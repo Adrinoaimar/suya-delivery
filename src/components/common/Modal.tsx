@@ -13,6 +13,8 @@ interface ModalProps {
   description?: string;
   footer?: ReactNode;
   size?: 'sm' | 'md' | 'lg';
+  /** Control que recibe el foco al abrir, por ejemplo `'input'`. */
+  initialFocusSelector?: string;
   children?: ReactNode;
 }
 
@@ -29,10 +31,12 @@ export function Modal({
   description,
   footer,
   size = 'md',
+  initialFocusSelector,
   children,
 }: ModalProps) {
   const titleId = useId();
-  const panelRef = useDialogBehavior(open, onClose);
+  const descriptionId = useId();
+  const panelRef = useDialogBehavior(open, onClose, initialFocusSelector);
 
   if (!open) return null;
 
@@ -50,6 +54,7 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
+        aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
         className={cn(
           'relative z-10 flex max-h-[92dvh] w-full flex-col overflow-hidden bg-white shadow-soft',
@@ -62,7 +67,11 @@ export function Modal({
             <h2 id={titleId} className="font-display text-lg font-bold">
               {title}
             </h2>
-            {description && <p className="mt-0.5 text-sm text-[#6B7076]">{description}</p>}
+            {description && (
+              <p id={descriptionId} className="mt-0.5 text-sm text-[#6B7076]">
+                {description}
+              </p>
+            )}
           </div>
           <IconButton label="Cerrar" onClick={onClose} className="-mr-2 -mt-1 shrink-0">
             <X className="h-5 w-5" />

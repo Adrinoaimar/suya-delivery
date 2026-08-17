@@ -61,6 +61,7 @@ export function CodeDialog({
       title={title}
       description={description}
       size="sm"
+      initialFocusSelector="#codigo-pedido"
       footer={
         <div className="flex gap-2">
           <Button variant="ghost" fullWidth onClick={onClose}>

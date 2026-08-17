@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import type { CSSProperties } from 'react';
 import {
   ArrowLeft,
   Bike,
@@ -24,7 +25,21 @@ import { cartTotals, useCartStore } from '@/store/cartStore';
 import { useUserStore } from '@/store/userStore';
 import { formatEta, formatPrice } from '@/utils/format';
 import { isOpenNow, scheduleLabel } from '@/utils/schedule';
-import type { Product } from '@/types';
+import type { Product, Store } from '@/types';
+
+/**
+ * Variables CSS con la paleta del negocio. Solo se usan dentro de esta página: el resto
+ * de la aplicación (carrito, checkout, navegación) siempre conserva la identidad Suya.
+ */
+function themeStyle(theme: Store['theme']): CSSProperties | undefined {
+  if (!theme) return undefined;
+  return {
+    '--store-primary': theme.primary,
+    '--store-accent': theme.accent,
+    '--store-surface': theme.surface,
+    '--store-on-primary': theme.onPrimary,
+  } as CSSProperties;
+}
 
 export default function StoreDetailPage() {
   const { id = '' } = useParams();
@@ -59,18 +74,38 @@ export default function StoreDetailPage() {
   const visibleSections = section ? sections.filter((name) => name === section) : sections;
   const totals = cartTotals(items, store, FREE_DELIVERY_THRESHOLD);
   const cartMatchesStore = cartStoreId === store.id && items.length > 0;
+  const theme = store.theme;
 
   return (
-    <div className="pb-24 lg:pb-8">
-      {/* Hero */}
-      <div className="relative h-44 overflow-hidden bg-suya-ivory sm:h-56 lg:h-64">
-        <Thumb
-          name={store.name}
-          src={store.image}
-          variant="store"
-          rounded="rounded-none"
-          textClassName="text-6xl"
-        />
+    <div style={themeStyle(theme)} className="pb-24 lg:pb-8">
+      {/* Hero: con marca propia, el fondo usa la paleta del negocio en vez del genérico. */}
+      <div
+        className={cn(
+          'relative h-44 overflow-hidden sm:h-56 lg:h-64',
+          theme ? 'bg-[var(--store-primary)]' : 'bg-suya-ivory',
+        )}
+      >
+        {theme ? (
+          <div className="flex h-full items-center justify-center gap-4 bg-gradient-to-br from-[var(--store-primary)] to-[var(--store-accent)] px-6">
+            <span className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-2 shadow-soft sm:h-28 sm:w-28">
+              <Thumb name={store.name} src={store.logo} variant="store" rounded="rounded-full" />
+            </span>
+            <span className="hidden text-left text-[var(--store-on-primary)] sm:block">
+              <span className="block font-display text-3xl font-bold leading-none">
+                {store.name}
+              </span>
+              <span className="mt-1.5 block text-sm opacity-90">{store.tags.join(' · ')}</span>
+            </span>
+          </div>
+        ) : (
+          <Thumb
+            name={store.name}
+            src={store.image}
+            variant="store"
+            rounded="rounded-none"
+            textClassName="text-6xl"
+          />
+        )}
         <div
           aria-hidden="true"
           className="absolute inset-0 bg-gradient-to-t from-suya-carbon/70 via-suya-carbon/10 to-transparent"
@@ -96,7 +131,12 @@ export default function StoreDetailPage() {
       <div className="shell">
         {/* Ficha del negocio. `relative z-10`: sin él, el degradado posicionado del hero
             se pinta encima de esta tarjeta y oculta el nombre del negocio. */}
-        <section className="relative z-10 -mt-10 rounded-card border border-suya-mist bg-white p-4 shadow-soft">
+        <section
+          className={cn(
+            'relative z-10 -mt-10 rounded-card border bg-white p-4 shadow-soft',
+            theme ? 'border-[var(--store-primary)]/30' : 'border-suya-mist',
+          )}
+        >
           <div className="flex items-start gap-3">
             <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-suya-mist">
               <Thumb name={store.name} src={store.logo} variant="store" rounded="rounded-xl" />
@@ -122,15 +162,31 @@ export default function StoreDetailPage() {
             </div>
             <div>
               <dt className="text-xs text-[#6B7076]">Tiempo estimado</dt>
-              <dd className="mt-0.5 inline-flex items-center gap-1 font-medium">
-                <Clock aria-hidden="true" className="h-4 w-4 text-suya-green" />
+              <dd
+                className={cn(
+                  'mt-0.5 inline-flex items-center gap-1 font-medium',
+                  theme && 'text-[var(--store-primary)]',
+                )}
+              >
+                <Clock
+                  aria-hidden="true"
+                  className={cn('h-4 w-4', theme ? 'text-[var(--store-primary)]' : 'text-suya-green')}
+                />
                 {formatEta(store.etaMin, store.etaMax)}
               </dd>
             </div>
             <div>
               <dt className="text-xs text-[#6B7076]">Envío</dt>
-              <dd className="mt-0.5 inline-flex items-center gap-1 font-medium">
-                <Bike aria-hidden="true" className="h-4 w-4 text-suya-green" />
+              <dd
+                className={cn(
+                  'mt-0.5 inline-flex items-center gap-1 font-medium',
+                  theme && 'text-[var(--store-primary)]',
+                )}
+              >
+                <Bike
+                  aria-hidden="true"
+                  className={cn('h-4 w-4', theme ? 'text-[var(--store-primary)]' : 'text-suya-green')}
+                />
                 {formatPrice(store.deliveryFee)}
               </dd>
             </div>
@@ -146,15 +202,29 @@ export default function StoreDetailPage() {
           </p>
 
           {store.promoLabel && (
-            <div className="mt-3 flex items-center gap-2 rounded-btn bg-suya-sun-soft px-3 py-2.5">
-              <Info aria-hidden="true" className="h-4 w-4 shrink-0 text-[#8A6100]" />
+            <div
+              className={cn(
+                'mt-3 flex items-center gap-2 rounded-btn px-3 py-2.5',
+                theme ? 'bg-[var(--store-surface)]' : 'bg-suya-sun-soft',
+              )}
+            >
+              <Info
+                aria-hidden="true"
+                className={cn('h-4 w-4 shrink-0', theme ? 'text-[var(--store-primary)]' : 'text-[#8A6100]')}
+              />
               <p className="text-sm font-medium text-suya-carbon">{store.promoLabel}</p>
             </div>
           )}
 
           {store.dataNote && (
             <div className="mt-3 flex items-start gap-2 rounded-btn border border-suya-mist bg-suya-ivory px-3 py-2.5">
-              <Info aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-suya-green" />
+              <Info
+                aria-hidden="true"
+                className={cn(
+                  'mt-0.5 h-4 w-4 shrink-0',
+                  theme ? 'text-[var(--store-primary)]' : 'text-suya-green',
+                )}
+              />
               <p className="text-sm text-[#4A4F55]">{store.dataNote}</p>
             </div>
           )}
@@ -168,7 +238,10 @@ export default function StoreDetailPage() {
         </section>
 
         {/* Categorías internas */}
-        <nav aria-label="Categorías del negocio" className="sticky top-[60px] z-20 -mx-4 bg-suya-ivory/95 px-4 py-3 backdrop-blur lg:top-[72px] lg:mx-0 lg:px-0">
+        <nav
+          aria-label="Categorías del negocio"
+          className="sticky top-[60px] z-20 -mx-4 bg-suya-ivory/95 px-4 py-3 backdrop-blur lg:top-[72px] lg:mx-0 lg:px-0"
+        >
           <div className="hide-scrollbar flex gap-2 overflow-x-auto">
             <button
               type="button"
@@ -177,7 +250,9 @@ export default function StoreDetailPage() {
               className={cn(
                 'press h-10 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors',
                 section === null
-                  ? 'border-suya-green bg-suya-green text-white'
+                  ? theme
+                    ? 'border-[var(--store-primary)] bg-[var(--store-primary)] text-[var(--store-on-primary)]'
+                    : 'border-suya-green bg-suya-green text-white'
                   : 'border-suya-mist bg-white text-suya-carbon',
               )}
             >
@@ -192,7 +267,9 @@ export default function StoreDetailPage() {
                 className={cn(
                   'press h-10 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors',
                   section === name
-                    ? 'border-suya-green bg-suya-green text-white'
+                    ? theme
+                      ? 'border-[var(--store-primary)] bg-[var(--store-primary)] text-[var(--store-on-primary)]'
+                      : 'border-suya-green bg-suya-green text-white'
                     : 'border-suya-mist bg-white text-suya-carbon',
                 )}
               >
@@ -218,6 +295,11 @@ export default function StoreDetailPage() {
                       product={product}
                       disabled={!open}
                       onSelect={setSelected}
+                      accentClassName={
+                        theme
+                          ? 'bg-[var(--store-primary)] hover:bg-[var(--store-accent)]'
+                          : undefined
+                      }
                     />
                   ))}
               </div>
@@ -238,7 +320,10 @@ export default function StoreDetailPage() {
         <div className="fixed inset-x-0 bottom-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom))] z-20 px-4 pb-3 lg:bottom-6">
           <Link
             to="/cart"
-            className="press mx-auto flex max-w-md items-center justify-between gap-3 rounded-btn bg-suya-green px-4 py-3.5 text-white shadow-soft"
+            className={cn(
+              'press mx-auto flex max-w-md items-center justify-between gap-3 rounded-btn px-4 py-3.5 text-white shadow-soft',
+              theme ? 'bg-[var(--store-primary)]' : 'bg-suya-green',
+            )}
           >
             <span className="flex items-center gap-2 font-display font-semibold">
               <ShoppingBag className="h-5 w-5" aria-hidden="true" />

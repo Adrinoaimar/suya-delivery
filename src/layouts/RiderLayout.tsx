@@ -15,6 +15,7 @@ import { Link, NavLink, Outlet } from 'react-router-dom';
 import { Drawer } from '@/components/common/Drawer';
 import { LogoMark } from '@/components/common/Logo';
 import { LocationGuardBanner } from '@/components/rider/LocationGuardBanner';
+import { useRiderTrackingRunner } from '@/hooks/useRiderLocationGuard';
 import { cn } from '@/lib/cn';
 import { useRiderStore } from '@/store/riderStore';
 
@@ -49,6 +50,8 @@ function linkClasses(isActive: boolean): string {
 export function RiderLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const available = useRiderStore((state) => state.available);
+  // Rastreador único de ubicación para toda el área del repartidor.
+  useRiderTrackingRunner();
 
   return (
     <div className="flex min-h-dvh flex-col bg-[#14161A] text-white lg:flex-row">

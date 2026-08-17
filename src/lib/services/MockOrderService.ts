@@ -1,6 +1,7 @@
 import { riders, seedOrders } from '@/data';
 import { STORAGE_KEYS, readLocal, writeLocal } from '@/lib/storage';
 import { createId, createOrderCode, createPinCode } from '@/utils/id';
+import { ORDER_FLOW } from '@/types';
 import type { CartItem, Order, OrderStatus } from '@/types';
 import { MockStoreService } from './MockStoreService';
 import type { CodeResult, CreateOrderInput, OrderService } from './types';
@@ -60,6 +61,7 @@ export class MockOrderServiceImpl implements OrderService {
   create(input: CreateOrderInput): Order {
     const store = MockStoreService.getStore(input.storeId);
     const now = new Date();
+    const deliveryCode = createPinCode();
     const order: Order = {
       id: createId('ord'),
       code: createOrderCode(),
@@ -77,8 +79,8 @@ export class MockOrderServiceImpl implements OrderService {
       paymentMethod: input.paymentMethod,
       riderId: riders[Math.floor(Math.random() * riders.length)]!.id,
       etaMinutes: store?.etaMax ?? 30,
-      deliveryCode: createPinCode(),
-      cancelCode: createPinCode(),
+      deliveryCode,
+      cancelCode: createPinCode(deliveryCode),
       simulationStartedAt: now.getTime(),
     };
 
@@ -87,18 +89,38 @@ export class MockOrderServiceImpl implements OrderService {
     return order;
   }
 
+  /**
+   * Avance del pedido dentro del flujo. No retrocede, no reabre pedidos cerrados y
+   * no puede llegar a «Entregado»: ese paso solo lo cierra `confirmDelivery` con el
+   * código del cliente.
+   */
   updateStatus(id: string, status: OrderStatus): Order | undefined {
-    const orders = this.list().map((order) => {
-      if (order.id !== id || order.status === status) return order;
-      return {
-        ...order,
-        status,
-        history: [...order.history, { status, at: new Date().toISOString() }],
-      };
-    });
+    const current = this.get(id);
+    if (!current) return undefined;
+    if (!this.canAdvance(current.status, status)) return current;
+
+    const orders = this.list().map((order) =>
+      order.id === current.id
+        ? {
+            ...order,
+            status,
+            history: [...order.history, { status, at: new Date().toISOString() }],
+          }
+        : order,
+    );
     this.cache = orders;
     this.persist();
-    return this.get(id);
+    return this.get(current.id);
+  }
+
+  private canAdvance(from: OrderStatus, to: OrderStatus): boolean {
+    if (from === to) return false;
+    if (from === 'delivered' || from === 'cancelled') return false;
+    if (to === 'delivered' || to === 'cancelled') return false;
+
+    const fromIndex = ORDER_FLOW.indexOf(from);
+    const toIndex = ORDER_FLOW.indexOf(to);
+    return toIndex > fromIndex;
   }
 
   /**
@@ -112,8 +134,9 @@ export class MockOrderServiceImpl implements OrderService {
     if (order.status === 'cancelled') return { ok: false, reason: 'already_closed' };
     if (code.trim() !== order.cancelCode) return { ok: false, reason: 'invalid_code' };
 
+    // `get()` acepta id o código visible: a partir de aquí se usa siempre el id real.
     this.cache = this.list().map((item) =>
-      item.id === id
+      item.id === order.id
         ? {
             ...item,
             status: 'cancelled' as OrderStatus,
@@ -131,17 +154,29 @@ export class MockOrderServiceImpl implements OrderService {
 
   /**
    * El repartidor cierra el pedido con el código de 4 dígitos que le da el cliente.
-   * Sin código correcto, el pedido no pasa a «Entregado».
+   * Solo se puede confirmar cuando el pedido ya va en camino.
    */
   confirmDelivery(id: string, code: string): CodeResult {
     const order = this.get(id);
     if (!order) return { ok: false, reason: 'not_found' };
     if (order.status === 'cancelled') return { ok: false, reason: 'already_closed' };
     if (order.status === 'delivered') return { ok: false, reason: 'already_closed' };
+    if (order.status !== 'on_the_way') return { ok: false, reason: 'invalid_status' };
     if (code.trim() !== order.deliveryCode) return { ok: false, reason: 'invalid_code' };
 
-    const updated = this.updateStatus(id, 'delivered');
-    return updated ? { ok: true, order: updated } : { ok: false, reason: 'not_found' };
+    const now = new Date().toISOString();
+    this.cache = this.list().map((item) =>
+      item.id === order.id
+        ? {
+            ...item,
+            status: 'delivered' as OrderStatus,
+            simulationStartedAt: null,
+            history: [...item.history, { status: 'delivered' as OrderStatus, at: now }],
+          }
+        : item,
+    );
+    this.persist();
+    return { ok: true, order: this.get(order.id)! };
   }
 
   restartSimulation(id: string): Order | undefined {

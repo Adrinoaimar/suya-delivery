@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { SuyaIntroLoader } from '@/components/common/SuyaIntroLoader';
 
@@ -34,7 +34,9 @@ describe('pantalla de carga', () => {
     const onFinish = vi.fn();
     render(<SuyaIntroLoader onFinish={onFinish} minDuration={1000} />);
 
-    vi.advanceTimersByTime(1500);
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
     expect(onFinish).toHaveBeenCalledTimes(1);
     vi.useRealTimers();
   });

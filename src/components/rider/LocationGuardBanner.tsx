@@ -1,7 +1,7 @@
 import { LocateFixed, LocateOff, ShieldAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/cn';
-import { useRiderLocationGuard } from '@/hooks/useRiderLocationGuard';
+import { useRiderLocation } from '@/hooks/useRiderLocationGuard';
 import { useRiderStore } from '@/store/riderStore';
 import { formatRelative } from '@/utils/format';
 import { useNow } from '@/hooks/useSharedLocation';
@@ -11,11 +11,11 @@ import { useNow } from '@/hooks/useSharedLocation';
  * Suya exige ubicación activa durante toda la conexión, no solo al compartirla.
  */
 export function LocationGuardBanner() {
-  const { required, tracking, reading, error, simulated } = useRiderLocationGuard();
+  const { required, sharing, tracking, reading, error, simulated } = useRiderLocation();
   const setSimulatedLocation = useRiderStore((state) => state.setSimulatedLocation);
   const now = useNow(5000);
 
-  if (!required) {
+  if (!required && !sharing) {
     return (
       <div className="flex items-start gap-2.5 border-b border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white/75">
         <LocateOff aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />

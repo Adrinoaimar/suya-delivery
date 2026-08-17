@@ -76,7 +76,7 @@ describe('pedidos', () => {
     expect(updated?.total).toBe(40);
   });
 
-  it('genera códigos de entrega y cancelación distintos', () => {
+  it('genera códigos de entrega y cancelación distintos entre sí', () => {
     const service = createService();
     const order = service.create({
       storeId: 'el-buen-sabor',
@@ -90,6 +90,67 @@ describe('pedidos', () => {
 
     expect(order.deliveryCode).toMatch(/^\d{4}$/);
     expect(order.cancelCode).toMatch(/^\d{4}$/);
+    expect(order.deliveryCode).not.toBe(order.cancelCode);
+  });
+
+  it('updateStatus nunca retrocede ni salta a delivered', () => {
+    const service = createService();
+    const order = service.create({
+      storeId: 'el-buen-sabor',
+      items: buildItems(),
+      subtotal: 30,
+      deliveryFee: 4,
+      discount: 0,
+      customer,
+      paymentMethod: 'cash',
+    });
+
+    service.updateStatus(order.id, 'picked_up');
+    expect(service.get(order.id)?.status).toBe('picked_up');
+
+    // Retroceder no tiene efecto.
+    service.updateStatus(order.id, 'preparing');
+    expect(service.get(order.id)?.status).toBe('picked_up');
+
+    // No se puede saltar directo a entregado por esta vía.
+    service.updateStatus(order.id, 'delivered');
+    expect(service.get(order.id)?.status).toBe('picked_up');
+  });
+
+  it('confirmDelivery solo cierra el pedido cuando va en camino', () => {
+    const service = createService();
+    const order = service.create({
+      storeId: 'el-buen-sabor',
+      items: buildItems(),
+      subtotal: 30,
+      deliveryFee: 4,
+      discount: 0,
+      customer,
+      paymentMethod: 'cash',
+    });
+
+    // Todavía en 'confirmed': el código es correcto pero el estado no lo permite.
+    const early = service.confirmDelivery(order.id, order.deliveryCode);
+    expect(early.ok).toBe(false);
+    expect(early.ok ? null : early.reason).toBe('invalid_status');
+    expect(service.get(order.id)?.status).toBe('confirmed');
+  });
+
+  it('cancel usa el id real del pedido aunque se busque por código', () => {
+    const service = createService();
+    const order = service.create({
+      storeId: 'el-buen-sabor',
+      items: buildItems(),
+      subtotal: 30,
+      deliveryFee: 4,
+      discount: 0,
+      customer,
+      paymentMethod: 'cash',
+    });
+
+    const result = service.cancel(order.code, order.cancelCode);
+    expect(result.ok).toBe(true);
+    expect(service.get(order.id)?.status).toBe('cancelled');
   });
 
   it('solo cancela con el código de cancelación correcto', () => {

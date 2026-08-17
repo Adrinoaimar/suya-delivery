@@ -73,11 +73,16 @@ tipos, estilo y pruebas, construye y despliega.
 | Repartidor | `/rider`, `/rider/current`, `/rider/safety`, `/rider/history`, `/rider/earnings`, `/rider/settings` |
 | Contacto de confianza | `/share/:token` |
 
-- Marketplace con 13 negocios, 6 categorías, 70 productos y 5 promociones.
-- Dos negocios sullaneros en **fase beta**: **El Tío Jhony** (cevichería, pollería y pizzería, con
-  carta tomada de la publicada por el restaurante) y **Andá Paya** (carta norteña referencial, aún
-  sin confirmar con el negocio). Ambos llevan distintivo «Beta», nota de datos y un logotipo
-  original creado para la demo, que debe sustituirse por el activo oficial del comercio.
+- Marketplace con 13 negocios, 6 categorías, 94 productos y 5 promociones.
+- **El Tío Jhony** integrado como negocio funcional (no beta): logotipo oficial y 33 platos con
+  precios tomados de su menú físico y de [eltiojhony.com](https://eltiojhony.com). Su ficha
+  (`/store/tio-jhony`) se muestra con la **paleta propia de la marca** (rojo `#8C1220`/`#D91E36`
+  tomado de su sitio oficial) en vez del verde de Suya; el resto de la aplicación —carrito,
+  checkout, navegación— conserva siempre la identidad Suya. Ver `Store.theme` en
+  `src/types/index.ts` y `themeStyle()` en `StoreDetailPage.tsx`.
+- **Andá Paya** sigue en **fase beta**: carta norteña referencial, sin presencia web indexada que
+  permita confirmarla, con distintivo «Beta», nota de datos y un logotipo original creado para la
+  demo que debe sustituirse por el activo oficial cuando el negocio lo entregue.
 - Carrito persistente de un solo negocio, con extras, notas y cálculo de envío.
 - Checkout con métodos de pago simulados (efectivo, Yape, tarjeta) y cupones demo.
 - Pedido con código `#SUY-XXXXX`, línea de tiempo de estados y seguimiento en mapa.

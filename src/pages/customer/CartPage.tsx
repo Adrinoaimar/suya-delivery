@@ -7,7 +7,6 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { Modal } from '@/components/common/Modal';
 import { CartLine } from '@/components/order/CartLine';
 import { FREE_DELIVERY_THRESHOLD } from '@/data';
-import { cn } from '@/lib/cn';
 import { storeService } from '@/lib/services';
 import { cartTotals, useCartStore } from '@/store/cartStore';
 import { formatPrice } from '@/utils/format';
@@ -121,17 +120,20 @@ export default function CartPage() {
               </p>
             ) : null}
 
-            <ButtonLink
-              to="/checkout"
-              fullWidth
-              size="lg"
-              className={cn(
-                'mt-4',
-                store && totals.subtotal < store.minOrder && 'pointer-events-none opacity-50',
-              )}
-            >
-              Continuar al pago
-            </ButtonLink>
+            {/* Bajo el mínimo no se renderiza el enlace: deshabilitarlo solo con CSS
+                lo dejaba accesible con el teclado. */}
+            {store && totals.subtotal < store.minOrder ? (
+              <p
+                role="status"
+                className="mt-4 rounded-btn bg-suya-mist/60 px-3 py-3 text-center text-sm font-medium text-[#4A4F55]"
+              >
+                Agrega {formatPrice(store.minOrder - totals.subtotal)} más para continuar al pago.
+              </p>
+            ) : (
+              <ButtonLink to="/checkout" fullWidth size="lg" className="mt-4">
+                Continuar al pago
+              </ButtonLink>
+            )}
           </Card>
         </div>
       </div>

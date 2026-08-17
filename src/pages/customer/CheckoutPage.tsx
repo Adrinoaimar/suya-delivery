@@ -81,7 +81,11 @@ export default function CheckoutPage() {
   function validate(): boolean {
     const next: Record<string, string> = {};
     if (form.name.trim().length < 3) next.name = 'Escribe tu nombre completo.';
-    if (!/^[0-9+\s]{6,15}$/.test(form.phone.trim())) next.phone = 'Escribe un teléfono válido.';
+
+    // Cuenta dígitos reales: «+  » pasaba el patrón anterior y guardaba un contacto inútil.
+    const digits = form.phone.replace(/\D/g, '');
+    if (digits.length < 6 || digits.length > 15) next.phone = 'Escribe un teléfono válido.';
+
     if (form.address.trim().length < 6) next.address = 'Indica la dirección de entrega.';
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -90,6 +94,16 @@ export default function CheckoutPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!validate() || !store) return;
+
+    // El mínimo también se comprueba aquí: llegar por URL directa o con el teclado
+    // no debe permitir saltarse la restricción del negocio.
+    if (base.subtotal < store.minOrder) {
+      notificationService.notify(
+        `El pedido mínimo de ${store.name} es ${formatPrice(store.minOrder)}.`,
+        'warning',
+      );
+      return;
+    }
 
     setSubmitting(true);
     const payment = await paymentService.authorize(method, total);

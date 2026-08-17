@@ -50,10 +50,39 @@ export class LocalLocationSharingServiceImpl implements LocationSharingService {
     this.write(snapshot);
   }
 
+  /**
+   * Detener revoca el acceso: el enlace deja de mostrar dónde está el repartidor.
+   * Se conserva solo el estado «detenido» para que el contacto entienda qué pasó,
+   * nunca la última posición.
+   */
   async stop(): Promise<void> {
     const current = this.getSnapshot();
     if (!current) return;
-    this.write({ ...current, status: 'stopped', updatedAt: Date.now() });
+    this.write({
+      ...current,
+      status: 'stopped',
+      position: null,
+      accuracy: null,
+      sos: false,
+      updatedAt: Date.now(),
+    });
+  }
+
+  /**
+   * Genera un enlace nuevo e invalida el anterior en el mismo paso: si el token
+   * cambiara solo en el panel, el enlace antiguo seguiría mostrando la ubicación.
+   */
+  async rotateToken(token: string): Promise<void> {
+    const current = this.getSnapshot();
+    if (!current) return;
+    this.write({
+      ...current,
+      token,
+      position: null,
+      accuracy: null,
+      startedAt: Date.now(),
+      updatedAt: Date.now(),
+    });
   }
 
   publish(partial: Partial<SharedLocationSnapshot>): void {

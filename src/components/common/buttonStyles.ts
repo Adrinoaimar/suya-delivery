@@ -12,7 +12,8 @@ const VARIANTS: Record<ButtonVariant, string> = {
 };
 
 const SIZES: Record<ButtonSize, string> = {
-  sm: 'h-10 px-3.5 text-sm',
+  // 44 px es el objetivo táctil mínimo declarado en las reglas del proyecto.
+  sm: 'h-11 px-3.5 text-sm',
   md: 'h-12 px-5 text-[15px]',
   lg: 'h-14 px-6 text-base',
 };

@@ -38,6 +38,17 @@ export interface Store {
   isBeta?: boolean;
   /** Nota mostrada en la ficha cuando los datos son referenciales. */
   dataNote?: string;
+  /**
+   * Paleta propia del negocio (hex), tomada de su marca oficial. Cuando existe, la ficha
+   * del negocio se muestra con estos colores en lugar de la identidad verde de Suya; el
+   * resto de la aplicación (carrito, checkout, navegación) conserva siempre la marca Suya.
+   */
+  theme?: {
+    primary: string;
+    accent: string;
+    surface: string;
+    onPrimary: string;
+  };
   promoLabel: string | null;
   schedule: Schedule;
   address: string;

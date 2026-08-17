@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { orderService, statusForElapsed } from '@/lib/services';
 import type { CodeResult, CreateOrderInput } from '@/lib/services';
+import { ORDER_FLOW } from '@/types';
 import type { Order } from '@/types';
 
 interface OrderState {
@@ -60,11 +61,23 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       // La entrega no se cierra sola: la confirma el repartidor con el código del cliente.
       if (next === 'delivered') return order;
 
+      // El estado nunca retrocede: si el repartidor ya avanzó a mano, la simulación
+      // no puede devolver el pedido a una etapa anterior.
+      const currentIndex = ORDER_FLOW.indexOf(order.status);
+      const nextIndex = ORDER_FLOW.indexOf(next);
+      if (nextIndex <= currentIndex) return order;
+
       changed = true;
+      // Registra también las etapas intermedias que se hayan saltado (pestaña suspendida).
+      const skipped = ORDER_FLOW.slice(currentIndex + 1, nextIndex + 1).map((status) => ({
+        status,
+        at: new Date().toISOString(),
+      }));
+
       return {
         ...order,
         status: next,
-        history: [...order.history, { status: next, at: new Date().toISOString() }],
+        history: [...order.history, ...skipped],
       };
     });
 

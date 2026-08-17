@@ -15,10 +15,11 @@ import { Modal } from '@/components/common/Modal';
 import { Toggle } from '@/components/common/Toggle';
 import { MapProvider } from '@/components/map/MapProvider';
 import { demoRoute } from '@/data';
-import { useGeolocation } from '@/hooks/useGeolocation';
+import { useRiderLocation } from '@/hooks/useRiderLocationGuard';
 import { useNow } from '@/hooks/useSharedLocation';
 import { locationSharingService, notificationService } from '@/lib/services';
 import { useRiderStore } from '@/store/riderStore';
+import { useTrackingStore } from '@/store/trackingStore';
 import { formatRelative } from '@/utils/format';
 import { DemoNotice } from './DemoNotice';
 
@@ -32,26 +33,22 @@ export function LocationShareCard() {
   const regenerateShareToken = useRiderStore((state) => state.regenerateShareToken);
   const storedToken = useRiderStore((state) => state.shareToken);
 
-  const [sharing, setSharing] = useState(() => locationSharingService.getStatus() === 'sharing');
+  const sharing = useTrackingStore((state) => state.sharing);
+  const setSharing = useTrackingStore((state) => state.setSharing);
   const [helpOpen, setHelpOpen] = useState(false);
-  const { reading, error, permission } = useGeolocation(sharing, simulated);
+  // La posición viene del rastreador único del layout: aquí no se abre otro `watchPosition`.
+  const { reading, error, permission } = useRiderLocation();
   const now = useNow();
+
+  // Al entrar, refleja si ya había una sesión de compartición abierta.
+  useEffect(() => {
+    setSharing(locationSharingService.getStatus() === 'sharing');
+  }, [setSharing]);
 
   const token = storedToken ?? '';
   const shareUrl = token
     ? `${window.location.origin}${import.meta.env.BASE_URL}share/${token}`
     : '';
-
-  useEffect(() => {
-    if (!sharing || !reading) return;
-    locationSharingService.publish({
-      position: reading.position,
-      accuracy: reading.accuracy,
-      updatedAt: reading.timestamp,
-      simulated: reading.simulated,
-      status: 'sharing',
-    });
-  }, [sharing, reading]);
 
   async function startSharing() {
     const nextToken = ensureShareToken();
@@ -214,8 +211,13 @@ export function LocationShareCard() {
                 size="sm"
                 variant="ghost"
                 onClick={() => {
-                  regenerateShareToken();
-                  notificationService.notify('Se generó un enlace nuevo', 'info');
+                  const nextToken = regenerateShareToken();
+                  // El enlace anterior deja de funcionar en el mismo momento.
+                  void locationSharingService.rotateToken(nextToken);
+                  notificationService.notify(
+                    'Enlace nuevo generado. El anterior dejó de funcionar.',
+                    'info',
+                  );
                 }}
               >
                 <RefreshCw className="h-4 w-4" aria-hidden="true" />

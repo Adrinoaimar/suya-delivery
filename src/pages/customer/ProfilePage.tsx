@@ -207,7 +207,8 @@ export default function ProfilePage() {
               fullWidth
               onClick={() => {
                 clearSuyaStorage();
-                window.location.href = '/';
+                // `BASE_URL` respeta la subruta de GitHub Pages; '/' saldría del sitio.
+                window.location.href = import.meta.env.BASE_URL;
               }}
             >
               Reiniciar

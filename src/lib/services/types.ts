@@ -36,7 +36,7 @@ export interface CreateOrderInput {
   paymentMethod: PaymentMethod;
 }
 
-export type CodeFailure = 'not_found' | 'invalid_code' | 'already_closed';
+export type CodeFailure = 'not_found' | 'invalid_code' | 'already_closed' | 'invalid_status';
 
 export type CodeResult = { ok: true; order: Order } | { ok: false; reason: CodeFailure };
 
@@ -44,6 +44,7 @@ export const CODE_ERROR_MESSAGES: Record<CodeFailure, string> = {
   not_found: 'No encontramos este pedido.',
   invalid_code: 'El código no coincide. Revísalo con el cliente.',
   already_closed: 'Este pedido ya está cerrado.',
+  invalid_status: 'Marca primero que vas en camino para poder cerrar la entrega.',
 };
 
 export interface OrderService {
@@ -98,6 +99,8 @@ export interface NotificationService {
 export interface LocationSharingService {
   start(payload: { token: string; riderName: string; simulated: boolean }): Promise<void>;
   stop(): Promise<void>;
+  /** Cambia el token del enlace activo e invalida el anterior. */
+  rotateToken(token: string): Promise<void>;
   publish(snapshot: Partial<SharedLocationSnapshot>): void;
   getStatus(): SharingStatus;
   getSnapshot(): SharedLocationSnapshot | null;

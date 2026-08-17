@@ -7,7 +7,12 @@ import { useEffect, useRef } from 'react';
  * El efecto depende solo de `open`: `onClose` vive en una ref para que un re-render
  * (por ejemplo, al escribir en un campo del diálogo) no devuelva el foco al disparador.
  */
-export function useDialogBehavior(open: boolean, onClose: () => void) {
+export function useDialogBehavior(
+  open: boolean,
+  onClose: () => void,
+  /** Selector del control que debe recibir el foco al abrir (por defecto, el primero). */
+  initialFocusSelector?: string,
+) {
   const panelRef = useRef<HTMLDivElement | null>(null);
   const lastFocused = useRef<HTMLElement | null>(null);
   const closeRef = useRef(onClose);
@@ -24,10 +29,15 @@ export function useDialogBehavior(open: boolean, onClose: () => void) {
     document.body.style.overflow = 'hidden';
 
     const focusTimer = window.setTimeout(() => {
+      const preferred = initialFocusSelector
+        ? panelRef.current?.querySelector<HTMLElement>(initialFocusSelector)
+        : null;
       const target =
+        preferred ??
         panelRef.current?.querySelector<HTMLElement>(
           'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        ) ?? panelRef.current;
+        ) ??
+        panelRef.current;
       target?.focus();
     }, 40);
 
@@ -78,7 +88,7 @@ export function useDialogBehavior(open: boolean, onClose: () => void) {
       window.clearTimeout(focusTimer);
       lastFocused.current?.focus?.();
     };
-  }, [open]);
+  }, [open, initialFocusSelector]);
 
   return panelRef;
 }

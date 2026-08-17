@@ -15,6 +15,11 @@ interface FieldShellProps {
   children: ReactNode;
 }
 
+/** Id del mensaje asociado al campo, para enlazarlo con `aria-describedby`. */
+function describedById(id: string): string {
+  return `${id}-desc`;
+}
+
 function FieldShell({ id, label, hint, error, children }: FieldShellProps) {
   return (
     <div className="flex flex-col gap-1.5">
@@ -23,11 +28,13 @@ function FieldShell({ id, label, hint, error, children }: FieldShellProps) {
       </label>
       {children}
       {error ? (
-        <p className="text-xs font-medium text-suya-danger" role="alert">
+        <p id={describedById(id)} className="text-xs font-medium text-suya-danger" role="alert">
           {error}
         </p>
       ) : hint ? (
-        <p className="text-xs text-[#6B7076]">{hint}</p>
+        <p id={describedById(id)} className="text-xs text-[#6B7076]">
+          {hint}
+        </p>
       ) : null}
     </div>
   );
@@ -47,6 +54,7 @@ export function Input({ label, hint, error, className, id, ...rest }: InputProps
       <input
         id={fieldId}
         aria-invalid={error ? true : undefined}
+        aria-describedby={error || hint ? describedById(fieldId) : undefined}
         className={cn(FIELD, 'h-12', error && 'border-suya-danger', className)}
         {...rest}
       />
@@ -69,6 +77,7 @@ export function Textarea({ label, hint, error, className, id, rows = 3, ...rest 
         id={fieldId}
         rows={rows}
         aria-invalid={error ? true : undefined}
+        aria-describedby={error || hint ? describedById(fieldId) : undefined}
         className={cn(FIELD, 'resize-y py-3', error && 'border-suya-danger', className)}
         {...rest}
       />
@@ -88,7 +97,12 @@ export function Select({ label, hint, error, options, className, id, ...rest }: 
   const fieldId = id ?? generatedId;
   return (
     <FieldShell id={fieldId} label={label} hint={hint} error={error}>
-      <select id={fieldId} className={cn(FIELD, 'h-12 appearance-none', className)} {...rest}>
+      <select
+        id={fieldId}
+        aria-describedby={error || hint ? describedById(fieldId) : undefined}
+        className={cn(FIELD, 'h-12 appearance-none', className)}
+        {...rest}
+      >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}

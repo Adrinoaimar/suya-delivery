@@ -18,9 +18,16 @@ export function createId(prefix = 'id'): string {
   return `${prefix}_${Date.now().toString(36)}_${randomChunk(4).toLowerCase()}`;
 }
 
-/** Código de 4 dígitos para confirmar la entrega o cancelar un pedido. */
-export function createPinCode(): string {
-  return String(Math.floor(1000 + Math.random() * 9000));
+/**
+ * Código de 4 dígitos para confirmar la entrega o cancelar un pedido.
+ * `exclude` evita que el pedido tenga dos códigos iguales.
+ */
+export function createPinCode(exclude?: string): string {
+  let code = String(Math.floor(1000 + Math.random() * 9000));
+  while (code === exclude) {
+    code = String(Math.floor(1000 + Math.random() * 9000));
+  }
+  return code;
 }
 
 /** Token del enlace de seguimiento compartido: `demo-ABCD123`. */
