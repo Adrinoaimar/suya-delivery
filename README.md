@@ -2,6 +2,8 @@
 
 **Tu ciudad. Tus tiendas. Llegamos a ti.**
 
+**Demo en vivo:** <https://adrinoaimar.github.io/suya-delivery/>
+
 Marketplace de delivery local de **Sullana, Piura, Perú**. Web app responsive **mobile-first**
 construida con React + TypeScript + Vite + Tailwind CSS. Esta primera versión es una
 **demostración local sin base de datos**: todo funciona en el navegador para validar la
@@ -42,6 +44,24 @@ npm run lint
 ```bash
 npm run typecheck
 ```
+
+Para revisar la animación de entrada con calma, en desarrollo puedes alargarla:
+<http://localhost:5173/?intro=8000> (se muestra una vez por pestaña; recarga con esa URL para
+volver a verla).
+
+---
+
+## Despliegue
+
+El repositorio se publica solo en **GitHub Pages** con el workflow
+[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml): en cada push a `main` verifica
+tipos, estilo y pruebas, construye y despliega.
+
+- El sitio vive bajo `/<repo>/`, por eso el build recibe `VITE_BASE=/suya-delivery/` y la app usa
+  `import.meta.env.BASE_URL` (router, service worker, placeholders y enlace de seguimiento).
+- `scripts/prepare-pages.mjs` copia `index.html` a `404.html` para que las rutas profundas
+  (`/orders`, `/rider/safety`, `/share/:token`) funcionen al recargar.
+- Para servirlo en la raíz de un dominio propio, construye sin `VITE_BASE` (o con `/`).
 
 ---
 
