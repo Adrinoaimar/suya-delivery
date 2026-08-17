@@ -21,7 +21,7 @@
     "phone": "+51 969 000 101",
     "image": null,
     "logo": null,
-    "sections": ["Recomendados", "Pollos", "Parrillas", "Guarniciones", "Bebidas"]
+    "sections": ["Pollos", "Parrillas", "Guarniciones", "Bebidas"]
   },
   {
     "id": "tio-jhony",
@@ -133,7 +133,7 @@
     "phone": "+51 969 000 102",
     "image": null,
     "logo": null,
-    "sections": ["Promociones", "Pizzas", "Pastas", "Entradas", "Bebidas"]
+    "sections": ["Pizzas", "Pastas", "Entradas", "Bebidas"]
   },
   {
     "id": "dulce-tentacion",
@@ -277,7 +277,7 @@
     "phone": "+51 969 000 108",
     "image": null,
     "logo": null,
-    "sections": ["Promociones", "Pizzas", "Complementos", "Bebidas"]
+    "sections": ["Pizzas", "Complementos", "Bebidas"]
   },
   {
     "id": "tottus",

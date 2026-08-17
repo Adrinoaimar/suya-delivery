@@ -12,11 +12,13 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  # No se cancela un despliegue a medias: se deja terminar el que ya está publicando.
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
 
@@ -33,10 +35,13 @@ jobs:
           npm run lint
           npm run test
 
+      # GitHub Pages sirve el proyecto bajo /<repo>/. Se toma de GITHUB_REPOSITORY
+      # ("owner/repo") porque está definido en cualquier evento, también en
+      # workflow_dispatch, donde el payload del evento puede no traer el repositorio.
+      - name: Calcular la base del sitio
+        run: echo "VITE_BASE=/${GITHUB_REPOSITORY#*/}/" >> "$GITHUB_ENV"
+
       - name: Construir sitio
-        env:
-          # GitHub Pages sirve el proyecto bajo /<repo>/
-          VITE_BASE: /${{ github.event.repository.name }}/
         run: npm run build:pages
 
       - uses: actions/upload-pages-artifact@v3
@@ -46,6 +51,7 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
