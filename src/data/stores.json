@@ -44,7 +44,7 @@
     "schedule": { "opens": "12:00", "closes": "23:30" },
     "address": "Av. Marcelino Champagnat 1108, Sullana",
     "phone": "+51 974 135 263",
-    "image": null,
+    "image": "/images/stores/tio-jhony/fachada-champagnat.webp",
     "logo": "/brand/stores/tio-jhony-logo.webp",
     "theme": {
       "primary": "#8C1220",
@@ -52,6 +52,26 @@
       "surface": "#FCEEEF",
       "onPrimary": "#FFFFFF"
     },
+    "gallery": [
+      {
+        "src": "/images/stores/tio-jhony/galeria/pescado-en-salsa.webp",
+        "caption": "Pescado en salsa con arroz"
+      },
+      { "src": "/images/stores/tio-jhony/galeria/sudado.webp", "caption": "Sudado de la casa" },
+      {
+        "src": "/images/stores/tio-jhony/galeria/piqueo-de-la-casa.webp",
+        "caption": "Piqueo de la casa"
+      },
+      {
+        "src": "/images/stores/tio-jhony/galeria/sede-pizzas-y-parrillas.webp",
+        "caption": "Sede Pizzas y Parrillas"
+      },
+      {
+        "src": "/images/stores/tio-jhony/galeria/sede-heladeria.webp",
+        "caption": "TJ Heladería y Cafetería"
+      },
+      { "src": "/images/stores/tio-jhony/galeria/sede-ugarte.webp", "caption": "Sede Ugarte" }
+    ],
     "sections": [
       "Para compartir",
       "Entradas",

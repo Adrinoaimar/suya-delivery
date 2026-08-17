@@ -49,6 +49,8 @@ export interface Store {
     surface: string;
     onPrimary: string;
   };
+  /** Fotos del local y de su cocina, mostradas como galería en la ficha. */
+  gallery?: { src: string; caption: string }[];
   promoLabel: string | null;
   schedule: Schedule;
   address: string;

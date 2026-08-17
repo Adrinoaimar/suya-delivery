@@ -1,15 +1,14 @@
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
+import { assetUrl } from '@/utils/asset';
 import { initialsOf } from '@/utils/format';
 
 type ThumbVariant = 'store' | 'product' | 'avatar';
 
-const BASE = import.meta.env.BASE_URL;
-
 const FALLBACK: Record<ThumbVariant, string> = {
-  store: `${BASE}placeholders/store.svg`,
-  product: `${BASE}placeholders/product.svg`,
-  avatar: `${BASE}placeholders/avatar.svg`,
+  store: assetUrl('/placeholders/store.svg')!,
+  product: assetUrl('/placeholders/product.svg')!,
+  avatar: assetUrl('/placeholders/avatar.svg')!,
 };
 
 /** Paleta determinista para las tarjetas neutras (sin logos de terceros). */
@@ -47,8 +46,7 @@ export function Thumb({
   rounded = 'rounded-xl',
 }: ThumbProps) {
   const [failed, setFailed] = useState(false);
-  // Las rutas de `src/data` se escriben desde la raíz pública; aquí se les antepone la base.
-  const resolved = src?.startsWith('/') ? `${BASE}${src.slice(1)}` : src;
+  const resolved = assetUrl(src);
 
   if (resolved && !failed) {
     return (

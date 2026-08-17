@@ -18,11 +18,13 @@ import { Rating } from '@/components/common/Rating';
 import { Thumb } from '@/components/common/Thumb';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { ProductSheet } from '@/components/marketplace/ProductSheet';
+import { StoreGallery } from '@/components/marketplace/StoreGallery';
 import { FREE_DELIVERY_THRESHOLD } from '@/data';
 import { cn } from '@/lib/cn';
 import { storeService } from '@/lib/services';
 import { cartTotals, useCartStore } from '@/store/cartStore';
 import { useUserStore } from '@/store/userStore';
+import { assetUrl } from '@/utils/asset';
 import { formatEta, formatPrice } from '@/utils/format';
 import { isOpenNow, scheduleLabel } from '@/utils/schedule';
 import type { Product, Store } from '@/types';
@@ -85,7 +87,16 @@ export default function StoreDetailPage() {
           theme ? 'bg-[var(--store-primary)]' : 'bg-suya-ivory',
         )}
       >
-        {theme ? (
+        {store.image ? (
+          // Foto real del local a sangre; el logotipo ya aparece en la ficha de abajo.
+          <img
+            src={assetUrl(store.image)}
+            alt={`Local de ${store.name}`}
+            className="h-full w-full object-cover"
+            width={1200}
+            height={720}
+          />
+        ) : theme ? (
           <div className="flex h-full items-center justify-center gap-4 bg-gradient-to-br from-[var(--store-primary)] to-[var(--store-accent)] px-6">
             <span className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-2 shadow-soft sm:h-28 sm:w-28">
               <Thumb name={store.name} src={store.logo} variant="store" rounded="rounded-full" />
@@ -236,6 +247,8 @@ export default function StoreDetailPage() {
             </p>
           )}
         </section>
+
+        {store.gallery && <StoreGallery gallery={store.gallery} storeName={store.name} />}
 
         {/* Categorías internas */}
         <nav

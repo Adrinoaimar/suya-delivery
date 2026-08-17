@@ -9,9 +9,21 @@
     "image": null,
     "popular": true,
     "extras": [
-      { "id": "bs-x1", "label": "Porción extra de papas", "price": 8 },
-      { "id": "bs-x2", "label": "Ají de la casa (200 g)", "price": 4 },
-      { "id": "bs-x3", "label": "Gaseosa 1.5 L", "price": 9.5 }
+      {
+        "id": "bs-x1",
+        "label": "Porción extra de papas",
+        "price": 8
+      },
+      {
+        "id": "bs-x2",
+        "label": "Ají de la casa (200 g)",
+        "price": 4
+      },
+      {
+        "id": "bs-x3",
+        "label": "Gaseosa 1.5 L",
+        "price": 9.5
+      }
     ]
   },
   {
@@ -24,8 +36,16 @@
     "image": null,
     "popular": true,
     "extras": [
-      { "id": "bs-x1b", "label": "Porción extra de papas", "price": 8 },
-      { "id": "bs-x2b", "label": "Ají de la casa (200 g)", "price": 4 }
+      {
+        "id": "bs-x1b",
+        "label": "Porción extra de papas",
+        "price": 8
+      },
+      {
+        "id": "bs-x2b",
+        "label": "Ají de la casa (200 g)",
+        "price": 4
+      }
     ]
   },
   {
@@ -37,7 +57,13 @@
     "price": 42.5,
     "image": null,
     "popular": false,
-    "extras": [{ "id": "bs-x4", "label": "Chorizo adicional", "price": 7.5 }]
+    "extras": [
+      {
+        "id": "bs-x4",
+        "label": "Chorizo adicional",
+        "price": 7.5
+      }
+    ]
   },
   {
     "id": "bs-4",
@@ -61,7 +87,6 @@
     "popular": true,
     "extras": []
   },
-
   {
     "id": "tj-1",
     "storeId": "tio-jhony",
@@ -69,7 +94,7 @@
     "name": "Trío marino",
     "description": "Ceviche + arroz con mariscos + chicharrón de pescado. Para compartir.",
     "price": 60,
-    "image": null,
+    "image": "/images/stores/tio-jhony/ceviche-mixto.webp",
     "popular": true,
     "extras": []
   },
@@ -80,7 +105,7 @@
     "name": "Ronda marina sullanera",
     "description": "Ceviche de pescado + ceviche de caballa + chicharrón de pescado + arroz con mariscos.",
     "price": 65,
-    "image": null,
+    "image": "/images/stores/tio-jhony/ceviche-mixto.webp",
     "popular": true,
     "extras": []
   },
@@ -91,7 +116,7 @@
     "name": "Ronda norteña (personal)",
     "description": "Seco de chavelo + majado de yuca + carne aliñada + costillas + rellena + chifles + cancha + sarza.",
     "price": 75,
-    "image": null,
+    "image": "/images/stores/tio-jhony/ronda-nortena.webp",
     "popular": false,
     "extras": []
   },
@@ -146,7 +171,7 @@
     "name": "Ceviche filete (personal)",
     "description": "Pescado fresco cortado al momento, con choclo y camote.",
     "price": 25,
-    "image": null,
+    "image": "/images/stores/tio-jhony/ceviche-pescado.webp",
     "popular": true,
     "extras": []
   },
@@ -157,7 +182,7 @@
     "name": "Ceviche de caballa (personal)",
     "description": "Caballa fresca marinada en limón, cebolla morada y ají.",
     "price": 30,
-    "image": null,
+    "image": "/images/stores/tio-jhony/ceviche-pescado.webp",
     "popular": false,
     "extras": []
   },
@@ -179,7 +204,7 @@
     "name": "Ceviche El Tío Jhony (personal)",
     "description": "Filete, mixtura y cangrejo. La especialidad de la casa.",
     "price": 50,
-    "image": null,
+    "image": "/images/stores/tio-jhony/ceviche-mixto.webp",
     "popular": true,
     "extras": []
   },
@@ -190,7 +215,7 @@
     "name": "Ceviche triple (personal)",
     "description": "Pescado, conchas negras y langostinos.",
     "price": 50,
-    "image": null,
+    "image": "/images/stores/tio-jhony/ceviche-mixto.webp",
     "popular": false,
     "extras": []
   },
@@ -245,9 +270,15 @@
     "name": "Pollo a la brasa entero",
     "description": "Con papas fritas, ensalada y cremas de la casa.",
     "price": 72,
-    "image": null,
+    "image": "/images/stores/tio-jhony/pollo-a-la-brasa.webp",
     "popular": true,
-    "extras": [{ "id": "tj-x1", "label": "Gaseosa 1.5 L (7up, Concordia, Pepsi o Triple Cola)", "price": 4 }]
+    "extras": [
+      {
+        "id": "tj-x1",
+        "label": "Gaseosa 1.5 L (7up, Concordia, Pepsi o Triple Cola)",
+        "price": 4
+      }
+    ]
   },
   {
     "id": "tj-18",
@@ -256,7 +287,7 @@
     "name": "Medio pollo a la brasa",
     "description": "Con papas fritas, ensalada y cremas de la casa.",
     "price": 42,
-    "image": null,
+    "image": "/images/stores/tio-jhony/pollo-a-la-brasa.webp",
     "popular": true,
     "extras": []
   },
@@ -267,7 +298,7 @@
     "name": "Cuarto de pollo a la brasa",
     "description": "Con papas fritas, ensalada y cremas de la casa.",
     "price": 25,
-    "image": null,
+    "image": "/images/stores/tio-jhony/pollo-a-la-brasa.webp",
     "popular": false,
     "extras": []
   },
@@ -333,7 +364,7 @@
     "name": "Seco de chavelo (personal)",
     "description": "Plátano majado con carne, plato tradicional piurano.",
     "price": 35,
-    "image": null,
+    "image": "/images/stores/tio-jhony/ronda-nortena.webp",
     "popular": true,
     "extras": []
   },
@@ -344,7 +375,7 @@
     "name": "Majado de yuca (personal)",
     "description": "Yuca majada con chicharrón y salsa criolla.",
     "price": 35,
-    "image": null,
+    "image": "/images/stores/tio-jhony/ronda-nortena.webp",
     "popular": false,
     "extras": []
   },
@@ -388,7 +419,7 @@
     "name": "Chicha morada (vaso)",
     "description": "Preparada en casa, servida bien fría.",
     "price": 7,
-    "image": null,
+    "image": "/images/stores/tio-jhony/chicha-morada.webp",
     "popular": true,
     "extras": []
   },
@@ -425,7 +456,6 @@
     "popular": false,
     "extras": []
   },
-
   {
     "id": "ap-1",
     "storeId": "anda-paya",
@@ -435,7 +465,13 @@
     "price": 28,
     "image": null,
     "popular": true,
-    "extras": [{ "id": "ap-x1", "label": "Extra de chifles", "price": 5 }]
+    "extras": [
+      {
+        "id": "ap-x1",
+        "label": "Extra de chifles",
+        "price": 5
+      }
+    ]
   },
   {
     "id": "ap-2",
@@ -492,7 +528,6 @@
     "popular": false,
     "extras": []
   },
-
   {
     "id": "dp-1",
     "storeId": "don-pizza",
@@ -503,8 +538,16 @@
     "image": null,
     "popular": true,
     "extras": [
-      { "id": "dp-x1", "label": "Borde relleno de queso", "price": 8 },
-      { "id": "dp-x2", "label": "Doble queso", "price": 6.5 }
+      {
+        "id": "dp-x1",
+        "label": "Borde relleno de queso",
+        "price": 8
+      },
+      {
+        "id": "dp-x2",
+        "label": "Doble queso",
+        "price": 6.5
+      }
     ]
   },
   {
@@ -516,7 +559,13 @@
     "price": 46.9,
     "image": null,
     "popular": true,
-    "extras": [{ "id": "dp-x3", "label": "Borde relleno de queso", "price": 8 }]
+    "extras": [
+      {
+        "id": "dp-x3",
+        "label": "Borde relleno de queso",
+        "price": 8
+      }
+    ]
   },
   {
     "id": "dp-3",
@@ -551,7 +600,6 @@
     "popular": false,
     "extras": []
   },
-
   {
     "id": "dt-1",
     "storeId": "dulce-tentacion",
@@ -561,7 +609,13 @@
     "price": 11.9,
     "image": null,
     "popular": true,
-    "extras": [{ "id": "dt-x1", "label": "Bola de helado de vainilla", "price": 5 }]
+    "extras": [
+      {
+        "id": "dt-x1",
+        "label": "Bola de helado de vainilla",
+        "price": 5
+      }
+    ]
   },
   {
     "id": "dt-2",
@@ -572,7 +626,13 @@
     "price": 89.9,
     "image": null,
     "popular": true,
-    "extras": [{ "id": "dt-x2", "label": "Mensaje personalizado", "price": 0 }]
+    "extras": [
+      {
+        "id": "dt-x2",
+        "label": "Mensaje personalizado",
+        "price": 0
+      }
+    ]
   },
   {
     "id": "dt-3",
@@ -605,9 +665,14 @@
     "price": 8.9,
     "image": null,
     "popular": true,
-    "extras": [{ "id": "dt-x3", "label": "Leche de almendras", "price": 3 }]
+    "extras": [
+      {
+        "id": "dt-x3",
+        "label": "Leche de almendras",
+        "price": 3
+      }
+    ]
   },
-
   {
     "id": "vf-1",
     "storeId": "verde-fresh",
@@ -617,7 +682,13 @@
     "price": 13.9,
     "image": null,
     "popular": true,
-    "extras": [{ "id": "vf-x1", "label": "Sin azúcar", "price": 0 }]
+    "extras": [
+      {
+        "id": "vf-x1",
+        "label": "Sin azúcar",
+        "price": 0
+      }
+    ]
   },
   {
     "id": "vf-2",
@@ -639,7 +710,13 @@
     "price": 14.9,
     "image": null,
     "popular": false,
-    "extras": [{ "id": "vf-x2", "label": "Mantequilla de maní", "price": 4 }]
+    "extras": [
+      {
+        "id": "vf-x2",
+        "label": "Mantequilla de maní",
+        "price": 4
+      }
+    ]
   },
   {
     "id": "vf-4",
@@ -663,7 +740,6 @@
     "popular": false,
     "extras": []
   },
-
   {
     "id": "ma-1",
     "storeId": "market-ahorro",
@@ -719,7 +795,6 @@
     "popular": false,
     "extras": []
   },
-
   {
     "id": "fc-1",
     "storeId": "flores-del-chira",
@@ -729,7 +804,13 @@
     "price": 79.9,
     "image": null,
     "popular": true,
-    "extras": [{ "id": "fc-x1", "label": "Tarjeta dedicada", "price": 0 }]
+    "extras": [
+      {
+        "id": "fc-x1",
+        "label": "Tarjeta dedicada",
+        "price": 0
+      }
+    ]
   },
   {
     "id": "fc-2",
@@ -751,7 +832,13 @@
     "price": 119.9,
     "image": null,
     "popular": false,
-    "extras": [{ "id": "fc-x2", "label": "Globo metálico", "price": 12 }]
+    "extras": [
+      {
+        "id": "fc-x2",
+        "label": "Globo metálico",
+        "price": 12
+      }
+    ]
   },
   {
     "id": "fc-4",
@@ -775,7 +862,6 @@
     "popular": false,
     "extras": []
   },
-
   {
     "id": "kf-1",
     "storeId": "kfc",
@@ -785,7 +871,13 @@
     "price": 24.9,
     "image": null,
     "popular": true,
-    "extras": [{ "id": "kf-x1", "label": "Papas grandes", "price": 4.5 }]
+    "extras": [
+      {
+        "id": "kf-x1",
+        "label": "Papas grandes",
+        "price": 4.5
+      }
+    ]
   },
   {
     "id": "kf-2",
@@ -831,7 +923,6 @@
     "popular": false,
     "extras": []
   },
-
   {
     "id": "pj-1",
     "storeId": "papa-johns",
@@ -841,7 +932,13 @@
     "price": 54.9,
     "image": null,
     "popular": true,
-    "extras": [{ "id": "pj-x1", "label": "Borde relleno", "price": 9 }]
+    "extras": [
+      {
+        "id": "pj-x1",
+        "label": "Borde relleno",
+        "price": 9
+      }
+    ]
   },
   {
     "id": "pj-2",
@@ -887,7 +984,6 @@
     "popular": false,
     "extras": []
   },
-
   {
     "id": "tt-1",
     "storeId": "tottus",
@@ -943,7 +1039,6 @@
     "popular": false,
     "extras": []
   },
-
   {
     "id": "if-1",
     "storeId": "inkafarma",
@@ -999,7 +1094,6 @@
     "popular": false,
     "extras": []
   },
-
   {
     "id": "jm-1",
     "storeId": "juguetes-sullana",

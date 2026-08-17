@@ -80,6 +80,13 @@ tipos, estilo y pruebas, construye y despliega.
   tomado de su sitio oficial) en vez del verde de Suya; el resto de la aplicación —carrito,
   checkout, navegación— conserva siempre la identidad Suya. Ver `Store.theme` en
   `src/types/index.ts` y `themeStyle()` en `StoreDetailPage.tsx`.
+- **Fotografía real del negocio**: la portada de su ficha es la fachada de su local de Champagnat,
+  13 platos llevan la foto del plato tomada de su propio menú y hay una galería con más fotos de su
+  cocina y de sus otras sedes (`Store.gallery`). Los 20 platos restantes se muestran con la reserva
+  neutra a propósito: **solo se asigna una foto cuando retrata ese plato**, nunca se rellena con la
+  imagen de otro para que la carta no engañe. Los archivos viven en
+  `public/images/stores/tio-jhony/` y proceden del material del propio restaurante, por lo que su
+  uso debe autorizarse antes de publicar la propuesta.
 - **Andá Paya** sigue en **fase beta**: carta norteña referencial, sin presencia web indexada que
   permita confirmarla, con distintivo «Beta», nota de datos y un logotipo original creado para la
   demo que debe sustituirse por el activo oficial cuando el negocio lo entregue.
@@ -159,6 +166,8 @@ Los puntos de conexión están marcados en el código con `// FUTURE:` y concent
 | Tiempos de la simulación | `src/lib/services/MockOrderService.ts` (`SIMULATION_STEPS`) |
 | Claves de almacenamiento | `src/lib/storage.ts` |
 | Imágenes reales | `public/images/README.md` explica dónde ponerlas |
+| Fotos y galería de un negocio | `src/data/stores.json` (`image`, `logo`, `gallery`) y el campo `image` de cada plato en `src/data/products.json` |
+| Paleta propia de un negocio | `src/data/stores.json` → campo `theme` del negocio |
 
 ### Cambiar el proveedor de mapa
 

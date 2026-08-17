@@ -20,6 +20,7 @@ import { useNow } from '@/hooks/useSharedLocation';
 import { locationSharingService, notificationService } from '@/lib/services';
 import { useRiderStore } from '@/store/riderStore';
 import { useTrackingStore } from '@/store/trackingStore';
+import { assetUrl } from '@/utils/asset';
 import { formatRelative } from '@/utils/format';
 import { DemoNotice } from './DemoNotice';
 
@@ -46,9 +47,7 @@ export function LocationShareCard() {
   }, [setSharing]);
 
   const token = storedToken ?? '';
-  const shareUrl = token
-    ? `${window.location.origin}${import.meta.env.BASE_URL}share/${token}`
-    : '';
+  const shareUrl = token ? `${window.location.origin}${assetUrl(`/share/${token}`)}` : '';
 
   async function startSharing() {
     const nextToken = ensureShareToken();
