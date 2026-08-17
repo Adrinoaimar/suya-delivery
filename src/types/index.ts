@@ -34,6 +34,10 @@ export interface Store {
   isFeatured: boolean;
   /** Marca real: se muestra con tarjeta neutra, nunca con un logo recreado. */
   isRealBrand: boolean;
+  /** Negocio incorporado en fase beta: carta y datos aún por confirmar con el comercio. */
+  isBeta?: boolean;
+  /** Nota mostrada en la ficha cuando los datos son referenciales. */
+  dataNote?: string;
   promoLabel: string | null;
   schedule: Schedule;
   address: string;
@@ -148,6 +152,10 @@ export interface Order {
   paymentMethod: PaymentMethod;
   riderId: string | null;
   etaMinutes: number;
+  /** Código de 4 dígitos que el cliente entrega al repartidor para cerrar el pedido. */
+  deliveryCode: string;
+  /** Código de 4 dígitos que hay que escribir para cancelar el pedido. */
+  cancelCode: string;
   /** Marca de tiempo (ms) desde la que corre la simulación local de estados. */
   simulationStartedAt: number | null;
 }

@@ -14,6 +14,7 @@ import type { LucideIcon } from 'lucide-react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { Drawer } from '@/components/common/Drawer';
 import { LogoMark } from '@/components/common/Logo';
+import { LocationGuardBanner } from '@/components/rider/LocationGuardBanner';
 import { cn } from '@/lib/cn';
 import { useRiderStore } from '@/store/riderStore';
 
@@ -114,6 +115,8 @@ export function RiderLayout() {
             <Menu className="h-5 w-5" />
           </button>
         </header>
+
+        <LocationGuardBanner />
 
         <main className="flex-1 pb-[calc(72px+env(safe-area-inset-bottom))] lg:pb-0">
           <Outlet />

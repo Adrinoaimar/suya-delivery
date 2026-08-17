@@ -73,11 +73,16 @@ tipos, estilo y pruebas, construye y despliega.
 | Repartidor | `/rider`, `/rider/current`, `/rider/safety`, `/rider/history`, `/rider/earnings`, `/rider/settings` |
 | Contacto de confianza | `/share/:token` |
 
-- Marketplace con 11 negocios, 6 categorías, 55 productos y 5 promociones.
+- Marketplace con 13 negocios, 6 categorías, 70 productos y 5 promociones.
+- Dos negocios sullaneros en **fase beta**: **El Tío Jhony** (cevichería, pollería y pizzería, con
+  carta tomada de la publicada por el restaurante) y **Andá Paya** (carta norteña referencial, aún
+  sin confirmar con el negocio). Ambos llevan distintivo «Beta», nota de datos y un logotipo
+  original creado para la demo, que debe sustituirse por el activo oficial del comercio.
 - Carrito persistente de un solo negocio, con extras, notas y cálculo de envío.
 - Checkout con métodos de pago simulados (efectivo, Yape, tarjeta) y cupones demo.
 - Pedido con código `#SUY-XXXXX`, línea de tiempo de estados y seguimiento en mapa.
-- Panel del repartidor con disponibilidad, viaje activo, historial y ganancias demo.
+- Panel del repartidor con disponibilidad, viaje activo, historial y ganancias demo, y rastreo de
+  ubicación obligatorio mientras el turno está activo.
 - Módulo **Seguridad en ruta**: compartir ubicación, contacto de confianza, botón SOS y
   reporte de incidentes.
 - Pantalla de carga animada de Sullana (SVG dibujado trazo a trazo + repartidor en ruta).
@@ -91,9 +96,11 @@ tipos, estilo y pruebas, construye y despliega.
 | --- | --- |
 | Datos de negocios y productos | JSON locales en `src/data/` (**DEMO DATA**) |
 | Pedidos y carrito | `localStorage` (`suya_cart`, `suya_orders`) |
-| Estados del pedido | Simulación local: 0 s confirmado → 8 s preparando → 18 s recogido → 28 s en camino → 60 s entregado. Se puede reiniciar desde el seguimiento |
+| Estados del pedido | Simulación local: 0 s confirmado → 8 s preparando → 18 s recogido → 28 s en camino. **La entrega no se cierra sola**: la confirma el repartidor con el código del cliente |
+| Códigos del pedido | Cada pedido genera dos PIN de 4 dígitos: `deliveryCode` (el cliente se lo da al repartidor para cerrar la entrega) y `cancelCode` (hay que escribirlo para cancelar) |
+| Ubicación del repartidor | Obligatoria mientras está disponible: el panel mantiene el rastreo durante todo el turno y retira la disponibilidad si se pierde el permiso |
 | Movimiento del repartidor | Interpolación sobre una polilínea de Sullana (`src/data/route.json`) |
-| Mapa | `MockMap` en SVG, sin red ni API key. Adaptadores listos para Leaflet/OpenStreetMap y Google Maps |
+| Mapa | Mapa real con calles (Leaflet + OpenStreetMap) por defecto, con ruta trazada y el repartidor moviéndose sobre ella. Sin conexión cae al `MockMap` en SVG; el adaptador de Google Maps queda listo para una API key |
 | Pagos | `MockPaymentService`: no existe pasarela ni cobro real |
 | Notificaciones | Toasts locales, no push |
 | Compartir ubicación | `BroadcastChannel` + `localStorage`: sincroniza **entre pestañas del mismo navegador**, no entre dispositivos |

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img"
+  aria-label="Andá Paya — Sullana">
+  <title>Andá Paya — Sullana</title>
+  <desc>
+    Logotipo original creado para la demo de Suya Delivery. NO es el logotipo oficial del
+    negocio: sustituir por el activo que entregue Andá Paya.
+  </desc>
+  <rect width="256" height="256" rx="56" fill="#0B3B57" />
+  <!-- Sol norteño sobre el mar -->
+  <circle cx="128" cy="96" r="42" fill="#F2A413" />
+  <path d="M18 150 q34 -18 68 0 t68 0 t68 0 v34 q-34 18 -68 0 t-68 0 t-68 0 z" fill="#0E7C7B"
+    opacity="0.85" />
+  <path d="M18 176 q34 -18 68 0 t68 0 t68 0 v50 h-204 z" fill="#0E7C7B" />
+  <!-- Pescado, guiño a la cocina marina de Sullana -->
+  <g transform="translate(128 96)">
+    <path d="M-40 0 c14 -20 40 -28 60 -12 l14 -12 v46 l-14 -12 c-20 16 -46 8 -60 -10 z"
+      fill="#0B3B57" />
+    <circle cx="6" cy="-4" r="4.5" fill="#F2A413" />
+  </g>
+  <text x="128" y="222" text-anchor="middle" font-family="Montserrat, 'Segoe UI', Arial, sans-serif"
+    font-size="34" font-weight="700" fill="#FFFFFF" letter-spacing="1">Andá Paya</text>
+</svg>

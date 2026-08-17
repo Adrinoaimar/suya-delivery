@@ -1,29 +1,34 @@
-import { useMemo } from 'react';
-import { Check, MapPin, Navigation, PackageCheck, Phone } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Check, KeyRound, MapPin, Navigation, PackageCheck, Phone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/common/Button';
 import { MapProvider } from '@/components/map/MapProvider';
+import { CodeDialog } from '@/components/order/CodeDialog';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
 import { demoRoute } from '@/data';
-import { orderService } from '@/lib/services';
+import { notificationService, orderService } from '@/lib/services';
 import { useRouteProgress } from '@/hooks/useOrderSimulation';
 import { selectActiveOrder, useOrderStore } from '@/store/orderStore';
 import { formatPrice, orderStatusLabel } from '@/utils/format';
 import { pointAtProgress } from '@/utils/geo';
 import type { OrderStatus } from '@/types';
 
+/**
+ * El último paso no avanza solo: exige el código de 4 dígitos del cliente.
+ */
 const NEXT_ACTION: Partial<Record<OrderStatus, { label: string; next: OrderStatus }>> = {
   confirmed: { label: 'Marcar en preparación', next: 'preparing' },
   preparing: { label: 'Recogí el pedido', next: 'picked_up' },
   picked_up: { label: 'Voy en camino', next: 'on_the_way' },
-  on_the_way: { label: 'Entregué el pedido', next: 'delivered' },
 };
 
 export default function RiderCurrentPage() {
   const orders = useOrderStore((state) => state.orders);
   const refresh = useOrderStore((state) => state.refresh);
+  const confirmDelivery = useOrderStore((state) => state.confirmDelivery);
   const active = selectActiveOrder(orders);
   const progress = useRouteProgress(active);
+  const [codeOpen, setCodeOpen] = useState(false);
 
   const riderPosition = useMemo(() => pointAtProgress(demoRoute.points, progress), [progress]);
 
@@ -104,12 +109,14 @@ export default function RiderCurrentPage() {
                   refresh();
                 }}
               >
-                {action.next === 'delivered' ? (
-                  <Check className="h-4 w-4" aria-hidden="true" />
-                ) : (
-                  <PackageCheck className="h-4 w-4" aria-hidden="true" />
-                )}
+                <PackageCheck className="h-4 w-4" aria-hidden="true" />
                 {action.label}
+              </Button>
+            )}
+            {active.status === 'on_the_way' && (
+              <Button onClick={() => setCodeOpen(true)}>
+                <Check className="h-4 w-4" aria-hidden="true" />
+                Entregué el pedido
               </Button>
             )}
             <a
@@ -125,8 +132,27 @@ export default function RiderCurrentPage() {
         <section className="rounded-card bg-white p-4">
           <h2 className="mb-3 font-display text-[15px] font-bold">Estado del pedido</h2>
           <TrackingTimeline order={active} compact />
+
+          <div className="mt-3 flex items-start gap-2 rounded-btn bg-suya-mist/60 p-3 text-sm text-[#4A4F55]">
+            <KeyRound aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-suya-green" />
+            <p>
+              Para cerrar la entrega pide al cliente su <strong>código de 4 dígitos</strong>. Solo
+              con ese código el pedido pasa a «Entregado».
+            </p>
+          </div>
         </section>
       </div>
+
+      <CodeDialog
+        open={codeOpen}
+        onClose={() => setCodeOpen(false)}
+        title="Confirmar entrega"
+        description={`Pide al cliente el código del pedido #${active.code}.`}
+        helper="El cliente lo ve en la pantalla de seguimiento de su pedido."
+        confirmLabel="Confirmar entrega"
+        onSubmit={(code) => confirmDelivery(active.id, code)}
+        onSuccess={() => notificationService.notify('Entrega confirmada', 'success')}
+      />
     </div>
   );
 }

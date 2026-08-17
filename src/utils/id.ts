@@ -18,6 +18,11 @@ export function createId(prefix = 'id'): string {
   return `${prefix}_${Date.now().toString(36)}_${randomChunk(4).toLowerCase()}`;
 }
 
+/** Código de 4 dígitos para confirmar la entrega o cancelar un pedido. */
+export function createPinCode(): string {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
 /** Token del enlace de seguimiento compartido: `demo-ABCD123`. */
 export function createShareToken(): string {
   return `demo-${randomChunk(7)}`;

@@ -47,11 +47,13 @@ export function Thumb({
   rounded = 'rounded-xl',
 }: ThumbProps) {
   const [failed, setFailed] = useState(false);
+  // Las rutas de `src/data` se escriben desde la raíz pública; aquí se les antepone la base.
+  const resolved = src?.startsWith('/') ? `${BASE}${src.slice(1)}` : src;
 
-  if (src && !failed) {
+  if (resolved && !failed) {
     return (
       <img
-        src={src}
+        src={resolved}
         alt={name}
         loading="lazy"
         decoding="async"

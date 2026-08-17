@@ -8,7 +8,8 @@ import type { MapAdapterInfo, MapService } from './types';
  * `google` queda declarado pero deshabilitado hasta que exista `VITE_GOOGLE_MAPS_KEY`.
  */
 const GOOGLE_KEY = import.meta.env.VITE_GOOGLE_MAPS_KEY as string | undefined;
-const CONFIGURED = (import.meta.env.VITE_MAP_PROVIDER as string | undefined) ?? 'mock';
+// Por defecto se usa un mapa real (OpenStreetMap); sin conexión, `MapProvider` cae a `mock`.
+const CONFIGURED = (import.meta.env.VITE_MAP_PROVIDER as string | undefined) ?? 'leaflet';
 
 export class MapServiceImpl implements MapService {
   listAdapters(): MapAdapterInfo[] {

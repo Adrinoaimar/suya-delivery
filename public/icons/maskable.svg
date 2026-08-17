@@ -2,7 +2,7 @@
   <title>Suya Delivery</title>
   <rect width="512" height="512" fill="#0E6B44" />
   <g transform="translate(256 256) scale(0.62) translate(-256 -256)">
-    <circle cx="118" cy="104" r="54" fill="#FFC107" opacity="0.92" />
+    <circle cx="214" cy="122" r="64" fill="#FFC107" opacity="0.95" />
     <path d="M345 155 C345 110 285 92 235 108 C180 126 168 196 225 222 C288 250 292 292 265 318"
       fill="none" stroke="#FFFFFF" stroke-width="46" stroke-linecap="round" stroke-linejoin="round" />
     <path d="M345 155 C345 110 285 92 235 108 C180 126 168 196 225 222 C288 250 292 292 265 318"

@@ -1,13 +1,16 @@
 import { create } from 'zustand';
 import { orderService, statusForElapsed } from '@/lib/services';
-import type { CreateOrderInput } from '@/lib/services';
+import type { CodeResult, CreateOrderInput } from '@/lib/services';
 import type { Order } from '@/types';
 
 interface OrderState {
   orders: Order[];
   refresh: () => void;
   createOrder: (input: CreateOrderInput) => Order;
-  cancelOrder: (id: string) => void;
+  /** Requiere el código de cancelación mostrado en el pedido. */
+  cancelOrder: (id: string, code: string) => CodeResult;
+  /** Requiere el código de entrega que el cliente le da al repartidor. */
+  confirmDelivery: (id: string, code: string) => CodeResult;
   restartSimulation: (id: string) => void;
   /** Avanza la simulación local de estados. La llama `useOrderSimulation`. */
   tick: () => void;
@@ -27,9 +30,16 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     return order;
   },
 
-  cancelOrder(id) {
-    orderService.cancel(id);
-    set({ orders: [...orderService.list()] });
+  cancelOrder(id, code) {
+    const result = orderService.cancel(id, code);
+    if (result.ok) set({ orders: [...orderService.list()] });
+    return result;
+  },
+
+  confirmDelivery(id, code) {
+    const result = orderService.confirmDelivery(id, code);
+    if (result.ok) set({ orders: [...orderService.list()] });
+    return result;
   },
 
   restartSimulation(id) {
@@ -47,6 +57,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
       const next = statusForElapsed(now - order.simulationStartedAt);
       if (next === order.status) return order;
+      // La entrega no se cierra sola: la confirma el repartidor con el código del cliente.
+      if (next === 'delivered') return order;
 
       changed = true;
       return {

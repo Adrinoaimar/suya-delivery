@@ -105,7 +105,10 @@ export default function StoreDetailPage() {
               <h1 className="font-display text-xl font-bold leading-tight">{store.name}</h1>
               <p className="mt-0.5 text-sm text-[#6B7076]">{store.tags.join(' · ')}</p>
             </div>
-            <Badge tone={open ? 'lime' : 'neutral'}>{open ? 'Abierto' : 'Cerrado'}</Badge>
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <Badge tone={open ? 'lime' : 'neutral'}>{open ? 'Abierto' : 'Cerrado'}</Badge>
+              {store.isBeta && <Badge tone="green">Beta</Badge>}
+            </div>
           </div>
 
           <p className="mt-3 text-sm text-[#4A4F55]">{store.description}</p>
@@ -146,6 +149,13 @@ export default function StoreDetailPage() {
             <div className="mt-3 flex items-center gap-2 rounded-btn bg-suya-sun-soft px-3 py-2.5">
               <Info aria-hidden="true" className="h-4 w-4 shrink-0 text-[#8A6100]" />
               <p className="text-sm font-medium text-suya-carbon">{store.promoLabel}</p>
+            </div>
+          )}
+
+          {store.dataNote && (
+            <div className="mt-3 flex items-start gap-2 rounded-btn border border-suya-mist bg-suya-ivory px-3 py-2.5">
+              <Info aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-suya-green" />
+              <p className="text-sm text-[#4A4F55]">{store.dataNote}</p>
             </div>
           )}
 

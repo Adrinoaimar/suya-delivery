@@ -34,11 +34,13 @@ export function Toggle({
           checked ? (tone === 'sun' ? 'bg-suya-sun' : 'bg-suya-green') : 'bg-suya-mist',
         )}
       >
+        {/* `left-1` ancla el círculo: sin él, el absoluto parte de su posición estática
+            y el recorrido se desplaza fuera del interruptor. */}
         <span
           aria-hidden="true"
           className={cn(
-            'absolute top-1 h-5 w-5 rounded-full bg-white shadow-card transition-transform',
-            checked ? 'translate-x-6' : 'translate-x-1',
+            'absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-card transition-transform',
+            checked ? 'translate-x-5' : 'translate-x-0',
           )}
         />
       </button>

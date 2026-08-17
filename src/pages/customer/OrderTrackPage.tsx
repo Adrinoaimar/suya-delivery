@@ -6,14 +6,16 @@ import { Button, ButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ExpandableSheet } from '@/components/common/BottomSheet';
-import { Modal } from '@/components/common/Modal';
+import { CodeDialog } from '@/components/order/CodeDialog';
+import { OrderCodes } from '@/components/order/OrderCodes';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
 import { RiderCard } from '@/components/rider/RiderCard';
 import { MapProvider } from '@/components/map/MapProvider';
 import { demoRoute, riders } from '@/data';
-import { SIMULATION_TOTAL_SECONDS } from '@/lib/services';
+import { SIMULATION_TOTAL_SECONDS, notificationService } from '@/lib/services';
 import { useOrderStore } from '@/store/orderStore';
 import { useRouteProgress, useOrderStatusNotifier } from '@/hooks/useOrderSimulation';
+import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { formatPrice, orderStatusLabel } from '@/utils/format';
 import { pointAtProgress } from '@/utils/geo';
 
@@ -24,6 +26,7 @@ export default function OrderTrackPage() {
   const restartSimulation = useOrderStore((state) => state.restartSimulation);
   const [expanded, setExpanded] = useState(true);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const isDesktop = useIsDesktop();
 
   const progress = useRouteProgress(order);
   useOrderStatusNotifier(order);
@@ -66,6 +69,8 @@ export default function OrderTrackPage() {
 
   const detail = (
     <div className="space-y-4">
+      <OrderCodes order={order} />
+
       <TrackingTimeline order={order} compact />
 
       {rider && !cancelled && (
@@ -124,7 +129,8 @@ export default function OrderTrackPage() {
 
   return (
     <>
-      {/* Móvil: mapa + hoja inferior */}
+      {/* Se monta un solo mapa: dos instancias de Leaflet a la vez duplicarían los tiles. */}
+      {!isDesktop && (
       <div className="flex h-[calc(100dvh-var(--header-h)-var(--bottom-nav-h))] flex-col lg:hidden">
         <div className="relative h-[45%] shrink-0 overflow-hidden bg-suya-ivory">
           <MapProvider
@@ -155,8 +161,10 @@ export default function OrderTrackPage() {
           {detail}
         </ExpandableSheet>
       </div>
+      )}
 
       {/* Escritorio: panel + mapa */}
+      {isDesktop && (
       <div className="hidden lg:block">
         <div className="shell grid grid-cols-[380px_1fr] gap-5 py-8">
           <div className="space-y-4">
@@ -186,30 +194,18 @@ export default function OrderTrackPage() {
           </div>
         </div>
       </div>
+      )}
 
-      <Modal
+      <CodeDialog
         open={confirmCancel}
         onClose={() => setConfirmCancel(false)}
         title="¿Cancelar el pedido?"
-        description="En la demo puedes cancelar en cualquier momento antes de la entrega."
-        size="sm"
-        footer={
-          <div className="flex gap-2">
-            <Button variant="ghost" fullWidth onClick={() => setConfirmCancel(false)}>
-              Mantener
-            </Button>
-            <Button
-              variant="danger"
-              fullWidth
-              onClick={() => {
-                cancelOrder(order.id);
-                setConfirmCancel(false);
-              }}
-            >
-              Cancelar pedido
-            </Button>
-          </div>
-        }
+        description="Escribe tu código de cancelación para confirmar."
+        helper={`Lo encuentras arriba, en «Código para cancelar» (pedido #${order.code}).`}
+        confirmLabel="Cancelar pedido"
+        tone="danger"
+        onSubmit={(code) => cancelOrder(order.id, code)}
+        onSuccess={() => notificationService.notify('Pedido cancelado', 'info')}
       />
     </>
   );

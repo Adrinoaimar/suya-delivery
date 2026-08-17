@@ -76,7 +76,23 @@ describe('pedidos', () => {
     expect(updated?.total).toBe(40);
   });
 
-  it('cancela un pedido y detiene la simulación', () => {
+  it('genera códigos de entrega y cancelación distintos', () => {
+    const service = createService();
+    const order = service.create({
+      storeId: 'el-buen-sabor',
+      items: buildItems(),
+      subtotal: 30,
+      deliveryFee: 4,
+      discount: 0,
+      customer,
+      paymentMethod: 'cash',
+    });
+
+    expect(order.deliveryCode).toMatch(/^\d{4}$/);
+    expect(order.cancelCode).toMatch(/^\d{4}$/);
+  });
+
+  it('solo cancela con el código de cancelación correcto', () => {
     const service = createService();
     const order = service.create({
       storeId: 'el-buen-sabor',
@@ -88,10 +104,42 @@ describe('pedidos', () => {
       paymentMethod: 'card',
     });
 
-    const cancelled = service.cancel(order.id);
+    const wrong = service.cancel(order.id, '0000' === order.cancelCode ? '1111' : '0000');
+    expect(wrong.ok).toBe(false);
+    expect(wrong.ok ? null : wrong.reason).toBe('invalid_code');
+    expect(service.get(order.id)?.status).toBe('confirmed');
 
-    expect(cancelled?.status).toBe('cancelled');
-    expect(cancelled?.simulationStartedAt).toBeNull();
+    const right = service.cancel(order.id, order.cancelCode);
+    expect(right.ok).toBe(true);
+    expect(service.get(order.id)?.status).toBe('cancelled');
+    expect(service.get(order.id)?.simulationStartedAt).toBeNull();
+  });
+
+  it('solo cierra la entrega con el código del cliente', () => {
+    const service = createService();
+    const order = service.create({
+      storeId: 'el-buen-sabor',
+      items: buildItems(),
+      subtotal: 30,
+      deliveryFee: 4,
+      discount: 0,
+      customer,
+      paymentMethod: 'cash',
+    });
+    service.updateStatus(order.id, 'on_the_way');
+
+    const wrong = service.confirmDelivery(order.id, '0000' === order.deliveryCode ? '1111' : '0000');
+    expect(wrong.ok).toBe(false);
+    expect(service.get(order.id)?.status).toBe('on_the_way');
+
+    const right = service.confirmDelivery(order.id, order.deliveryCode);
+    expect(right.ok).toBe(true);
+    expect(service.get(order.id)?.status).toBe('delivered');
+
+    // Un pedido ya cerrado no vuelve a confirmarse.
+    const again = service.confirmDelivery(order.id, order.deliveryCode);
+    expect(again.ok).toBe(false);
+    expect(again.ok ? null : again.reason).toBe('already_closed');
   });
 
   it('reinicia la simulación desde el primer estado', () => {

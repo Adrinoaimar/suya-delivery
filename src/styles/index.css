@@ -10,6 +10,13 @@
 
 @layer base {
   :root {
+    /*
+     * `only light` desactiva el «modo oscuro forzado» de Chrome en Android, que invertía
+     * las tarjetas blancas a gris y convertía el amarillo sol en marrón. La identidad de
+     * Suya define sus propias superficies claras y oscuras.
+     */
+    color-scheme: only light;
+
     /* Design tokens de Suya Delivery */
     --suya-green: #0e6b44;
     --suya-green-dark: #0a5335;

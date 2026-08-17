@@ -18,8 +18,10 @@ const GoogleMapAdapter = lazy(() => import('./GoogleMapAdapter'));
  */
 export function MapProvider(props: MapViewProps) {
   const adapter = mapService.getActiveAdapterId();
+  const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
 
-  if (adapter === 'mock') return <MockMap {...props} />;
+  // Sin conexión los tiles no cargarían: se dibuja el mapa local en su lugar.
+  if (adapter === 'mock' || offline) return <MockMap {...props} />;
 
   return (
     <Suspense fallback={<Skeleton className="h-full w-full rounded-none" />}>

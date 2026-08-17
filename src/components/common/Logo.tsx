@@ -14,9 +14,11 @@ export function LogoMark({ className, tone = 'brand', title = 'Suya Delivery' }:
   const pinCore = tone === 'onDark' ? '#0E6B44' : '#FFC107';
 
   return (
-    <svg viewBox="0 0 512 512" role="img" aria-label={title} className={cn('h-8 w-8', className)}>
+    // viewBox ajustado al dibujo: a 32–40 px el símbolo debe leerse como una sola marca
+    // (sol detrás de la ruta), no como manchas sueltas.
+    <svg viewBox="20 44 420 424" role="img" aria-label={title} className={cn('h-8 w-8', className)}>
       <title>{title}</title>
-      <circle cx="118" cy="104" r="54" fill="#FFC107" opacity={tone === 'onDark' ? 0.85 : 0.92} />
+      <circle cx="214" cy="122" r="64" fill="#FFC107" opacity={tone === 'onDark' ? 0.9 : 0.95} />
       <path
         d="M345 155 C345 110 285 92 235 108 C180 126 168 196 225 222 C288 250 292 292 265 318"
         fill="none"

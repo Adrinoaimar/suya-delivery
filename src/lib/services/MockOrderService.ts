@@ -1,11 +1,15 @@
 import { riders, seedOrders } from '@/data';
 import { STORAGE_KEYS, readLocal, writeLocal } from '@/lib/storage';
-import { createId, createOrderCode } from '@/utils/id';
+import { createId, createOrderCode, createPinCode } from '@/utils/id';
 import type { CartItem, Order, OrderStatus } from '@/types';
 import { MockStoreService } from './MockStoreService';
-import type { CreateOrderInput, OrderService } from './types';
+import type { CodeResult, CreateOrderInput, OrderService } from './types';
 
-/** Guion de la simulación local de estados (segundos desde la confirmación). */
+/**
+ * Guion de la simulación local de estados (segundos desde la confirmación).
+ * El paso final a «Entregado» NO ocurre solo: lo confirma el repartidor con el código
+ * de 4 dígitos del cliente (`confirmDelivery`).
+ */
 export const SIMULATION_STEPS: { at: number; status: OrderStatus }[] = [
   { at: 0, status: 'confirmed' },
   { at: 8, status: 'preparing' },
@@ -73,6 +77,8 @@ export class MockOrderServiceImpl implements OrderService {
       paymentMethod: input.paymentMethod,
       riderId: riders[Math.floor(Math.random() * riders.length)]!.id,
       etaMinutes: store?.etaMax ?? 30,
+      deliveryCode: createPinCode(),
+      cancelCode: createPinCode(),
       simulationStartedAt: now.getTime(),
     };
 
@@ -95,21 +101,47 @@ export class MockOrderServiceImpl implements OrderService {
     return this.get(id);
   }
 
-  cancel(id: string): Order | undefined {
+  /**
+   * Cancelar exige escribir el código de cancelación del pedido: evita cancelaciones
+   * accidentales y deja constancia de que la decisión fue deliberada.
+   */
+  cancel(id: string, code: string): CodeResult {
     const order = this.get(id);
-    if (!order || order.status === 'delivered') return order;
+    if (!order) return { ok: false, reason: 'not_found' };
+    if (order.status === 'delivered') return { ok: false, reason: 'already_closed' };
+    if (order.status === 'cancelled') return { ok: false, reason: 'already_closed' };
+    if (code.trim() !== order.cancelCode) return { ok: false, reason: 'invalid_code' };
+
     this.cache = this.list().map((item) =>
       item.id === id
         ? {
             ...item,
             status: 'cancelled' as OrderStatus,
             simulationStartedAt: null,
-            history: [...item.history, { status: 'cancelled' as OrderStatus, at: new Date().toISOString() }],
+            history: [
+              ...item.history,
+              { status: 'cancelled' as OrderStatus, at: new Date().toISOString() },
+            ],
           }
         : item,
     );
     this.persist();
-    return this.get(id);
+    return { ok: true, order: this.get(id)! };
+  }
+
+  /**
+   * El repartidor cierra el pedido con el código de 4 dígitos que le da el cliente.
+   * Sin código correcto, el pedido no pasa a «Entregado».
+   */
+  confirmDelivery(id: string, code: string): CodeResult {
+    const order = this.get(id);
+    if (!order) return { ok: false, reason: 'not_found' };
+    if (order.status === 'cancelled') return { ok: false, reason: 'already_closed' };
+    if (order.status === 'delivered') return { ok: false, reason: 'already_closed' };
+    if (code.trim() !== order.deliveryCode) return { ok: false, reason: 'invalid_code' };
+
+    const updated = this.updateStatus(id, 'delivered');
+    return updated ? { ok: true, order: updated } : { ok: false, reason: 'not_found' };
   }
 
   restartSimulation(id: string): Order | undefined {
@@ -185,6 +217,8 @@ export class MockOrderServiceImpl implements OrderService {
         paymentMethod: seed.paymentMethod as Order['paymentMethod'],
         riderId: seed.riderId,
         etaMinutes: store?.etaMax ?? 30,
+        deliveryCode: createPinCode(),
+        cancelCode: createPinCode(),
         simulationStartedAt: null,
       } as Order;
     });

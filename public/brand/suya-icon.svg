@@ -7,13 +7,8 @@
   </defs>
   <g clip-path="url(#frame)">
     <rect width="512" height="512" fill="#0E6B44" />
-    <!-- Sol / amanecer -->
-    <circle cx="118" cy="104" r="54" fill="#FFC107" opacity="0.92" />
-    <g stroke="#FFC107" stroke-width="10" stroke-linecap="round" opacity="0.55">
-      <line x1="118" y1="18" x2="118" y2="34" />
-      <line x1="196" y1="104" x2="212" y2="104" />
-      <line x1="177" y1="45" x2="188" y2="34" />
-    </g>
+    <!-- Sol / amanecer, detrás de la ruta para que la marca se lea de una sola pieza -->
+    <circle cx="214" cy="122" r="64" fill="#FFC107" opacity="0.95" />
     <!-- Horizonte cálido -->
     <path d="M0 392 Q 256 348 512 392 L512 512 L0 512 Z" fill="#0A5335" />
     <!-- S convertida en ruta -->

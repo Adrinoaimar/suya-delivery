@@ -73,6 +73,11 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
             <Badge tone="sun">{store.promoLabel}</Badge>
           </span>
         )}
+        {store.isBeta && (
+          <span className="absolute right-2 top-2">
+            <Badge tone="green">Beta</Badge>
+          </span>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col gap-1.5 p-3.5">

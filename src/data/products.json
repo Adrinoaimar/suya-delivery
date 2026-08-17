@@ -63,6 +63,173 @@
   },
 
   {
+    "id": "tj-1",
+    "storeId": "tio-jhony",
+    "section": "Entradas",
+    "name": "Leche de tigre",
+    "description": "Jugo de la casa con pescado, limón y ají limo. Precio según la carta publicada por el restaurante.",
+    "price": 18,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "tj-2",
+    "storeId": "tio-jhony",
+    "section": "Entradas",
+    "name": "Tequeños de queso (8 u.)",
+    "description": "Ocho tequeños crocantes con salsa de la casa.",
+    "price": 25,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "tj-3",
+    "storeId": "tio-jhony",
+    "section": "Entradas",
+    "name": "Alitas a la BBQ",
+    "description": "Alitas bañadas en salsa BBQ. También disponibles crocantes o picantes.",
+    "price": 26,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "tj-4",
+    "storeId": "tio-jhony",
+    "section": "Ceviches",
+    "name": "Ceviche de Sullana",
+    "description": "El clásico de la casa, con limón de la zona, cebolla y camote.",
+    "price": 25,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "tj-5",
+    "storeId": "tio-jhony",
+    "section": "Ceviches",
+    "name": "Ceviche de pescado",
+    "description": "Pescado fresco cortado al momento, con choclo y camote.",
+    "price": 30,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "tj-6",
+    "storeId": "tio-jhony",
+    "section": "Ceviches",
+    "name": "Ceviche de conchas negras",
+    "description": "Conchas negras del manglar, especialidad del norte.",
+    "price": 40,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "tj-7",
+    "storeId": "tio-jhony",
+    "section": "Ceviches",
+    "name": "Ceviche del Tío Jhony (mixto)",
+    "description": "Mixto de pescado y mariscos, el más pedido para compartir.",
+    "price": 50,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "tj-8",
+    "storeId": "tio-jhony",
+    "section": "Pollo a la brasa",
+    "name": "Pollo a la brasa entero",
+    "description": "Con papas fritas y ensalada. Precio referencial: confirmar con el restaurante.",
+    "price": 62,
+    "image": null,
+    "popular": true,
+    "extras": [{ "id": "tj-x1", "label": "Gaseosa 1.5 L", "price": 10 }]
+  },
+  {
+    "id": "tj-9",
+    "storeId": "tio-jhony",
+    "section": "Parrillas",
+    "name": "Parrilla familiar",
+    "description": "Cortes surtidos con guarniciones para compartir. Precio referencial.",
+    "price": 95,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+
+  {
+    "id": "ap-1",
+    "storeId": "anda-paya",
+    "section": "Ceviches",
+    "name": "Ceviche norteño de la casa",
+    "description": "Pescado del día con limón sullanero, cebolla morada, camote y choclo. Carta referencial.",
+    "price": 28,
+    "image": null,
+    "popular": true,
+    "extras": [{ "id": "ap-x1", "label": "Extra de chifles", "price": 5 }]
+  },
+  {
+    "id": "ap-2",
+    "storeId": "anda-paya",
+    "section": "Ceviches",
+    "name": "Arroz con mariscos",
+    "description": "Arroz meloso con mariscos surtidos y culantro. Carta referencial.",
+    "price": 32,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "ap-3",
+    "storeId": "anda-paya",
+    "section": "Criollos",
+    "name": "Seco de chabelo",
+    "description": "Plato tradicional piurano de plátano majado con carne seca. Carta referencial.",
+    "price": 26,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "ap-4",
+    "storeId": "anda-paya",
+    "section": "Criollos",
+    "name": "Majado de yuca con chicharrón",
+    "description": "Yuca majada, chicharrón de cerdo y salsa criolla. Carta referencial.",
+    "price": 24,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "ap-5",
+    "storeId": "anda-paya",
+    "section": "Entradas",
+    "name": "Chifles con salsa de la casa",
+    "description": "Chifles recién hechos de plátano verde. Carta referencial.",
+    "price": 9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "ap-6",
+    "storeId": "anda-paya",
+    "section": "Bebidas",
+    "name": "Chicha morada 1 L",
+    "description": "Preparada en casa, servida bien fría. Carta referencial.",
+    "price": 10,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+
+  {
     "id": "dp-1",
     "storeId": "don-pizza",
     "section": "Pizzas",

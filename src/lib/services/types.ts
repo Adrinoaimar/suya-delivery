@@ -36,12 +36,25 @@ export interface CreateOrderInput {
   paymentMethod: PaymentMethod;
 }
 
+export type CodeFailure = 'not_found' | 'invalid_code' | 'already_closed';
+
+export type CodeResult = { ok: true; order: Order } | { ok: false; reason: CodeFailure };
+
+export const CODE_ERROR_MESSAGES: Record<CodeFailure, string> = {
+  not_found: 'No encontramos este pedido.',
+  invalid_code: 'El código no coincide. Revísalo con el cliente.',
+  already_closed: 'Este pedido ya está cerrado.',
+};
+
 export interface OrderService {
   list(): Order[];
   get(id: string): Order | undefined;
   create(input: CreateOrderInput): Order;
   updateStatus(id: string, status: OrderStatus): Order | undefined;
-  cancel(id: string): Order | undefined;
+  /** Requiere el código de cancelación del pedido. */
+  cancel(id: string, code: string): CodeResult;
+  /** Requiere el código de entrega que el cliente le da al repartidor. */
+  confirmDelivery(id: string, code: string): CodeResult;
   restartSimulation(id: string): Order | undefined;
   save(orders: Order[]): void;
 }

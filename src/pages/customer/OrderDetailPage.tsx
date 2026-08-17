@@ -5,6 +5,7 @@ import { ButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
 import { CartLine } from '@/components/order/CartLine';
+import { OrderCodes } from '@/components/order/OrderCodes';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
 import { RiderCard } from '@/components/rider/RiderCard';
 import { riders } from '@/data';
@@ -55,6 +56,8 @@ export default function OrderDetailPage() {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px] lg:items-start">
         <div className="space-y-4">
+          {isActive && <OrderCodes order={order} />}
+
           <Card>
             <h2 className="mb-3 font-display text-[15px] font-bold">Seguimiento</h2>
             <TrackingTimeline order={order} />

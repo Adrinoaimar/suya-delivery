@@ -37,8 +37,8 @@ export default function RiderHomePage() {
           label={available ? 'Disponible' : 'No disponible'}
           description={
             available
-              ? 'Estás recibiendo pedidos en Sullana.'
-              : 'Actívalo para recibir pedidos cercanos.'
+              ? 'Estás recibiendo pedidos en Sullana. Tu ubicación permanece activa mientras dure el turno.'
+              : 'Actívalo para recibir pedidos cercanos. Suya necesita tu ubicación durante toda la conexión.'
           }
           checked={available}
           tone="sun"

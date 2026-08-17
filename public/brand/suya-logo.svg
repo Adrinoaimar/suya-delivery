@@ -2,7 +2,7 @@
   <title>Suya Delivery — Sullana, Perú</title>
   <!-- Marca vertical. El texto usa Montserrat; si no está disponible cae a una sans geométrica. -->
   <g transform="translate(104 10) scale(0.3)">
-    <circle cx="118" cy="104" r="54" fill="#FFC107" opacity="0.92" />
+    <circle cx="214" cy="122" r="64" fill="#FFC107" opacity="0.95" />
     <path d="M345 155 C345 110 285 92 235 108 C180 126 168 196 225 222 C288 250 292 292 265 318"
       fill="none" stroke="#0E6B44" stroke-width="46" stroke-linecap="round" stroke-linejoin="round" />
     <path d="M345 155 C345 110 285 92 235 108 C180 126 168 196 225 222 C288 250 292 292 265 318"
