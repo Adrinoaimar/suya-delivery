@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 260" width="600" height="260" role="img"
+  aria-label="PLACEHOLDER IGLESIA SULLANA">
+  <title>PLACEHOLDER IGLESIA SULLANA</title>
+  <desc>
+    PLACEHOLDER IGLESIA SULLANA — ilustración lineal temporal. Reemplazar por el activo oficial
+    (mismo viewBox 0 0 600 260) sin reinterpretar proporciones.
+  </desc>
+  <g fill="none" stroke="#0E6B44" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Base -->
+    <path d="M40 240 H560" />
+    <!-- Torre izquierda -->
+    <path d="M96 240 V96 H164 V240" />
+    <path d="M88 96 L130 46 L172 96" />
+    <path d="M130 46 V26" />
+    <path d="M120 34 H140" />
+    <path d="M114 132 a16 16 0 0 1 32 0 v30 h-32 z" />
+    <path d="M108 190 H152" />
+    <!-- Torre derecha -->
+    <path d="M436 240 V96 H504 V240" />
+    <path d="M428 96 L470 46 L512 96" />
+    <path d="M470 46 V26" />
+    <path d="M460 34 H480" />
+    <path d="M454 132 a16 16 0 0 1 32 0 v30 h-32 z" />
+    <path d="M448 190 H492" />
+    <!-- Cuerpo central -->
+    <path d="M164 240 V128 H436 V240" />
+    <path d="M156 128 L300 66 L444 128" />
+    <path d="M300 66 V40" />
+    <path d="M288 50 H312" />
+    <!-- Portada y puerta -->
+    <path d="M270 240 V196 a30 30 0 0 1 60 0 v44" />
+    <path d="M300 196 V240" />
+    <!-- Rosetón -->
+    <circle cx="300" cy="150" r="20" />
+    <!-- Ventanas laterales -->
+    <path d="M206 240 V186 a14 14 0 0 1 28 0 v54" />
+    <path d="M366 240 V186 a14 14 0 0 1 28 0 v54" />
+    <!-- Palmeras muy sutiles -->
+    <path d="M556 240 V186" stroke-width="3" />
+    <path d="M556 186 c-16 -8 -26 -4 -32 6 M556 186 c16 -8 26 -4 32 6 M556 186 c-6 -16 0 -24 10 -28"
+      stroke-width="3" />
+    <path d="M46 240 V196" stroke-width="3" />
+    <path d="M46 196 c-14 -7 -22 -3 -27 5 M46 196 c14 -7 22 -3 27 5 M46 196 c-5 -14 0 -20 8 -24"
+      stroke-width="3" />
+  </g>
+</svg>

@@ -1,0 +1,32 @@
+{
+  "name": "Suya Delivery — Sullana, Perú",
+  "short_name": "Suya",
+  "description": "Tu ciudad. Tus tiendas. Llegamos a ti. Marketplace de delivery local de Sullana.",
+  "lang": "es-PE",
+  "dir": "ltr",
+  "start_url": "../",
+  "scope": "../",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#FAF7F1",
+  "theme_color": "#0E6B44",
+  "categories": ["food", "shopping", "lifestyle"],
+  "icons": [
+    {
+      "src": "../brand/suya-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "../icons/maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    { "name": "Mis pedidos", "url": "../orders" },
+    { "name": "Panel repartidor", "url": "../rider" }
+  ]
+}

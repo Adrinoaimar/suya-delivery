@@ -1,0 +1,47 @@
+[
+  {
+    "id": "promo-envio",
+    "title": "Envíos gratis desde S/ 20",
+    "subtitle": "En negocios locales de Sullana, hasta agotar cupones del día.",
+    "code": "SUYA20",
+    "storeId": null,
+    "accent": "green",
+    "image": null
+  },
+  {
+    "id": "promo-pollo",
+    "title": "2x1 en gaseosa",
+    "subtitle": "Con tu pollo a la brasa de El Buen Sabor.",
+    "code": null,
+    "storeId": "el-buen-sabor",
+    "accent": "sun",
+    "image": null
+  },
+  {
+    "id": "promo-pizza",
+    "title": "Envío gratis desde S/ 45",
+    "subtitle": "Pizzas familiares de Don Pizza a horno de leña.",
+    "code": null,
+    "storeId": "don-pizza",
+    "accent": "lime",
+    "image": null
+  },
+  {
+    "id": "promo-dulce",
+    "title": "-15% en tortas enteras",
+    "subtitle": "Dulce Tentación, pastelería artesanal sullanera.",
+    "code": "DULCE15",
+    "storeId": "dulce-tentacion",
+    "accent": "sun",
+    "image": null
+  },
+  {
+    "id": "promo-market",
+    "title": "Tu bodega en 30 minutos",
+    "subtitle": "Market Ahorro trae abarrotes y bebidas a tu puerta.",
+    "code": null,
+    "storeId": "market-ahorro",
+    "accent": "green",
+    "image": null
+  }
+]

@@ -1,0 +1,627 @@
+[
+  {
+    "id": "bs-1",
+    "storeId": "el-buen-sabor",
+    "section": "Pollos",
+    "name": "Pollo a la brasa entero",
+    "description": "Pollo entero a la leña con papas fritas, ensalada y cremas de la casa.",
+    "price": 59.9,
+    "image": null,
+    "popular": true,
+    "extras": [
+      { "id": "bs-x1", "label": "Porción extra de papas", "price": 8 },
+      { "id": "bs-x2", "label": "Ají de la casa (200 g)", "price": 4 },
+      { "id": "bs-x3", "label": "Gaseosa 1.5 L", "price": 9.5 }
+    ]
+  },
+  {
+    "id": "bs-2",
+    "storeId": "el-buen-sabor",
+    "section": "Pollos",
+    "name": "Medio pollo a la brasa",
+    "description": "Medio pollo, papas fritas y ensalada fresca. Ideal para dos personas.",
+    "price": 34.9,
+    "image": null,
+    "popular": true,
+    "extras": [
+      { "id": "bs-x1b", "label": "Porción extra de papas", "price": 8 },
+      { "id": "bs-x2b", "label": "Ají de la casa (200 g)", "price": 4 }
+    ]
+  },
+  {
+    "id": "bs-3",
+    "storeId": "el-buen-sabor",
+    "section": "Parrillas",
+    "name": "Parrilla sullanera",
+    "description": "Bife, chorizo, chuleta, plátano frito y yuca dorada.",
+    "price": 42.5,
+    "image": null,
+    "popular": false,
+    "extras": [{ "id": "bs-x4", "label": "Chorizo adicional", "price": 7.5 }]
+  },
+  {
+    "id": "bs-4",
+    "storeId": "el-buen-sabor",
+    "section": "Guarniciones",
+    "name": "Ensalada de la casa",
+    "description": "Lechuga, tomate, palta y vinagreta de limón sullano.",
+    "price": 12.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "bs-5",
+    "storeId": "el-buen-sabor",
+    "section": "Bebidas",
+    "name": "Chicha morada 1 L",
+    "description": "Preparada en casa, con piña, canela y clavo. Servida bien fría.",
+    "price": 9.9,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+
+  {
+    "id": "dp-1",
+    "storeId": "don-pizza",
+    "section": "Pizzas",
+    "name": "Pizza americana familiar",
+    "description": "Salsa de tomate casera, queso mozzarella y jamón. 8 porciones.",
+    "price": 39.9,
+    "image": null,
+    "popular": true,
+    "extras": [
+      { "id": "dp-x1", "label": "Borde relleno de queso", "price": 8 },
+      { "id": "dp-x2", "label": "Doble queso", "price": 6.5 }
+    ]
+  },
+  {
+    "id": "dp-2",
+    "storeId": "don-pizza",
+    "section": "Pizzas",
+    "name": "Pizza suprema Don Pizza",
+    "description": "Pepperoni, champiñones, pimiento, aceituna y cebolla morada.",
+    "price": 46.9,
+    "image": null,
+    "popular": true,
+    "extras": [{ "id": "dp-x3", "label": "Borde relleno de queso", "price": 8 }]
+  },
+  {
+    "id": "dp-3",
+    "storeId": "don-pizza",
+    "section": "Pastas",
+    "name": "Lasaña boloñesa",
+    "description": "Capas de pasta fresca, carne de res y bechamel gratinada.",
+    "price": 26.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "dp-4",
+    "storeId": "don-pizza",
+    "section": "Entradas",
+    "name": "Pan al ajo con queso",
+    "description": "Seis porciones de pan horneado con mantequilla de ajo y mozzarella.",
+    "price": 14.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "dp-5",
+    "storeId": "don-pizza",
+    "section": "Bebidas",
+    "name": "Limonada frozen 1 L",
+    "description": "Limón de Chulucanas licuado con hielo y hierbabuena.",
+    "price": 12.5,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+
+  {
+    "id": "dt-1",
+    "storeId": "dulce-tentacion",
+    "section": "Tortas",
+    "name": "Torta de chocolate (porción)",
+    "description": "Bizcocho húmedo de cacao con ganache y crema chantilly.",
+    "price": 11.9,
+    "image": null,
+    "popular": true,
+    "extras": [{ "id": "dt-x1", "label": "Bola de helado de vainilla", "price": 5 }]
+  },
+  {
+    "id": "dt-2",
+    "storeId": "dulce-tentacion",
+    "section": "Tortas",
+    "name": "Torta entera de tres leches",
+    "description": "Torta para 12 porciones. Requiere 4 horas de anticipación.",
+    "price": 89.9,
+    "image": null,
+    "popular": true,
+    "extras": [{ "id": "dt-x2", "label": "Mensaje personalizado", "price": 0 }]
+  },
+  {
+    "id": "dt-3",
+    "storeId": "dulce-tentacion",
+    "section": "Postres",
+    "name": "Alfajores de maicena (6 u.)",
+    "description": "Rellenos de manjar blanco y espolvoreados con azúcar impalpable.",
+    "price": 15.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "dt-4",
+    "storeId": "dulce-tentacion",
+    "section": "Del día",
+    "name": "Pie de limón (porción)",
+    "description": "Base crocante, crema de limón y merengue tostado.",
+    "price": 10.5,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "dt-5",
+    "storeId": "dulce-tentacion",
+    "section": "Café",
+    "name": "Café pasado de Piura 12 oz",
+    "description": "Café de altura de la sierra piurana, filtrado al momento.",
+    "price": 8.9,
+    "image": null,
+    "popular": true,
+    "extras": [{ "id": "dt-x3", "label": "Leche de almendras", "price": 3 }]
+  },
+
+  {
+    "id": "vf-1",
+    "storeId": "verde-fresh",
+    "section": "Jugos",
+    "name": "Jugo surtido 1 L",
+    "description": "Papaya, piña, plátano y naranja recién exprimida.",
+    "price": 13.9,
+    "image": null,
+    "popular": true,
+    "extras": [{ "id": "vf-x1", "label": "Sin azúcar", "price": 0 }]
+  },
+  {
+    "id": "vf-2",
+    "storeId": "verde-fresh",
+    "section": "Jugos",
+    "name": "Jugo verde detox",
+    "description": "Piña, apio, manzana verde, jengibre y limón.",
+    "price": 11.5,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "vf-3",
+    "storeId": "verde-fresh",
+    "section": "Batidos",
+    "name": "Batido proteico de plátano",
+    "description": "Plátano, avena, leche y una medida de proteína.",
+    "price": 14.9,
+    "image": null,
+    "popular": false,
+    "extras": [{ "id": "vf-x2", "label": "Mantequilla de maní", "price": 4 }]
+  },
+  {
+    "id": "vf-4",
+    "storeId": "verde-fresh",
+    "section": "Bowls",
+    "name": "Bowl de fruta y granola",
+    "description": "Fruta de estación, yogurt griego, granola artesanal y miel.",
+    "price": 16.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "vf-5",
+    "storeId": "verde-fresh",
+    "section": "Snacks",
+    "name": "Sándwich integral de pollo",
+    "description": "Pan integral, pollo deshilachado, palta y tomate.",
+    "price": 12.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+
+  {
+    "id": "ma-1",
+    "storeId": "market-ahorro",
+    "section": "Abarrotes",
+    "name": "Arroz extra 5 kg",
+    "description": "Arroz superior seleccionado, saco de 5 kilos.",
+    "price": 24.9,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "ma-2",
+    "storeId": "market-ahorro",
+    "section": "Abarrotes",
+    "name": "Aceite vegetal 1 L",
+    "description": "Aceite vegetal para cocina, botella de 1 litro.",
+    "price": 9.5,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "ma-3",
+    "storeId": "market-ahorro",
+    "section": "Bebidas",
+    "name": "Gaseosa 3 L",
+    "description": "Bebida gaseosa familiar de 3 litros bien fría.",
+    "price": 12.9,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "ma-4",
+    "storeId": "market-ahorro",
+    "section": "Limpieza",
+    "name": "Detergente en polvo 1.5 kg",
+    "description": "Detergente multiuso para ropa blanca y de color.",
+    "price": 18.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "ma-5",
+    "storeId": "market-ahorro",
+    "section": "Snacks",
+    "name": "Pack de galletas surtidas (6 u.)",
+    "description": "Seis paquetes de galletas dulces y saladas variadas.",
+    "price": 7.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+
+  {
+    "id": "fc-1",
+    "storeId": "flores-del-chira",
+    "section": "Ramos",
+    "name": "Ramo de 12 rosas rojas",
+    "description": "Rosas seleccionadas con follaje y papel kraft.",
+    "price": 79.9,
+    "image": null,
+    "popular": true,
+    "extras": [{ "id": "fc-x1", "label": "Tarjeta dedicada", "price": 0 }]
+  },
+  {
+    "id": "fc-2",
+    "storeId": "flores-del-chira",
+    "section": "Ramos",
+    "name": "Ramo de girasoles",
+    "description": "Seis girasoles frescos con eucalipto y lazo de yute.",
+    "price": 64.9,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "fc-3",
+    "storeId": "flores-del-chira",
+    "section": "Arreglos",
+    "name": "Arreglo en caja redonda",
+    "description": "Mix de flores de estación en caja de regalo.",
+    "price": 119.9,
+    "image": null,
+    "popular": false,
+    "extras": [{ "id": "fc-x2", "label": "Globo metálico", "price": 12 }]
+  },
+  {
+    "id": "fc-4",
+    "storeId": "flores-del-chira",
+    "section": "Plantas",
+    "name": "Suculenta en maceta",
+    "description": "Planta pequeña en maceta de cerámica, lista para regalar.",
+    "price": 29.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "fc-5",
+    "storeId": "flores-del-chira",
+    "section": "Detalles",
+    "name": "Caja de chocolates surtidos",
+    "description": "Bombones surtidos, caja de 12 unidades.",
+    "price": 39.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+
+  {
+    "id": "kf-1",
+    "storeId": "kfc",
+    "section": "Combos",
+    "name": "Combo individual crocante",
+    "description": "Dos piezas de pollo, papas y bebida. Producto de demostración.",
+    "price": 24.9,
+    "image": null,
+    "popular": true,
+    "extras": [{ "id": "kf-x1", "label": "Papas grandes", "price": 4.5 }]
+  },
+  {
+    "id": "kf-2",
+    "storeId": "kfc",
+    "section": "Piezas",
+    "name": "Balde 8 piezas",
+    "description": "Ocho piezas de pollo para compartir. Producto de demostración.",
+    "price": 79.9,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "kf-3",
+    "storeId": "kfc",
+    "section": "Snacks",
+    "name": "Sándwich de pollo",
+    "description": "Pan brioche, filete de pollo y salsa. Producto de demostración.",
+    "price": 18.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "kf-4",
+    "storeId": "kfc",
+    "section": "Snacks",
+    "name": "Porción de papas",
+    "description": "Papas fritas medianas. Producto de demostración.",
+    "price": 8.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "kf-5",
+    "storeId": "kfc",
+    "section": "Bebidas",
+    "name": "Gaseosa 500 ml",
+    "description": "Bebida gaseosa personal. Producto de demostración.",
+    "price": 6.5,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+
+  {
+    "id": "pj-1",
+    "storeId": "papa-johns",
+    "section": "Pizzas",
+    "name": "Pizza familiar de peperoni",
+    "description": "Pizza familiar con peperoni. Producto de demostración.",
+    "price": 54.9,
+    "image": null,
+    "popular": true,
+    "extras": [{ "id": "pj-x1", "label": "Borde relleno", "price": 9 }]
+  },
+  {
+    "id": "pj-2",
+    "storeId": "papa-johns",
+    "section": "Pizzas",
+    "name": "Pizza familiar hawaiana",
+    "description": "Jamón y piña sobre queso mozzarella. Producto de demostración.",
+    "price": 52.9,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "pj-3",
+    "storeId": "papa-johns",
+    "section": "Complementos",
+    "name": "Alitas BBQ (8 u.)",
+    "description": "Alitas bañadas en salsa BBQ. Producto de demostración.",
+    "price": 32.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "pj-4",
+    "storeId": "papa-johns",
+    "section": "Complementos",
+    "name": "Palitos de pan con queso",
+    "description": "Ocho palitos horneados con queso. Producto de demostración.",
+    "price": 19.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "pj-5",
+    "storeId": "papa-johns",
+    "section": "Bebidas",
+    "name": "Gaseosa 1.5 L",
+    "description": "Bebida gaseosa familiar. Producto de demostración.",
+    "price": 10.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+
+  {
+    "id": "tt-1",
+    "storeId": "tottus",
+    "section": "Frescos",
+    "name": "Pechuga de pollo 1 kg",
+    "description": "Pechuga fresca envasada. Producto de demostración.",
+    "price": 15.9,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "tt-2",
+    "storeId": "tottus",
+    "section": "Frescos",
+    "name": "Huevos pardos (15 u.)",
+    "description": "Bandeja de quince huevos. Producto de demostración.",
+    "price": 12.5,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "tt-3",
+    "storeId": "tottus",
+    "section": "Abarrotes",
+    "name": "Fideo tallarín 500 g",
+    "description": "Pasta de sémola de trigo. Producto de demostración.",
+    "price": 4.3,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "tt-4",
+    "storeId": "tottus",
+    "section": "Bebidas",
+    "name": "Agua sin gas 2.5 L",
+    "description": "Agua de mesa. Producto de demostración.",
+    "price": 5.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "tt-5",
+    "storeId": "tottus",
+    "section": "Limpieza",
+    "name": "Papel higiénico (12 u.)",
+    "description": "Doce rollos doble hoja. Producto de demostración.",
+    "price": 26.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+
+  {
+    "id": "if-1",
+    "storeId": "inkafarma",
+    "section": "Sin receta",
+    "name": "Paracetamol 500 mg (10 tab.)",
+    "description": "Analgésico de venta sin receta. Producto de demostración: consulta a tu médico.",
+    "price": 6.9,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "if-2",
+    "storeId": "inkafarma",
+    "section": "Botiquín",
+    "name": "Alcohol en gel 250 ml",
+    "description": "Gel antibacterial de uso externo. Producto de demostración.",
+    "price": 9.9,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "if-3",
+    "storeId": "inkafarma",
+    "section": "Cuidado personal",
+    "name": "Bloqueador solar FPS 50",
+    "description": "Protector solar facial y corporal. Producto de demostración.",
+    "price": 42.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "if-4",
+    "storeId": "inkafarma",
+    "section": "Bebé",
+    "name": "Pañales talla M (30 u.)",
+    "description": "Paquete de treinta pañales. Producto de demostración.",
+    "price": 38.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "if-5",
+    "storeId": "inkafarma",
+    "section": "Botiquín",
+    "name": "Termómetro digital",
+    "description": "Termómetro digital de punta flexible. Producto de demostración.",
+    "price": 24.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+
+  {
+    "id": "jm-1",
+    "storeId": "juguetes-sullana",
+    "section": "Juguetes",
+    "name": "Set de bloques (120 piezas)",
+    "description": "Bloques de construcción de colores para armar.",
+    "price": 49.9,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "jm-2",
+    "storeId": "juguetes-sullana",
+    "section": "Juegos de mesa",
+    "name": "Juego de mesa familiar",
+    "description": "Juego de estrategia para 2 a 6 jugadores.",
+    "price": 69.9,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "jm-3",
+    "storeId": "juguetes-sullana",
+    "section": "Juguetes",
+    "name": "Pelota de fútbol N.° 5",
+    "description": "Pelota cosida a máquina, tamaño oficial.",
+    "price": 39.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "jm-4",
+    "storeId": "juguetes-sullana",
+    "section": "Regalos",
+    "name": "Peluche mediano",
+    "description": "Peluche suave de 35 cm para regalo.",
+    "price": 34.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "jm-5",
+    "storeId": "juguetes-sullana",
+    "section": "Regalos",
+    "name": "Set de arte para niños",
+    "description": "Maletín con colores, plumones y crayolas.",
+    "price": 29.9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  }
+]

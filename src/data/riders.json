@@ -1,0 +1,32 @@
+[
+  {
+    "id": "rider-carlos",
+    "name": "Carlos Ramírez",
+    "photo": null,
+    "rating": 4.8,
+    "deliveries": 230,
+    "verified": true,
+    "phone": "+51 987 654 321",
+    "vehicle": { "type": "Moto", "color": "Verde", "plate": "ABC-123" }
+  },
+  {
+    "id": "rider-lucia",
+    "name": "Lucía Cornejo",
+    "photo": null,
+    "rating": 4.9,
+    "deliveries": 412,
+    "verified": true,
+    "phone": "+51 987 100 220",
+    "vehicle": { "type": "Moto", "color": "Blanca", "plate": "PIU-884" }
+  },
+  {
+    "id": "rider-jose",
+    "name": "José Palacios",
+    "photo": null,
+    "rating": 4.6,
+    "deliveries": 118,
+    "verified": false,
+    "phone": "+51 987 330 918",
+    "vehicle": { "type": "Mototaxi", "color": "Amarilla", "plate": "SUL-471" }
+  }
+]

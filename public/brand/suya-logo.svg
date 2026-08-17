@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 420" width="360" height="420" role="img" aria-label="Suya Delivery — Sullana, Perú">
+  <title>Suya Delivery — Sullana, Perú</title>
+  <!-- Marca vertical. El texto usa Montserrat; si no está disponible cae a una sans geométrica. -->
+  <g transform="translate(104 10) scale(0.3)">
+    <circle cx="118" cy="104" r="54" fill="#FFC107" opacity="0.92" />
+    <path d="M345 155 C345 110 285 92 235 108 C180 126 168 196 225 222 C288 250 292 292 265 318"
+      fill="none" stroke="#0E6B44" stroke-width="46" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M345 155 C345 110 285 92 235 108 C180 126 168 196 225 222 C288 250 292 292 265 318"
+      fill="none" stroke="#FFC107" stroke-width="7" stroke-linecap="round" stroke-dasharray="18 24" />
+    <path d="M265 306 c-31 0 -56 25 -56 56 0 40 56 92 56 92 s56 -52 56 -92 c0 -31 -25 -56 -56 -56 z" fill="#0E6B44" />
+    <circle cx="265" cy="360" r="20" fill="#FFC107" />
+  </g>
+  <text x="180" y="290" text-anchor="middle" font-family="Montserrat, 'Segoe UI', Arial, sans-serif"
+    font-size="86" font-weight="700" fill="#0E6B44" letter-spacing="-2">Suya</text>
+  <text x="180" y="336" text-anchor="middle" font-family="Montserrat, 'Segoe UI', Arial, sans-serif"
+    font-size="34" font-weight="600" fill="#1F2023" letter-spacing="9">DELIVERY</text>
+  <text x="180" y="372" text-anchor="middle" font-family="Inter, 'Segoe UI', Arial, sans-serif"
+    font-size="17" font-weight="500" fill="#6B7076" letter-spacing="4">SULLANA, PERÚ</text>
+</svg>

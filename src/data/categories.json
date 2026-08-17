@@ -1,0 +1,8 @@
+[
+  { "id": "restaurantes", "name": "Restaurantes", "icon": "utensils", "accent": "green" },
+  { "id": "supermercados", "name": "Supermercados", "icon": "shopping-cart", "accent": "lime" },
+  { "id": "farmacias", "name": "Farmacias", "icon": "cross", "accent": "green" },
+  { "id": "bebidas", "name": "Bebidas", "icon": "cup-soda", "accent": "sun" },
+  { "id": "postres", "name": "Postres", "icon": "cake", "accent": "sun" },
+  { "id": "tiendas", "name": "Tiendas", "icon": "store", "accent": "lime" }
+]

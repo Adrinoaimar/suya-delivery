@@ -1,0 +1,131 @@
+@import '@fontsource/montserrat/600.css';
+@import '@fontsource/montserrat/700.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Design tokens de Suya Delivery */
+    --suya-green: #0e6b44;
+    --suya-green-dark: #0a5335;
+    --suya-lime: #8cc63f;
+    --suya-sun: #ffc107;
+    --suya-ivory: #faf7f1;
+    --suya-white: #ffffff;
+    --suya-carbon: #1f2023;
+    --suya-mist: #e6e7e9;
+    --suya-muted: #6b7076;
+
+    --radius-btn: 12px;
+    --radius-card: 16px;
+    --radius-promo: 20px;
+
+    --shadow-soft: 0 8px 30px rgba(31, 32, 35, 0.08);
+
+    --header-h: 60px;
+    --bottom-nav-h: 64px;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-suya-ivory font-sans text-suya-carbon antialiased;
+    margin: 0;
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display font-bold tracking-tight;
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--suya-lime);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  button,
+  [role='button'] {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  ::selection {
+    background: var(--suya-lime);
+    color: var(--suya-carbon);
+  }
+}
+
+@layer components {
+  .shell {
+    @apply mx-auto w-full max-w-shell px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-title {
+    @apply font-display text-lg font-bold text-suya-carbon sm:text-xl;
+  }
+
+  .surface {
+    @apply rounded-card border border-suya-mist bg-white;
+  }
+
+  .press {
+    @apply transition-transform duration-150 active:scale-[0.98];
+  }
+
+  .hide-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .skeleton {
+    @apply relative overflow-hidden bg-suya-mist/70;
+  }
+
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+    animation: shimmer 1.4s infinite;
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Altura reservada para la navegación inferior en móvil */
+  .pb-nav {
+    padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

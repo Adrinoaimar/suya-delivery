@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-label="Suya Delivery">
+  <title>Suya Delivery</title>
+  <rect width="512" height="512" fill="#0E6B44" />
+  <g transform="translate(256 256) scale(0.62) translate(-256 -256)">
+    <circle cx="118" cy="104" r="54" fill="#FFC107" opacity="0.92" />
+    <path d="M345 155 C345 110 285 92 235 108 C180 126 168 196 225 222 C288 250 292 292 265 318"
+      fill="none" stroke="#FFFFFF" stroke-width="46" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M345 155 C345 110 285 92 235 108 C180 126 168 196 225 222 C288 250 292 292 265 318"
+      fill="none" stroke="#FFC107" stroke-width="7" stroke-linecap="round" stroke-dasharray="18 24" />
+    <path d="M265 306 c-31 0 -56 25 -56 56 0 40 56 92 56 92 s56 -52 56 -92 c0 -31 -25 -56 -56 -56 z" fill="#FFC107" />
+    <circle cx="265" cy="360" r="20" fill="#0E6B44" />
+  </g>
+</svg>

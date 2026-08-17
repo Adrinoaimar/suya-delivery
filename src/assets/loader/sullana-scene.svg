@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300" role="img"
+  aria-label="Sullana y un repartidor de Suya Delivery en ruta">
+  <title>Suya Delivery — Sullana</title>
+  <desc>
+    Versión estática de la escena del cargador: el sol, la silueta lineal de la iglesia
+    (PLACEHOLDER IGLESIA SULLANA), la ruta y el repartidor. Se usa cuando el sistema pide
+    reducir el movimiento.
+  </desc>
+  <rect width="400" height="300" fill="#FAF7F1" />
+  <circle cx="200" cy="152" r="54" fill="#FFC107" opacity="0.22" />
+  <circle cx="200" cy="152" r="30" fill="#FFC107" opacity="0.55" />
+
+  <g transform="translate(90.5 120.4) scale(0.365)" fill="none" stroke="#0E6B44" stroke-width="9"
+    stroke-linecap="round" stroke-linejoin="round">
+    <path d="M96 240 V96 H164 V240" />
+    <path d="M88 96 L130 46 L172 96" />
+    <path d="M130 46 V26 M120 34 H140" />
+    <path d="M436 240 V96 H504 V240" />
+    <path d="M428 96 L470 46 L512 96" />
+    <path d="M470 46 V26 M460 34 H480" />
+    <path d="M164 240 V128 H436 V240" />
+    <path d="M156 128 L300 66 L444 128" />
+    <path d="M300 66 V40 M288 50 H312" />
+    <path d="M270 240 V196 a30 30 0 0 1 60 0 v44" />
+    <circle cx="300" cy="150" r="20" />
+    <path d="M206 240 V186 a14 14 0 0 1 28 0 v54" />
+    <path d="M366 240 V186 a14 14 0 0 1 28 0 v54" />
+  </g>
+
+  <path d="M20 210 H380" stroke="#E6E7E9" stroke-width="3" stroke-linecap="round" />
+
+  <path d="M8 274 C 90 252, 150 264, 214 248 C 268 234, 312 238, 392 226" fill="none"
+    stroke="#E6E7E9" stroke-width="17" stroke-linecap="round" />
+  <path d="M8 274 C 90 252, 150 264, 214 248 C 268 234, 312 238, 392 226" fill="none"
+    stroke="#FFC107" stroke-width="3" stroke-linecap="round" stroke-dasharray="10 14" />
+
+  <g transform="translate(232 216) scale(0.42)">
+    <rect x="42" y="40" width="34" height="30" rx="6" fill="#0E6B44" />
+    <path d="M59 48 v14 M53 55 h12" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" />
+    <path d="M34 100 L68 80 L102 80 L126 100" fill="none" stroke="#0E6B44" stroke-width="9"
+      stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M62 80 h34" stroke="#1F2023" stroke-width="9" stroke-linecap="round" />
+    <path d="M126 100 L114 64" stroke="#1F2023" stroke-width="6" stroke-linecap="round" />
+    <path d="M108 62 L126 56" stroke="#1F2023" stroke-width="5" stroke-linecap="round" />
+    <path d="M80 74 L88 92 L104 92" fill="none" stroke="#0A5335" stroke-width="8"
+      stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M78 74 L94 48" stroke="#0E6B44" stroke-width="13" stroke-linecap="round" />
+    <path d="M94 50 L114 62" stroke="#0E6B44" stroke-width="8" stroke-linecap="round" />
+    <circle cx="103" cy="38" r="12" fill="#0A5335" />
+    <circle cx="34" cy="100" r="18" fill="none" stroke="#1F2023" stroke-width="7" />
+    <circle cx="126" cy="100" r="18" fill="none" stroke="#1F2023" stroke-width="7" />
+  </g>
+
+  <g transform="translate(352 200)">
+    <path d="M0 0 c-11 0 -20 9 -20 20 0 14 20 32 20 32 s20 -18 20 -32 c0 -11 -9 -20 -20 -20 z"
+      fill="#FFC107" />
+    <circle cx="0" cy="20" r="7" fill="#0E6B44" />
+  </g>
+</svg>

@@ -1,0 +1,65 @@
+[
+  {
+    "code": "SUY-41208",
+    "storeId": "el-buen-sabor",
+    "status": "delivered",
+    "daysAgo": 2,
+    "riderId": "rider-carlos",
+    "paymentMethod": "yape",
+    "discount": 0,
+    "items": [
+      { "productId": "bs-1", "quantity": 1 },
+      { "productId": "bs-5", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "SUY-40977",
+    "storeId": "don-pizza",
+    "status": "delivered",
+    "daysAgo": 5,
+    "riderId": "rider-lucia",
+    "paymentMethod": "cash",
+    "discount": 5,
+    "items": [
+      { "productId": "dp-2", "quantity": 1 },
+      { "productId": "dp-4", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "SUY-40712",
+    "storeId": "market-ahorro",
+    "status": "delivered",
+    "daysAgo": 9,
+    "riderId": "rider-jose",
+    "paymentMethod": "card",
+    "discount": 0,
+    "items": [
+      { "productId": "ma-1", "quantity": 1 },
+      { "productId": "ma-3", "quantity": 2 },
+      { "productId": "ma-5", "quantity": 1 }
+    ]
+  },
+  {
+    "code": "SUY-40388",
+    "storeId": "dulce-tentacion",
+    "status": "cancelled",
+    "daysAgo": 14,
+    "riderId": null,
+    "paymentMethod": "yape",
+    "discount": 0,
+    "items": [{ "productId": "dt-2", "quantity": 1 }]
+  },
+  {
+    "code": "SUY-40105",
+    "storeId": "inkafarma",
+    "status": "delivered",
+    "daysAgo": 21,
+    "riderId": "rider-carlos",
+    "paymentMethod": "cash",
+    "discount": 0,
+    "items": [
+      { "productId": "if-1", "quantity": 2 },
+      { "productId": "if-2", "quantity": 1 }
+    ]
+  }
+]

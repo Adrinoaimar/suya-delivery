@@ -1,0 +1,203 @@
+/*
+ * Pantalla de carga de Suya Delivery.
+ * La ciudad se dibuja línea por línea (stroke-dasharray/stroke-dashoffset con pathLength="1")
+ * mientras el repartidor recorre la ruta y aparece la marca.
+ */
+
+.suya-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--suya-ivory);
+  transition:
+    opacity 420ms ease,
+    transform 420ms ease;
+}
+
+.suya-intro[data-leaving='true'] {
+  opacity: 0;
+  transform: scale(1.015);
+  pointer-events: none;
+}
+
+.suya-intro__stage {
+  width: min(480px, 86vw);
+  max-height: 100dvh;
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+/*
+ * La escena nunca debe empujar al logo fuera de la pantalla: cede altura primero
+ * (importante en móviles bajos y en ventanas de escritorio poco altas).
+ */
+.suya-intro__scene {
+  width: 100%;
+  height: auto;
+  max-height: 46dvh;
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+@media (max-height: 620px) {
+  .suya-intro__stage {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .suya-intro__scene {
+    max-height: 38dvh;
+  }
+}
+
+/* --- Trazo progresivo --- */
+.intro-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: intro-draw 900ms ease-out forwards;
+}
+
+@keyframes intro-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* --- Sol --- */
+.intro-sun {
+  transform-origin: 200px 150px;
+  animation: intro-sun 800ms cubic-bezier(0.22, 1, 0.36, 1) 600ms both;
+}
+
+@keyframes intro-sun {
+  from {
+    opacity: 0;
+    transform: translateY(26px) scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* --- Repartidor --- */
+.intro-rider {
+  animation: intro-rider-in 400ms ease-out 900ms both;
+}
+
+@keyframes intro-rider-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.intro-rider__body {
+  animation: intro-suspension 620ms ease-in-out 1200ms 3;
+  transform-origin: center;
+}
+
+@keyframes intro-suspension {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.1px);
+  }
+}
+
+.intro-wheel {
+  animation: intro-wheel 700ms linear 900ms 3;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes intro-wheel {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- Pin --- */
+.intro-pin {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: intro-pop 460ms cubic-bezier(0.34, 1.56, 0.64, 1) 1800ms both;
+}
+
+@keyframes intro-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* --- Marca --- */
+.intro-logo {
+  animation: intro-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) 2000ms both;
+}
+
+.intro-tagline {
+  animation: intro-rise 520ms cubic-bezier(0.22, 1, 0.36, 1) 2200ms both;
+}
+
+@keyframes intro-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.intro-progress {
+  width: 132px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--suya-mist);
+  overflow: hidden;
+}
+
+.intro-progress span {
+  display: block;
+  height: 100%;
+  width: 40%;
+  border-radius: 999px;
+  background: var(--suya-green);
+  animation: intro-progress 1400ms ease-in-out infinite;
+}
+
+@keyframes intro-progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(320%);
+  }
+}
+
+/* --- Versión estática accesible --- */
+@media (prefers-reduced-motion: reduce) {
+  .suya-intro * {
+    animation: none !important;
+  }
+
+  .intro-draw {
+    stroke-dashoffset: 0;
+  }
+}

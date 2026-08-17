@@ -1,0 +1,216 @@
+import { useMemo, useState } from 'react';
+import { ArrowLeft, MapPin, RotateCcw, XCircle } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
+import { Badge } from '@/components/common/Badge';
+import { Button, ButtonLink } from '@/components/common/Button';
+import { Card } from '@/components/common/Card';
+import { EmptyState } from '@/components/common/EmptyState';
+import { ExpandableSheet } from '@/components/common/BottomSheet';
+import { Modal } from '@/components/common/Modal';
+import { TrackingTimeline } from '@/components/order/TrackingTimeline';
+import { RiderCard } from '@/components/rider/RiderCard';
+import { MapProvider } from '@/components/map/MapProvider';
+import { demoRoute, riders } from '@/data';
+import { SIMULATION_TOTAL_SECONDS } from '@/lib/services';
+import { useOrderStore } from '@/store/orderStore';
+import { useRouteProgress, useOrderStatusNotifier } from '@/hooks/useOrderSimulation';
+import { formatPrice, orderStatusLabel } from '@/utils/format';
+import { pointAtProgress } from '@/utils/geo';
+
+export default function OrderTrackPage() {
+  const { id = '' } = useParams();
+  const order = useOrderStore((state) => state.getOrder(id));
+  const cancelOrder = useOrderStore((state) => state.cancelOrder);
+  const restartSimulation = useOrderStore((state) => state.restartSimulation);
+  const [expanded, setExpanded] = useState(true);
+  const [confirmCancel, setConfirmCancel] = useState(false);
+
+  const progress = useRouteProgress(order);
+  useOrderStatusNotifier(order);
+
+  const riderPosition = useMemo(
+    () => pointAtProgress(demoRoute.points, progress),
+    [progress],
+  );
+
+  if (!order) {
+    return (
+      <div className="shell py-10">
+        <EmptyState
+          icon={<MapPin className="h-6 w-6" />}
+          title="No encontramos este pedido"
+          action={<ButtonLink to="/orders">Ver mis pedidos</ButtonLink>}
+        />
+      </div>
+    );
+  }
+
+  const rider = riders.find((item) => item.id === order.riderId);
+  const delivered = order.status === 'delivered';
+  const cancelled = order.status === 'cancelled';
+  const etaMinutes = Math.max(1, Math.round(order.etaMinutes * (1 - progress)));
+  const etaLabel = delivered
+    ? 'Pedido entregado'
+    : cancelled
+      ? 'Pedido cancelado'
+      : `${Math.max(1, etaMinutes - 6)}–${etaMinutes} min`;
+
+  const summary = (
+    <span className="flex flex-col">
+      <span className="font-display text-[15px] font-bold">{orderStatusLabel(order.status)}</span>
+      <span className="text-sm text-[#6B7076]">
+        {delivered || cancelled ? order.storeName : `Llega en ${etaLabel}`}
+      </span>
+    </span>
+  );
+
+  const detail = (
+    <div className="space-y-4">
+      <TrackingTimeline order={order} compact />
+
+      {rider && !cancelled && (
+        <div className="rounded-card border border-suya-mist p-3">
+          <RiderCard rider={rider} />
+        </div>
+      )}
+
+      <div className="rounded-card border border-suya-mist p-3">
+        <p className="font-display text-[15px] font-bold">{order.storeName}</p>
+        <p className="text-sm text-[#6B7076]">
+          #{order.code} · {order.items.length} {order.items.length === 1 ? 'producto' : 'productos'}
+        </p>
+        <ul className="mt-2 space-y-1 text-sm text-[#4A4F55]">
+          {order.items.map((item) => (
+            <li key={item.lineId}>
+              {item.quantity} × {item.name}
+            </li>
+          ))}
+        </ul>
+        <p className="mt-2 flex justify-between border-t border-suya-mist pt-2 font-display font-bold">
+          Total <span>{formatPrice(order.total)}</span>
+        </p>
+      </div>
+
+      <div className="rounded-card border border-suya-mist p-3">
+        <p className="text-sm font-semibold">Entregar en</p>
+        <p className="text-sm text-[#6B7076]">{order.customer.address}</p>
+        {order.customer.reference && (
+          <p className="text-sm text-[#6B7076]">Referencia: {order.customer.reference}</p>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        <Button variant="secondary" size="sm" onClick={() => restartSimulation(order.id)}>
+          <RotateCcw className="h-4 w-4" aria-hidden="true" />
+          Reiniciar simulación
+        </Button>
+        {!delivered && !cancelled && (
+          <Button variant="ghost" size="sm" onClick={() => setConfirmCancel(true)}>
+            <XCircle className="h-4 w-4" aria-hidden="true" />
+            Cancelar pedido
+          </Button>
+        )}
+        <ButtonLink to={`/orders/${order.id}`} variant="ghost" size="sm">
+          Ver detalle
+        </ButtonLink>
+      </div>
+
+      <p className="text-xs text-[#9AA0A6]">
+        DEMO LOCAL: el avance del pedido se simula en el navegador ({SIMULATION_TOTAL_SECONDS} s de
+        principio a fin). En producción llegará por WebSocket o push desde el backend.
+      </p>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Móvil: mapa + hoja inferior */}
+      <div className="flex h-[calc(100dvh-var(--header-h)-var(--bottom-nav-h))] flex-col lg:hidden">
+        <div className="relative h-[45%] shrink-0 overflow-hidden bg-suya-ivory">
+          <MapProvider
+            points={demoRoute.points}
+            origin={demoRoute.origin}
+            destination={demoRoute.destination}
+            rider={cancelled ? null : riderPosition}
+            label={`Ruta del pedido ${order.code}`}
+          />
+          <Link
+            to="/orders"
+            aria-label="Volver a mis pedidos"
+            className="press absolute left-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 shadow-card"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <Badge tone="green" className="absolute right-3 top-3 shadow-card">
+            {etaLabel}
+          </Badge>
+        </div>
+        <ExpandableSheet
+          title="Resumen del pedido"
+          expanded={expanded}
+          onToggle={() => setExpanded((value) => !value)}
+          summary={summary}
+          className="-mt-4 flex-1 overflow-hidden"
+        >
+          {detail}
+        </ExpandableSheet>
+      </div>
+
+      {/* Escritorio: panel + mapa */}
+      <div className="hidden lg:block">
+        <div className="shell grid grid-cols-[380px_1fr] gap-5 py-8">
+          <div className="space-y-4">
+            <Link
+              to="/orders"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#6B7076] hover:text-suya-green"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+              Mis pedidos
+            </Link>
+            <div>
+              <h1 className="section-title">{orderStatusLabel(order.status)}</h1>
+              <p className="text-sm text-[#6B7076]">
+                {delivered || cancelled ? order.storeName : `Llega en ${etaLabel}`}
+              </p>
+            </div>
+            <Card>{detail}</Card>
+          </div>
+          <div className="sticky top-24 h-[calc(100dvh-140px)] overflow-hidden rounded-card border border-suya-mist bg-white">
+            <MapProvider
+              points={demoRoute.points}
+              origin={demoRoute.origin}
+              destination={demoRoute.destination}
+              rider={cancelled ? null : riderPosition}
+              label={`Ruta del pedido ${order.code}`}
+            />
+          </div>
+        </div>
+      </div>
+
+      <Modal
+        open={confirmCancel}
+        onClose={() => setConfirmCancel(false)}
+        title="¿Cancelar el pedido?"
+        description="En la demo puedes cancelar en cualquier momento antes de la entrega."
+        size="sm"
+        footer={
+          <div className="flex gap-2">
+            <Button variant="ghost" fullWidth onClick={() => setConfirmCancel(false)}>
+              Mantener
+            </Button>
+            <Button
+              variant="danger"
+              fullWidth
+              onClick={() => {
+                cancelOrder(order.id);
+                setConfirmCancel(false);
+              }}
+            >
+              Cancelar pedido
+            </Button>
+          </div>
+        }
+      />
+    </>
+  );
+}
