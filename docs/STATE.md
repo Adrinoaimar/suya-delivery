@@ -10,7 +10,8 @@ producción.
 ## Estado actual
 
 - Rama: `codex/functional-suya-loop`.
-- Checkpoint F3 verificado: typecheck, lint, 49 pruebas y tres builds aislados pasan.
+- Checkpoint F4 verificado: typecheck, lint, 56 pruebas frontend, tres builds aislados y 40 pruebas
+  pgTAP pasan.
 - F0 verificado localmente: gobernanza, secretos, CI, arquitectura y continuidad.
 - Contratos de catálogo y pedidos son asíncronos; las pantallas manejan carga, error y reintento.
 - La progresión automática de pedidos y el pago digital simulado fueron retirados. El checkout solo
@@ -34,7 +35,7 @@ producción.
 
 ## Siguiente acción
 
-Validar Auth/trigger en CI; conectar perfiles, catálogo y pedidos a Supabase, conservando servicios
+Conectar catálogo y pedidos a Supabase, cargar la carta verificada de Andá Paya y conservar servicios
 locales únicamente para tests durante la sustitución.
 
 ## Gate productivo pendiente
