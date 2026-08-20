@@ -6,8 +6,8 @@ import { MapProvider } from '@/components/map/MapProvider';
 import { CodeDialog } from '@/components/order/CodeDialog';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
 import { demoRoute } from '@/data';
-import { notificationService, orderService } from '@/lib/services';
-import { useRouteProgress } from '@/hooks/useOrderSimulation';
+import { notificationService } from '@/lib/services';
+import { orderRouteProgress } from '@/hooks/useOrders';
 import { selectActiveOrder, useOrderStore } from '@/store/orderStore';
 import { formatPrice, orderStatusLabel } from '@/utils/format';
 import { pointAtProgress } from '@/utils/geo';
@@ -24,10 +24,10 @@ const NEXT_ACTION: Partial<Record<OrderStatus, { label: string; next: OrderStatu
 
 export default function RiderCurrentPage() {
   const orders = useOrderStore((state) => state.orders);
-  const refresh = useOrderStore((state) => state.refresh);
+  const updateOrderStatus = useOrderStore((state) => state.updateOrderStatus);
   const confirmDelivery = useOrderStore((state) => state.confirmDelivery);
   const active = selectActiveOrder(orders);
-  const progress = useRouteProgress(active);
+  const progress = orderRouteProgress(active);
   const [codeOpen, setCodeOpen] = useState(false);
 
   const riderPosition = useMemo(() => pointAtProgress(demoRoute.points, progress), [progress]);
@@ -104,10 +104,7 @@ export default function RiderCurrentPage() {
           <div className="mt-3 flex flex-wrap gap-2">
             {action && (
               <Button
-                onClick={() => {
-                  orderService.updateStatus(active.id, action.next);
-                  refresh();
-                }}
+                onClick={() => void updateOrderStatus(active.id, action.next)}
               >
                 <PackageCheck className="h-4 w-4" aria-hidden="true" />
                 {action.label}

@@ -4,6 +4,8 @@ import { Badge } from '@/components/common/Badge';
 import { ButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
+import { ErrorState } from '@/components/common/ErrorState';
+import { Skeleton } from '@/components/common/Skeleton';
 import { CartLine } from '@/components/order/CartLine';
 import { OrderCodes } from '@/components/order/OrderCodes';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
@@ -15,15 +17,34 @@ import { formatDateTime, formatPrice, orderStatusLabel, paymentLabel } from '@/u
 export default function OrderDetailPage() {
   const { id = '' } = useParams();
   const order = useOrderStore((state) => state.getOrder(id));
+  const status = useOrderStore((state) => state.status);
+  const error = useOrderStore((state) => state.error);
+  const refresh = useOrderStore((state) => state.refresh);
   const rider = riders.find((item) => item.id === order?.riderId);
 
   if (!order) {
+    if (status === 'idle' || status === 'loading') {
+      return (
+        <div className="shell space-y-3 py-10" role="status" aria-busy="true">
+          <span className="sr-only">Cargando pedido…</span>
+          <Skeleton className="h-8 w-56" />
+          <Skeleton className="h-40 w-full rounded-card" />
+        </div>
+      );
+    }
+    if (status === 'error') {
+      return (
+        <div className="shell py-10">
+          <ErrorState description={error ?? undefined} onRetry={() => void refresh()} />
+        </div>
+      );
+    }
     return (
       <div className="shell py-10">
         <EmptyState
           icon={<Receipt className="h-6 w-6" />}
           title="No encontramos este pedido"
-          description="Puede que se haya borrado al reiniciar los datos de la demo."
+          description="Verifica el enlace o vuelve a tu historial de pedidos."
           action={<ButtonLink to="/orders">Ver mis pedidos</ButtonLink>}
         />
       </div>

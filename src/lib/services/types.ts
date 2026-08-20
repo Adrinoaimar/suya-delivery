@@ -19,11 +19,11 @@ import type {
 } from '@/types';
 
 export interface StoreService {
-  listStores(): Store[];
-  getStore(id: string): Store | undefined;
-  listProducts(storeId: string): Product[];
-  getProduct(id: string): Product | undefined;
-  search(query: string): { stores: Store[]; products: Product[] };
+  listStores(): Promise<Store[]>;
+  getStore(id: string): Promise<Store | undefined>;
+  listProducts(storeId: string): Promise<Product[]>;
+  getProduct(id: string): Promise<Product | undefined>;
+  search(query: string): Promise<{ stores: Store[]; products: Product[] }>;
 }
 
 export interface CreateOrderInput {
@@ -48,16 +48,14 @@ export const CODE_ERROR_MESSAGES: Record<CodeFailure, string> = {
 };
 
 export interface OrderService {
-  list(): Order[];
-  get(id: string): Order | undefined;
-  create(input: CreateOrderInput): Order;
-  updateStatus(id: string, status: OrderStatus): Order | undefined;
+  list(): Promise<Order[]>;
+  get(id: string): Promise<Order | undefined>;
+  create(input: CreateOrderInput): Promise<Order>;
+  updateStatus(id: string, status: OrderStatus): Promise<Order | undefined>;
   /** Requiere el código de cancelación del pedido. */
-  cancel(id: string, code: string): CodeResult;
+  cancel(id: string, code: string): Promise<CodeResult>;
   /** Requiere el código de entrega que el cliente le da al repartidor. */
-  confirmDelivery(id: string, code: string): CodeResult;
-  restartSimulation(id: string): Order | undefined;
-  save(orders: Order[]): void;
+  confirmDelivery(id: string, code: string): Promise<CodeResult>;
 }
 
 export type LocationPermission = 'unknown' | 'granted' | 'denied' | 'unsupported';
@@ -85,7 +83,7 @@ export interface PaymentResult {
 }
 
 export interface PaymentService {
-  /** Simulación local: NO procesa cobros reales bajo ninguna circunstancia. */
+  /** La confirmación final de pagos digitales siempre proviene del backend/webhook. */
   authorize(method: PaymentMethod, amount: number): Promise<PaymentResult>;
 }
 

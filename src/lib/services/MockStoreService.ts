@@ -3,25 +3,25 @@ import { normalize } from '@/utils/format';
 import type { Product, Store } from '@/types';
 import type { StoreService } from './types';
 
-/** Implementación local sobre los JSON de `src/data`. */
+/** Implementación local asíncrona sobre los JSON de `src/data`. */
 export class MockStoreServiceImpl implements StoreService {
-  listStores(): Store[] {
+  async listStores(): Promise<Store[]> {
     return stores;
   }
 
-  getStore(id: string): Store | undefined {
+  async getStore(id: string): Promise<Store | undefined> {
     return stores.find((store) => store.id === id);
   }
 
-  listProducts(storeId: string): Product[] {
+  async listProducts(storeId: string): Promise<Product[]> {
     return products.filter((product) => product.storeId === storeId);
   }
 
-  getProduct(id: string): Product | undefined {
+  async getProduct(id: string): Promise<Product | undefined> {
     return products.find((product) => product.id === id);
   }
 
-  search(query: string): { stores: Store[]; products: Product[] } {
+  async search(query: string): Promise<{ stores: Store[]; products: Product[] }> {
     const term = normalize(query).trim();
     if (term.length === 0) return { stores: [], products: [] };
 

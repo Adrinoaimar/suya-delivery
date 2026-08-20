@@ -1,13 +1,15 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SlidersHorizontal, Store as StoreIcon } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { ButtonLink } from '@/components/common/Button';
 import { Chip } from '@/components/common/Chip';
 import { EmptyState } from '@/components/common/EmptyState';
+import { ErrorState } from '@/components/common/ErrorState';
 import { SectionHeader } from '@/components/common/Card';
+import { StoreListSkeleton } from '@/components/common/Skeleton';
 import { StoreCard } from '@/components/marketplace/StoreCard';
 import { categories } from '@/data';
-import { storeService } from '@/lib/services';
+import { useCatalogStore } from '@/store/catalogStore';
 import { isOpenNow } from '@/utils/schedule';
 
 type SortKey = 'recomendado' | 'tiempo' | 'rating' | 'envio';
@@ -26,8 +28,17 @@ export default function StoresPage() {
   const [onlyOpen, setOnlyOpen] = useState(false);
   const [onlyLocal, setOnlyLocal] = useState(false);
 
+  const allStores = useCatalogStore((state) => state.stores);
+  const storesStatus = useCatalogStore((state) => state.storesStatus);
+  const storesError = useCatalogStore((state) => state.storesError);
+  const loadStores = useCatalogStore((state) => state.loadStores);
+
+  useEffect(() => {
+    void loadStores();
+  }, [loadStores]);
+
   const stores = useMemo(() => {
-    let list = storeService.listStores();
+    let list = allStores;
     if (activeCategory) list = list.filter((store) => store.categoryId === activeCategory);
     if (onlyOpen) list = list.filter((store) => isOpenNow(store.schedule));
     if (onlyLocal) list = list.filter((store) => store.isLocal);
@@ -40,7 +51,7 @@ export default function StoresPage() {
       sorted.sort((a, b) => Number(b.isFeatured) - Number(a.isFeatured) || b.rating - a.rating);
     }
     return sorted;
-  }, [activeCategory, onlyOpen, onlyLocal, sort]);
+  }, [allStores, activeCategory, onlyOpen, onlyLocal, sort]);
 
   function selectCategory(id: string | null) {
     const next = new URLSearchParams(params);
@@ -55,7 +66,11 @@ export default function StoresPage() {
     <div className="shell space-y-5 py-4 lg:py-8">
       <SectionHeader
         title={categoryName ?? 'Todas las tiendas'}
-        subtitle={`${stores.length} ${stores.length === 1 ? 'negocio' : 'negocios'} en Sullana`}
+        subtitle={
+          storesStatus === 'ready'
+            ? `${stores.length} ${stores.length === 1 ? 'negocio' : 'negocios'} en Sullana`
+            : 'Cargando negocios…'
+        }
       />
 
       <div className="hide-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
@@ -91,7 +106,14 @@ export default function StoresPage() {
         </Chip>
       </div>
 
-      {stores.length === 0 ? (
+      {storesError ? (
+        <ErrorState description={storesError} onRetry={() => void loadStores(true)} />
+      ) : storesStatus !== 'ready' ? (
+        <div role="status" aria-busy="true">
+          <span className="sr-only">Cargando tiendas…</span>
+          <StoreListSkeleton count={8} />
+        </div>
+      ) : stores.length === 0 ? (
         <EmptyState
           icon={<StoreIcon className="h-6 w-6" />}
           title="No encontramos negocios con esos filtros"

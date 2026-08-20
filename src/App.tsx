@@ -2,7 +2,7 @@ import { ScrollToTop } from '@/app/ScrollToTop';
 import { SuyaIntroLoader } from '@/components/common/SuyaIntroLoader';
 import { ToastViewport } from '@/components/common/Toast';
 import { useIntro } from '@/hooks/useIntro';
-import { useOrderSimulationRunner } from '@/hooks/useOrderSimulation';
+import { useOrderBootstrap } from '@/hooks/useOrders';
 import { AppRoutes } from '@/routes/AppRoutes';
 
 /**
@@ -18,8 +18,7 @@ function introDurationOverride(): number | undefined {
 
 export default function App() {
   const intro = useIntro();
-  // La simulación de pedidos corre en un único intervalo para toda la aplicación.
-  useOrderSimulationRunner();
+  useOrderBootstrap();
 
   return (
     <>

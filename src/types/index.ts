@@ -1,7 +1,4 @@
-/**
- * Modelos de dominio de Suya Delivery.
- * Todos los datos que alimentan estos tipos son DEMO DATA locales (`src/data`).
- */
+/** Modelos de dominio compartidos por las aplicaciones de Suya Delivery. */
 
 export type Accent = 'green' | 'lime' | 'sun';
 
@@ -169,8 +166,6 @@ export interface Order {
   deliveryCode: string;
   /** Código de 4 dígitos que hay que escribir para cancelar el pedido. */
   cancelCode: string;
-  /** Marca de tiempo (ms) desde la que corre la simulación local de estados. */
-  simulationStartedAt: number | null;
 }
 
 export interface LatLng {

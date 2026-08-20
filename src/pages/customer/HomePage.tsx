@@ -1,16 +1,18 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowRight, Heart, Sparkles, Store as StoreIcon } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ButtonLink } from '@/components/common/Button';
 import { SectionHeader } from '@/components/common/Card';
+import { ErrorState } from '@/components/common/ErrorState';
 import { Logo } from '@/components/common/Logo';
 import { SearchInput } from '@/components/common/SearchInput';
+import { StoreListSkeleton } from '@/components/common/Skeleton';
 import { CategoryRail } from '@/components/marketplace/CategoryRail';
 import { PromoCard } from '@/components/marketplace/PromoCard';
 import { StoreCard } from '@/components/marketplace/StoreCard';
 import { MapProvider } from '@/components/map/MapProvider';
 import { categories, demoRoute, promotions } from '@/data';
-import { storeService } from '@/lib/services';
+import { useCatalogStore } from '@/store/catalogStore';
 import { useUserStore } from '@/store/userStore';
 import { isOpenNow } from '@/utils/schedule';
 
@@ -20,7 +22,17 @@ export default function HomePage() {
   const pushSearch = useUserStore((state) => state.pushSearch);
   const favorites = useUserStore((state) => state.favorites);
 
-  const stores = useMemo(() => storeService.listStores(), []);
+  const stores = useCatalogStore((state) => state.stores);
+  const storesStatus = useCatalogStore((state) => state.storesStatus);
+  const storesError = useCatalogStore((state) => state.storesError);
+  const loadStores = useCatalogStore((state) => state.loadStores);
+
+  useEffect(() => {
+    void loadStores();
+  }, [loadStores]);
+
+  const storesLoading = storesStatus === 'idle' || storesStatus === 'loading';
+  const storesReady = storesStatus === 'ready';
   const featured = stores.filter((store) => store.isFeatured);
   const locals = stores.filter((store) => store.isLocal);
   const recommended = [...stores].sort((a, b) => b.rating - a.rating).slice(0, 4);
@@ -66,7 +78,9 @@ export default function HomePage() {
             <dl className="mt-9 flex gap-8">
               <div>
                 <dt className="text-sm text-[#6B7076]">Negocios</dt>
-                <dd className="font-display text-2xl font-bold">{stores.length}</dd>
+                <dd className="font-display text-2xl font-bold">
+                  {storesReady ? stores.length : '…'}
+                </dd>
               </div>
               <div>
                 <dt className="text-sm text-[#6B7076]">Entrega promedio</dt>
@@ -130,7 +144,7 @@ export default function HomePage() {
           <PromoCard promotion={mainPromo} size="lg" className="w-full" />
         </section>
 
-        {favoriteStores.length > 0 && (
+        {storesReady && favoriteStores.length > 0 && (
           <section>
             <SectionHeader
               title="Tus favoritos"
@@ -164,11 +178,20 @@ export default function HomePage() {
               </Link>
             }
           />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {featured.map((store) => (
-              <StoreCard key={store.id} store={store} />
-            ))}
-          </div>
+          {storesError ? (
+            <ErrorState description={storesError} onRetry={() => void loadStores(true)} />
+          ) : storesLoading ? (
+            <div role="status" aria-busy="true">
+              <span className="sr-only">Cargando tiendas…</span>
+              <StoreListSkeleton count={4} />
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {featured.map((store) => (
+                <StoreCard key={store.id} store={store} />
+              ))}
+            </div>
+          )}
         </section>
 
         <section>
@@ -180,28 +203,35 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section>
-          <SectionHeader
-            title="Negocios locales"
-            subtitle="Emprendimientos sullaneros en la plataforma"
-          />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {locals.map((store) => (
-              <StoreCard key={store.id} store={store} layout="row" />
-            ))}
-          </div>
-        </section>
-
-        <section>
-          <SectionHeader title="Recomendados para ti" subtitle="Mejor calificados y abiertos ahora" />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {recommended
-              .filter((store) => isOpenNow(store.schedule))
-              .map((store) => (
-                <StoreCard key={store.id} store={store} />
+        {storesReady && (
+          <section>
+            <SectionHeader
+              title="Negocios locales"
+              subtitle="Emprendimientos sullaneros en la plataforma"
+            />
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {locals.map((store) => (
+                <StoreCard key={store.id} store={store} layout="row" />
               ))}
-          </div>
-        </section>
+            </div>
+          </section>
+        )}
+
+        {storesReady && (
+          <section>
+            <SectionHeader
+              title="Recomendados para ti"
+              subtitle="Mejor calificados y abiertos ahora"
+            />
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {recommended
+                .filter((store) => isOpenNow(store.schedule))
+                .map((store) => (
+                  <StoreCard key={store.id} store={store} />
+                ))}
+            </div>
+          </section>
+        )}
 
         {/* Banner editorial */}
         <section className="overflow-hidden rounded-promo bg-suya-green px-5 py-7 text-white sm:px-8">

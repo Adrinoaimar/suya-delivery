@@ -10,8 +10,11 @@ producción.
 ## Estado actual
 
 - Rama: `codex/functional-suya-loop`.
-- Línea base verificada: typecheck, lint, 46 pruebas y build pasan.
+- Checkpoint F1 verificado: typecheck, lint, 49 pruebas, build y escaneo de secretos pasan.
 - F0 verificado localmente: gobernanza, secretos, CI, arquitectura y continuidad.
+- Contratos de catálogo y pedidos son asíncronos; las pantallas manejan carga, error y reintento.
+- La progresión automática de pedidos y el pago digital simulado fueron retirados. El checkout solo
+  acepta efectivo hasta integrar una pasarela real.
 - Backend elegido: Supabase exclusivo de Suya.
 - Frontend objetivo: tres builds Cloudflare Pages: customer, rider y backoffice.
 
@@ -26,8 +29,8 @@ producción.
 
 ## Siguiente acción
 
-Commit de F0. Luego iniciar contratos async con operaciones granulares, hidratación y manejo de
-errores; no trasladar `save(Order[])` al backend.
+Crear el esquema Supabase aislado, migraciones, RLS y adaptadores de catálogo/pedidos; conservar los
+servicios locales únicamente para tests mientras se completa la sustitución.
 
 ## Gate productivo pendiente
 

@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react';
-import { ArrowLeft, MapPin, RotateCcw, XCircle } from 'lucide-react';
+import { ArrowLeft, MapPin, XCircle } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
 import { Button, ButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
+import { ErrorState } from '@/components/common/ErrorState';
+import { Skeleton } from '@/components/common/Skeleton';
 import { ExpandableSheet } from '@/components/common/BottomSheet';
 import { CodeDialog } from '@/components/order/CodeDialog';
 import { OrderCodes } from '@/components/order/OrderCodes';
@@ -12,9 +14,9 @@ import { TrackingTimeline } from '@/components/order/TrackingTimeline';
 import { RiderCard } from '@/components/rider/RiderCard';
 import { MapProvider } from '@/components/map/MapProvider';
 import { demoRoute, riders } from '@/data';
-import { SIMULATION_TOTAL_SECONDS, notificationService } from '@/lib/services';
+import { notificationService } from '@/lib/services';
 import { useOrderStore } from '@/store/orderStore';
-import { useRouteProgress, useOrderStatusNotifier } from '@/hooks/useOrderSimulation';
+import { orderRouteProgress, useOrderStatusNotifier } from '@/hooks/useOrders';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { formatPrice, orderStatusLabel } from '@/utils/format';
 import { pointAtProgress } from '@/utils/geo';
@@ -22,13 +24,15 @@ import { pointAtProgress } from '@/utils/geo';
 export default function OrderTrackPage() {
   const { id = '' } = useParams();
   const order = useOrderStore((state) => state.getOrder(id));
+  const status = useOrderStore((state) => state.status);
+  const error = useOrderStore((state) => state.error);
+  const refresh = useOrderStore((state) => state.refresh);
   const cancelOrder = useOrderStore((state) => state.cancelOrder);
-  const restartSimulation = useOrderStore((state) => state.restartSimulation);
   const [expanded, setExpanded] = useState(true);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const isDesktop = useIsDesktop();
 
-  const progress = useRouteProgress(order);
+  const progress = orderRouteProgress(order);
   useOrderStatusNotifier(order);
 
   const riderPosition = useMemo(
@@ -37,6 +41,22 @@ export default function OrderTrackPage() {
   );
 
   if (!order) {
+    if (status === 'idle' || status === 'loading') {
+      return (
+        <div className="shell space-y-3 py-10" role="status" aria-busy="true">
+          <span className="sr-only">Cargando seguimiento…</span>
+          <Skeleton className="h-72 w-full rounded-card" />
+          <Skeleton className="h-32 w-full rounded-card" />
+        </div>
+      );
+    }
+    if (status === 'error') {
+      return (
+        <div className="shell py-10">
+          <ErrorState description={error ?? undefined} onRetry={() => void refresh()} />
+        </div>
+      );
+    }
     return (
       <div className="shell py-10">
         <EmptyState
@@ -105,10 +125,6 @@ export default function OrderTrackPage() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" size="sm" onClick={() => restartSimulation(order.id)}>
-          <RotateCcw className="h-4 w-4" aria-hidden="true" />
-          Reiniciar simulación
-        </Button>
         {!delivered && !cancelled && (
           <Button variant="ghost" size="sm" onClick={() => setConfirmCancel(true)}>
             <XCircle className="h-4 w-4" aria-hidden="true" />
@@ -120,10 +136,6 @@ export default function OrderTrackPage() {
         </ButtonLink>
       </div>
 
-      <p className="text-xs text-[#9AA0A6]">
-        DEMO LOCAL: el avance del pedido se simula en el navegador ({SIMULATION_TOTAL_SECONDS} s de
-        principio a fin). En producción llegará por WebSocket o push desde el backend.
-      </p>
     </div>
   );
 

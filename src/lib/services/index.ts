@@ -12,15 +12,9 @@
  */
 export { MockStoreService as storeService } from './MockStoreService';
 export { MockOrderService as orderService } from './MockOrderService';
-export { MockPaymentService as paymentService } from './MockPaymentService';
+export { CashPaymentService as paymentService } from './CashPaymentService';
 export { LocalNotificationService as notificationService } from './LocalNotificationService';
 export { LocalLocationSharingService as locationSharingService } from './LocalLocationSharingService';
 export { MapServiceLocal as mapService } from './MapServiceImpl';
 export { BrowserLocationService, SimulatedLocationService } from './BrowserLocationService';
-export {
-  SIMULATION_STEPS,
-  SIMULATION_TOTAL_SECONDS,
-  progressForElapsed,
-  statusForElapsed,
-} from './MockOrderService';
 export * from './types';

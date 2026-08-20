@@ -1,89 +1,87 @@
 import { create } from 'zustand';
-import { orderService, statusForElapsed } from '@/lib/services';
+import { orderService } from '@/lib/services';
 import type { CodeResult, CreateOrderInput } from '@/lib/services';
-import { ORDER_FLOW } from '@/types';
-import type { Order } from '@/types';
+import type { Order, OrderStatus } from '@/types';
+
+type LoadStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 interface OrderState {
   orders: Order[];
-  refresh: () => void;
-  createOrder: (input: CreateOrderInput) => Order;
-  /** Requiere el código de cancelación mostrado en el pedido. */
-  cancelOrder: (id: string, code: string) => CodeResult;
-  /** Requiere el código de entrega que el cliente le da al repartidor. */
-  confirmDelivery: (id: string, code: string) => CodeResult;
-  restartSimulation: (id: string) => void;
-  /** Avanza la simulación local de estados. La llama `useOrderSimulation`. */
-  tick: () => void;
+  status: LoadStatus;
+  error: string | null;
+  hydrate: () => Promise<void>;
+  refresh: () => Promise<void>;
+  createOrder: (input: CreateOrderInput) => Promise<Order>;
+  updateOrderStatus: (id: string, status: OrderStatus) => Promise<Order | undefined>;
+  cancelOrder: (id: string, code: string) => Promise<CodeResult>;
+  confirmDelivery: (id: string, code: string) => Promise<CodeResult>;
   getOrder: (id: string) => Order | undefined;
 }
 
+function replaceOrder(orders: Order[], updated: Order): Order[] {
+  const exists = orders.some((order) => order.id === updated.id);
+  if (!exists) return [updated, ...orders];
+  return orders.map((order) => (order.id === updated.id ? updated : order));
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'No pudimos cargar los pedidos.';
+}
+
 export const useOrderStore = create<OrderState>((set, get) => ({
-  orders: orderService.list(),
+  orders: [],
+  status: 'idle',
+  error: null,
 
-  refresh() {
-    set({ orders: [...orderService.list()] });
+  async hydrate() {
+    if (get().status !== 'idle') return;
+    await get().refresh();
   },
 
-  createOrder(input) {
-    const order = orderService.create(input);
-    set({ orders: [...orderService.list()] });
-    return order;
+  async refresh() {
+    set({ status: 'loading', error: null });
+    try {
+      const orders = await orderService.list();
+      set({ orders, status: 'ready', error: null });
+    } catch (error) {
+      set({ status: 'error', error: errorMessage(error) });
+    }
   },
 
-  cancelOrder(id, code) {
-    const result = orderService.cancel(id, code);
-    if (result.ok) set({ orders: [...orderService.list()] });
+  async createOrder(input) {
+    set({ error: null });
+    try {
+      const order = await orderService.create(input);
+      set((state) => ({ orders: replaceOrder(state.orders, order), status: 'ready' }));
+      return order;
+    } catch (error) {
+      set({ status: 'error', error: errorMessage(error) });
+      throw error;
+    }
+  },
+
+  async updateOrderStatus(id, status) {
+    set({ error: null });
+    try {
+      const order = await orderService.updateStatus(id, status);
+      if (order) set((state) => ({ orders: replaceOrder(state.orders, order) }));
+      return order;
+    } catch (error) {
+      set({ error: errorMessage(error) });
+      throw error;
+    }
+  },
+
+  async cancelOrder(id, code) {
+    const result = await orderService.cancel(id, code);
+    if (result.ok) set((state) => ({ orders: replaceOrder(state.orders, result.order) }));
     return result;
   },
 
-  confirmDelivery(id, code) {
-    const result = orderService.confirmDelivery(id, code);
-    if (result.ok) set({ orders: [...orderService.list()] });
+  async confirmDelivery(id, code) {
+    const result = await orderService.confirmDelivery(id, code);
+    if (result.ok) set((state) => ({ orders: replaceOrder(state.orders, result.order) }));
     return result;
-  },
-
-  restartSimulation(id) {
-    orderService.restartSimulation(id);
-    set({ orders: [...orderService.list()] });
-  },
-
-  tick() {
-    const now = Date.now();
-    let changed = false;
-
-    const orders = get().orders.map((order) => {
-      if (order.simulationStartedAt === null) return order;
-      if (order.status === 'delivered' || order.status === 'cancelled') return order;
-
-      const next = statusForElapsed(now - order.simulationStartedAt);
-      if (next === order.status) return order;
-      // La entrega no se cierra sola: la confirma el repartidor con el código del cliente.
-      if (next === 'delivered') return order;
-
-      // El estado nunca retrocede: si el repartidor ya avanzó a mano, la simulación
-      // no puede devolver el pedido a una etapa anterior.
-      const currentIndex = ORDER_FLOW.indexOf(order.status);
-      const nextIndex = ORDER_FLOW.indexOf(next);
-      if (nextIndex <= currentIndex) return order;
-
-      changed = true;
-      // Registra también las etapas intermedias que se hayan saltado (pestaña suspendida).
-      const skipped = ORDER_FLOW.slice(currentIndex + 1, nextIndex + 1).map((status) => ({
-        status,
-        at: new Date().toISOString(),
-      }));
-
-      return {
-        ...order,
-        status: next,
-        history: [...order.history, ...skipped],
-      };
-    });
-
-    if (!changed) return;
-    orderService.save(orders);
-    set({ orders });
   },
 
   getOrder(id) {
@@ -91,7 +89,6 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   },
 }));
 
-/** Pedido en curso (el más reciente que aún no llegó ni fue cancelado). */
 export function selectActiveOrder(orders: Order[]): Order | undefined {
   return orders.find((order) => order.status !== 'delivered' && order.status !== 'cancelled');
 }

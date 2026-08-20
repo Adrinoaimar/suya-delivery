@@ -1,14 +1,17 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Bike, Heart, RefreshCw, ShieldCheck, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button, ButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
+import { ErrorState } from '@/components/common/ErrorState';
 import { Input } from '@/components/common/Input';
 import { Modal } from '@/components/common/Modal';
+import { StoreListSkeleton } from '@/components/common/Skeleton';
 import { Toggle } from '@/components/common/Toggle';
 import { StoreCard } from '@/components/marketplace/StoreCard';
 import { clearSuyaStorage } from '@/lib/storage';
-import { notificationService, storeService } from '@/lib/services';
+import { notificationService } from '@/lib/services';
+import { useCatalogStore } from '@/store/catalogStore';
 import { useUserStore } from '@/store/userStore';
 
 export default function ProfilePage() {
@@ -28,7 +31,16 @@ export default function ProfilePage() {
   });
   const [confirmReset, setConfirmReset] = useState(false);
 
-  const favoriteStores = storeService.listStores().filter((store) => favorites.includes(store.id));
+  const allStores = useCatalogStore((state) => state.stores);
+  const storesStatus = useCatalogStore((state) => state.storesStatus);
+  const storesError = useCatalogStore((state) => state.storesError);
+  const loadStores = useCatalogStore((state) => state.loadStores);
+
+  useEffect(() => {
+    void loadStores();
+  }, [loadStores]);
+
+  const favoriteStores = allStores.filter((store) => favorites.includes(store.id));
 
   return (
     <div className="shell space-y-4 py-4 lg:py-8">
@@ -175,7 +187,14 @@ export default function ProfilePage() {
           <Heart className="h-4 w-4 text-suya-danger" aria-hidden="true" />
           <h2 className="section-title">Favoritos</h2>
         </div>
-        {favoriteStores.length === 0 ? (
+        {storesError ? (
+          <ErrorState description={storesError} onRetry={() => void loadStores(true)} />
+        ) : storesStatus !== 'ready' ? (
+          <div role="status" aria-busy="true">
+            <span className="sr-only">Cargando tus favoritos…</span>
+            <StoreListSkeleton count={2} />
+          </div>
+        ) : favoriteStores.length === 0 ? (
           <p className="rounded-card border border-dashed border-suya-mist bg-white p-5 text-sm text-[#6B7076]">
             Todavía no guardaste negocios. Toca el corazón en cualquier tienda para verla aquí.{' '}
             <Link to="/stores" className="font-semibold text-suya-green">

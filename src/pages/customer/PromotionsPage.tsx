@@ -1,11 +1,23 @@
+import { useEffect } from 'react';
 import { SectionHeader } from '@/components/common/Card';
+import { ErrorState } from '@/components/common/ErrorState';
+import { StoreListSkeleton } from '@/components/common/Skeleton';
 import { PromoCard } from '@/components/marketplace/PromoCard';
 import { StoreCard } from '@/components/marketplace/StoreCard';
 import { promotions } from '@/data';
-import { storeService } from '@/lib/services';
+import { useCatalogStore } from '@/store/catalogStore';
 
 export default function PromotionsPage() {
-  const stores = storeService.listStores().filter((store) => store.promoLabel !== null);
+  const allStores = useCatalogStore((state) => state.stores);
+  const storesStatus = useCatalogStore((state) => state.storesStatus);
+  const storesError = useCatalogStore((state) => state.storesError);
+  const loadStores = useCatalogStore((state) => state.loadStores);
+
+  useEffect(() => {
+    void loadStores();
+  }, [loadStores]);
+
+  const stores = allStores.filter((store) => store.promoLabel !== null);
 
   return (
     <div className="shell space-y-6 py-4 lg:py-8">
@@ -22,11 +34,20 @@ export default function PromotionsPage() {
 
       <section>
         <SectionHeader title="Negocios con promoción activa" />
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {stores.map((store) => (
-            <StoreCard key={store.id} store={store} />
-          ))}
-        </div>
+        {storesError ? (
+          <ErrorState description={storesError} onRetry={() => void loadStores(true)} />
+        ) : storesStatus !== 'ready' ? (
+          <div role="status" aria-busy="true">
+            <span className="sr-only">Cargando negocios con promoción…</span>
+            <StoreListSkeleton count={4} />
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {stores.map((store) => (
+              <StoreCard key={store.id} store={store} />
+            ))}
+          </div>
+        )}
       </section>
 
       <p className="text-xs text-[#9AA0A6]">
