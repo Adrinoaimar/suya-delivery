@@ -1,17 +1,17 @@
 name: Deploy a GitHub Pages
 
 on:
+  pull_request:
+    branches: [main]
   push:
     branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: pages
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   # No se cancela un despliegue a medias: se deja terminar el que ya está publicando.
   cancel-in-progress: false
 
@@ -31,6 +31,7 @@ jobs:
 
       - name: Verificar tipos, estilo y pruebas
         run: |
+          npm run security:secrets
           npm run typecheck
           npm run lint
           npm run test
@@ -49,9 +50,14 @@ jobs:
           path: dist
 
   deploy:
+    if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

@@ -2,12 +2,14 @@
 
 **Tu ciudad. Tus tiendas. Llegamos a ti.**
 
-**Demo en vivo:** <https://adrinoaimar.github.io/suya-delivery/>
+**Sitio legado durante migración:** <https://adrinoaimar.github.io/suya-delivery/>
+
+> El sitio legado todavía contiene simulaciones y no es producción. La rama de trabajo migra todas
+> las funciones a servicios reales; ningún mock quedará habilitado en el lanzamiento funcional.
 
 Marketplace de delivery local de **Sullana, Piura, Perú**. Web app responsive **mobile-first**
-construida con React + TypeScript + Vite + Tailwind CSS. Esta primera versión es una
-**demostración local sin base de datos**: todo funciona en el navegador para validar la
-experiencia antes de conectar backend, pagos o apps nativas.
+construida con React + TypeScript + Vite + Tailwind CSS. El producto está en migración desde una
+prueba local hacia tres aplicaciones conectadas a un backend Supabase exclusivo.
 
 ---
 

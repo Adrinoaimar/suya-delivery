@@ -11,6 +11,13 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.*
+!.env.example
+
+# Supabase local y archivos de credenciales
+.supabase/
+supabase/.temp/
 
 # Editor directories and files
 .vscode/*
