@@ -1,0 +1,46 @@
+name: Verificar base de datos
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/database.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/database.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: database-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Iniciar Supabase local
+        run: npm run db:start
+      - name: Probar esquema y RLS
+        run: npm run db:test
+      - name: Revisar SQL y funciones
+        run: npm run db:lint
+      - name: Detener Supabase
+        if: always()
+        run: npm run db:stop

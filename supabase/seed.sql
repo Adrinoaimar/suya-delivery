@@ -1,0 +1,2 @@
+-- Sin datos comerciales ficticios. Los datos verificables se importarán mediante un proceso
+-- auditable después de que cada restaurante confirme su carta, precios y horarios.

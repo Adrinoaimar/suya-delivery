@@ -15,6 +15,8 @@ producción.
 - Contratos de catálogo y pedidos son asíncronos; las pantallas manejan carga, error y reintento.
 - La progresión automática de pedidos y el pago digital simulado fueron retirados. El checkout solo
   acepta efectivo hasta integrar una pasarela real.
+- Supabase CLI `2.115.0` y `supabase-js` `2.112.3` están fijados. El esquema inicial incluye RLS,
+  aislamiento por restaurante, secretos fuera de `public`, auditoría, ubicaciones e incidencias.
 - Backend elegido: Supabase exclusivo de Suya.
 - Frontend objetivo: tres builds Cloudflare Pages: customer, rider y backoffice.
 
@@ -29,10 +31,13 @@ producción.
 
 ## Siguiente acción
 
-Crear el esquema Supabase aislado, migraciones, RLS y adaptadores de catálogo/pedidos; conservar los
-servicios locales únicamente para tests mientras se completa la sustitución.
+Ejecutar la migración en CI, corregir cualquier hallazgo SQL y crear adaptadores Supabase de Auth,
+catálogo y pedidos; conservar servicios locales únicamente para tests durante la sustitución.
 
 ## Gate productivo pendiente
 
 El sitio GitHub Pages actual es legado no productivo. Se retirará cuando las tres aplicaciones
 Cloudflare funcionen con Supabase y el verificador confirme ausencia de mocks en bundles.
+
+La máquina actual no tiene Docker ni Podman. Las pruebas pgTAP y `db lint` se ejecutan en GitHub CI;
+localmente se habilitarán cuando exista uno de esos runtimes.
