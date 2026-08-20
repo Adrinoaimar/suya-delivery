@@ -8,7 +8,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Input, Textarea } from '@/components/common/Input';
 import { Skeleton } from '@/components/common/Skeleton';
-import { FREE_DELIVERY_THRESHOLD } from '@/data';
+import { FREE_DELIVERY_THRESHOLD } from '@/lib/commerce';
 import { notificationService, paymentService } from '@/lib/services';
 import { useCatalogStore } from '@/store/catalogStore';
 import { cartTotals, useCartStore } from '@/store/cartStore';
@@ -148,7 +148,10 @@ export default function CheckoutPage() {
       });
 
       clearCart();
-      notificationService.notify(payment.message, 'success');
+      notificationService.notify(
+        `Pedido confirmado. Pagarás ${formatPrice(order.total)} en efectivo al recibirlo.`,
+        'success',
+      );
       navigate(`/orders/${order.id}/track`, { replace: true });
     } catch {
       notificationService.notify('No pudimos crear el pedido. Inténtalo nuevamente.', 'danger');

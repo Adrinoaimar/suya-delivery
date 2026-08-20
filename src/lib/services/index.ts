@@ -11,7 +11,8 @@
  *   LocalLocationSharingService   → RealtimeLocationSharingService
  */
 import { SupabaseStoreServiceImpl } from './SupabaseStoreService';
-import type { StoreService } from './types';
+import { SupabaseOrderServiceImpl } from './SupabaseOrderService';
+import type { OrderService, StoreService } from './types';
 
 let resolvedStoreService: Promise<StoreService> | null = null;
 
@@ -44,7 +45,28 @@ export const storeService: StoreService = {
     return (await resolveStoreService()).search(query);
   },
 };
-export { MockOrderService as orderService } from './MockOrderService';
+
+let resolvedOrderService: Promise<OrderService> | null = null;
+
+function resolveOrderService(): Promise<OrderService> {
+  if (resolvedOrderService) return resolvedOrderService;
+  resolvedOrderService = import.meta.env.VITE_BACKEND === 'supabase'
+    ? Promise.resolve(new SupabaseOrderServiceImpl())
+    : import('./MockOrderService').then(({ MockOrderService }) => MockOrderService);
+  return resolvedOrderService;
+}
+
+/** Router asíncrono: pedidos demo nunca entran al bundle Supabase. */
+export const orderService: OrderService = {
+  async list() { return (await resolveOrderService()).list(); },
+  async get(id) { return (await resolveOrderService()).get(id); },
+  async create(input) { return (await resolveOrderService()).create(input); },
+  async updateStatus(id, status) { return (await resolveOrderService()).updateStatus(id, status); },
+  async cancel(id, code) { return (await resolveOrderService()).cancel(id, code); },
+  async confirmDelivery(id, code) {
+    return (await resolveOrderService()).confirmDelivery(id, code);
+  },
+};
 export { CashPaymentService as paymentService } from './CashPaymentService';
 export { LocalNotificationService as notificationService } from './LocalNotificationService';
 export { LocalLocationSharingService as locationSharingService } from './LocalLocationSharingService';

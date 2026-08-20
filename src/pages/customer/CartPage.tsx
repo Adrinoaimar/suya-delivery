@@ -8,7 +8,7 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { Modal } from '@/components/common/Modal';
 import { ProductRowSkeleton } from '@/components/common/Skeleton';
 import { CartLine } from '@/components/order/CartLine';
-import { FREE_DELIVERY_THRESHOLD } from '@/data';
+import { FREE_DELIVERY_ENABLED, FREE_DELIVERY_THRESHOLD } from '@/lib/commerce';
 import { useCatalogStore } from '@/store/catalogStore';
 import { cartTotals, useCartStore } from '@/store/cartStore';
 import { formatPrice } from '@/utils/format';
@@ -111,7 +111,7 @@ export default function CartPage() {
         </Card>
 
         <div className="space-y-3 lg:sticky lg:top-24">
-          {store?.isLocal && missingForFreeDelivery > 0 && (
+          {FREE_DELIVERY_ENABLED && store?.isLocal && missingForFreeDelivery > 0 && (
             <div className="rounded-card bg-suya-sun-soft px-4 py-3 text-sm text-suya-carbon">
               Te faltan <strong>{formatPrice(missingForFreeDelivery)}</strong> para el envío gratis
               en negocios locales.
