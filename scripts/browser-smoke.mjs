@@ -63,9 +63,55 @@ for (const viewport of viewports) {
   await context.close();
 }
 
+if (process.env.SMOKE_BUSINESS === 'true') {
+  const customerOrigin = new URL(targets[0].url).origin;
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    reducedMotion: 'reduce',
+    geolocation: { latitude: -4.903, longitude: -80.685 },
+    permissions: ['geolocation'],
+  });
+  const page = await context.newPage();
+  page.on('pageerror', (error) => failures.push(`business/pageerror: ${error.message}`));
+  try {
+    const email = process.env.E2E_CUSTOMER_EMAIL ?? 'e2e.customer@suya.test';
+    const password = process.env.E2E_CUSTOMER_PASSWORD ?? 'SuyaE2E!2026Local';
+    await page.goto(`${customerOrigin}/login`, { waitUntil: 'domcontentloaded', timeout: 20_000 });
+    await page.getByLabel('Correo').fill(email);
+    await page.getByLabel('Contraseña').fill(password);
+    await page.getByRole('button', { name: 'Ingresar' }).click();
+    await page.waitForURL(/\/profile|\/$/, { timeout: 20_000 });
+
+    await page.goto(`${customerOrigin}/stores`, { waitUntil: 'networkidle', timeout: 20_000 });
+    await page.getByRole('link', { name: 'Andá Paya' }).click();
+    await page.getByRole('heading', { name: 'Andá Paya' }).waitFor();
+    await page.getByRole('button', { name: 'Agregar Chicharrón de pescado' }).click();
+    await page.getByRole('button', { name: /Agregar ·/ }).click();
+
+    await page.goto(`${customerOrigin}/cart`, { waitUntil: 'networkidle', timeout: 20_000 });
+    await page.getByRole('link', { name: 'Continuar al pago' }).click();
+    await page.getByRole('heading', { name: 'Confirmar pedido' }).waitFor();
+    await page.getByLabel('Nombre y apellido').fill('Cliente E2E Suya');
+    await page.getByLabel('Teléfono').fill('987654321');
+    await page.getByLabel('Dirección').fill('Av. José de Lama 480, Sullana');
+    await page.getByRole('button', { name: 'Usar mi ubicación' }).click();
+    await page.getByText('Punto confirmado:', { exact: false }).waitFor({ timeout: 10_000 });
+    await page.getByRole('button', { name: /Confirmar pedido ·/ }).click();
+    await page.waitForURL(/\/orders\/[^/]+\/track$/, { timeout: 20_000 });
+    await page.getByRole('heading', { name: 'Pedido confirmado' }).waitFor({ timeout: 20_000 });
+    console.log('business/customer-create-cash-order: OK');
+  } catch (error) {
+    failures.push(`business/customer-create-cash-order: ${error.message}`);
+  } finally {
+    await page.close();
+    await context.close();
+  }
+}
+
 await browser.close();
 if (failures.length) {
   console.error(failures.join('\n'));
   process.exit(1);
 }
+
 
