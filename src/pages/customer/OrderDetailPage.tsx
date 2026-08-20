@@ -9,8 +9,6 @@ import { Skeleton } from '@/components/common/Skeleton';
 import { CartLine } from '@/components/order/CartLine';
 import { OrderCodes } from '@/components/order/OrderCodes';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
-import { RiderCard } from '@/components/rider/RiderCard';
-import { riders } from '@/data';
 import { useOrderStore } from '@/store/orderStore';
 import { formatDateTime, formatPrice, orderStatusLabel, paymentLabel } from '@/utils/format';
 
@@ -20,7 +18,6 @@ export default function OrderDetailPage() {
   const status = useOrderStore((state) => state.status);
   const error = useOrderStore((state) => state.error);
   const refresh = useOrderStore((state) => state.refresh);
-  const rider = riders.find((item) => item.id === order?.riderId);
 
   if (!order) {
     if (status === 'idle' || status === 'loading') {
@@ -108,10 +105,12 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="space-y-3">
-          {rider && (
+          {order.riderId && (
             <Card>
               <h2 className="mb-3 font-display text-[15px] font-bold">Repartidor</h2>
-              <RiderCard rider={rider} />
+              <p className="text-sm text-[#4A4F55]">
+                Repartidor asignado. Su GPS aparece cuando recoja el pedido.
+              </p>
             </Card>
           )}
 

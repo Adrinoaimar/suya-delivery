@@ -6,7 +6,6 @@ const COLUMNS = [
     title: 'Suya Delivery',
     links: [
       { to: '/stores', label: 'Tiendas' },
-      { to: '/promotions', label: 'Promociones' },
       { to: '/orders', label: 'Mis pedidos' },
     ],
   },
@@ -15,7 +14,6 @@ const COLUMNS = [
     links: [
       { to: '/rider', label: 'Panel del repartidor' },
       { to: '/rider/safety', label: 'Seguridad en ruta' },
-      { to: '/rider/earnings', label: 'Ganancias' },
     ],
   },
   {
@@ -56,8 +54,7 @@ export function Footer() {
       </div>
       <div className="border-t border-suya-mist py-4">
         <p className="shell text-xs text-[#9AA0A6]">
-          Suya Delivery · Sullana, Piura, Perú · Demostración local sin base de datos. Precios,
-          horarios, promociones y calificaciones son datos ficticios.
+          Suya Delivery · Sullana, Piura, Perú · Catálogo conectado a comercios incorporados.
         </p>
       </div>
     </footer>

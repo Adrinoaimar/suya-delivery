@@ -8,7 +8,6 @@ import {
   Settings,
   ShieldCheck,
   Store,
-  Wallet,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
@@ -34,7 +33,6 @@ const PRIMARY: NavItem[] = [
 
 const SECONDARY: NavItem[] = [
   { to: '/rider/history', label: 'Historial', icon: History },
-  { to: '/rider/earnings', label: 'Ganancias', icon: Wallet },
   { to: '/rider/settings', label: 'Configuración', icon: Settings },
   { to: '/rider/help', label: 'Ayuda', icon: CircleHelp },
 ];

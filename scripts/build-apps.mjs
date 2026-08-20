@@ -8,6 +8,10 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const supportedApps = ['customer', 'rider', 'backoffice'];
 const requested = process.argv[2] ? [process.argv[2]] : supportedApps;
 
+if (requested.length === supportedApps.length) {
+  await rm(path.join(repoRoot, 'dist'), { recursive: true, force: true });
+}
+
 for (const app of requested) {
   if (!supportedApps.includes(app)) {
     throw new Error(`Aplicación desconocida: ${app}. Usa ${supportedApps.join(', ')}.`);

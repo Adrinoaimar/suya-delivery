@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BrowserLocationService, SimulatedLocationService } from '@/lib/services';
+import { BrowserLocationService } from '@/lib/services';
 import type { LocationPermission, LocationReading } from '@/lib/services';
 
 interface GeolocationState {
@@ -13,7 +13,7 @@ interface GeolocationState {
  * Ubicación del repartidor.
  * `simulated` fuerza el modo de ubicación simulada (útil sin GPS o en escritorio).
  */
-export function useGeolocation(enabled: boolean, simulated: boolean) {
+export function useGeolocation(enabled: boolean) {
   const [state, setState] = useState<GeolocationState>({
     reading: null,
     error: null,
@@ -40,7 +40,7 @@ export function useGeolocation(enabled: boolean, simulated: boolean) {
       return undefined;
     }
 
-    const service = simulated ? SimulatedLocationService : BrowserLocationService;
+    const service = BrowserLocationService;
     setState((prev) => ({ ...prev, error: null, active: true }));
 
     const stop = service.watch(
@@ -53,7 +53,7 @@ export function useGeolocation(enabled: boolean, simulated: boolean) {
       stop();
       stopRef.current = null;
     };
-  }, [enabled, simulated]);
+  }, [enabled]);
 
   return state;
 }

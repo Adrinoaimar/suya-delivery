@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { locationSharingService, notificationService, safetyOperationsService } from '@/lib/services';
+import { notificationService, safetyOperationsService } from '@/lib/services';
 import { useRiderStore } from '@/store/riderStore';
 import { useTrackingStore } from '@/store/trackingStore';
 import { selectActiveOrder, useOrderStore } from '@/store/orderStore';
@@ -15,29 +15,17 @@ import { useGeolocation } from './useGeolocation';
  */
 export function useRiderTrackingRunner(): void {
   const available = useRiderStore((state) => state.available);
-  const simulated = useRiderStore((state) => state.simulatedLocation);
   const setAvailable = useRiderStore((state) => state.setAvailable);
-  const sharing = useTrackingStore((state) => state.sharing);
   const setSnapshot = useTrackingStore((state) => state.setSnapshot);
   const activeOrder = useOrderStore((state) => selectActiveOrder(state.orders));
   const lastPublishedRef = useRef(0);
 
-  const enabled = available || sharing;
-  const { reading, error, permission, active } = useGeolocation(enabled, simulated);
+  const enabled = available;
+  const { reading, error, permission, active } = useGeolocation(enabled);
 
   useEffect(() => {
     setSnapshot({ reading, error, permission, active });
   }, [reading, error, permission, active, setSnapshot]);
-
-  useEffect(() => {
-    if (!sharing || !reading) return;
-    locationSharingService.publish({
-      position: reading.position,
-      accuracy: reading.accuracy,
-      updatedAt: reading.timestamp,
-      simulated: reading.simulated,
-    });
-  }, [sharing, reading]);
 
   useEffect(() => {
     if (!reading || reading.simulated || !activeOrder ||
@@ -62,16 +50,13 @@ export function useRiderTrackingRunner(): void {
 /** Estado de ubicación para las pantallas del repartidor (solo lectura). */
 export function useRiderLocation() {
   const available = useRiderStore((state) => state.available);
-  const simulated = useRiderStore((state) => state.simulatedLocation);
-  const { reading, error, permission, active, sharing } = useTrackingStore();
+  const { reading, error, permission, active } = useTrackingStore();
 
   return {
     required: available,
-    sharing,
-    tracking: (available || sharing) && active && reading !== null,
+    tracking: available && active && reading !== null,
     reading,
     error,
     permission,
-    simulated,
   };
 }

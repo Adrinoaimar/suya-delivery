@@ -14,8 +14,6 @@ import type {
   OrderStatus,
   PaymentMethod,
   Product,
-  SharedLocationSnapshot,
-  SharingStatus,
   Store,
   IncidentCategory,
 } from '@/types';
@@ -134,27 +132,4 @@ export type NotificationLevel = 'info' | 'success' | 'warning' | 'danger';
 export interface NotificationService {
   notify(message: string, level?: NotificationLevel): void;
   subscribe(listener: (message: string, level: NotificationLevel) => void): () => void;
-}
-
-export interface LocationSharingService {
-  start(payload: { token: string; riderName: string; simulated: boolean }): Promise<void>;
-  stop(): Promise<void>;
-  /** Cambia el token del enlace activo e invalida el anterior. */
-  rotateToken(token: string): Promise<void>;
-  publish(snapshot: Partial<SharedLocationSnapshot>): void;
-  getStatus(): SharingStatus;
-  getSnapshot(): SharedLocationSnapshot | null;
-  subscribe(listener: (snapshot: SharedLocationSnapshot | null) => void): () => void;
-}
-
-export interface MapAdapterInfo {
-  id: 'mock' | 'leaflet' | 'google';
-  label: string;
-  requiresApiKey: boolean;
-  available: boolean;
-}
-
-export interface MapService {
-  listAdapters(): MapAdapterInfo[];
-  getActiveAdapterId(): MapAdapterInfo['id'];
 }

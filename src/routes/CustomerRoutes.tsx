@@ -13,11 +13,8 @@ const CheckoutPage = lazy(() => import('@/pages/customer/CheckoutPage'));
 const OrdersPage = lazy(() => import('@/pages/customer/OrdersPage'));
 const OrderDetailPage = lazy(() => import('@/pages/customer/OrderDetailPage'));
 const OrderTrackPage = lazy(() => import('@/pages/customer/OrderTrackPage'));
-const PromotionsPage = lazy(() => import('@/pages/customer/PromotionsPage'));
 const ProfilePage = lazy(() => import('@/pages/customer/ProfilePage'));
 const HelpPage = lazy(() => import('@/pages/customer/HelpPage'));
-const RiderProfilePage = lazy(() => import('@/pages/customer/RiderProfilePage'));
-const SharePage = lazy(() => import('@/pages/shared/SharePage'));
 const NotFoundPage = lazy(() => import('@/pages/shared/NotFoundPage'));
 const LoginPage = lazy(() => import('@/pages/shared/LoginPage'));
 const UnauthorizedPage = lazy(() => import('@/pages/shared/UnauthorizedPage'));
@@ -32,9 +29,7 @@ export function CustomerRoutes() {
           <Route path="store/:id" element={<StoreDetailPage />} />
           <Route path="search" element={<SearchPage />} />
           <Route path="cart" element={<CartPage />} />
-          <Route path="promotions" element={<PromotionsPage />} />
           <Route path="help" element={<HelpPage />} />
-          <Route path="rider/:id" element={<RiderProfilePage />} />
           <Route element={<RequireAccess anyOf={['customer']} />}>
             <Route path="checkout" element={<CheckoutPage />} />
             <Route path="orders" element={<OrdersPage />} />
@@ -45,7 +40,6 @@ export function CustomerRoutes() {
         </Route>
         <Route path="login" element={<LoginPage title="Ingresa a Suya" allowed={['customer']} allowCustomerSignup defaultPath="/profile" />} />
         <Route path="unauthorized" element={<UnauthorizedPage />} />
-        <Route path="share/:token" element={<SharePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>

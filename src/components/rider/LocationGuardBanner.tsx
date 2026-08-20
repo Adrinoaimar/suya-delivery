@@ -2,20 +2,18 @@ import { LocateFixed, LocateOff, ShieldAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/cn';
 import { useRiderLocation } from '@/hooks/useRiderLocationGuard';
-import { useRiderStore } from '@/store/riderStore';
 import { formatRelative } from '@/utils/format';
-import { useNow } from '@/hooks/useSharedLocation';
+import { useNow } from '@/hooks/useNow';
 
 /**
  * Estado permanente de la ubicación en el área del repartidor.
  * Suya exige ubicación activa durante toda la conexión, no solo al compartirla.
  */
 export function LocationGuardBanner() {
-  const { required, sharing, tracking, reading, error, simulated } = useRiderLocation();
-  const setSimulatedLocation = useRiderStore((state) => state.setSimulatedLocation);
+  const { required, tracking, reading, error } = useRiderLocation();
   const now = useNow(5000);
 
-  if (!required && !sharing) {
+  if (!required) {
     return (
       <div className="flex items-start gap-2.5 border-b border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white/75">
         <LocateOff aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0" />
@@ -32,13 +30,6 @@ export function LocationGuardBanner() {
       <div className="flex flex-wrap items-center gap-2.5 border-b border-suya-danger/50 bg-suya-danger/15 px-4 py-2.5 text-sm text-white">
         <ShieldAlert aria-hidden="true" className="h-4 w-4 shrink-0 text-suya-danger" />
         <p className="flex-1 min-w-[200px]">{error} Sin ubicación no puedes recibir pedidos.</p>
-        <button
-          type="button"
-          onClick={() => setSimulatedLocation(true)}
-          className="press h-9 rounded-btn bg-white px-3 text-sm font-semibold text-suya-carbon"
-        >
-          Usar modo simulado
-        </button>
         <Link
           to="/rider/safety"
           className="press h-9 rounded-btn border border-white/40 px-3 text-sm font-semibold leading-9"
@@ -72,11 +63,6 @@ export function LocationGuardBanner() {
           </span>
         )}
       </p>
-      {simulated && (
-        <span className="rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-semibold">
-          Modo simulado
-        </span>
-      )}
     </div>
   );
 }

@@ -10,8 +10,9 @@ producción.
 ## Estado actual
 
 - Rama: `codex/functional-suya-loop`.
-- Checkpoint F6 verificado: pedidos cash transaccionales, despacho multirol, códigos privados,
-  Realtime, rider y backoffice operativo. CI aprobó 77 pruebas frontend, tres builds y 110 pgTAP.
+- Checkpoint F7 verificado: puntos de entrega consentidos, mapas OSM, GPS real limitado, tracking
+  participante, incidentes y SOS persistentes. CI aprobó 138 pgTAP; frontend aprobó 81 pruebas.
+- F8A local: simulaciones productivas retiradas. Gate validó 352 artefactos sin mocks ni secretos.
 - F0 verificado localmente: gobernanza, secretos, CI, arquitectura y continuidad.
 - Contratos de catálogo y pedidos son asíncronos; las pantallas manejan carga, error y reintento.
 - La progresión automática de pedidos y el pago digital simulado fueron retirados. El checkout solo
@@ -25,8 +26,8 @@ producción.
   distinto al exclusivo esperado para Suya.
 - El catálogo Supabase no inventa horario, distancia ni reseñas. `accepting_orders` permanece falso
   para Andá Paya hasta definir logística real; bebidas sin precio no se importaron.
-- Producción ya no incluye `MockStoreService` ni `MockOrderService`. Siguen pendientes mocks de
-  mapas, seguridad y datos secundarios antes del gate productivo.
+- Producción no incluye servicios mock, mapa falso, GPS simulado, promociones ficticias ni ganancias
+  inventadas. Enlace público de tracking sigue deshabilitado por seguridad.
 
 ## Reglas de continuidad
 
@@ -39,7 +40,7 @@ producción.
 
 ## Siguiente acción
 
-Conectar ubicación/mapas reales, alertas e incidencias; retirar simulaciones restantes.
+Crear E2E multirol, pruebas de dispositivos, accesibilidad, desconexión y carga.
 
 ## Gate productivo pendiente
 

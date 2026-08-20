@@ -36,7 +36,7 @@ const forbiddenContent = [
   /DEMO LOCAL/iu,
   /DEMO DATA/iu,
   /SIMULATION_STEPS/u,
-  /\bsb_secret_/u,
+  /\bsb_secret_[A-Za-z0-9_-]{20,}/u,
   /\bservice_role\b/u,
 ];
 

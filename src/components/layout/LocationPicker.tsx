@@ -8,7 +8,7 @@ interface LocationPickerProps {
   onClose: () => void;
 }
 
-/** Selector de zona de entrega (datos demo de Sullana). */
+/** Referencia general; punto exacto se confirma por GPS en checkout. */
 export function LocationPicker({ open, onClose }: LocationPickerProps) {
   const locationLabel = useUserStore((state) => state.preferences.locationLabel);
   const setPreferences = useUserStore((state) => state.setPreferences);
@@ -18,7 +18,7 @@ export function LocationPicker({ open, onClose }: LocationPickerProps) {
       open={open}
       onClose={onClose}
       title="¿Dónde entregamos?"
-      description="Zonas de demostración dentro de Sullana."
+      description="Elige una referencia general dentro de Sullana."
     >
       <ul className="space-y-2">
         {LOCATION_OPTIONS.map((option) => {
@@ -50,7 +50,7 @@ export function LocationPicker({ open, onClose }: LocationPickerProps) {
         })}
       </ul>
       <p className="mt-4 text-xs text-[#6B7076]">
-        En producción esta pantalla usará tu ubicación real y las zonas de cobertura activas.
+        Confirmarás el punto exacto con GPS antes de crear el pedido.
       </p>
     </Modal>
   );

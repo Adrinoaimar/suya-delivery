@@ -13,7 +13,6 @@ import { NotificationsSheet } from './NotificationsSheet';
 const LINKS = [
   { to: '/', label: 'Inicio', end: true },
   { to: '/stores', label: 'Tiendas', end: false },
-  { to: '/promotions', label: 'Promociones', end: false },
   { to: '/help', label: 'Ayuda', end: false },
 ];
 

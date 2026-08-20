@@ -8,10 +8,7 @@ import { Logo } from '@/components/common/Logo';
 import { SearchInput } from '@/components/common/SearchInput';
 import { StoreListSkeleton } from '@/components/common/Skeleton';
 import { CategoryRail } from '@/components/marketplace/CategoryRail';
-import { PromoCard } from '@/components/marketplace/PromoCard';
 import { StoreCard } from '@/components/marketplace/StoreCard';
-import { MapProvider } from '@/components/map/MapProvider';
-import { demoRoute, promotions } from '@/data';
 import { useCatalogStore } from '@/store/catalogStore';
 import { useUserStore } from '@/store/userStore';
 import { isStoreAcceptingOrders } from '@/utils/schedule';
@@ -40,7 +37,6 @@ export default function HomePage() {
   const locals = stores.filter((store) => store.isLocal);
   const recommended = [...stores].sort((a, b) => b.rating - a.rating).slice(0, 4);
   const favoriteStores = stores.filter((store) => favorites.includes(store.id));
-  const mainPromo = promotions[0]!;
 
   function submitSearch() {
     const term = query.trim();
@@ -99,13 +95,16 @@ export default function HomePage() {
           {/* Composición: mapa + teléfono + repartidor */}
           <div className="relative h-[380px]">
             <div className="absolute inset-0 overflow-hidden rounded-promo border border-suya-mist bg-suya-ivory shadow-soft">
-              <MapProvider
-                points={demoRoute.points}
-                origin={demoRoute.origin}
-                destination={demoRoute.destination}
-                rider={demoRoute.points[7]}
-                label="Mapa ilustrativo de una entrega en Sullana"
-              />
+              <div className="flex h-full flex-col justify-between bg-gradient-to-br from-suya-lime-soft via-white to-suya-sun-soft p-8">
+                <div className="max-w-xs rounded-card bg-white/90 p-4 shadow-card">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-suya-green">Cobertura inicial</p>
+                  <p className="mt-1 font-display text-2xl font-bold">Sullana</p>
+                  <p className="mt-1 text-sm text-[#6B7076]">Ubicación exacta se solicita solo al confirmar un pedido.</p>
+                </div>
+                <div className="flex items-center gap-3 text-sm font-semibold text-suya-green-dark">
+                  <span className="h-3 w-3 rounded-full bg-suya-green" /> Negocios locales conectados
+                </div>
+              </div>
             </div>
             <div className="absolute -bottom-2 right-6 w-[212px] overflow-hidden rounded-[26px] border-[7px] border-suya-carbon bg-white shadow-soft">
               <div className="bg-suya-green px-3 py-2.5 text-white">
@@ -141,10 +140,6 @@ export default function HomePage() {
         <section>
           <SectionHeader title="¿Qué necesitas hoy?" />
           <CategoryRail categories={categories} />
-        </section>
-
-        <section>
-          <PromoCard promotion={mainPromo} size="lg" className="w-full" />
         </section>
 
         {storesReady && favoriteStores.length > 0 && (
@@ -195,15 +190,6 @@ export default function HomePage() {
               ))}
             </div>
           )}
-        </section>
-
-        <section>
-          <SectionHeader title="Promociones" subtitle="Cupones y beneficios de demostración" />
-          <div className="hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:px-0 lg:grid-cols-4">
-            {promotions.slice(1).map((promotion) => (
-              <PromoCard key={promotion.id} promotion={promotion} />
-            ))}
-          </div>
         </section>
 
         {storesReady && (

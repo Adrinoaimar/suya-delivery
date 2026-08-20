@@ -8,7 +8,6 @@ const RiderHomePage = lazy(() => import('@/pages/rider/RiderHomePage'));
 const RiderCurrentPage = lazy(() => import('@/pages/rider/RiderCurrentPage'));
 const RiderSafetyPage = lazy(() => import('@/pages/rider/RiderSafetyPage'));
 const RiderHistoryPage = lazy(() => import('@/pages/rider/RiderHistoryPage'));
-const RiderEarningsPage = lazy(() => import('@/pages/rider/RiderEarningsPage'));
 const RiderSettingsPage = lazy(() => import('@/pages/rider/RiderSettingsPage'));
 const RiderHelpPage = lazy(() => import('@/pages/rider/RiderHelpPage'));
 const NotFoundPage = lazy(() => import('@/pages/shared/NotFoundPage'));
@@ -28,7 +27,6 @@ export function RiderRoutes() {
             <Route path="current" element={<RiderCurrentPage />} />
             <Route path="safety" element={<RiderSafetyPage />} />
             <Route path="history" element={<RiderHistoryPage />} />
-            <Route path="earnings" element={<RiderEarningsPage />} />
             <Route path="settings" element={<RiderSettingsPage />} />
             <Route path="help" element={<RiderHelpPage />} />
           </Route>

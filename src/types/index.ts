@@ -197,21 +197,6 @@ export interface TrustedContact {
   relation: string;
 }
 
-export type SharingStatus = 'idle' | 'sharing' | 'stopped' | 'error';
-
-export interface SharedLocationSnapshot {
-  token: string;
-  riderName: string;
-  position: LatLng | null;
-  accuracy: number | null;
-  updatedAt: number;
-  status: SharingStatus;
-  battery: number;
-  sos: boolean;
-  startedAt: number;
-  simulated: boolean;
-}
-
 export type IncidentCategory =
   | 'accidente'
   | 'mecanico'

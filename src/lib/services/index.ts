@@ -8,7 +8,6 @@
  *   MockStoreService              → HttpStoreService
  *   MockPaymentService            → GatewayPaymentService
  *   LocalNotificationService      → PushNotificationService
- *   LocalLocationSharingService   → RealtimeLocationSharingService
  */
 import { SupabaseStoreServiceImpl } from './SupabaseStoreService';
 import { SupabaseOrderServiceImpl } from './SupabaseOrderService';
@@ -152,7 +151,5 @@ export const safetyOperationsService: SafetyOperationsService = {
 };
 export { CashPaymentService as paymentService } from './CashPaymentService';
 export { LocalNotificationService as notificationService } from './LocalNotificationService';
-export { LocalLocationSharingService as locationSharingService } from './LocalLocationSharingService';
-export { MapServiceLocal as mapService } from './MapServiceImpl';
-export { BrowserLocationService, SimulatedLocationService } from './BrowserLocationService';
+export { BrowserLocationService } from './BrowserLocationService';
 export * from './types';

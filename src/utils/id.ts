@@ -29,8 +29,3 @@ export function createPinCode(exclude?: string): string {
   }
   return code;
 }
-
-/** Token del enlace de seguimiento compartido: `demo-ABCD123`. */
-export function createShareToken(): string {
-  return `demo-${randomChunk(7)}`;
-}
