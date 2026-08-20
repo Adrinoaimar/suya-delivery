@@ -17,7 +17,6 @@ import type { OrderStatus } from '@/types';
  * El último paso no avanza solo: exige el código de 4 dígitos del cliente.
  */
 const NEXT_ACTION: Partial<Record<OrderStatus, { label: string; next: OrderStatus }>> = {
-  confirmed: { label: 'Marcar en preparación', next: 'preparing' },
   preparing: { label: 'Recogí el pedido', next: 'picked_up' },
   picked_up: { label: 'Voy en camino', next: 'on_the_way' },
 };
@@ -39,13 +38,13 @@ export default function RiderCurrentPage() {
           <Navigation className="mx-auto h-8 w-8 text-suya-lime" aria-hidden="true" />
           <h1 className="mt-3 font-display text-xl font-bold">Sin viaje activo</h1>
           <p className="mt-1 text-sm text-white/70">
-            Crea un pedido desde la vista de cliente para ver aquí el viaje del repartidor.
+            No tienes una entrega asignada en este momento.
           </p>
           <Link
-            to="/stores"
+            to="/rider"
             className="press mt-4 inline-flex h-11 items-center rounded-btn bg-suya-lime px-4 font-display text-sm font-semibold text-suya-carbon"
           >
-            Ir a la tienda
+            Volver al inicio
           </Link>
         </div>
       </div>

@@ -1,7 +1,14 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
 import type { CartItem, Order, OrderStatus, ProductExtra } from '@/types';
-import type { CodeResult, CreateOrderInput, OrderService } from './types';
+import type {
+  AvailableRider,
+  CodeResult,
+  CreateOrderInput,
+  DispatchService,
+  OrderService,
+  RiderOperationsService,
+} from './types';
 
 interface OrderItemRow {
   id: string;
@@ -177,7 +184,8 @@ function clearRequest(requestId: string): void {
   }
 }
 
-export class SupabaseOrderServiceImpl implements OrderService {
+export class SupabaseOrderServiceImpl
+  implements OrderService, DispatchService, RiderOperationsService {
   private readonly client: SupabaseClient;
 
   constructor(client: SupabaseClient = requireClient()) {
@@ -265,8 +273,15 @@ export class SupabaseOrderServiceImpl implements OrderService {
   }
 
   async updateStatus(id: string, status: OrderStatus): Promise<Order | undefined> {
-    const { error } = await this.client.from('orders').update({ status }).eq('id', id);
+    const current = await this.get(id);
+    if (!current) return undefined;
+    const { data, error } = await this.client.rpc('transition_order', {
+      target_order: current.id,
+      expected_status: current.status,
+      next_status: status,
+    });
     if (error) throw new Error(error.message);
+    if (data !== true) return undefined;
     return this.get(id);
   }
 
@@ -301,5 +316,74 @@ export class SupabaseOrderServiceImpl implements OrderService {
     if (data !== true) return { ok: false, reason: 'invalid_code' };
     const order = await this.get(before.id);
     return order ? { ok: true, order } : { ok: false, reason: 'not_found' };
+  }
+
+  subscribe(listener: () => void): () => void {
+    const channel = this.client
+      .channel(`orders-${crypto.randomUUID()}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, listener)
+      .subscribe();
+    return () => { void this.client.removeChannel(channel); };
+  }
+
+  async listAvailableRiders(restaurantId: string): Promise<AvailableRider[]> {
+    const { data, error } = await this.client.rpc('list_available_riders', {
+      target_restaurant: restaurantId,
+    });
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
+      id: String(row.user_id),
+      name: String(row.display_name),
+      phone: row.phone ? String(row.phone) : '',
+      vehicleType: row.vehicle_type ? String(row.vehicle_type) : '',
+      vehicleColor: row.vehicle_color ? String(row.vehicle_color) : '',
+      vehiclePlate: row.vehicle_plate ? String(row.vehicle_plate) : '',
+      rating: amount(row.rating as number | string),
+      deliveries: Number(row.deliveries),
+    }));
+  }
+
+  async assignRider(orderId: string, riderId: string | null): Promise<boolean> {
+    const { data, error } = await this.client.rpc('assign_order_rider', {
+      target_order: orderId,
+      target_rider: riderId,
+    });
+    if (error) throw new Error(error.message);
+    return data === true;
+  }
+
+  async cancelOrder(orderId: string, reason: string): Promise<boolean> {
+    const { data, error } = await this.client.rpc('cancel_order_by_restaurant', {
+      target_order: orderId,
+      reason,
+    });
+    if (error) throw new Error(error.message);
+    return data === true;
+  }
+
+  async setAvailability(available: boolean): Promise<'available' | 'offline'> {
+    const { data, error } = await this.client.rpc('set_rider_availability', {
+      is_available: available,
+    });
+    if (error) throw new Error(error.message);
+    if (data !== 'available' && data !== 'offline') {
+      throw new Error('Supabase devolvió un estado de repartidor inválido.');
+    }
+    return data;
+  }
+
+  async getAvailability(): Promise<'available' | 'offline' | 'busy'> {
+    const { data: userData, error: userError } = await this.client.auth.getUser();
+    if (userError || !userData.user) throw new Error(userError?.message ?? 'Sesión no válida.');
+    const { data, error } = await this.client
+      .from('rider_profiles')
+      .select('status')
+      .eq('user_id', userData.user.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (data?.status !== 'available' && data?.status !== 'offline' && data?.status !== 'busy') {
+      throw new Error('Perfil de repartidor no disponible.');
+    }
+    return data.status;
   }
 }

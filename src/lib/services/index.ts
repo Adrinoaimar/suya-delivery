@@ -12,7 +12,12 @@
  */
 import { SupabaseStoreServiceImpl } from './SupabaseStoreService';
 import { SupabaseOrderServiceImpl } from './SupabaseOrderService';
-import type { OrderService, StoreService } from './types';
+import type {
+  DispatchService,
+  OrderService,
+  RiderOperationsService,
+  StoreService,
+} from './types';
 
 let resolvedStoreService: Promise<StoreService> | null = null;
 
@@ -46,9 +51,10 @@ export const storeService: StoreService = {
   },
 };
 
-let resolvedOrderService: Promise<OrderService> | null = null;
+type OperationalOrderService = OrderService & Partial<DispatchService & RiderOperationsService>;
+let resolvedOrderService: Promise<OperationalOrderService> | null = null;
 
-function resolveOrderService(): Promise<OrderService> {
+function resolveOrderService(): Promise<OperationalOrderService> {
   if (resolvedOrderService) return resolvedOrderService;
   resolvedOrderService = import.meta.env.VITE_BACKEND === 'supabase'
     ? Promise.resolve(new SupabaseOrderServiceImpl())
@@ -65,6 +71,51 @@ export const orderService: OrderService = {
   async cancel(id, code) { return (await resolveOrderService()).cancel(id, code); },
   async confirmDelivery(id, code) {
     return (await resolveOrderService()).confirmDelivery(id, code);
+  },
+  subscribe(listener) {
+    let unsubscribe: () => void = () => undefined;
+    let cancelled = false;
+    void resolveOrderService().then((service) => {
+      if (cancelled) return;
+      unsubscribe = service.subscribe(listener);
+    });
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
+  },
+};
+
+async function requireDispatch(): Promise<OperationalOrderService & DispatchService> {
+  const service = await resolveOrderService();
+  if (!service.listAvailableRiders || !service.assignRider || !service.cancelOrder) {
+    throw new Error('Las operaciones de despacho requieren Supabase.');
+  }
+  return service as OperationalOrderService & DispatchService;
+}
+
+export const dispatchService: DispatchService = {
+  async listAvailableRiders(restaurantId) {
+    return (await requireDispatch()).listAvailableRiders(restaurantId);
+  },
+  async assignRider(orderId, riderId) {
+    return (await requireDispatch()).assignRider(orderId, riderId);
+  },
+  async cancelOrder(orderId, reason) {
+    return (await requireDispatch()).cancelOrder(orderId, reason);
+  },
+};
+
+export const riderOperationsService: RiderOperationsService = {
+  async getAvailability() {
+    const service = await resolveOrderService();
+    if (!service.getAvailability) throw new Error('La disponibilidad real requiere Supabase.');
+    return service.getAvailability();
+  },
+  async setAvailability(available) {
+    const service = await resolveOrderService();
+    if (!service.setAvailability) throw new Error('La disponibilidad real requiere Supabase.');
+    return service.setAvailability(available);
   },
 };
 export { CashPaymentService as paymentService } from './CashPaymentService';

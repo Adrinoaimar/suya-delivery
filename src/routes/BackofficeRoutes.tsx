@@ -4,6 +4,8 @@ import { BackofficePage } from '@/pages/backoffice/BackofficePage';
 import { RequireAccess } from './RequireAccess';
 import LoginPage from '@/pages/shared/LoginPage';
 import UnauthorizedPage from '@/pages/shared/UnauthorizedPage';
+import OrdersOperationsPage from '@/pages/backoffice/OrdersOperationsPage';
+import OperationsSummaryPage from '@/pages/backoffice/OperationsSummaryPage';
 
 export function BackofficeRoutes() {
   return (
@@ -12,8 +14,8 @@ export function BackofficeRoutes() {
       <Route path="unauthorized" element={<UnauthorizedPage />} />
       <Route element={<RequireAccess anyOf={['platform_admin']} />}>
         <Route element={<BackofficeLayout />}>
-          <Route index element={<BackofficePage title="Resumen" description="Estado general de la operación Suya." />} />
-          <Route path="orders" element={<BackofficePage title="Pedidos" description="Cola operativa y estados de preparación y entrega." />} />
+          <Route index element={<OperationsSummaryPage />} />
+          <Route path="orders" element={<OrdersOperationsPage />} />
           <Route path="catalog" element={<BackofficePage title="Catálogo" description="Productos, precios, disponibilidad y temas por restaurante." />} />
           <Route path="riders" element={<BackofficePage title="Repartidores" description="Disponibilidad, asignaciones e incidencias." />} />
           <Route path="restaurants" element={<BackofficePage title="Restaurantes" description="Altas, membresías y verificación comercial." />} />

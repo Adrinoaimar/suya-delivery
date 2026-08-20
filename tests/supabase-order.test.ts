@@ -283,4 +283,28 @@ describe('SupabaseOrderServiceImpl', () => {
     });
     expect(rpc).not.toHaveBeenCalledWith('confirm_order_delivery', expect.anything());
   });
+
+  it('transiciona por RPC con estado esperado y vuelve a leer el pedido', async () => {
+    let reads = 0;
+    const { client, rpc } = createFakeClient({
+      userId: 'rider-1',
+      rowResult: () => ({
+        data: buildRow({
+          rider_id: 'rider-1',
+          status: reads++ === 0 ? 'preparing' : 'picked_up',
+        }),
+        error: null,
+      }),
+      rpc: async () => ({ data: true, error: null }),
+    });
+
+    const order = await new SupabaseOrderServiceImpl(client).updateStatus(buildRow().id, 'picked_up');
+
+    expect(rpc).toHaveBeenCalledWith('transition_order', {
+      target_order: buildRow().id,
+      expected_status: 'preparing',
+      next_status: 'picked_up',
+    });
+    expect(order?.status).toBe('picked_up');
+  });
 });

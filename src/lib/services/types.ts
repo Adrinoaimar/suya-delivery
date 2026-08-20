@@ -58,6 +58,29 @@ export interface OrderService {
   cancel(id: string, code: string): Promise<CodeResult>;
   /** Requiere el código de entrega que el cliente le da al repartidor. */
   confirmDelivery(id: string, code: string): Promise<CodeResult>;
+  subscribe(listener: () => void): () => void;
+}
+
+export interface AvailableRider {
+  id: string;
+  name: string;
+  phone: string;
+  vehicleType: string;
+  vehicleColor: string;
+  vehiclePlate: string;
+  rating: number;
+  deliveries: number;
+}
+
+export interface DispatchService {
+  listAvailableRiders(restaurantId: string): Promise<AvailableRider[]>;
+  assignRider(orderId: string, riderId: string | null): Promise<boolean>;
+  cancelOrder(orderId: string, reason: string): Promise<boolean>;
+}
+
+export interface RiderOperationsService {
+  getAvailability(): Promise<'available' | 'offline' | 'busy'>;
+  setAvailability(available: boolean): Promise<'available' | 'offline'>;
 }
 
 export type LocationPermission = 'unknown' | 'granted' | 'denied' | 'unsupported';

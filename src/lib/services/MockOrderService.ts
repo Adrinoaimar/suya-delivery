@@ -149,6 +149,10 @@ export class MockOrderServiceImpl implements OrderService {
     return { ok: true, order: this.find(order.id)! };
   }
 
+  subscribe(): () => void {
+    return () => undefined;
+  }
+
   /** Historial DEMO DATA creado la primera vez que se abre la aplicación. */
   private seed(): Order[] {
     const orders = seedOrders.map((seed) => {
