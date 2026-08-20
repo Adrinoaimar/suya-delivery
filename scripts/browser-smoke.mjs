@@ -100,6 +100,39 @@ if (process.env.SMOKE_BUSINESS === 'true') {
     await page.waitForURL(/\/orders\/[^/]+\/track$/, { timeout: 20_000 });
     await page.getByRole('heading', { name: 'Pedido confirmado' }).waitFor({ timeout: 20_000 });
     console.log('business/customer-create-cash-order: OK');
+
+    const backofficeOrigin = new URL(targets[2].url).origin;
+    const riderOrigin = new URL(targets[1].url).origin;
+    const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'e2e.admin@suya.test';
+    const riderEmail = process.env.E2E_RIDER_EMAIL ?? 'e2e.rider@suya.test';
+    const opsPage = await context.newPage();
+    await opsPage.goto(`${backofficeOrigin}/login`, { waitUntil: 'domcontentloaded', timeout: 20_000 });
+    await opsPage.getByLabel('Correo').fill(adminEmail);
+    await opsPage.getByLabel('Contraseña').fill(password);
+    await opsPage.getByRole('button', { name: 'Ingresar' }).click();
+    await opsPage.waitForURL(/\/$|\/orders$/, { timeout: 20_000 });
+    await opsPage.goto(`${backofficeOrigin}/orders`, { waitUntil: 'networkidle', timeout: 20_000 });
+    await opsPage.getByRole('heading', { name: 'Pedidos' }).waitFor();
+    await opsPage.locator('select').first().selectOption({ label: 'Repartidor E2E Suya · Moto' });
+    await opsPage.getByRole('button', { name: 'Iniciar preparación' }).first().click();
+    await opsPage.getByText('En preparación', { exact: true }).waitFor({ timeout: 20_000 });
+    console.log('business/backoffice-assign-and-prepare: OK');
+
+    const riderPage = await context.newPage();
+    await riderPage.goto(`${riderOrigin}/login`, { waitUntil: 'domcontentloaded', timeout: 20_000 });
+    await riderPage.getByLabel('Correo').fill(riderEmail);
+    await riderPage.getByLabel('Contraseña').fill(password);
+    await riderPage.getByRole('button', { name: 'Ingresar' }).click();
+    await riderPage.waitForURL(/\/rider(?:\/current)?$/, { timeout: 20_000 });
+    await riderPage.goto(`${riderOrigin}/rider/current`, { waitUntil: 'networkidle', timeout: 20_000 });
+    await riderPage.getByRole('heading', { name: 'Viaje actual' }).waitFor();
+    await riderPage.getByRole('button', { name: 'Recogí el pedido' }).click();
+    await riderPage.getByText('Repartidor recogió pedido', { exact: true }).waitFor({ timeout: 20_000 });
+    await riderPage.getByRole('button', { name: 'Voy en camino' }).click();
+    await riderPage.getByText('En camino', { exact: true }).waitFor({ timeout: 20_000 });
+    console.log('business/rider-advance-status: OK');
+    await opsPage.close();
+    await riderPage.close();
   } catch (error) {
     failures.push(`business/customer-create-cash-order: ${error.message}`);
   } finally {
