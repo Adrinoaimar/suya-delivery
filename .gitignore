@@ -19,6 +19,9 @@ dist-ssr
 .supabase/
 supabase/.temp/
 .playwright-cli/
+.playwright-daemon/
+.playwright-local/
+.playwright-browsers/
 output/playwright/
 .npm-cache/
 .xdg/
@@ -33,3 +36,4 @@ output/playwright/
 *.njsproj
 *.sln
 *.sw?
+
