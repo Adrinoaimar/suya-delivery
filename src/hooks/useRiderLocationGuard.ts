@@ -20,7 +20,9 @@ export function useRiderTrackingRunner(): void {
   const activeOrder = useOrderStore((state) => selectActiveOrder(state.orders));
   const lastPublishedRef = useRef(0);
 
-  const enabled = available;
+  // Un rider asignado pasa a `busy`; el GPS debe seguir activo durante el viaje.
+  const tripInProgress = Boolean(activeOrder && ['picked_up', 'on_the_way'].includes(activeOrder.status));
+  const enabled = available || tripInProgress;
   const { reading, error, permission, active } = useGeolocation(enabled);
 
   useEffect(() => {
@@ -60,3 +62,4 @@ export function useRiderLocation() {
     permission,
   };
 }
+
