@@ -104,6 +104,7 @@ if (process.env.SMOKE_BUSINESS === 'true') {
 
     const backofficeOrigin = new URL(targets[2].url).origin;
     const riderOrigin = new URL(targets[1].url).origin;
+    await context.grantPermissions(['geolocation'], { origin: riderOrigin });
     const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'e2e.admin@suya.test';
     const riderEmail = process.env.E2E_RIDER_EMAIL ?? 'e2e.rider@suya.test';
     const opsPage = await context.newPage();
