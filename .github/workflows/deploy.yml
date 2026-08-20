@@ -69,9 +69,12 @@ jobs:
           api_url=$(jq -r '.API_URL // .api_url // empty' "$RUNNER_TEMP/supabase.json")
           anon_key=$(jq -r '.ANON_KEY // .anon_key // empty' "$RUNNER_TEMP/supabase.json")
           service_role_key=$(jq -r '.SERVICE_ROLE_KEY // .service_role_key // empty' "$RUNNER_TEMP/supabase.json")
+          db_url=$(jq -r '.DB_URL // .db_url // empty' "$RUNNER_TEMP/supabase.json")
           test -n "$api_url"
           test -n "$anon_key"
           test -n "$service_role_key"
+          test -n "$db_url"
+          psql "$db_url" -v ON_ERROR_STOP=1 -c "update public.restaurants set accepting_orders = true, address = 'Av. José de Lama 480, Sullana' where slug = 'anda-paya';"
           {
             echo "VITE_SUPABASE_URL=$api_url"
             echo "VITE_SUPABASE_PUBLISHABLE_KEY=$anon_key"
