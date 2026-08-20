@@ -9,6 +9,10 @@ Usa builds independientes (`customer`, `rider`, `backoffice`) servidos localment
 preview reales. Nunca sustituyas backend, mapas, GPS, autenticación o pagos con fixtures para
 declarar producción lista.
 
+Para repetir smoke local, ejecuta `npm run test:e2e` después de servir `dist/customer`,
+`dist/rider` y `dist/backoffice` en puertos 4173–4175. CI usa `.github/workflows/e2e.yml` y
+Supabase local real; `CI_E2E=true` nunca debe llegar a un release.
+
 - Prueba como mínimo móvil 390×844 y escritorio 1440×900; añade tablet cuando cambie layout.
 - Comprueba HTTP exitoso, título principal esperado, ruta final, ausencia de `pageerror`, overflow
   horizontal y nombre accesible en botones, enlaces e inputs.
@@ -21,4 +25,5 @@ declarar producción lista.
   guardes cookies, tokens, coordenadas privadas ni capturas con PII.
 - Si falla, conserva reproducción mínima y corrige antes de promover. El smoke no reemplaza E2E
   multirol contra Supabase ni pruebas de carga.
+
 
