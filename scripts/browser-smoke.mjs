@@ -136,20 +136,21 @@ if (process.env.SMOKE_BUSINESS === 'true') {
     await riderPage.getByText('En camino', { exact: true }).waitFor({ timeout: 20_000 });
     console.log('business/rider-advance-status: OK');
 
-    await riderPage.goto(`${riderOrigin}/rider/safety`, { waitUntil: 'networkidle', timeout: 20_000 });
-    await riderPage.getByRole('heading', { name: 'Seguridad en ruta' }).waitFor();
-    await riderPage.getByText('GPS real activo', { exact: true }).waitFor({ timeout: 20_000 });
-    await riderPage.getByRole('button', { name: 'SOS' }).click();
-    await riderPage.getByRole('button', { name: 'Enviar alerta SOS' }).click();
-    await riderPage.getByText('Alerta operativa activa', { exact: true }).waitFor({ timeout: 20_000 });
-    await riderPage.getByRole('button', { name: 'Estoy bien, avisar a operaciones' }).click();
-    await riderPage.getByRole('heading', { name: 'Reportar incidente' }).waitFor();
-    await riderPage.getByLabel('Descripción').fill('Tráfico intenso en la ruta, sin riesgo para el pedido.');
-    await riderPage.getByRole('button', { name: 'Registrar incidente' }).click();
-    await riderPage.getByText('Incidentes registrados', { exact: true }).waitFor({ timeout: 20_000 });
+    const safetyPage = await context.newPage();
+    await safetyPage.goto(`${riderOrigin}/rider/safety`, { waitUntil: 'networkidle', timeout: 20_000 });
+    await safetyPage.getByRole('heading', { name: 'Seguridad en ruta' }).waitFor();
+    await safetyPage.getByText('GPS real activo', { exact: true }).waitFor({ timeout: 20_000 });
+    await safetyPage.getByRole('button', { name: 'SOS' }).click();
+    await safetyPage.getByRole('button', { name: 'Enviar alerta SOS' }).click();
+    await safetyPage.getByText('Alerta operativa activa', { exact: true }).waitFor({ timeout: 20_000 });
+    await safetyPage.getByRole('button', { name: 'Estoy bien, avisar a operaciones' }).click();
+    await safetyPage.getByRole('heading', { name: 'Reportar incidente' }).waitFor();
+    await safetyPage.getByLabel('Descripción').fill('Tráfico intenso en la ruta, sin riesgo para el pedido.');
+    await safetyPage.getByRole('button', { name: 'Registrar incidente' }).click();
+    await safetyPage.getByText('Incidentes registrados', { exact: true }).waitFor({ timeout: 20_000 });
+    await safetyPage.close();
     console.log('business/rider-gps-sos-incident: OK');
 
-    await riderPage.goto(`${riderOrigin}/rider/current`, { waitUntil: 'networkidle', timeout: 20_000 });
     await riderPage.getByRole('button', { name: 'Entregué el pedido' }).click();
     await riderPage.locator('#codigo-pedido').fill(deliveryCode);
     await riderPage.getByRole('button', { name: 'Confirmar entrega' }).click();
