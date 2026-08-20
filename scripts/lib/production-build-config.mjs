@@ -6,7 +6,10 @@ export function inspectProductionBuildConfig(env = process.env) {
   const supabaseUrl = env.VITE_SUPABASE_URL;
   const expectedProjectRef = env.VITE_EXPECTED_SUPABASE_PROJECT_REF;
   const publishableKey = env.VITE_SUPABASE_PUBLISHABLE_KEY;
-  const actualProjectRef = supabaseUrl?.match(/^https:\/\/([a-z0-9]+)\.supabase\.co$/i)?.[1];
+  const localE2e = env.CI_E2E === 'true' && /^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?$/i.test(supabaseUrl ?? '');
+  const actualProjectRef = localE2e
+    ? 'local'
+    : supabaseUrl?.match(/^https:\/\/([a-z0-9]+)\.supabase\.co$/i)?.[1];
   const failures = [];
 
   if (backend !== 'supabase') failures.push('VITE_BACKEND=supabase');
@@ -32,4 +35,5 @@ export function assertProductionBuildConfig(env = process.env) {
   }
   return result;
 }
+
 
