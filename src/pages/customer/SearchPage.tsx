@@ -9,7 +9,6 @@ import { Price } from '@/components/common/Price';
 import { ProductRowSkeleton } from '@/components/common/Skeleton';
 import { Thumb } from '@/components/common/Thumb';
 import { StoreCard } from '@/components/marketplace/StoreCard';
-import { categories } from '@/data';
 import { Chip } from '@/components/common/Chip';
 import { useCatalogStore } from '@/store/catalogStore';
 import { useUserStore } from '@/store/userStore';
@@ -23,11 +22,13 @@ export default function SearchPage() {
   const clearSearches = useUserStore((state) => state.clearSearches);
 
   const results = useCatalogStore((state) => state.searchResults);
+  const categories = useCatalogStore((state) => state.categories);
   const searchStatus = useCatalogStore((state) => state.searchStatus);
   const searchError = useCatalogStore((state) => state.searchError);
   const search = useCatalogStore((state) => state.search);
   const catalogStores = useCatalogStore((state) => state.stores);
   const loadStores = useCatalogStore((state) => state.loadStores);
+  const loadCategories = useCatalogStore((state) => state.loadCategories);
 
   useEffect(() => {
     setQuery(initial);
@@ -37,7 +38,8 @@ export default function SearchPage() {
 
   useEffect(() => {
     void loadStores();
-  }, [loadStores]);
+    void loadCategories();
+  }, [loadStores, loadCategories]);
 
   useEffect(() => {
     if (!hasQuery) return;

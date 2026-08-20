@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { storeService } from '@/lib/services';
-import type { Product, Store } from '@/types';
+import type { Category, Product, Store } from '@/types';
 
 /**
  * Estado del catálogo (negocios y productos).
@@ -23,6 +23,9 @@ export const PRODUCTS_ERROR_MESSAGE = 'No pudimos cargar el menú de este negoci
 export const SEARCH_ERROR_MESSAGE = 'No pudimos completar la búsqueda.';
 
 interface CatalogState {
+  categories: Category[];
+  categoriesStatus: CatalogLoadStatus;
+  categoriesError: string | null;
   stores: Store[];
   storesStatus: CatalogLoadStatus;
   storesError: string | null;
@@ -35,6 +38,7 @@ interface CatalogState {
   searchResults: CatalogSearchResults;
   /** Carga la lista de negocios. Con `force` reintenta aunque ya esté lista o fallando. */
   loadStores: (force?: boolean) => Promise<void>;
+  loadCategories: (force?: boolean) => Promise<void>;
   /** Carga los productos de un negocio. Con `force` reintenta aunque ya estén listos. */
   loadProducts: (storeId: string, force?: boolean) => Promise<void>;
   /** Busca negocios y productos. Una búsqueda nueva descarta la respuesta anterior. */
@@ -47,6 +51,9 @@ interface CatalogState {
 export function createCatalogInitialState(): Pick<
   CatalogState,
   | 'stores'
+  | 'categories'
+  | 'categoriesStatus'
+  | 'categoriesError'
   | 'storesStatus'
   | 'storesError'
   | 'productsByStore'
@@ -58,6 +65,9 @@ export function createCatalogInitialState(): Pick<
   | 'searchResults'
 > {
   return {
+    categories: [],
+    categoriesStatus: 'idle',
+    categoriesError: null,
     stores: [],
     storesStatus: 'idle',
     storesError: null,
@@ -87,6 +97,18 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
       set({ stores, storesStatus: 'ready', storesError: null });
     } catch {
       set({ storesStatus: 'error', storesError: CATALOG_ERROR_MESSAGE });
+    }
+  },
+
+  async loadCategories(force = false) {
+    const status = get().categoriesStatus;
+    if (!force && (status === 'ready' || status === 'loading')) return;
+    set({ categoriesStatus: 'loading', categoriesError: null });
+    try {
+      const categories = await storeService.listCategories();
+      set({ categories, categoriesStatus: 'ready', categoriesError: null });
+    } catch {
+      set({ categoriesStatus: 'error', categoriesError: CATALOG_ERROR_MESSAGE });
     }
   },
 

@@ -11,10 +11,10 @@ import { CategoryRail } from '@/components/marketplace/CategoryRail';
 import { PromoCard } from '@/components/marketplace/PromoCard';
 import { StoreCard } from '@/components/marketplace/StoreCard';
 import { MapProvider } from '@/components/map/MapProvider';
-import { categories, demoRoute, promotions } from '@/data';
+import { demoRoute, promotions } from '@/data';
 import { useCatalogStore } from '@/store/catalogStore';
 import { useUserStore } from '@/store/userStore';
-import { isOpenNow } from '@/utils/schedule';
+import { isStoreAcceptingOrders } from '@/utils/schedule';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -23,13 +23,16 @@ export default function HomePage() {
   const favorites = useUserStore((state) => state.favorites);
 
   const stores = useCatalogStore((state) => state.stores);
+  const categories = useCatalogStore((state) => state.categories);
   const storesStatus = useCatalogStore((state) => state.storesStatus);
   const storesError = useCatalogStore((state) => state.storesError);
   const loadStores = useCatalogStore((state) => state.loadStores);
+  const loadCategories = useCatalogStore((state) => state.loadCategories);
 
   useEffect(() => {
     void loadStores();
-  }, [loadStores]);
+    void loadCategories();
+  }, [loadStores, loadCategories]);
 
   const storesLoading = storesStatus === 'idle' || storesStatus === 'loading';
   const storesReady = storesStatus === 'ready';
@@ -225,7 +228,7 @@ export default function HomePage() {
             />
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {recommended
-                .filter((store) => isOpenNow(store.schedule))
+                .filter((store) => isStoreAcceptingOrders(store))
                 .map((store) => (
                   <StoreCard key={store.id} store={store} />
                 ))}

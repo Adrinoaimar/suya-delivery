@@ -1,10 +1,14 @@
-import { products, stores } from '@/data';
+import { categories, products, stores } from '@/data';
 import { normalize } from '@/utils/format';
-import type { Product, Store } from '@/types';
+import type { Category, Product, Store } from '@/types';
 import type { StoreService } from './types';
 
 /** Implementación local asíncrona sobre los JSON de `src/data`. */
 export class MockStoreServiceImpl implements StoreService {
+  async listCategories(): Promise<Category[]> {
+    return categories;
+  }
+
   async listStores(): Promise<Store[]> {
     return stores;
   }

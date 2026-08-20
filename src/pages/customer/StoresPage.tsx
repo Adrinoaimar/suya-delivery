@@ -8,9 +8,8 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { SectionHeader } from '@/components/common/Card';
 import { StoreListSkeleton } from '@/components/common/Skeleton';
 import { StoreCard } from '@/components/marketplace/StoreCard';
-import { categories } from '@/data';
 import { useCatalogStore } from '@/store/catalogStore';
-import { isOpenNow } from '@/utils/schedule';
+import { isStoreAcceptingOrders } from '@/utils/schedule';
 
 type SortKey = 'recomendado' | 'tiempo' | 'rating' | 'envio';
 
@@ -29,18 +28,21 @@ export default function StoresPage() {
   const [onlyLocal, setOnlyLocal] = useState(false);
 
   const allStores = useCatalogStore((state) => state.stores);
+  const categories = useCatalogStore((state) => state.categories);
   const storesStatus = useCatalogStore((state) => state.storesStatus);
   const storesError = useCatalogStore((state) => state.storesError);
   const loadStores = useCatalogStore((state) => state.loadStores);
+  const loadCategories = useCatalogStore((state) => state.loadCategories);
 
   useEffect(() => {
     void loadStores();
-  }, [loadStores]);
+    void loadCategories();
+  }, [loadStores, loadCategories]);
 
   const stores = useMemo(() => {
     let list = allStores;
     if (activeCategory) list = list.filter((store) => store.categoryId === activeCategory);
-    if (onlyOpen) list = list.filter((store) => isOpenNow(store.schedule));
+    if (onlyOpen) list = list.filter((store) => isStoreAcceptingOrders(store));
     if (onlyLocal) list = list.filter((store) => store.isLocal);
 
     const sorted = [...list];

@@ -27,6 +27,17 @@ describe('catálogo asíncrono', () => {
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
+  it('carga categorías desde el servicio y evita solicitudes repetidas', async () => {
+    const spy = vi.spyOn(storeService, 'listCategories');
+
+    await useCatalogStore.getState().loadCategories();
+    await useCatalogStore.getState().loadCategories();
+
+    expect(useCatalogStore.getState().categoriesStatus).toBe('ready');
+    expect(useCatalogStore.getState().categories.length).toBeGreaterThan(0);
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
   it('expone error y permite reintentar', async () => {
     vi.spyOn(storeService, 'listStores').mockRejectedValueOnce(new Error('sin red'));
 

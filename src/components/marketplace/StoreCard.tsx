@@ -6,7 +6,7 @@ import { Thumb } from '@/components/common/Thumb';
 import { cn } from '@/lib/cn';
 import { useUserStore } from '@/store/userStore';
 import { formatDistance, formatEta, formatPrice } from '@/utils/format';
-import { isOpenNow } from '@/utils/schedule';
+import { isStoreAcceptingOrders } from '@/utils/schedule';
 import type { Store } from '@/types';
 
 interface StoreCardProps {
@@ -19,7 +19,7 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
   const favorites = useUserStore((state) => state.favorites);
   const toggleFavorite = useUserStore((state) => state.toggleFavorite);
   const isFavorite = favorites.includes(store.id);
-  const open = isOpenNow(store.schedule);
+  const open = isStoreAcceptingOrders(store);
 
   const meta = (
     <>

@@ -7,6 +7,7 @@
  */
 import type {
   CartItem,
+  Category,
   CustomerInfo,
   LatLng,
   Order,
@@ -19,6 +20,7 @@ import type {
 } from '@/types';
 
 export interface StoreService {
+  listCategories(): Promise<Category[]>;
   listStores(): Promise<Store[]>;
   getStore(id: string): Promise<Store | undefined>;
   listProducts(storeId: string): Promise<Product[]>;

@@ -29,6 +29,8 @@ export interface Store {
   distanceKm: number;
   isLocal: boolean;
   isFeatured: boolean;
+  /** Control operativo del backend; si falta se conserva el cálculo por horario legado. */
+  acceptingOrders?: boolean;
   /** Marca real: se muestra con tarjeta neutra, nunca con un logo recreado. */
   isRealBrand: boolean;
   /** Negocio incorporado en fase beta: carta y datos aún por confirmar con el comercio. */

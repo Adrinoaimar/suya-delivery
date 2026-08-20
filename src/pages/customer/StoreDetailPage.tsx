@@ -28,7 +28,7 @@ import { cartTotals, useCartStore } from '@/store/cartStore';
 import { useUserStore } from '@/store/userStore';
 import { assetUrl } from '@/utils/asset';
 import { formatEta, formatPrice } from '@/utils/format';
-import { isOpenNow, scheduleLabel } from '@/utils/schedule';
+import { isStoreAcceptingOrders, scheduleLabel } from '@/utils/schedule';
 import type { Product, Store } from '@/types';
 
 /**
@@ -114,7 +114,7 @@ export default function StoreDetailPage() {
   const products = productsData ?? [];
   const productsLoading = productsStatus !== 'ready' && productsError === null;
 
-  const open = isOpenNow(store.schedule);
+  const open = isStoreAcceptingOrders(store);
   const isFavorite = favorites.includes(store.id);
   const sections = store.sections.filter((name) =>
     products.some((product) => product.section === name),
@@ -286,12 +286,6 @@ export default function StoreDetailPage() {
             </div>
           )}
 
-          {store.isRealBrand && (
-            <p className="mt-3 text-xs text-[#9AA0A6]">
-              Marca mostrada sin logotipo oficial. Precios, horarios y promociones son datos de
-              demostración.
-            </p>
-          )}
         </section>
 
         {store.gallery && <StoreGallery gallery={store.gallery} storeName={store.name} />}
