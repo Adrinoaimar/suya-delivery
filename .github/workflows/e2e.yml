@@ -3,6 +3,8 @@ name: E2E multiapp
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [codex/functional-suya-loop]
   workflow_dispatch:
 
 permissions:
@@ -63,3 +65,4 @@ jobs:
 
 
 yaml ok
+
