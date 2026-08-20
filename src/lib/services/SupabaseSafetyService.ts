@@ -58,4 +58,30 @@ export class SupabaseSafetyServiceImpl implements SafetyOperationsService {
     if (error) throw new Error(error.message);
     return data === true;
   }
+
+  async latestLocation(orderId: string) {
+    const { data, error } = await this.client.from('rider_locations')
+      .select('latitude, longitude')
+      .eq('order_id', orderId)
+      .order('captured_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data ? { lat: Number(data.latitude), lng: Number(data.longitude) } : null;
+  }
+
+  subscribeLocation(orderId: string, listener: (position: { lat: number; lng: number }) => void) {
+    const channel = this.client.channel(`order-location-${orderId}-${crypto.randomUUID()}`)
+      .on('postgres_changes', {
+        event: 'INSERT', schema: 'public', table: 'rider_locations', filter: `order_id=eq.${orderId}`,
+      }, (payload) => {
+        const latitude = Number(payload.new.latitude);
+        const longitude = Number(payload.new.longitude);
+        if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+          listener({ lat: latitude, lng: longitude });
+        }
+      })
+      .subscribe();
+    return () => { void this.client.removeChannel(channel); };
+  }
 }

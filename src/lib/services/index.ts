@@ -138,6 +138,17 @@ export const safetyOperationsService: SafetyOperationsService = {
   async resolveSos(incidentId) {
     return (await resolveSafetyService()).resolveSos(incidentId);
   },
+  async latestLocation(orderId) {
+    return (await resolveSafetyService()).latestLocation(orderId);
+  },
+  subscribeLocation(orderId, listener) {
+    let unsubscribe: () => void = () => undefined;
+    let cancelled = false;
+    void resolveSafetyService().then((service) => {
+      if (!cancelled) unsubscribe = service.subscribeLocation(orderId, listener);
+    }).catch(() => undefined);
+    return () => { cancelled = true; unsubscribe(); };
+  },
 };
 export { CashPaymentService as paymentService } from './CashPaymentService';
 export { LocalNotificationService as notificationService } from './LocalNotificationService';

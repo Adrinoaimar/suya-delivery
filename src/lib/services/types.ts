@@ -96,6 +96,8 @@ export interface SafetyOperationsService {
     sos: boolean;
   }): Promise<string>;
   resolveSos(incidentId: string): Promise<boolean>;
+  latestLocation(orderId: string): Promise<LatLng | null>;
+  subscribeLocation(orderId: string, listener: (position: LatLng) => void): () => void;
 }
 
 export type LocationPermission = 'unknown' | 'granted' | 'denied' | 'unsupported';

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowLeft, MapPin, XCircle } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
@@ -12,11 +12,12 @@ import { CodeDialog } from '@/components/order/CodeDialog';
 import { OrderCodes } from '@/components/order/OrderCodes';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
 import { MapProvider } from '@/components/map/MapProvider';
-import { notificationService } from '@/lib/services';
+import { notificationService, safetyOperationsService } from '@/lib/services';
 import { useOrderStore } from '@/store/orderStore';
 import { orderRouteProgress, useOrderStatusNotifier } from '@/hooks/useOrders';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { formatPrice, orderStatusLabel } from '@/utils/format';
+import type { LatLng } from '@/types';
 
 export default function OrderTrackPage() {
   const { id = '' } = useParams();
@@ -27,10 +28,26 @@ export default function OrderTrackPage() {
   const cancelOrder = useOrderStore((state) => state.cancelOrder);
   const [expanded, setExpanded] = useState(true);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [riderPosition, setRiderPosition] = useState<LatLng | null>(null);
   const isDesktop = useIsDesktop();
 
   const progress = orderRouteProgress(order);
   useOrderStatusNotifier(order);
+
+  useEffect(() => {
+    if (!order?.riderId || !['picked_up', 'on_the_way'].includes(order.status)) {
+      setRiderPosition(null);
+      return undefined;
+    }
+    let active = true;
+    void safetyOperationsService.latestLocation(order.id)
+      .then((position) => { if (active) setRiderPosition(position); })
+      .catch(() => undefined);
+    const unsubscribe = safetyOperationsService.subscribeLocation(order.id, (position) => {
+      if (active) setRiderPosition(position);
+    });
+    return () => { active = false; unsubscribe(); };
+  }, [order?.id, order?.riderId, order?.status]);
 
   if (!order) {
     if (status === 'idle' || status === 'loading') {
@@ -142,7 +159,7 @@ export default function OrderTrackPage() {
             points={mapPoints}
             origin={{ ...order.storePosition!, label: order.storeName }}
             destination={{ ...order.deliveryPosition!, label: 'Punto de entrega' }}
-            rider={null}
+            rider={cancelled ? null : riderPosition}
             label={`Ubicaciones del pedido ${order.code}`}
           /> : <MapUnavailable />}
           <Link
@@ -193,7 +210,7 @@ export default function OrderTrackPage() {
               points={mapPoints}
               origin={{ ...order.storePosition!, label: order.storeName }}
               destination={{ ...order.deliveryPosition!, label: 'Punto de entrega' }}
-              rider={null}
+              rider={cancelled ? null : riderPosition}
               label={`Ubicaciones del pedido ${order.code}`}
             /> : <MapUnavailable />}
           </div>

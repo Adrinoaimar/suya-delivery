@@ -162,3 +162,6 @@ grant execute on function public.report_rider_incident(
   uuid, uuid, public.incident_category, text, double precision, double precision, boolean
 ) to authenticated;
 grant execute on function public.resolve_rider_sos(uuid) to authenticated;
+
+-- Frecuencia limitada por RPC. RLS reautoriza cada suscriptor participante.
+alter publication supabase_realtime add table public.rider_locations;
