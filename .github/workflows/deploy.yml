@@ -1,11 +1,10 @@
-name: Deploy a GitHub Pages
+name: Verificar frontend
 
 on:
   pull_request:
     branches: [main]
   push:
     branches: [main]
-  workflow_dispatch:
 
 permissions:
   contents: read
@@ -36,33 +35,5 @@ jobs:
           npm run lint
           npm run test
 
-      # GitHub Pages sirve el proyecto bajo /<repo>/. Se toma de GITHUB_REPOSITORY
-      # ("owner/repo") porque está definido en cualquier evento, también en
-      # workflow_dispatch, donde el payload del evento puede no traer el repositorio.
-      - name: Calcular la base del sitio
-        run: echo "VITE_BASE=/${GITHUB_REPOSITORY#*/}/" >> "$GITHUB_ENV"
+      # La publicación real pasa por cloudflare-pages.yml con Supabase y secretos verificados.
 
-      - name: Construir sitio
-        run: |
-          npm run build:pages
-          npm run build:apps
-
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: dist
-
-  deploy:
-    if: github.event_name != 'pull_request'
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - id: deployment
-        uses: actions/deploy-pages@v4
