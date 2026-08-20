@@ -23,6 +23,8 @@ producción.
 - Frontend objetivo: tres builds Cloudflare Pages: customer, rider y backoffice.
 - Release Pages reproducible preparado: workflow manual desde `main`, Wrangler fijado, validación de
   cuenta/proyectos/URLs, identidad canónica, previews y rollback antes de publicar.
+- Smoke browser multiapp quedó extraído como skill reusable en `.agents/skills/suya-browser-smoke`;
+  cubre Chrome real, móvil/escritorio, rutas protegidas, accesibilidad básica y reduced motion.
 - Cliente, repartidor y backoffice ya tienen entradas, rutas y bundles físicos independientes.
 - Auth Supabase y guards por capacidad están implementados; la conexión rechaza un project ref
   distinto al exclusivo esperado para Suya.
@@ -52,3 +54,4 @@ Cloudflare funcionen con Supabase y el verificador confirme ausencia de mocks en
 
 La máquina actual no tiene Docker ni Podman. Las pruebas pgTAP y `db lint` se ejecutan en GitHub CI;
 localmente se habilitarán cuando exista uno de esos runtimes.
+
