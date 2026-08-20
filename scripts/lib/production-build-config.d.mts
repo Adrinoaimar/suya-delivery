@@ -4,6 +4,7 @@ export type ProductionBuildEnvironment = {
   VITE_SUPABASE_URL?: string;
   VITE_EXPECTED_SUPABASE_PROJECT_REF?: string;
   VITE_SUPABASE_PUBLISHABLE_KEY?: string;
+  CI_E2E?: string;
 };
 
 export type ProductionBuildConfigResult = {
@@ -18,4 +19,5 @@ export function inspectProductionBuildConfig(
 export function assertProductionBuildConfig(
   env?: ProductionBuildEnvironment,
 ): ProductionBuildConfigResult;
+
 
