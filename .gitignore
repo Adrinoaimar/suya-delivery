@@ -20,6 +20,8 @@ dist-ssr
 supabase/.temp/
 .playwright-cli/
 output/playwright/
+.npm-cache/
+.xdg/
 
 # Editor directories and files
 .vscode/*

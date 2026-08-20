@@ -21,6 +21,8 @@ producción.
   aislamiento por restaurante, secretos fuera de `public`, auditoría, ubicaciones e incidencias.
 - Backend elegido: Supabase exclusivo de Suya.
 - Frontend objetivo: tres builds Cloudflare Pages: customer, rider y backoffice.
+- Release Pages reproducible preparado: workflow manual desde `main`, Wrangler fijado, validación de
+  cuenta/proyectos/URLs, identidad canónica, previews y rollback antes de publicar.
 - Cliente, repartidor y backoffice ya tienen entradas, rutas y bundles físicos independientes.
 - Auth Supabase y guards por capacidad están implementados; la conexión rechaza un project ref
   distinto al exclusivo esperado para Suya.
@@ -40,7 +42,8 @@ producción.
 
 ## Siguiente acción
 
-Crear E2E multirol, pruebas de dispositivos, accesibilidad, desconexión y carga.
+Crear E2E multirol, pruebas de dispositivos, accesibilidad, desconexión y carga. El despliegue real
+espera una cuenta Cloudflare autenticada y un proyecto Supabase exclusivo con sus variables.
 
 ## Gate productivo pendiente
 

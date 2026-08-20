@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
+import { isSafeSupabasePublishableKey } from './lib/public-supabase-key.mjs';
 
 const backend = process.env.VITE_BACKEND;
 const mapProvider = process.env.VITE_MAP_PROVIDER;
@@ -16,7 +17,7 @@ if (!expectedProjectRef || expectedProjectRef === 'PROJECT_REF') {
 } else if (actualProjectRef !== expectedProjectRef) {
   failures.push('La URL Supabase no coincide con el project ref exclusivo esperado.');
 }
-if (!supabaseKey || !/^(?:sb_publishable_|eyJ)/.test(supabaseKey) || /REPLACE_ME/.test(supabaseKey)) {
+if (!isSafeSupabasePublishableKey(supabaseKey)) {
   failures.push('VITE_SUPABASE_PUBLISHABLE_KEY debe ser una clave pública válida.');
 }
 if (!mapProvider || mapProvider === 'mock') {
