@@ -99,6 +99,7 @@ if (process.env.SMOKE_BUSINESS === 'true') {
     await page.getByRole('button', { name: /Confirmar pedido ·/ }).click();
     await page.waitForURL(/\/orders\/[^/]+\/track$/, { timeout: 20_000 });
     await page.getByRole('heading', { name: 'Pedido confirmado' }).waitFor({ timeout: 20_000 });
+    const deliveryCode = await page.getByText(/^\d{4}$/, { exact: true }).first().innerText();
     console.log('business/customer-create-cash-order: OK');
 
     const backofficeOrigin = new URL(targets[2].url).origin;
@@ -131,6 +132,26 @@ if (process.env.SMOKE_BUSINESS === 'true') {
     await riderPage.getByRole('button', { name: 'Voy en camino' }).click();
     await riderPage.getByText('En camino', { exact: true }).waitFor({ timeout: 20_000 });
     console.log('business/rider-advance-status: OK');
+
+    await riderPage.goto(`${riderOrigin}/rider/safety`, { waitUntil: 'networkidle', timeout: 20_000 });
+    await riderPage.getByRole('heading', { name: 'Seguridad en ruta' }).waitFor();
+    await riderPage.getByText('GPS real activo', { exact: true }).waitFor({ timeout: 20_000 });
+    await riderPage.getByRole('button', { name: 'SOS' }).click();
+    await riderPage.getByRole('button', { name: 'Enviar alerta SOS' }).click();
+    await riderPage.getByText('Alerta operativa activa', { exact: true }).waitFor({ timeout: 20_000 });
+    await riderPage.getByRole('button', { name: 'Estoy bien, avisar a operaciones' }).click();
+    await riderPage.getByRole('heading', { name: 'Reportar incidente' }).waitFor();
+    await riderPage.getByLabel('Descripción').fill('Tráfico intenso en la ruta, sin riesgo para el pedido.');
+    await riderPage.getByRole('button', { name: 'Registrar incidente' }).click();
+    await riderPage.getByText('Incidentes registrados', { exact: true }).waitFor({ timeout: 20_000 });
+    console.log('business/rider-gps-sos-incident: OK');
+
+    await riderPage.goto(`${riderOrigin}/rider/current`, { waitUntil: 'networkidle', timeout: 20_000 });
+    await riderPage.getByRole('button', { name: 'Entregué el pedido' }).click();
+    await riderPage.locator('#codigo-pedido').fill(deliveryCode);
+    await riderPage.getByRole('button', { name: 'Confirmar entrega' }).click();
+    await riderPage.getByText('Entregado', { exact: true }).waitFor({ timeout: 20_000 });
+    console.log('business/rider-confirm-delivery-code: OK');
     await opsPage.close();
     await riderPage.close();
   } catch (error) {
