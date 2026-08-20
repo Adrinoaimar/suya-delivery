@@ -23,6 +23,7 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "test:e2e": "node scripts/browser-smoke.mjs",
+    "prepare:e2e": "node scripts/prepare-e2e-backend.mjs",
     "test:watch": "vitest",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"tests/**/*.ts\"",
     "preview": "vite preview"
@@ -61,4 +62,5 @@
     "vitest": "^4.1.10"
   }
 }
+
 
