@@ -17,6 +17,7 @@ import type {
   SharedLocationSnapshot,
   SharingStatus,
   Store,
+  IncidentCategory,
 } from '@/types';
 
 export interface StoreService {
@@ -35,6 +36,7 @@ export interface CreateOrderInput {
   deliveryFee: number;
   discount: number;
   customer: CustomerInfo;
+  deliveryPosition: LatLng;
   paymentMethod: PaymentMethod;
 }
 
@@ -81,6 +83,19 @@ export interface DispatchService {
 export interface RiderOperationsService {
   getAvailability(): Promise<'available' | 'offline' | 'busy'>;
   setAvailability(available: boolean): Promise<'available' | 'offline'>;
+}
+
+export interface SafetyOperationsService {
+  publishLocation(orderId: string, reading: LocationReading): Promise<boolean>;
+  reportIncident(input: {
+    requestId: string;
+    orderId: string | null;
+    category: IncidentCategory;
+    description: string;
+    position: LatLng | null;
+    sos: boolean;
+  }): Promise<string>;
+  resolveSos(incidentId: string): Promise<boolean>;
 }
 
 export type LocationPermission = 'unknown' | 'granted' | 'denied' | 'unsupported';

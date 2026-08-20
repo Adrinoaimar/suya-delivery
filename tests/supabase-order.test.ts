@@ -32,9 +32,11 @@ function buildRow(overrides: Record<string, unknown> = {}) {
     customer_phone: '987654321',
     delivery_address: 'Av. Principal 123',
     delivery_reference: 'Puerta verde',
+    delivery_latitude: -4.8941,
+    delivery_longitude: -80.6899,
     estimated_minutes: 35,
     created_at: '2026-08-20T15:00:00.000Z',
-    restaurants: { name: 'El Buen Sabor' },
+    restaurants: { name: 'El Buen Sabor', latitude: -4.9, longitude: -80.68 },
     order_items: [
       {
         id: 'line-server-1',
@@ -117,6 +119,7 @@ function createInput(paymentMethod: CreateOrderInput['paymentMethod'] = 'cash'):
       address: 'Av. Principal 123',
       reference: 'Puerta verde',
     },
+    deliveryPosition: { lat: -4.8941, lng: -80.6899 },
     paymentMethod,
   };
 }
@@ -186,6 +189,7 @@ describe('SupabaseOrderServiceImpl', () => {
       userId: 'customer-1',
       rowResult: { data: buildRow(), error: null },
       rpc: async (name) => {
+        if (name === 'set_order_delivery_coordinates') return { data: true, error: null };
         expect(name).toBe('create_cash_order');
         attempts += 1;
         return attempts === 1
@@ -218,6 +222,11 @@ describe('SupabaseOrderServiceImpl', () => {
       p_request_id: requestId,
     });
     expect(rpc.mock.calls[1]?.[1]).toEqual(rpc.mock.calls[0]?.[1]);
+    expect(rpc).toHaveBeenNthCalledWith(3, 'set_order_delivery_coordinates', {
+      target_order: buildRow().id,
+      latitude: -4.8941,
+      longitude: -80.6899,
+    });
     expect(order.items[0]?.unitPrice).toBe(12.5);
     expect(order).toMatchObject({ subtotal: 25, deliveryFee: 4, discount: 1, total: 28 });
     expect(sessionStorage.getItem('suya.pending-cash-order')).toBeNull();

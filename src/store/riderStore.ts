@@ -16,7 +16,7 @@ const DEFAULT_STATE: RiderSafetyState = {
   available: false,
   trustedContact: null,
   shareToken: null,
-  simulatedLocation: true,
+  simulatedLocation: false,
   incidents: [],
   sosEvents: [],
 };
@@ -32,7 +32,7 @@ interface RiderState extends RiderSafetyState {
     description: string;
     position: LatLng | null;
   }) => Incident;
-  triggerSos: (position: LatLng | null) => SosEvent;
+  triggerSos: (position: LatLng | null, id?: string) => SosEvent;
   resolveSos: (id: string) => void;
 }
 
@@ -60,7 +60,11 @@ function load(): RiderSafetyState {
     incidents: DEFAULT_STATE.incidents,
     sosEvents: DEFAULT_STATE.sosEvents,
   });
-  return { ...rider, ...safety };
+  return {
+    ...rider,
+    ...safety,
+    simulatedLocation: import.meta.env.DEV ? rider.simulatedLocation : false,
+  };
 }
 
 export const useRiderStore = create<RiderState>((set, get) => ({
@@ -79,6 +83,7 @@ export const useRiderStore = create<RiderState>((set, get) => ({
   },
 
   setSimulatedLocation(value) {
+    if (!import.meta.env.DEV) return;
     const next = { ...get(), simulatedLocation: value };
     persist(next);
     set({ simulatedLocation: value });
@@ -117,9 +122,9 @@ export const useRiderStore = create<RiderState>((set, get) => ({
     return incident;
   },
 
-  triggerSos(position) {
+  triggerSos(position, id) {
     const event: SosEvent = {
-      id: createId('sos'),
+      id: id ?? createId('sos'),
       createdAt: new Date().toISOString(),
       position,
       resolvedAt: null,

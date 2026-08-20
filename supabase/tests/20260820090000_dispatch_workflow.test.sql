@@ -92,19 +92,20 @@ insert into public.rider_profiles (
   ('91000000-0000-0000-0000-000000000005', 'available', now(), '900000005', 'bici', 'R3A');
 insert into public.orders (
   id, code, customer_id, restaurant_id, status, subtotal, delivery_fee, customer_name,
-  customer_phone, delivery_address, estimated_minutes, idempotency_key
+  customer_phone, delivery_address, delivery_latitude, delivery_longitude,
+  estimated_minutes, idempotency_key
 ) values
   ('94000000-0000-0000-0000-000000000001', 'DISPATCH01',
    '91000000-0000-0000-0000-000000000006', '93000000-0000-0000-0000-000000000001',
-   'confirmed', 20, 4, 'Cliente Privado', '999111222', 'Dirección privada 1', 30,
+   'confirmed', 20, 4, 'Cliente Privado', '999111222', 'Dirección privada 1', -4.8941, -80.6899, 30,
    '95000000-0000-0000-0000-000000000001'),
   ('94000000-0000-0000-0000-000000000002', 'DISPATCH02',
    '91000000-0000-0000-0000-000000000006', '93000000-0000-0000-0000-000000000001',
-   'confirmed', 20, 4, 'Cliente Privado', '999111222', 'Dirección privada 2', 30,
+   'confirmed', 20, 4, 'Cliente Privado', '999111222', 'Dirección privada 2', -4.8942, -80.6898, 30,
    '95000000-0000-0000-0000-000000000002'),
   ('94000000-0000-0000-0000-000000000003', 'DISPATCH03',
    '91000000-0000-0000-0000-000000000006', '93000000-0000-0000-0000-000000000001',
-   'confirmed', 20, 4, 'Cliente Privado', '999111222', 'Dirección privada 3', 30,
+   'confirmed', 20, 4, 'Cliente Privado', '999111222', 'Dirección privada 3', -4.8943, -80.6897, 30,
    '95000000-0000-0000-0000-000000000003');
 
 set local request.jwt.claims =

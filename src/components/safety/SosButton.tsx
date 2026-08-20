@@ -3,43 +3,60 @@ import { CheckCircle2, Siren } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { Modal } from '@/components/common/Modal';
-import { locationSharingService, notificationService } from '@/lib/services';
+import { notificationService, safetyOperationsService } from '@/lib/services';
 import { useRiderStore } from '@/store/riderStore';
 import { formatDateTime } from '@/utils/format';
 import type { LatLng } from '@/types';
 
 interface SosButtonProps {
   position: LatLng | null;
+  orderId: string | null;
 }
 
 /**
- * Alerta de emergencia en modo demostración.
- * NUNCA contacta automáticamente a la policía ni a servicios de emergencia.
+ * Alerta operativa. No contacta automáticamente a policía ni emergencias.
  */
-export function SosButton({ position }: SosButtonProps) {
+export function SosButton({ position, orderId }: SosButtonProps) {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const sosEvents = useRiderStore((state) => state.sosEvents);
   const triggerSos = useRiderStore((state) => state.triggerSos);
   const resolveSos = useRiderStore((state) => state.resolveSos);
-  const trustedContact = useRiderStore((state) => state.trustedContact);
+  const [submitting, setSubmitting] = useState(false);
 
   const activeEvent = sosEvents.find((event) => event.resolvedAt === null);
 
-  function activate() {
-    const event = triggerSos(position);
-    locationSharingService.publish({ sos: true });
-    setConfirmOpen(false);
-    notificationService.notify(
-      `Alerta demo activada a las ${new Date(event.createdAt).toLocaleTimeString('es-PE')}`,
-      'danger',
-    );
+  async function activate() {
+    setSubmitting(true);
+    try {
+      const id = await safetyOperationsService.reportIncident({
+        requestId: crypto.randomUUID(), orderId, category: 'otro',
+        description: 'SOS activado por el repartidor', position, sos: true,
+      });
+      const event = triggerSos(position, id);
+      setConfirmOpen(false);
+      notificationService.notify(
+        `Alerta enviada a operaciones a las ${new Date(event.createdAt).toLocaleTimeString('es-PE')}`,
+        'danger',
+      );
+    } catch {
+      notificationService.notify('No pudimos enviar SOS. Llama al 105 o 116 si estás en peligro.', 'danger');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  function resolve() {
+  async function resolve() {
     if (!activeEvent) return;
-    resolveSos(activeEvent.id);
-    locationSharingService.publish({ sos: false });
-    notificationService.notify('Alerta desactivada', 'success');
+    setSubmitting(true);
+    try {
+      if (!await safetyOperationsService.resolveSos(activeEvent.id)) throw new Error('SOS no encontrado');
+      resolveSos(activeEvent.id);
+      notificationService.notify('Operaciones recibió que estás a salvo', 'success');
+    } catch {
+      notificationService.notify('No pudimos cerrar la alerta. Contacta a operaciones.', 'danger');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -60,17 +77,15 @@ export function SosButton({ position }: SosButtonProps) {
       {activeEvent ? (
         <div className="rounded-btn border border-suya-danger bg-suya-danger-soft p-3">
           <p className="font-display text-[15px] font-bold text-suya-danger">
-            Alerta demo activa
+            Alerta operativa activa
           </p>
           <p className="mt-0.5 text-sm text-[#4A4F55]">
             Activada el {formatDateTime(activeEvent.createdAt)}.
-            {trustedContact
-              ? ` Se marcó como alerta para ${trustedContact.name}.`
-              : ' Registra un contacto de confianza para avisar a alguien.'}
+            Operaciones debe revisar y atender esta alerta.
           </p>
-          <Button variant="secondary" size="sm" className="mt-2.5" onClick={resolve}>
+          <Button variant="secondary" size="sm" className="mt-2.5" onClick={() => void resolve()} disabled={submitting}>
             <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-            Estoy bien, desactivar
+            Estoy bien, avisar a operaciones
           </Button>
         </div>
       ) : (
@@ -103,22 +118,22 @@ export function SosButton({ position }: SosButtonProps) {
         open={confirmOpen}
         onClose={() => setConfirmOpen(false)}
         title="¿Quieres activar una alerta de emergencia?"
-        description="Modo demostración: se registra la hora y se marca la alerta para tu contacto de confianza dentro de esta demo."
+        description="La alerta se registra en Suya con hora y ubicación disponible."
         size="sm"
         footer={
           <div className="flex gap-2">
             <Button variant="ghost" fullWidth onClick={() => setConfirmOpen(false)}>
               Cancelar
             </Button>
-            <Button variant="danger" fullWidth onClick={activate}>
-              Activar alerta demo
+            <Button variant="danger" fullWidth onClick={() => void activate()} disabled={submitting}>
+              {submitting ? 'Enviando…' : 'Enviar alerta SOS'}
             </Button>
           </div>
         }
       >
         <p className="text-sm text-[#4A4F55]">
-          En producción esta acción notificará al centro de operaciones de Suya y a tu contacto de
-          confianza. Si estás en peligro real, llama al <strong>105</strong> (Policía) o al{' '}
+          Esta acción avisa al centro de operaciones de Suya. No llama automáticamente a tu contacto
+          ni a emergencias. Si estás en peligro real, llama al <strong>105</strong> (Policía) o al{' '}
           <strong>116</strong> (Bomberos).
         </p>
       </Modal>

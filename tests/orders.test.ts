@@ -35,6 +35,7 @@ async function createOrder(service: MockOrderServiceImpl) {
     deliveryFee: 4,
     discount: 0,
     customer,
+    deliveryPosition: { lat: -4.8941, lng: -80.6899 },
     paymentMethod: 'cash',
   });
 }
@@ -49,6 +50,7 @@ describe('contrato de pedidos async', () => {
       deliveryFee: 4,
       discount: 0,
       customer,
+      deliveryPosition: { lat: -4.8941, lng: -80.6899 },
       paymentMethod: 'cash',
     });
 

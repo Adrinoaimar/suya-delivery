@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { ArrowLeft, MapPin, XCircle } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
@@ -11,15 +11,12 @@ import { ExpandableSheet } from '@/components/common/BottomSheet';
 import { CodeDialog } from '@/components/order/CodeDialog';
 import { OrderCodes } from '@/components/order/OrderCodes';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
-import { RiderCard } from '@/components/rider/RiderCard';
 import { MapProvider } from '@/components/map/MapProvider';
-import { demoRoute, riders } from '@/data';
 import { notificationService } from '@/lib/services';
 import { useOrderStore } from '@/store/orderStore';
 import { orderRouteProgress, useOrderStatusNotifier } from '@/hooks/useOrders';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { formatPrice, orderStatusLabel } from '@/utils/format';
-import { pointAtProgress } from '@/utils/geo';
 
 export default function OrderTrackPage() {
   const { id = '' } = useParams();
@@ -34,11 +31,6 @@ export default function OrderTrackPage() {
 
   const progress = orderRouteProgress(order);
   useOrderStatusNotifier(order);
-
-  const riderPosition = useMemo(
-    () => pointAtProgress(demoRoute.points, progress),
-    [progress],
-  );
 
   if (!order) {
     if (status === 'idle' || status === 'loading') {
@@ -68,7 +60,8 @@ export default function OrderTrackPage() {
     );
   }
 
-  const rider = riders.find((item) => item.id === order.riderId);
+  const mapReady = order.storePosition !== null && order.deliveryPosition !== null;
+  const mapPoints = mapReady ? [order.storePosition!, order.deliveryPosition!] : [];
   const delivered = order.status === 'delivered';
   const cancelled = order.status === 'cancelled';
   const etaMinutes = Math.max(1, Math.round(order.etaMinutes * (1 - progress)));
@@ -93,10 +86,10 @@ export default function OrderTrackPage() {
 
       <TrackingTimeline order={order} compact />
 
-      {rider && !cancelled && (
-        <div className="rounded-card border border-suya-mist p-3">
-          <RiderCard rider={rider} />
-        </div>
+      {order.riderId && !cancelled && (
+        <p className="rounded-card border border-suya-mist p-3 text-sm text-[#4A4F55]">
+          Repartidor asignado. Su ubicación aparecerá cuando recoja el pedido y comparta GPS.
+        </p>
       )}
 
       <div className="rounded-card border border-suya-mist p-3">
@@ -145,13 +138,13 @@ export default function OrderTrackPage() {
       {!isDesktop && (
       <div className="flex h-[calc(100dvh-var(--header-h)-var(--bottom-nav-h))] flex-col lg:hidden">
         <div className="relative h-[45%] shrink-0 overflow-hidden bg-suya-ivory">
-          <MapProvider
-            points={demoRoute.points}
-            origin={demoRoute.origin}
-            destination={demoRoute.destination}
-            rider={cancelled ? null : riderPosition}
-            label={`Ruta del pedido ${order.code}`}
-          />
+          {mapReady ? <MapProvider
+            points={mapPoints}
+            origin={{ ...order.storePosition!, label: order.storeName }}
+            destination={{ ...order.deliveryPosition!, label: 'Punto de entrega' }}
+            rider={null}
+            label={`Ubicaciones del pedido ${order.code}`}
+          /> : <MapUnavailable />}
           <Link
             to="/orders"
             aria-label="Volver a mis pedidos"
@@ -196,13 +189,13 @@ export default function OrderTrackPage() {
             <Card>{detail}</Card>
           </div>
           <div className="sticky top-24 h-[calc(100dvh-140px)] overflow-hidden rounded-card border border-suya-mist bg-white">
-            <MapProvider
-              points={demoRoute.points}
-              origin={demoRoute.origin}
-              destination={demoRoute.destination}
-              rider={cancelled ? null : riderPosition}
-              label={`Ruta del pedido ${order.code}`}
-            />
+            {mapReady ? <MapProvider
+              points={mapPoints}
+              origin={{ ...order.storePosition!, label: order.storeName }}
+              destination={{ ...order.deliveryPosition!, label: 'Punto de entrega' }}
+              rider={null}
+              label={`Ubicaciones del pedido ${order.code}`}
+            /> : <MapUnavailable />}
           </div>
         </div>
       </div>
@@ -220,5 +213,13 @@ export default function OrderTrackPage() {
         onSuccess={() => notificationService.notify('Pedido cancelado', 'info')}
       />
     </>
+  );
+}
+
+function MapUnavailable() {
+  return (
+    <div className="flex h-full items-center justify-center bg-suya-ivory p-6 text-center text-sm text-[#6B7076]" role="status">
+      Este pedido no tiene ambos puntos verificados. Usa dirección y referencia para coordinar.
+    </div>
   );
 }

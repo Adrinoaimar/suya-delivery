@@ -5,10 +5,14 @@ import { LocationShareCard } from '@/components/safety/LocationShareCard';
 import { SosButton } from '@/components/safety/SosButton';
 import { TrustedContactForm } from '@/components/safety/TrustedContactForm';
 import { useSharedLocation } from '@/hooks/useSharedLocation';
+import { selectActiveOrder, useOrderStore } from '@/store/orderStore';
+import { useTrackingStore } from '@/store/trackingStore';
 
 export default function RiderSafetyPage() {
   const { snapshot } = useSharedLocation();
-  const position = snapshot?.position ?? null;
+  const reading = useTrackingStore((state) => state.reading);
+  const position = reading?.position ?? snapshot?.position ?? null;
+  const activeOrder = useOrderStore((state) => selectActiveOrder(state.orders));
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-5 lg:px-8 lg:py-8">
@@ -26,8 +30,8 @@ export default function RiderSafetyPage() {
       <div className="space-y-4 text-suya-carbon">
         <LocationShareCard />
         <TrustedContactForm />
-        <SosButton position={position} />
-        <IncidentForm position={position} />
+        <SosButton position={position} orderId={activeOrder?.id ?? null} />
+        <IncidentForm position={position} orderId={activeOrder?.id ?? null} />
       </div>
 
       <Link

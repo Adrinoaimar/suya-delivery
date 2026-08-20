@@ -1,16 +1,14 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Check, KeyRound, MapPin, Navigation, PackageCheck, Phone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/common/Button';
 import { MapProvider } from '@/components/map/MapProvider';
 import { CodeDialog } from '@/components/order/CodeDialog';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
-import { demoRoute } from '@/data';
 import { notificationService } from '@/lib/services';
-import { orderRouteProgress } from '@/hooks/useOrders';
 import { selectActiveOrder, useOrderStore } from '@/store/orderStore';
+import { useTrackingStore } from '@/store/trackingStore';
 import { formatPrice, orderStatusLabel } from '@/utils/format';
-import { pointAtProgress } from '@/utils/geo';
 import type { OrderStatus } from '@/types';
 
 /**
@@ -26,10 +24,8 @@ export default function RiderCurrentPage() {
   const updateOrderStatus = useOrderStore((state) => state.updateOrderStatus);
   const confirmDelivery = useOrderStore((state) => state.confirmDelivery);
   const active = selectActiveOrder(orders);
-  const progress = orderRouteProgress(active);
+  const reading = useTrackingStore((state) => state.reading);
   const [codeOpen, setCodeOpen] = useState(false);
-
-  const riderPosition = useMemo(() => pointAtProgress(demoRoute.points, progress), [progress]);
 
   if (!active) {
     return (
@@ -52,6 +48,8 @@ export default function RiderCurrentPage() {
   }
 
   const action = NEXT_ACTION[active.status];
+  const mapReady = active.storePosition !== null && active.deliveryPosition !== null;
+  const mapPoints = mapReady ? [active.storePosition!, active.deliveryPosition!] : [];
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-4 px-4 py-5 lg:px-8 lg:py-8">
@@ -63,13 +61,17 @@ export default function RiderCurrentPage() {
       </header>
 
       <div className="h-56 overflow-hidden rounded-card border border-white/10 sm:h-72">
-        <MapProvider
-          points={demoRoute.points}
-          origin={demoRoute.origin}
-          destination={demoRoute.destination}
-          rider={riderPosition}
-          label="Ruta asignada"
-        />
+        {mapReady ? <MapProvider
+          points={mapPoints}
+          origin={{ ...active.storePosition!, label: active.storeName }}
+          destination={{ ...active.deliveryPosition!, label: 'Punto de entrega' }}
+          rider={reading?.position ?? null}
+          label="Ubicaciones de entrega"
+        /> : (
+          <div className="flex h-full items-center justify-center bg-white p-6 text-center text-sm text-[#6B7076]">
+            Pedido sin ambos puntos verificados. Usa dirección y referencia.
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2 lg:items-start">

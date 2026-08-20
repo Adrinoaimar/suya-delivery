@@ -288,14 +288,19 @@ as $$
 begin
   if (new.id, new.code, new.customer_id, new.restaurant_id, new.subtotal, new.delivery_fee,
       new.discount, new.payment_method, new.customer_name, new.customer_phone,
-      new.delivery_address, new.delivery_reference, new.delivery_latitude,
-      new.delivery_longitude, new.estimated_minutes, new.created_at, new.idempotency_key)
+      new.delivery_address, new.delivery_reference,
+      new.estimated_minutes, new.created_at, new.idempotency_key)
     is distinct from
      (old.id, old.code, old.customer_id, old.restaurant_id, old.subtotal, old.delivery_fee,
       old.discount, old.payment_method, old.customer_name, old.customer_phone,
-      old.delivery_address, old.delivery_reference, old.delivery_latitude,
-      old.delivery_longitude, old.estimated_minutes, old.created_at, old.idempotency_key) then
+      old.delivery_address, old.delivery_reference,
+      old.estimated_minutes, old.created_at, old.idempotency_key) then
     raise exception 'immutable order fields cannot be changed';
+  end if;
+  if (new.delivery_latitude, new.delivery_longitude) is distinct from
+     (old.delivery_latitude, old.delivery_longitude)
+    and current_user not in ('service_role', 'postgres') then
+    raise exception 'delivery coordinates are backend-only';
   end if;
   if new.rider_id is distinct from old.rider_id then
     if current_user not in ('service_role', 'postgres') and not private.is_platform_admin()

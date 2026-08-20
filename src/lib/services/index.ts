@@ -12,10 +12,12 @@
  */
 import { SupabaseStoreServiceImpl } from './SupabaseStoreService';
 import { SupabaseOrderServiceImpl } from './SupabaseOrderService';
+import { SupabaseSafetyServiceImpl } from './SupabaseSafetyService';
 import type {
   DispatchService,
   OrderService,
   RiderOperationsService,
+  SafetyOperationsService,
   StoreService,
 } from './types';
 
@@ -116,6 +118,25 @@ export const riderOperationsService: RiderOperationsService = {
     const service = await resolveOrderService();
     if (!service.setAvailability) throw new Error('La disponibilidad real requiere Supabase.');
     return service.setAvailability(available);
+  },
+};
+let resolvedSafetyService: Promise<SafetyOperationsService> | null = null;
+function resolveSafetyService(): Promise<SafetyOperationsService> {
+  if (resolvedSafetyService) return resolvedSafetyService;
+  resolvedSafetyService = import.meta.env.VITE_BACKEND === 'supabase'
+    ? Promise.resolve(new SupabaseSafetyServiceImpl())
+    : Promise.reject(new Error('Seguridad operativa real requiere Supabase.'));
+  return resolvedSafetyService;
+}
+export const safetyOperationsService: SafetyOperationsService = {
+  async publishLocation(orderId, reading) {
+    return (await resolveSafetyService()).publishLocation(orderId, reading);
+  },
+  async reportIncident(input) {
+    return (await resolveSafetyService()).reportIncident(input);
+  },
+  async resolveSos(incidentId) {
+    return (await resolveSafetyService()).resolveSos(incidentId);
   },
 };
 export { CashPaymentService as paymentService } from './CashPaymentService';

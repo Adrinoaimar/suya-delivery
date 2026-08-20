@@ -42,9 +42,12 @@ interface OrderRow {
   customer_phone: string;
   delivery_address: string;
   delivery_reference: string;
+  delivery_latitude: number | null;
+  delivery_longitude: number | null;
   estimated_minutes: number;
   created_at: string;
-  restaurants: { name: string } | { name: string }[];
+  restaurants: { name: string; latitude: number | null; longitude: number | null } |
+    { name: string; latitude: number | null; longitude: number | null }[];
   order_items: OrderItemRow[];
   order_events: OrderEventRow[];
 }
@@ -58,7 +61,8 @@ const ORDER_SELECT = `
   id, code, customer_id, restaurant_id, rider_id, status, payment_method,
   subtotal, delivery_fee, discount, total, customer_name, customer_phone,
   delivery_address, delivery_reference, estimated_minutes, created_at,
-  restaurants!inner(name),
+  delivery_latitude, delivery_longitude,
+  restaurants!inner(name, latitude, longitude),
   order_items(id, product_id, product_name, unit_price, quantity, extras, note, image_url),
   order_events(status, created_at)
 `;
@@ -90,6 +94,10 @@ function extras(value: unknown): ProductExtra[] {
 function restaurantName(row: OrderRow): string {
   const restaurant = Array.isArray(row.restaurants) ? row.restaurants[0] : row.restaurants;
   return restaurant?.name ?? 'Negocio';
+}
+
+function coordinate(lat: number | null, lng: number | null) {
+  return lat === null || lng === null ? null : { lat, lng };
 }
 
 function mapOrder(row: OrderRow, codes?: OrderCodes): Order {
@@ -128,6 +136,11 @@ function mapOrder(row: OrderRow, codes?: OrderCodes): Order {
       address: row.delivery_address,
       reference: row.delivery_reference,
     },
+    deliveryPosition: coordinate(row.delivery_latitude, row.delivery_longitude),
+    storePosition: (() => {
+      const restaurant = Array.isArray(row.restaurants) ? row.restaurants[0] : row.restaurants;
+      return coordinate(restaurant?.latitude ?? null, restaurant?.longitude ?? null);
+    })(),
     paymentMethod: row.payment_method,
     riderId: row.rider_id,
     etaMinutes: row.estimated_minutes,
@@ -146,6 +159,7 @@ function fingerprint(input: CreateOrderInput): string {
     phone: input.customer.phone.trim(),
     address: input.customer.address.trim(),
     reference: input.customer.reference.trim(),
+    deliveryPosition: input.deliveryPosition,
     items: input.items.map((item) => ({
       productId: item.productId,
       quantity: item.quantity,
@@ -266,6 +280,16 @@ export class SupabaseOrderServiceImpl
     if (error) throw new Error(error.message);
     const result = first(data as ({ order_id: string } & OrderCodes)[] | null);
     if (!result) throw new Error('Supabase no devolvió el pedido creado.');
+    const { data: positioned, error: positionError } = await this.client.rpc(
+      'set_order_delivery_coordinates',
+      {
+        target_order: result.order_id,
+        latitude: input.deliveryPosition.lat,
+        longitude: input.deliveryPosition.lng,
+      },
+    );
+    if (positionError) throw new Error(positionError.message);
+    if (positioned !== true) throw new Error('No pudimos confirmar el punto de entrega.');
     const row = await this.row(result.order_id);
     if (!row) throw new Error('El pedido fue creado, pero no pudo recuperarse. Reintenta.');
     clearRequest(requestId);

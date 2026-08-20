@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Banknote, TicketPercent } from 'lucide-react';
+import { Banknote, LocateFixed, MapPin, TicketPercent } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button, ButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
@@ -16,6 +16,7 @@ import { useOrderStore } from '@/store/orderStore';
 import { useAuthStore } from '@/store/authStore';
 import { formatPrice } from '@/utils/format';
 import type { PaymentMethod } from '@/types';
+import type { LatLng } from '@/types';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
@@ -45,6 +46,8 @@ export default function CheckoutPage() {
   const method: PaymentMethod = 'cash';
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [deliveryPosition, setDeliveryPosition] = useState<LatLng | null>(null);
+  const [locating, setLocating] = useState(false);
 
   const base = cartTotals(items, store, FREE_DELIVERY_THRESHOLD);
   const discount = 0;
@@ -106,8 +109,35 @@ export default function CheckoutPage() {
     if (digits.length < 6 || digits.length > 15) next.phone = 'Escribe un teléfono válido.';
 
     if (form.address.trim().length < 6) next.address = 'Indica la dirección de entrega.';
+    if (!deliveryPosition) next.location = 'Confirma el punto de entrega con GPS.';
     setErrors(next);
     return Object.keys(next).length === 0;
+  }
+
+  function locateDelivery(): void {
+    if (!navigator.geolocation) {
+      setErrors((current) => ({ ...current, location: 'Este dispositivo no ofrece ubicación.' }));
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setDeliveryPosition({ lat: coords.latitude, lng: coords.longitude });
+        setErrors((current) => {
+          const { location: _location, ...rest } = current;
+          return rest;
+        });
+        setLocating(false);
+      },
+      () => {
+        setErrors((current) => ({
+          ...current,
+          location: 'No pudimos obtener tu ubicación. Activa GPS y permiso del navegador.',
+        }));
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, maximumAge: 30_000, timeout: 15_000 },
+    );
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -144,6 +174,7 @@ export default function CheckoutPage() {
           address: form.address.trim(),
           reference: form.reference.trim(),
         },
+        deliveryPosition: deliveryPosition!,
         paymentMethod: method,
       });
 
@@ -204,6 +235,24 @@ export default function CheckoutPage() {
                   hint="Ayuda al repartidor a encontrarte: color de fachada, piso, punto cercano."
                   onChange={(event) => setForm({ ...form, reference: event.target.value })}
                 />
+              </div>
+              <div className="sm:col-span-2 rounded-btn border border-suya-mist p-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="flex items-center gap-2 text-sm font-semibold">
+                    <MapPin className="h-4 w-4 text-suya-green" aria-hidden="true" />
+                    Punto exacto de entrega
+                  </span>
+                  <Button type="button" variant="ghost" size="sm" onClick={locateDelivery} disabled={locating}>
+                    <LocateFixed className="h-4 w-4" aria-hidden="true" />
+                    {locating ? 'Ubicando…' : deliveryPosition ? 'Actualizar GPS' : 'Usar mi ubicación'}
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-[#6B7076]">
+                  {deliveryPosition
+                    ? `Punto confirmado: ${deliveryPosition.lat.toFixed(5)}, ${deliveryPosition.lng.toFixed(5)}`
+                    : 'Solo se solicita al tocar el botón. No enviamos tu dirección a geocodificadores públicos.'}
+                </p>
+                {errors.location && <p className="mt-1 text-xs text-red-700" role="alert">{errors.location}</p>}
               </div>
             </div>
           </Card>

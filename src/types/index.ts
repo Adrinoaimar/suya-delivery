@@ -161,6 +161,10 @@ export interface Order {
   status: OrderStatus;
   history: OrderStatusEvent[];
   customer: CustomerInfo;
+  /** Punto confirmado por cliente; nunca inferido con geocodificación pública. */
+  deliveryPosition: LatLng | null;
+  /** Ubicación registrada por negocio. */
+  storePosition: LatLng | null;
   paymentMethod: PaymentMethod;
   riderId: string | null;
   etaMinutes: number;
