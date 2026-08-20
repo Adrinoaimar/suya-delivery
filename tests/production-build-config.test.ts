@@ -33,5 +33,19 @@ describe('configuración de build productivo', () => {
     expect(result.failures).toContain('VITE_EXPECTED_SUPABASE_PROJECT_REF coincidente');
     expect(result.failures).toContain('VITE_SUPABASE_PUBLISHABLE_KEY pública válida');
   });
+
+  it('acepta Supabase local solo en E2E explícito', () => {
+    const local = {
+      ...valid,
+      CI_E2E: 'true',
+      VITE_SUPABASE_URL: 'http://127.0.0.1:54321',
+      VITE_EXPECTED_SUPABASE_PROJECT_REF: 'local',
+    };
+    expect(inspectProductionBuildConfig(local)).toMatchObject({ ok: true, actualProjectRef: 'local' });
+    expect(inspectProductionBuildConfig({ ...local, CI_E2E: undefined }).failures).toContain(
+      'VITE_SUPABASE_URL válida',
+    );
+  });
 });
+
 
