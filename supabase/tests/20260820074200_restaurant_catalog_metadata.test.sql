@@ -12,8 +12,16 @@ select has_column('public', 'restaurants', 'local_business', 'restaurants identi
 select has_column('public', 'restaurants', 'accepting_orders', 'restaurants controla recepción de pedidos');
 select has_column('public', 'restaurants', 'data_note', 'restaurants conserva nota de procedencia');
 select has_column('public', 'restaurants', 'promo_label', 'restaurants conserva promoción verificada');
-select has_check('public', 'restaurants', 'restaurants_rating_reviews_consistent',
-  'rating y review_count aparecen juntos');
+select ok(
+  exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.restaurants'::regclass
+      and conname = 'restaurants_rating_reviews_consistent'
+      and contype = 'c'
+  ),
+  'rating y review_count aparecen juntos'
+);
 select has_index('public', 'restaurants', 'restaurants_active_featured_idx',
   'catálogo activo/destacado está indexado');
 
