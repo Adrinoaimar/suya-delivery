@@ -24,3 +24,6 @@ alter table public.restaurants
 create index restaurants_active_featured_idx
   on public.restaurants (featured desc, name)
   where active;
+
+grant update (tags, accepting_orders, data_note)
+  on public.restaurants to authenticated;
