@@ -10,8 +10,8 @@ producción.
 ## Estado actual
 
 - Rama: `codex/functional-suya-loop`.
-- Checkpoint F5 verificado: catálogo Supabase, categorías reales y seed trazable de 58 productos de
-  Andá Paya. CI aprobó 70 pruebas frontend, tres builds y 50 pgTAP.
+- Checkpoint F6A verificado: pedidos cash transaccionales, precios de servidor, idempotencia,
+  códigos privados y adaptador Supabase. CI aprobó 76 pruebas frontend, tres builds y 72 pgTAP.
 - F0 verificado localmente: gobernanza, secretos, CI, arquitectura y continuidad.
 - Contratos de catálogo y pedidos son asíncronos; las pantallas manejan carga, error y reintento.
 - La progresión automática de pedidos y el pago digital simulado fueron retirados. El checkout solo
@@ -25,6 +25,8 @@ producción.
   distinto al exclusivo esperado para Suya.
 - El catálogo Supabase no inventa horario, distancia ni reseñas. `accepting_orders` permanece falso
   para Andá Paya hasta definir logística real; bebidas sin precio no se importaron.
+- Producción ya no incluye `MockStoreService` ni `MockOrderService`. Siguen pendientes mocks de
+  mapas, seguridad y datos secundarios antes del gate productivo.
 
 ## Reglas de continuidad
 
@@ -37,8 +39,7 @@ producción.
 
 ## Siguiente acción
 
-Conectar pedidos a una RPC transaccional Supabase con precios calculados en servidor, estados
-multirol y Realtime.
+Completar despacho y estados multirol mediante RPC estrictas, Realtime y notificaciones.
 
 ## Gate productivo pendiente
 
