@@ -10,7 +10,7 @@ producción.
 ## Estado actual
 
 - Rama: `codex/functional-suya-loop`.
-- Checkpoint F1 verificado: typecheck, lint, 49 pruebas, build y escaneo de secretos pasan.
+- Checkpoint F3 verificado: typecheck, lint, 49 pruebas y tres builds aislados pasan.
 - F0 verificado localmente: gobernanza, secretos, CI, arquitectura y continuidad.
 - Contratos de catálogo y pedidos son asíncronos; las pantallas manejan carga, error y reintento.
 - La progresión automática de pedidos y el pago digital simulado fueron retirados. El checkout solo
@@ -19,6 +19,7 @@ producción.
   aislamiento por restaurante, secretos fuera de `public`, auditoría, ubicaciones e incidencias.
 - Backend elegido: Supabase exclusivo de Suya.
 - Frontend objetivo: tres builds Cloudflare Pages: customer, rider y backoffice.
+- Cliente, repartidor y backoffice ya tienen entradas, rutas y bundles físicos independientes.
 
 ## Reglas de continuidad
 
@@ -31,8 +32,8 @@ producción.
 
 ## Siguiente acción
 
-Ejecutar la migración en CI, corregir cualquier hallazgo SQL y crear adaptadores Supabase de Auth,
-catálogo y pedidos; conservar servicios locales únicamente para tests durante la sustitución.
+Crear cliente Supabase y Auth con guards de rol; después conectar catálogo y pedidos, conservando
+servicios locales únicamente para tests durante la sustitución.
 
 ## Gate productivo pendiente
 

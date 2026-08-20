@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/cn';
 import { buttonClasses } from './buttonStyles';
@@ -50,5 +50,29 @@ export function ButtonLink({
     <Link to={to} state={state} className={cn(buttonClasses(variant, size, fullWidth), className)}>
       {children}
     </Link>
+  );
+}
+
+interface ExternalButtonLinkProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
+  href: string;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  fullWidth?: boolean;
+  children: ReactNode;
+}
+
+export function ExternalButtonLink({
+  href,
+  variant = 'primary',
+  size = 'md',
+  fullWidth = false,
+  className,
+  children,
+  ...rest
+}: ExternalButtonLinkProps) {
+  return (
+    <a href={href} className={cn(buttonClasses(variant, size, fullWidth), className)} {...rest}>
+      {children}
+    </a>
   );
 }

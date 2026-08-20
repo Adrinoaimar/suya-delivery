@@ -36,7 +36,7 @@ const SECONDARY: NavItem[] = [
   { to: '/rider/history', label: 'Historial', icon: History },
   { to: '/rider/earnings', label: 'Ganancias', icon: Wallet },
   { to: '/rider/settings', label: 'Configuración', icon: Settings },
-  { to: '/help', label: 'Ayuda', icon: CircleHelp },
+  { to: '/rider/help', label: 'Ayuda', icon: CircleHelp },
 ];
 
 function linkClasses(isActive: boolean): string {
@@ -50,6 +50,7 @@ function linkClasses(isActive: boolean): string {
 export function RiderLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const available = useRiderStore((state) => state.available);
+  const customerAppUrl = import.meta.env.VITE_CUSTOMER_APP_URL;
   // Rastreador único de ubicación para toda el área del repartidor.
   useRiderTrackingRunner();
 
@@ -81,13 +82,15 @@ export function RiderLayout() {
           ))}
         </nav>
 
-        <Link
-          to="/"
-          className="mt-4 flex items-center gap-2 rounded-btn border border-white/15 px-3 py-2.5 text-sm text-white/80 hover:bg-white/10"
-        >
-          <Store aria-hidden="true" className="h-[18px] w-[18px]" />
-          Volver a la tienda
-        </Link>
+        {customerAppUrl && (
+          <a
+            href={customerAppUrl}
+            className="mt-4 flex items-center gap-2 rounded-btn border border-white/15 px-3 py-2.5 text-sm text-white/80 hover:bg-white/10"
+          >
+            <Store aria-hidden="true" className="h-[18px] w-[18px]" />
+            Volver a la tienda
+          </a>
+        )}
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -184,14 +187,16 @@ export function RiderLayout() {
               {item.label}
             </NavLink>
           ))}
-          <Link
-            to="/"
-            onClick={() => setMenuOpen(false)}
-            className="mt-2 flex items-center gap-3 rounded-btn border border-suya-mist px-3 py-3 text-[15px] font-medium text-suya-carbon"
-          >
-            <Store aria-hidden="true" className="h-5 w-5" />
-            Volver a la tienda
-          </Link>
+          {customerAppUrl && (
+            <a
+              href={customerAppUrl}
+              onClick={() => setMenuOpen(false)}
+              className="mt-2 flex items-center gap-3 rounded-btn border border-suya-mist px-3 py-3 text-[15px] font-medium text-suya-carbon"
+            >
+              <Store aria-hidden="true" className="h-5 w-5" />
+              Volver a la tienda
+            </a>
+          )}
         </nav>
       </Drawer>
     </div>

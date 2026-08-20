@@ -43,7 +43,9 @@ jobs:
         run: echo "VITE_BASE=/${GITHUB_REPOSITORY#*/}/" >> "$GITHUB_ENV"
 
       - name: Construir sitio
-        run: npm run build:pages
+        run: |
+          npm run build:pages
+          npm run build:apps
 
       - uses: actions/upload-pages-artifact@v3
         with:

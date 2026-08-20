@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, LifeBuoy, MessageSquare, ShieldCheck } from 'lucide-react';
-import { ButtonLink } from '@/components/common/Button';
+import { ButtonLink, ExternalButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { cn } from '@/lib/cn';
 
@@ -38,6 +38,7 @@ const FAQ = [
 ];
 
 export default function HelpPage() {
+  const riderAppUrl = import.meta.env.VITE_RIDER_APP_URL;
   const [open, setOpen] = useState<number | null>(0);
 
   return (
@@ -61,9 +62,16 @@ export default function HelpPage() {
           <p className="mt-1 text-sm text-[#6B7076]">
             Herramientas para repartidores: ubicación compartida, contacto de confianza y SOS.
           </p>
-          <ButtonLink to="/rider/safety" variant="secondary" size="sm" className="mt-3">
-            Abrir seguridad
-          </ButtonLink>
+          {riderAppUrl && (
+            <ExternalButtonLink
+              href={`${riderAppUrl.replace(/\/$/, '')}/rider/safety`}
+              variant="secondary"
+              size="sm"
+              className="mt-3"
+            >
+              Abrir seguridad
+            </ExternalButtonLink>
+          )}
         </Card>
       </div>
 

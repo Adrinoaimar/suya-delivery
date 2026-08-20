@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Bike, Heart, RefreshCw, ShieldCheck, User } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Button, ButtonLink } from '@/components/common/Button';
+import { Button, ExternalButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Input } from '@/components/common/Input';
@@ -30,6 +30,7 @@ export default function ProfilePage() {
     reference: profile.reference,
   });
   const [confirmReset, setConfirmReset] = useState(false);
+  const riderAppUrl = import.meta.env.VITE_RIDER_APP_URL;
 
   const allStores = useCatalogStore((state) => state.stores);
   const storesStatus = useCatalogStore((state) => state.storesStatus);
@@ -117,17 +118,17 @@ export default function ProfilePage() {
                 <User className="h-4 w-4" aria-hidden="true" />
                 Entrar como cliente
               </Button>
-              <Button
-                variant={profile.role === 'rider' ? 'primary' : 'secondary'}
-                fullWidth
-                onClick={() => {
-                  setRole('rider');
-                  navigate('/rider');
-                }}
-              >
-                <Bike className="h-4 w-4" aria-hidden="true" />
-                Entrar como repartidor
-              </Button>
+              {riderAppUrl && (
+                <ExternalButtonLink
+                  href={riderAppUrl}
+                  variant={profile.role === 'rider' ? 'primary' : 'secondary'}
+                  fullWidth
+                  onClick={() => setRole('rider')}
+                >
+                  <Bike className="h-4 w-4" aria-hidden="true" />
+                  Entrar como repartidor
+                </ExternalButtonLink>
+              )}
             </div>
           </Card>
         </div>
@@ -151,16 +152,22 @@ export default function ProfilePage() {
             </div>
           </Card>
 
-          <Card>
-            <h2 className="font-display text-[15px] font-bold">Seguridad del repartidor</h2>
-            <p className="mt-1 text-sm text-[#6B7076]">
-              Compartir ubicación con una persona de confianza, botón SOS y reporte de incidentes.
-            </p>
-            <ButtonLink to="/rider/safety" variant="secondary" className="mt-3">
-              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-              Abrir seguridad en ruta
-            </ButtonLink>
-          </Card>
+          {riderAppUrl && (
+            <Card>
+              <h2 className="font-display text-[15px] font-bold">Seguridad del repartidor</h2>
+              <p className="mt-1 text-sm text-[#6B7076]">
+                Compartir ubicación con una persona de confianza, botón SOS y reporte de incidentes.
+              </p>
+              <ExternalButtonLink
+                href={`${riderAppUrl.replace(/\/$/, '')}/rider/safety`}
+                variant="secondary"
+                className="mt-3"
+              >
+                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                Abrir seguridad en ruta
+              </ExternalButtonLink>
+            </Card>
+          )}
 
           <Card>
             <div className="flex items-center justify-between gap-3">
