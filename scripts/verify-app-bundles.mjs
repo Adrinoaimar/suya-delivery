@@ -13,6 +13,9 @@ const forbiddenByApp = {
     'RiderSafetyPage',
     'RiderSettingsPage',
     'Suya Operaciones',
+    'MockOrderService',
+    'MockStoreService',
+    'MockPaymentService',
   ],
   rider: [
     'BackofficePage',
@@ -22,6 +25,9 @@ const forbiddenByApp = {
     'StoreDetailPage',
     'StoresPage',
     'Suya Operaciones',
+    'MockOrderService',
+    'MockStoreService',
+    'MockPaymentService',
   ],
   backoffice: [
     'CartPage',
@@ -30,6 +36,9 @@ const forbiddenByApp = {
     'RiderCurrentPage',
     'RiderHomePage',
     'StoreDetailPage',
+    'MockOrderService',
+    'MockStoreService',
+    'MockPaymentService',
   ],
 };
 
@@ -82,3 +91,4 @@ if (failures.length > 0) {
 } else {
   console.log(`Bundles aislados: ${apps.join(', ')}`);
 }
+
