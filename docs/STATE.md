@@ -10,8 +10,8 @@ producción.
 ## Estado actual
 
 - Rama: `codex/functional-suya-loop`.
-- Checkpoint F5 en cierre: catálogo Supabase, categorías reales y seed trazable de 58 productos de
-  Andá Paya. F4 conserva 56 pruebas frontend y 40 pgTAP aprobadas en CI.
+- Checkpoint F5 verificado: catálogo Supabase, categorías reales y seed trazable de 58 productos de
+  Andá Paya. CI aprobó 70 pruebas frontend, tres builds y 50 pgTAP.
 - F0 verificado localmente: gobernanza, secretos, CI, arquitectura y continuidad.
 - Contratos de catálogo y pedidos son asíncronos; las pantallas manejan carga, error y reintento.
 - La progresión automática de pedidos y el pago digital simulado fueron retirados. El checkout solo
@@ -37,8 +37,8 @@ producción.
 
 ## Siguiente acción
 
-Validar F5 en CI y conectar pedidos a una RPC transaccional Supabase con precios calculados en
-servidor, estados multirol y Realtime.
+Conectar pedidos a una RPC transaccional Supabase con precios calculados en servidor, estados
+multirol y Realtime.
 
 ## Gate productivo pendiente
 
