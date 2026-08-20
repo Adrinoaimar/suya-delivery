@@ -10,8 +10,11 @@ estas configuraciones:
 | `suya-backoffice` | `npm ci && npm run build:backoffice` | `dist/backoffice` |
 
 Variables públicas en los tres proyectos: `VITE_BACKEND=supabase`, `VITE_SUPABASE_URL` y
-`VITE_SUPABASE_PUBLISHABLE_KEY`. Configurar además las tres URL cruzadas de `.env.example`.
+`VITE_SUPABASE_PUBLISHABLE_KEY`. Configurar además `VITE_EXPECTED_SUPABASE_PROJECT_REF` y las tres URL cruzadas de `.env.example`.
 Nunca colocar `service_role` ni secretos de pago en Pages/Vite.
+
+En Supabase Auth, registrar únicamente las URL exactas de los tres proyectos y del dominio final;
+no usar comodines globales `*.pages.dev`, porque permitirían redirecciones a proyectos ajenos.
 
 Cada build usa raíz `/`, por lo que cambiar de `*.pages.dev` al dominio comprado solo requiere
 actualizar dominios/variables URL y lanzar un redeploy, sin modificar código. No se genera `404.html`: Pages reconoce una SPA cuando falta ese

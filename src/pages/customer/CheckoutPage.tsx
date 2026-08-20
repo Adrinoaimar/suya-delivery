@@ -13,7 +13,7 @@ import { notificationService, paymentService } from '@/lib/services';
 import { useCatalogStore } from '@/store/catalogStore';
 import { cartTotals, useCartStore } from '@/store/cartStore';
 import { useOrderStore } from '@/store/orderStore';
-import { useUserStore } from '@/store/userStore';
+import { useAuthStore } from '@/store/authStore';
 import { formatPrice } from '@/utils/format';
 import type { PaymentMethod } from '@/types';
 
@@ -23,8 +23,7 @@ export default function CheckoutPage() {
   const storeId = useCartStore((state) => state.storeId);
   const clearCart = useCartStore((state) => state.clear);
   const createOrder = useOrderStore((state) => state.createOrder);
-  const profile = useUserStore((state) => state.profile);
-  const setProfile = useUserStore((state) => state.setProfile);
+  const identity = useAuthStore((state) => state.identity);
 
   const store = useCatalogStore((state) =>
     storeId ? state.stores.find((entry) => entry.id === storeId) : undefined,
@@ -38,10 +37,10 @@ export default function CheckoutPage() {
   }, [loadStores]);
 
   const [form, setForm] = useState({
-    name: profile.name === 'Invitado' ? '' : profile.name,
-    phone: profile.phone,
-    address: profile.address,
-    reference: profile.reference,
+    name: identity?.displayName ?? '',
+    phone: identity?.phone ?? '',
+    address: identity?.defaultAddress ?? '',
+    reference: identity?.defaultReference ?? '',
   });
   const method: PaymentMethod = 'cash';
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -148,12 +147,6 @@ export default function CheckoutPage() {
         paymentMethod: method,
       });
 
-      setProfile({
-        name: form.name,
-        phone: form.phone,
-        address: form.address,
-        reference: form.reference,
-      });
       clearCart();
       notificationService.notify(payment.message, 'success');
       navigate(`/orders/${order.id}/track`, { replace: true });

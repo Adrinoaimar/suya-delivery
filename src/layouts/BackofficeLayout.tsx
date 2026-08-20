@@ -1,7 +1,8 @@
-import { Building2, ClipboardList, LayoutDashboard, Settings, Store, Users } from 'lucide-react';
+import { Building2, ClipboardList, LayoutDashboard, LogOut, Settings, Store, Users } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { LogoMark } from '@/components/common/Logo';
 import { cn } from '@/lib/cn';
+import { useAuthStore } from '@/store/authStore';
 
 const navigation = [
   { to: '/', label: 'Resumen', icon: LayoutDashboard, end: true },
@@ -13,6 +14,8 @@ const navigation = [
 ];
 
 export function BackofficeLayout() {
+  const identity = useAuthStore((state) => state.identity);
+  const signOut = useAuthStore((state) => state.signOut);
   return (
     <div className="min-h-dvh bg-[#F4F6F8] text-[#20242A] lg:grid lg:grid-cols-[250px_1fr]">
       <aside className="border-b border-white/10 bg-[#15231D] p-4 text-white lg:min-h-dvh lg:border-b-0 lg:border-r">
@@ -43,11 +46,19 @@ export function BackofficeLayout() {
         </nav>
       </aside>
       <div className="min-w-0">
-        <header className="border-b border-[#E0E5E2] bg-white px-4 py-3 lg:px-7">
+        <header className="flex items-center justify-between border-b border-[#E0E5E2] bg-white px-4 py-3 lg:px-7">
           <div>
             <p className="font-display font-bold">Centro de operaciones</p>
-            <p className="text-xs text-[#68716C]">No publicar hasta activar autenticación y roles</p>
+            <p className="text-xs text-[#68716C]">{identity?.email}</p>
           </div>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-[#68716C]"
+            onClick={() => void signOut()}
+          >
+            <LogOut className="h-4 w-4" aria-hidden="true" />
+            Cerrar sesión
+          </button>
         </header>
         <main id="contenido" className="p-4 lg:p-7">
           <Outlet />

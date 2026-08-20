@@ -20,6 +20,8 @@ producción.
 - Backend elegido: Supabase exclusivo de Suya.
 - Frontend objetivo: tres builds Cloudflare Pages: customer, rider y backoffice.
 - Cliente, repartidor y backoffice ya tienen entradas, rutas y bundles físicos independientes.
+- Auth Supabase y guards por capacidad están implementados; la conexión rechaza un project ref
+  distinto al exclusivo esperado para Suya.
 
 ## Reglas de continuidad
 
@@ -32,8 +34,8 @@ producción.
 
 ## Siguiente acción
 
-Crear cliente Supabase y Auth con guards de rol; después conectar catálogo y pedidos, conservando
-servicios locales únicamente para tests durante la sustitución.
+Validar Auth/trigger en CI; conectar perfiles, catálogo y pedidos a Supabase, conservando servicios
+locales únicamente para tests durante la sustitución.
 
 ## Gate productivo pendiente
 

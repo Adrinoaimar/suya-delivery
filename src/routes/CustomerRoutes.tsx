@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react';
 import { Route, Routes } from 'react-router-dom';
 import { CustomerLayout } from '@/layouts/CustomerLayout';
 import { RouteFallback } from './RouteFallback';
+import { RequireAccess } from './RequireAccess';
 
 const HomePage = lazy(() => import('@/pages/customer/HomePage'));
 const StoresPage = lazy(() => import('@/pages/customer/StoresPage'));
@@ -18,6 +19,8 @@ const HelpPage = lazy(() => import('@/pages/customer/HelpPage'));
 const RiderProfilePage = lazy(() => import('@/pages/customer/RiderProfilePage'));
 const SharePage = lazy(() => import('@/pages/shared/SharePage'));
 const NotFoundPage = lazy(() => import('@/pages/shared/NotFoundPage'));
+const LoginPage = lazy(() => import('@/pages/shared/LoginPage'));
+const UnauthorizedPage = lazy(() => import('@/pages/shared/UnauthorizedPage'));
 
 export function CustomerRoutes() {
   return (
@@ -29,15 +32,19 @@ export function CustomerRoutes() {
           <Route path="store/:id" element={<StoreDetailPage />} />
           <Route path="search" element={<SearchPage />} />
           <Route path="cart" element={<CartPage />} />
-          <Route path="checkout" element={<CheckoutPage />} />
-          <Route path="orders" element={<OrdersPage />} />
-          <Route path="orders/:id" element={<OrderDetailPage />} />
-          <Route path="orders/:id/track" element={<OrderTrackPage />} />
           <Route path="promotions" element={<PromotionsPage />} />
-          <Route path="profile" element={<ProfilePage />} />
           <Route path="help" element={<HelpPage />} />
           <Route path="rider/:id" element={<RiderProfilePage />} />
+          <Route element={<RequireAccess anyOf={['customer']} />}>
+            <Route path="checkout" element={<CheckoutPage />} />
+            <Route path="orders" element={<OrdersPage />} />
+            <Route path="orders/:id" element={<OrderDetailPage />} />
+            <Route path="orders/:id/track" element={<OrderTrackPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+          </Route>
         </Route>
+        <Route path="login" element={<LoginPage title="Ingresa a Suya" allowed={['customer']} allowCustomerSignup defaultPath="/profile" />} />
+        <Route path="unauthorized" element={<UnauthorizedPage />} />
         <Route path="share/:token" element={<SharePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

@@ -1,20 +1,11 @@
 import { create } from 'zustand';
 import { STORAGE_KEYS, readLocal, writeLocal } from '@/lib/storage';
-import type { UserProfile } from '@/types';
 
 export interface Preferences {
   locationLabel: string;
   reduceMotion: boolean;
   notifications: boolean;
 }
-
-const DEFAULT_PROFILE: UserProfile = {
-  name: 'Invitado',
-  phone: '',
-  address: 'Urb. Popular Villa Perú Canadá, Sullana',
-  reference: '',
-  role: 'customer',
-};
 
 const DEFAULT_PREFERENCES: Preferences = {
   locationLabel: 'Sullana, Perú',
@@ -31,12 +22,9 @@ export const LOCATION_OPTIONS = [
 ];
 
 interface UserState {
-  profile: UserProfile;
   preferences: Preferences;
   favorites: string[];
   recentSearches: string[];
-  setProfile: (patch: Partial<UserProfile>) => void;
-  setRole: (role: UserProfile['role']) => void;
   setPreferences: (patch: Partial<Preferences>) => void;
   toggleFavorite: (storeId: string) => void;
   pushSearch: (term: string) => void;
@@ -44,22 +32,9 @@ interface UserState {
 }
 
 export const useUserStore = create<UserState>((set, get) => ({
-  profile: readLocal<UserProfile>(STORAGE_KEYS.user, DEFAULT_PROFILE),
   preferences: readLocal<Preferences>(STORAGE_KEYS.preferences, DEFAULT_PREFERENCES),
   favorites: readLocal<string[]>(STORAGE_KEYS.favorites, []),
   recentSearches: readLocal<string[]>(STORAGE_KEYS.recentSearches, []),
-
-  setProfile(patch) {
-    const profile = { ...get().profile, ...patch };
-    writeLocal(STORAGE_KEYS.user, profile);
-    set({ profile });
-  },
-
-  setRole(role) {
-    const profile = { ...get().profile, role };
-    writeLocal(STORAGE_KEYS.user, profile);
-    set({ profile });
-  },
 
   setPreferences(patch) {
     const preferences = { ...get().preferences, ...patch };

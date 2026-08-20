@@ -185,14 +185,6 @@ export interface DemoRoute {
   points: LatLng[];
 }
 
-export interface UserProfile {
-  name: string;
-  phone: string;
-  address: string;
-  reference: string;
-  role: 'customer' | 'rider';
-}
-
 export interface TrustedContact {
   name: string;
   phone: string;

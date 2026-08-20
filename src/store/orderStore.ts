@@ -4,6 +4,7 @@ import type { CodeResult, CreateOrderInput } from '@/lib/services';
 import type { Order, OrderStatus } from '@/types';
 
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'error';
+let orderGeneration = 0;
 
 interface OrderState {
   orders: Order[];
@@ -16,6 +17,7 @@ interface OrderState {
   cancelOrder: (id: string, code: string) => Promise<CodeResult>;
   confirmDelivery: (id: string, code: string) => Promise<CodeResult>;
   getOrder: (id: string) => Order | undefined;
+  reset: () => void;
 }
 
 function replaceOrder(orders: Order[], updated: Order): Order[] {
@@ -39,20 +41,24 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   },
 
   async refresh() {
+    const generation = orderGeneration;
     set({ status: 'loading', error: null });
     try {
       const orders = await orderService.list();
-      set({ orders, status: 'ready', error: null });
+      if (generation === orderGeneration) set({ orders, status: 'ready', error: null });
     } catch (error) {
-      set({ status: 'error', error: errorMessage(error) });
+      if (generation === orderGeneration) set({ status: 'error', error: errorMessage(error) });
     }
   },
 
   async createOrder(input) {
+    const generation = orderGeneration;
     set({ error: null });
     try {
       const order = await orderService.create(input);
-      set((state) => ({ orders: replaceOrder(state.orders, order), status: 'ready' }));
+      if (generation === orderGeneration) {
+        set((state) => ({ orders: replaceOrder(state.orders, order), status: 'ready' }));
+      }
       return order;
     } catch (error) {
       set({ status: 'error', error: errorMessage(error) });
@@ -61,10 +67,13 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   },
 
   async updateOrderStatus(id, status) {
+    const generation = orderGeneration;
     set({ error: null });
     try {
       const order = await orderService.updateStatus(id, status);
-      if (order) set((state) => ({ orders: replaceOrder(state.orders, order) }));
+      if (order && generation === orderGeneration) {
+        set((state) => ({ orders: replaceOrder(state.orders, order) }));
+      }
       return order;
     } catch (error) {
       set({ error: errorMessage(error) });
@@ -73,19 +82,30 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   },
 
   async cancelOrder(id, code) {
+    const generation = orderGeneration;
     const result = await orderService.cancel(id, code);
-    if (result.ok) set((state) => ({ orders: replaceOrder(state.orders, result.order) }));
+    if (result.ok && generation === orderGeneration) {
+      set((state) => ({ orders: replaceOrder(state.orders, result.order) }));
+    }
     return result;
   },
 
   async confirmDelivery(id, code) {
+    const generation = orderGeneration;
     const result = await orderService.confirmDelivery(id, code);
-    if (result.ok) set((state) => ({ orders: replaceOrder(state.orders, result.order) }));
+    if (result.ok && generation === orderGeneration) {
+      set((state) => ({ orders: replaceOrder(state.orders, result.order) }));
+    }
     return result;
   },
 
   getOrder(id) {
     return get().orders.find((order) => order.id === id || order.code === id);
+  },
+
+  reset() {
+    orderGeneration += 1;
+    set({ orders: [], status: 'idle', error: null });
   },
 }));
 

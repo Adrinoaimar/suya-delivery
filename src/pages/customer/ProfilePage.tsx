@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Bike, Heart, RefreshCw, ShieldCheck, User } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button, ExternalButtonLink } from '@/components/common/Button';
+import { Heart, RefreshCw, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Input } from '@/components/common/Input';
@@ -13,24 +13,22 @@ import { clearSuyaStorage } from '@/lib/storage';
 import { notificationService } from '@/lib/services';
 import { useCatalogStore } from '@/store/catalogStore';
 import { useUserStore } from '@/store/userStore';
+import { useAuthStore } from '@/store/authStore';
 
 export default function ProfilePage() {
-  const navigate = useNavigate();
-  const profile = useUserStore((state) => state.profile);
+  const identity = useAuthStore((state) => state.identity);
+  const updateProfile = useAuthStore((state) => state.updateProfile);
   const preferences = useUserStore((state) => state.preferences);
   const favorites = useUserStore((state) => state.favorites);
-  const setProfile = useUserStore((state) => state.setProfile);
-  const setRole = useUserStore((state) => state.setRole);
   const setPreferences = useUserStore((state) => state.setPreferences);
 
   const [form, setForm] = useState({
-    name: profile.name,
-    phone: profile.phone,
-    address: profile.address,
-    reference: profile.reference,
+    name: identity?.displayName ?? '',
+    phone: identity?.phone ?? '',
+    address: identity?.defaultAddress ?? '',
+    reference: identity?.defaultReference ?? '',
   });
   const [confirmReset, setConfirmReset] = useState(false);
-  const riderAppUrl = import.meta.env.VITE_RIDER_APP_URL;
 
   const allStores = useCatalogStore((state) => state.stores);
   const storesStatus = useCatalogStore((state) => state.storesStatus);
@@ -55,10 +53,8 @@ export default function ProfilePage() {
                 <User className="h-6 w-6" />
               </span>
               <div>
-                <p className="font-display text-lg font-bold">{profile.name}</p>
-                <p className="text-sm text-[#6B7076]">
-                  {profile.role === 'rider' ? 'Perfil de repartidor' : 'Perfil de cliente'}
-                </p>
+                <p className="font-display text-lg font-bold">{identity?.displayName}</p>
+                <p className="text-sm text-[#6B7076]">{identity?.email}</p>
               </div>
             </div>
 
@@ -93,44 +89,20 @@ export default function ProfilePage() {
             <Button
               className="mt-3"
               onClick={() => {
-                setProfile(form);
-                notificationService.notify('Datos guardados', 'success');
+                void updateProfile({
+                  displayName: form.name,
+                  phone: form.phone,
+                  defaultAddress: form.address,
+                  defaultReference: form.reference,
+                })
+                  .then(() => notificationService.notify('Datos guardados', 'success'))
+                  .catch(() => notificationService.notify('No pudimos guardar tus datos.', 'danger'));
               }}
             >
               Guardar cambios
             </Button>
           </Card>
 
-          <Card>
-            <h2 className="font-display text-[15px] font-bold">¿Cómo quieres entrar?</h2>
-            <p className="mt-1 text-sm text-[#6B7076]">
-              La demo no usa credenciales: elige el perfil con el que quieres navegar.
-            </p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <Button
-                variant={profile.role === 'customer' ? 'primary' : 'secondary'}
-                fullWidth
-                onClick={() => {
-                  setRole('customer');
-                  navigate('/');
-                }}
-              >
-                <User className="h-4 w-4" aria-hidden="true" />
-                Entrar como cliente
-              </Button>
-              {riderAppUrl && (
-                <ExternalButtonLink
-                  href={riderAppUrl}
-                  variant={profile.role === 'rider' ? 'primary' : 'secondary'}
-                  fullWidth
-                  onClick={() => setRole('rider')}
-                >
-                  <Bike className="h-4 w-4" aria-hidden="true" />
-                  Entrar como repartidor
-                </ExternalButtonLink>
-              )}
-            </div>
-          </Card>
         </div>
 
         <div className="space-y-4">
@@ -152,22 +124,6 @@ export default function ProfilePage() {
             </div>
           </Card>
 
-          {riderAppUrl && (
-            <Card>
-              <h2 className="font-display text-[15px] font-bold">Seguridad del repartidor</h2>
-              <p className="mt-1 text-sm text-[#6B7076]">
-                Compartir ubicación con una persona de confianza, botón SOS y reporte de incidentes.
-              </p>
-              <ExternalButtonLink
-                href={`${riderAppUrl.replace(/\/$/, '')}/rider/safety`}
-                variant="secondary"
-                className="mt-3"
-              >
-                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                Abrir seguridad en ruta
-              </ExternalButtonLink>
-            </Card>
-          )}
 
           <Card>
             <div className="flex items-center justify-between gap-3">

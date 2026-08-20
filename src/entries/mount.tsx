@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AppShell } from '@/app/AppShell';
+import { AuthBootstrap } from '@/app/AuthBootstrap';
 import '@/styles/index.css';
 
 interface MountOptions {
@@ -19,6 +20,7 @@ export function mountApp(Routes: ComponentType, options: MountOptions = {}): voi
     <StrictMode>
       <BrowserRouter basename={basename}>
         <AppShell>
+          <AuthBootstrap />
           {options.Bootstrap && <options.Bootstrap />}
           <Routes />
         </AppShell>
