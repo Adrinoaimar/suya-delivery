@@ -62,7 +62,7 @@ jobs:
       - name: Cargar credenciales públicas locales
         shell: bash
         run: |
-          supabase status -o json > "$RUNNER_TEMP/supabase.json"
+          npx supabase status -o json > "$RUNNER_TEMP/supabase.json"
           api_url=$(jq -r '.API_URL // .api_url // empty' "$RUNNER_TEMP/supabase.json")
           anon_key=$(jq -r '.ANON_KEY // .anon_key // empty' "$RUNNER_TEMP/supabase.json")
           test -n "$api_url"
