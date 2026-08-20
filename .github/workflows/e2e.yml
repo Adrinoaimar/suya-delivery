@@ -31,13 +31,14 @@ jobs:
         shell: bash
         run: |
           supabase status -o env > "$RUNNER_TEMP/supabase.env"
-          set -a
-          source "$RUNNER_TEMP/supabase.env"
-          set +a
-          test -n "${API_URL:-}"
-          test -n "${ANON_KEY:-}"
-          echo "VITE_SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
-          echo "VITE_SUPABASE_PUBLISHABLE_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          api_url=$(sed -n 's/^API_URL=//p' "$RUNNER_TEMP/supabase.env" | tail -n 1 | sed 's/^"//; s/"$//')
+          anon_key=$(sed -n 's/^ANON_KEY=//p' "$RUNNER_TEMP/supabase.env" | tail -n 1 | sed 's/^"//; s/"$//')
+          test -n "$api_url"
+          test -n "$anon_key"
+          {
+            echo "VITE_SUPABASE_URL=$api_url"
+            echo "VITE_SUPABASE_PUBLISHABLE_KEY=$anon_key"
+          } >> "$GITHUB_ENV"
       - run: npm run build:apps
       - name: Instalar Chromium real
         run: npx playwright install --with-deps chromium
@@ -58,4 +59,5 @@ jobs:
       - name: Detener Supabase
         if: always()
         run: npm run db:stop
+
 
