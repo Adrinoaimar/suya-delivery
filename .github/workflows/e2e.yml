@@ -61,8 +61,3 @@ jobs:
       - name: Detener Supabase
         if: always()
         run: npm run db:stop
-
-
-
-yaml ok
-
