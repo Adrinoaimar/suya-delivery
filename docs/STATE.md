@@ -10,8 +10,8 @@ producción.
 ## Estado actual
 
 - Rama: `codex/functional-suya-loop`.
-- Checkpoint F6A verificado: pedidos cash transaccionales, precios de servidor, idempotencia,
-  códigos privados y adaptador Supabase. CI aprobó 76 pruebas frontend, tres builds y 72 pgTAP.
+- Checkpoint F6 verificado: pedidos cash transaccionales, despacho multirol, códigos privados,
+  Realtime, rider y backoffice operativo. CI aprobó 77 pruebas frontend, tres builds y 110 pgTAP.
 - F0 verificado localmente: gobernanza, secretos, CI, arquitectura y continuidad.
 - Contratos de catálogo y pedidos son asíncronos; las pantallas manejan carga, error y reintento.
 - La progresión automática de pedidos y el pago digital simulado fueron retirados. El checkout solo
@@ -39,7 +39,7 @@ producción.
 
 ## Siguiente acción
 
-Completar despacho y estados multirol mediante RPC estrictas, Realtime y notificaciones.
+Conectar ubicación/mapas reales, alertas e incidencias; retirar simulaciones restantes.
 
 ## Gate productivo pendiente
 
