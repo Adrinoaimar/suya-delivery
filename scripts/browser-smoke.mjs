@@ -152,6 +152,9 @@ if (process.env.SMOKE_BUSINESS === 'true') {
     console.log('business/rider-gps-sos-incident: OK');
 
     await riderPage.getByRole('button', { name: 'Entregué el pedido' }).click();
+    await riderPage.locator('#codigo-pedido').fill(deliveryCode === '0000' ? '0001' : '0000');
+    await riderPage.getByRole('button', { name: 'Confirmar entrega' }).click();
+    await riderPage.getByText('El código no coincide. Revísalo con el cliente.', { exact: true }).waitFor({ timeout: 20_000 });
     await riderPage.locator('#codigo-pedido').fill(deliveryCode);
     await riderPage.getByRole('button', { name: 'Confirmar entrega' }).click();
     await riderPage.getByText('Entregado', { exact: true }).waitFor({ timeout: 20_000 });
