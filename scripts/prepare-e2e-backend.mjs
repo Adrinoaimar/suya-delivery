@@ -32,11 +32,5 @@ if (userResult.error || !userResult.data.user) {
   throw new Error(`No se pudo preparar el usuario E2E: ${userResult.error?.message ?? 'respuesta vacía'}`);
 }
 
-const { error: restaurantError } = await admin
-  .from('restaurants')
-  .update({ accepting_orders: true, address: 'Av. José de Lama 480, Sullana' })
-  .eq('slug', 'anda-paya');
-if (restaurantError) throw new Error(`No se pudo abrir el restaurante E2E: ${restaurantError.message}`);
-
 console.log(`Fixture E2E listo: ${email}`);
 
