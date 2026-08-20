@@ -125,6 +125,8 @@ if (process.env.SMOKE_BUSINESS === 'true') {
     await riderPage.getByLabel('Contraseña').fill(password);
     await riderPage.getByRole('button', { name: 'Ingresar' }).click();
     await riderPage.waitForURL(/\/rider(?:\/current)?$/, { timeout: 20_000 });
+    await riderPage.goto(`${riderOrigin}/rider`, { waitUntil: 'networkidle', timeout: 20_000 });
+    await riderPage.getByText('Disponible', { exact: true }).waitFor({ timeout: 20_000 });
     await riderPage.goto(`${riderOrigin}/rider/current`, { waitUntil: 'networkidle', timeout: 20_000 });
     await riderPage.getByRole('heading', { name: 'Viaje actual' }).waitFor();
     await riderPage.getByRole('button', { name: 'Recogí el pedido' }).click();
