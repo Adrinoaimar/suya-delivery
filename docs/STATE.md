@@ -27,6 +27,8 @@ producción.
   cubre Chrome real, móvil/escritorio, rutas protegidas, accesibilidad básica y reduced motion.
 - F9 cerró el último escape conocido: `build:apps` rechaza configuración incompleta y los bundles
   productivos rechazan chunks `Mock*`; GitHub Pages ya no publica artefactos heredados.
+- F10 añadió E2E Playwright reproducible: Supabase local real en CI, tres apps, nueve combinaciones
+  de viewport/ruta y gate local explícito que no puede usarse en release productivo.
 - Cliente, repartidor y backoffice ya tienen entradas, rutas y bundles físicos independientes.
 - Auth Supabase y guards por capacidad están implementados; la conexión rechaza un project ref
   distinto al exclusivo esperado para Suya.
@@ -56,5 +58,6 @@ Cloudflare funcionen con Supabase y el verificador confirme ausencia de mocks en
 
 La máquina actual no tiene Docker ni Podman. Las pruebas pgTAP y `db lint` se ejecutan en GitHub CI;
 localmente se habilitarán cuando exista uno de esos runtimes.
+
 
 
