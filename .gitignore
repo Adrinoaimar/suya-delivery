@@ -18,6 +18,8 @@ dist-ssr
 # Supabase local y archivos de credenciales
 .supabase/
 supabase/.temp/
+.playwright-cli/
+output/playwright/
 
 # Editor directories and files
 .vscode/*
