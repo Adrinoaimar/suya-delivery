@@ -63,6 +63,113 @@ for (const viewport of viewports) {
   await context.close();
 }
 
+if (process.env.SMOKE_BUSINESS === 'true') {
+  const customerOrigin = new URL(targets[0].url).origin;
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    reducedMotion: 'reduce',
+    geolocation: { latitude: -4.903, longitude: -80.685 },
+    permissions: ['geolocation'],
+  });
+  const page = await context.newPage();
+  page.on('pageerror', (error) => failures.push(`business/pageerror: ${error.message}`));
+  try {
+    const email = process.env.E2E_CUSTOMER_EMAIL ?? 'e2e.customer@suya.test';
+    const password = process.env.E2E_CUSTOMER_PASSWORD ?? 'SuyaE2E!2026Local';
+    await page.goto(`${customerOrigin}/login`, { waitUntil: 'domcontentloaded', timeout: 20_000 });
+    await page.getByLabel('Correo').fill(email);
+    await page.getByLabel('Contraseña').fill(password);
+    await page.getByRole('button', { name: 'Ingresar' }).click();
+    await page.waitForURL(/\/profile|\/$/, { timeout: 20_000 });
+
+    await page.goto(`${customerOrigin}/stores`, { waitUntil: 'networkidle', timeout: 20_000 });
+    await page.getByRole('link', { name: 'Andá Paya' }).click();
+    await page.getByRole('heading', { name: 'Andá Paya' }).waitFor();
+    await page.getByRole('button', { name: 'Agregar Chicharrón de pescado' }).click();
+    await page.getByRole('button', { name: /Agregar ·/ }).click();
+
+    await page.goto(`${customerOrigin}/cart`, { waitUntil: 'networkidle', timeout: 20_000 });
+    await page.getByRole('link', { name: 'Continuar al pago' }).click();
+    await page.getByRole('heading', { name: 'Confirmar pedido' }).waitFor();
+    await page.getByLabel('Nombre y apellido').fill('Cliente E2E Suya');
+    await page.getByLabel('Teléfono').fill('987654321');
+    await page.getByLabel('Dirección').fill('Av. José de Lama 480, Sullana');
+    await page.getByRole('button', { name: 'Usar mi ubicación' }).click();
+    await page.getByText('Punto confirmado:', { exact: false }).waitFor({ timeout: 10_000 });
+    await page.getByRole('button', { name: /Confirmar pedido ·/ }).click();
+    await page.waitForURL(/\/orders\/[^/]+\/track$/, { timeout: 20_000 });
+    await page.getByRole('heading', { name: 'Pedido confirmado' }).waitFor({ timeout: 20_000 });
+    const deliveryCode = await page.getByText(/^\d{4}$/, { exact: true }).first().innerText();
+    console.log('business/customer-create-cash-order: OK');
+
+    const backofficeOrigin = new URL(targets[2].url).origin;
+    const riderOrigin = new URL(targets[1].url).origin;
+    await context.grantPermissions(['geolocation'], { origin: riderOrigin });
+    const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'e2e.admin@suya.test';
+    const riderEmail = process.env.E2E_RIDER_EMAIL ?? 'e2e.rider@suya.test';
+    const opsPage = await context.newPage();
+    await opsPage.goto(`${backofficeOrigin}/login`, { waitUntil: 'domcontentloaded', timeout: 20_000 });
+    await opsPage.getByLabel('Correo').fill(adminEmail);
+    await opsPage.getByLabel('Contraseña').fill(password);
+    await opsPage.getByRole('button', { name: 'Ingresar' }).click();
+    await opsPage.waitForURL(/\/$|\/orders$/, { timeout: 20_000 });
+    await opsPage.goto(`${backofficeOrigin}/orders`, { waitUntil: 'networkidle', timeout: 20_000 });
+    await opsPage.getByRole('heading', { name: 'Pedidos' }).waitFor();
+    await opsPage.locator('select').first().selectOption({ label: 'Repartidor E2E Suya · Moto' });
+    await opsPage.getByRole('button', { name: 'Iniciar preparación' }).first().click();
+    await opsPage.getByText('En preparación', { exact: true }).waitFor({ timeout: 20_000 });
+    console.log('business/backoffice-assign-and-prepare: OK');
+
+    const riderPage = await context.newPage();
+    await riderPage.goto(`${riderOrigin}/login`, { waitUntil: 'domcontentloaded', timeout: 20_000 });
+    await riderPage.getByLabel('Correo').fill(riderEmail);
+    await riderPage.getByLabel('Contraseña').fill(password);
+    await riderPage.getByRole('button', { name: 'Ingresar' }).click();
+    await riderPage.waitForURL(/\/rider(?:\/current)?$/, { timeout: 20_000 });
+    await riderPage.goto(`${riderOrigin}/rider`, { waitUntil: 'networkidle', timeout: 20_000 });
+    await riderPage.getByText('Disponible', { exact: true }).waitFor({ timeout: 20_000 });
+    await riderPage.goto(`${riderOrigin}/rider/current`, { waitUntil: 'networkidle', timeout: 20_000 });
+    await riderPage.getByRole('heading', { name: 'Viaje actual' }).waitFor();
+    await riderPage.getByRole('button', { name: 'Recogí el pedido' }).click();
+    await riderPage.getByText('Repartidor recogió pedido', { exact: true }).waitFor({ timeout: 20_000 });
+    await riderPage.getByRole('button', { name: 'Voy en camino' }).click();
+    await riderPage.getByText('En camino', { exact: true }).waitFor({ timeout: 20_000 });
+    console.log('business/rider-advance-status: OK');
+
+    const safetyPage = await context.newPage();
+    await safetyPage.goto(`${riderOrigin}/rider/safety`, { waitUntil: 'networkidle', timeout: 20_000 });
+    await safetyPage.getByRole('heading', { name: 'Seguridad en ruta' }).waitFor();
+    await safetyPage.getByText('GPS real activo', { exact: true }).waitFor({ timeout: 20_000 });
+    await safetyPage.getByRole('button', { name: 'SOS' }).click();
+    await safetyPage.getByRole('button', { name: 'Enviar alerta SOS' }).click();
+    await safetyPage.getByText('Alerta operativa activa', { exact: true }).waitFor({ timeout: 20_000 });
+    await safetyPage.getByRole('button', { name: 'Estoy bien, avisar a operaciones' }).click();
+    await safetyPage.getByRole('heading', { name: 'Reportar incidente' }).waitFor();
+    await safetyPage.getByLabel('Descripción').fill('Tráfico intenso en la ruta, sin riesgo para el pedido.');
+    await safetyPage.getByRole('button', { name: 'Registrar incidente' }).click();
+    await safetyPage.getByText('Incidentes registrados', { exact: true }).waitFor({ timeout: 20_000 });
+    await safetyPage.close();
+    console.log('business/rider-gps-sos-incident: OK');
+
+    await riderPage.getByRole('button', { name: 'Entregué el pedido' }).click();
+    await riderPage.locator('#codigo-pedido').fill(deliveryCode === '0000' ? '0001' : '0000');
+    await riderPage.getByRole('button', { name: 'Confirmar entrega' }).click();
+    await riderPage.getByText('El código no coincide. Revísalo con el cliente.', { exact: true }).waitFor({ timeout: 20_000 });
+    console.log('business/rider-reject-invalid-delivery-code: OK');
+    await riderPage.locator('#codigo-pedido').fill(deliveryCode);
+    await riderPage.getByRole('button', { name: 'Confirmar entrega' }).click();
+    await riderPage.getByText('Entregado', { exact: true }).waitFor({ timeout: 20_000 });
+    console.log('business/rider-confirm-delivery-code: OK');
+    await opsPage.close();
+    await riderPage.close();
+  } catch (error) {
+    failures.push(`business/customer-create-cash-order: ${error.message}`);
+  } finally {
+    await page.close();
+    await context.close();
+  }
+}
+
 await browser.close();
 if (failures.length) {
   console.error(failures.join('\n'));

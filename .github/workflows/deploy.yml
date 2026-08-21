@@ -46,6 +46,11 @@ jobs:
       VITE_BACKEND: supabase
       VITE_MAP_PROVIDER: osm
       VITE_EXPECTED_SUPABASE_PROJECT_REF: local
+      SMOKE_BUSINESS: 'true'
+      E2E_CUSTOMER_EMAIL: e2e.customer@suya.test
+      E2E_CUSTOMER_PASSWORD: SuyaE2E!2026Local
+      E2E_ADMIN_EMAIL: e2e.admin@suya.test
+      E2E_RIDER_EMAIL: e2e.rider@suya.test
     steps:
       - uses: actions/checkout@v4
 
@@ -62,16 +67,26 @@ jobs:
       - name: Cargar credenciales públicas locales
         shell: bash
         run: |
-          supabase status -o json > "$RUNNER_TEMP/supabase.json"
+          npx supabase status -o json > "$RUNNER_TEMP/supabase.json"
           api_url=$(jq -r '.API_URL // .api_url // empty' "$RUNNER_TEMP/supabase.json")
           anon_key=$(jq -r '.ANON_KEY // .anon_key // empty' "$RUNNER_TEMP/supabase.json")
+          service_role_key=$(jq -r '.SERVICE_ROLE_KEY // .service_role_key // empty' "$RUNNER_TEMP/supabase.json")
+          db_url=$(jq -r '.DB_URL // .db_url // empty' "$RUNNER_TEMP/supabase.json")
           test -n "$api_url"
           test -n "$anon_key"
+          test -n "$service_role_key"
+          test -n "$db_url"
+          psql "$db_url" -v ON_ERROR_STOP=1 -c "update public.restaurants set accepting_orders = true, address = 'Av. José de Lama 480, Sullana' where slug = 'anda-paya';"
+          echo "SUPABASE_DB_URL=$db_url" >> "$GITHUB_ENV"
           {
             echo "VITE_SUPABASE_URL=$api_url"
             echo "VITE_SUPABASE_PUBLISHABLE_KEY=$anon_key"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$service_role_key"
           } >> "$GITHUB_ENV"
 
+      - run: npm run prepare:e2e
+      - name: Habilitar perfil rider E2E
+        run: psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -c "insert into public.rider_profiles (user_id, status, verified_at, vehicle_type) select id, 'available', now(), 'Moto' from auth.users where email = 'e2e.rider@suya.test' on conflict (user_id) do update set status = 'available', verified_at = now(), vehicle_type = 'Moto';"
       - run: npm run build:apps
 
       - name: Instalar Chromium real
