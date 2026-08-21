@@ -12,12 +12,18 @@
 Proyecto dedicado `SUYA-DELYVERI`, ref `cggxooilzhqlcnofgtmi`, región `us-east-1`; migraciones,
 lint y seed de Andá Paya aplicados. No reutilizar otros proyectos.
 
-## Continuación obligatoria
+## Despliegue verificado
 
-1. Crear `suya-customer`, `suya-rider` y `suya-backoffice` en Cloudflare Pages.
-2. Configurar el environment protegido `cloudflare-production` según `.github/workflows/cloudflare-pages.yml`.
-3. Ejecutar el workflow manual con `allow_initial_release=true` solo después de validar los proyectos.
-4. Probar las tres URLs públicas y registrar sus enlaces; no declarar producción antes de ese smoke.
+- `https://suya-customer.pages.dev` — customer.
+- `https://suya-rider.pages.dev` — rider.
+- `https://suya-backoffice.pages.dev` — backoffice.
+- Despliegues direct-upload verificados con Wrangler desde commit `7909b10`.
+- Smoke remoto Chrome: nueve combinaciones viewport/ruta, HTTP 200, headings correctos, sin errores de página.
+
+## Automatización pendiente
+
+Configurar environment protegido `cloudflare-production` y token Cloudflare dedicado de mínimo privilegio
+para que `.github/workflows/cloudflare-pages.yml` publique automáticamente. Despliegue manual ya está activo.
 
 Nunca colocar `service_role`, claves de pago ni secretos en Vite/Pages. Los pagos digitales siguen
 bloqueados hasta integrar un proveedor real con credenciales del comercio; efectivo es el único

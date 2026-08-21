@@ -9,7 +9,7 @@ producción.
 
 ## Estado actual
 
-- Rama: `codex/functional-suya-loop`.
+- Rama: `main`.
 - Checkpoint F7 verificado: puntos de entrega consentidos, mapas OSM, GPS real limitado, tracking
   participante, incidentes y SOS persistentes. CI aprobó 138 pgTAP; frontend aprobó 81 pruebas.
 - F8A local: simulaciones productivas retiradas. Gate validó 352 artefactos sin mocks ni secretos.
@@ -32,8 +32,8 @@ producción.
 - Cliente, repartidor y backoffice ya tienen entradas, rutas y bundles físicos independientes.
 - Auth Supabase y guards por capacidad están implementados; la conexión rechaza un project ref
   distinto al exclusivo esperado para Suya.
-- El catálogo Supabase no inventa horario, distancia ni reseñas. `accepting_orders` permanece falso
-  para Andá Paya hasta definir logística real; bebidas sin precio no se importaron.
+- El catálogo Supabase no inventa horario, distancia ni reseñas. Andá Paya tiene 58 productos y
+  `accepting_orders` habilitado por autorización comercial; bebidas sin precio no se importaron.
 - Producción no incluye servicios mock, mapa falso, GPS simulado, promociones ficticias ni ganancias
   inventadas. Enlace público de tracking sigue deshabilitado por seguridad.
 
@@ -48,13 +48,13 @@ producción.
 
 ## Siguiente acción
 
-Crear E2E multirol, pruebas de dispositivos, accesibilidad, desconexión y carga. El despliegue real
-espera una cuenta Cloudflare autenticada y un proyecto Supabase exclusivo con sus variables.
+Ejecutar E2E multirol remoto con cuentas de prueba controladas, pruebas de desconexión y carga.
+Las tres Pages ya están desplegadas; automatización CI requiere token Cloudflare dedicado de mínimo privilegio.
 
 ## Gate productivo pendiente
 
-El sitio GitHub Pages actual es legado no productivo. Se retirará cuando las tres aplicaciones
-Cloudflare funcionen con Supabase y el verificador confirme ausencia de mocks en bundles.
+El sitio GitHub Pages actual es legado. Producción canónica usa `suya-customer.pages.dev`,
+`suya-rider.pages.dev` y `suya-backoffice.pages.dev`; smoke remoto y verificador de bundles están verdes.
 
 La máquina actual no tiene Docker ni Podman. Las pruebas pgTAP y `db lint` se ejecutan en GitHub CI;
 localmente se habilitarán cuando exista uno de esos runtimes.
