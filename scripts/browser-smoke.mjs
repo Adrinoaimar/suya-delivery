@@ -30,6 +30,7 @@ for (const viewport of viewports) {
     try {
       response = await page.goto(target.url, { waitUntil: 'domcontentloaded', timeout: 20_000 });
       await page.waitForTimeout(500);
+      await page.getByRole('heading', { name: target.heading }).waitFor({ timeout: 10_000 });
       const state = await page.evaluate(() => {
         const accessibleName = (element) =>
           element.getAttribute('aria-label') ||
