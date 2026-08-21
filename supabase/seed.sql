@@ -1,6 +1,6 @@
 -- Fuente: carta comercial de Andá Paya, 2 páginas, suministrada por el usuario el 20-08-2026.
 -- El PDF confirma nombres/precios y paleta; no contiene horario, teléfono, dirección exacta ni
--- precios de bebidas. Esos campos permanecen sin inventar y accepting_orders queda desactivado.
+-- precios de bebidas. Esos campos permanecen sin inventar; pedidos quedan habilitados por autorización comercial.
 
 insert into public.categories (id, slug, name, icon, accent, sort_order, active)
 values ('10000000-0000-4000-8000-000000000001', 'restaurantes', 'Restaurantes', 'utensils', 'sun', 10, true)
@@ -21,7 +21,7 @@ values (
   null, 'Sullana, Piura', 0, 0, 25, 45, '{}'::jsonb,
   '{"primary":"#090909","accent":"#F20E18","surface":"#FFF1F1","onPrimary":"#FFFFFF"}'::jsonb,
   null, null, '[]'::jsonb, true, now(),
-  array['Comida norteña', 'Marinos', 'Criollo'], null, null, true, true, false,
+  array['Comida norteña', 'Marinos', 'Criollo'], null, null, true, true, true,
   'Carta y precios suministrados por la empresa. Horario, dirección exacta, teléfono, tarifa de entrega y bebidas quedan por registrar.',
   null
 )
