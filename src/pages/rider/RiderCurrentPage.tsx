@@ -28,6 +28,21 @@ export default function RiderCurrentPage() {
   const [codeOpen, setCodeOpen] = useState(false);
   const [advancing, setAdvancing] = useState(false);
 
+  const mapReady = active?.storePosition != null && active?.deliveryPosition != null;
+  // Referencias estables: LeafletMap remonta el mapa entero si origin/destination cambian de identidad.
+  const mapPoints = useMemo(
+    () => (mapReady ? [active!.storePosition!, active!.deliveryPosition!] : []),
+    [mapReady, active?.storePosition, active?.deliveryPosition],
+  );
+  const mapOrigin = useMemo(
+    () => (active?.storePosition ? { ...active.storePosition, label: active.storeName } : undefined),
+    [active?.storePosition, active?.storeName],
+  );
+  const mapDestination = useMemo(
+    () => (active?.deliveryPosition ? { ...active.deliveryPosition, label: 'Punto de entrega' } : undefined),
+    [active?.deliveryPosition],
+  );
+
   if (!active) {
     return (
       <div className="mx-auto w-full max-w-3xl px-4 py-8 lg:px-8">
@@ -49,25 +64,11 @@ export default function RiderCurrentPage() {
   }
 
   const action = NEXT_ACTION[active.status];
-  const mapReady = active.storePosition !== null && active.deliveryPosition !== null;
-  // Referencias estables: LeafletMap remonta el mapa entero si origin/destination cambian de identidad.
-  const mapPoints = useMemo(
-    () => (mapReady ? [active.storePosition!, active.deliveryPosition!] : []),
-    [mapReady, active.storePosition, active.deliveryPosition],
-  );
-  const mapOrigin = useMemo(
-    () => (active.storePosition ? { ...active.storePosition, label: active.storeName } : undefined),
-    [active.storePosition, active.storeName],
-  );
-  const mapDestination = useMemo(
-    () => (active.deliveryPosition ? { ...active.deliveryPosition, label: 'Punto de entrega' } : undefined),
-    [active.deliveryPosition],
-  );
 
   async function advance(next: OrderStatus) {
     setAdvancing(true);
     try {
-      await updateOrderStatus(active.id, next);
+      await updateOrderStatus(active!.id, next);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'No pudimos actualizar el pedido.';
       notificationService.notify(message, 'danger');
