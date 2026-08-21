@@ -1,7 +1,6 @@
 /*
  * Service worker mínimo de Suya Delivery.
- * Solo habilita la instalación como PWA y una caché de shell básica.
- * No sincroniza datos: la demo funciona íntegramente con localStorage.
+ * Solo se registra en la aplicación de clientes y mantiene una caché de shell básica.
  *
  * Todas las rutas se resuelven contra el scope, para que funcione tanto en la raíz
  * de un dominio como bajo /<repo>/ en GitHub Pages.

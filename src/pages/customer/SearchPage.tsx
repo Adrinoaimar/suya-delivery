@@ -1,15 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Clock, Search as SearchIcon, X } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { EmptyState } from '@/components/common/EmptyState';
+import { ErrorState } from '@/components/common/ErrorState';
 import { SearchInput } from '@/components/common/SearchInput';
 import { SectionHeader } from '@/components/common/Card';
 import { Price } from '@/components/common/Price';
+import { ProductRowSkeleton } from '@/components/common/Skeleton';
 import { Thumb } from '@/components/common/Thumb';
 import { StoreCard } from '@/components/marketplace/StoreCard';
-import { categories } from '@/data';
 import { Chip } from '@/components/common/Chip';
-import { storeService } from '@/lib/services';
+import { useCatalogStore } from '@/store/catalogStore';
 import { useUserStore } from '@/store/userStore';
 
 export default function SearchPage() {
@@ -20,12 +21,33 @@ export default function SearchPage() {
   const pushSearch = useUserStore((state) => state.pushSearch);
   const clearSearches = useUserStore((state) => state.clearSearches);
 
+  const results = useCatalogStore((state) => state.searchResults);
+  const categories = useCatalogStore((state) => state.categories);
+  const searchStatus = useCatalogStore((state) => state.searchStatus);
+  const searchError = useCatalogStore((state) => state.searchError);
+  const search = useCatalogStore((state) => state.search);
+  const catalogStores = useCatalogStore((state) => state.stores);
+  const loadStores = useCatalogStore((state) => state.loadStores);
+  const loadCategories = useCatalogStore((state) => state.loadCategories);
+
   useEffect(() => {
     setQuery(initial);
   }, [initial]);
 
-  const results = useMemo(() => storeService.search(query), [query]);
   const hasQuery = query.trim().length > 0;
+
+  useEffect(() => {
+    void loadStores();
+    void loadCategories();
+  }, [loadStores, loadCategories]);
+
+  useEffect(() => {
+    if (!hasQuery) return;
+    void search(query);
+  }, [query, hasQuery, search]);
+
+  const searching = hasQuery && (searchStatus === 'idle' || searchStatus === 'loading');
+  const searchReady = hasQuery && searchStatus === 'ready';
 
   function commit(term: string) {
     setQuery(term);
@@ -97,7 +119,20 @@ export default function SearchPage() {
         </>
       )}
 
-      {hasQuery && results.stores.length === 0 && results.products.length === 0 && (
+      {hasQuery && searchError && (
+        <ErrorState description={searchError} onRetry={() => void search(query)} />
+      )}
+
+      {searching && !searchError && (
+        <div className="space-y-3" role="status" aria-busy="true">
+          <span className="sr-only">Buscando…</span>
+          {Array.from({ length: 3 }).map((_, index) => (
+            <ProductRowSkeleton key={index} />
+          ))}
+        </div>
+      )}
+
+      {searchReady && results.stores.length === 0 && results.products.length === 0 && (
         <EmptyState
           icon={<SearchIcon className="h-6 w-6" />}
           title={`Sin resultados para «${query}»`}
@@ -105,7 +140,7 @@ export default function SearchPage() {
         />
       )}
 
-      {hasQuery && results.stores.length > 0 && (
+      {searchReady && results.stores.length > 0 && (
         <section>
           <SectionHeader title="Negocios" subtitle={`${results.stores.length} encontrados`} />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -116,12 +151,12 @@ export default function SearchPage() {
         </section>
       )}
 
-      {hasQuery && results.products.length > 0 && (
+      {searchReady && results.products.length > 0 && (
         <section>
           <SectionHeader title="Productos" subtitle={`${results.products.length} encontrados`} />
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {results.products.slice(0, 24).map((product) => {
-              const store = storeService.getStore(product.storeId);
+              const store = catalogStores.find((entry) => entry.id === product.storeId);
               return (
                 <li key={product.id}>
                   <Link

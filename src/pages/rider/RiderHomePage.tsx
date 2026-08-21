@@ -1,29 +1,32 @@
-import { Bike, Navigation, ShieldCheck, TrendingUp, Wallet } from 'lucide-react';
+import { useEffect } from 'react';
+import { Bike, Navigation, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Toggle } from '@/components/common/Toggle';
-import { riders } from '@/data';
 import { cn } from '@/lib/cn';
-import { notificationService } from '@/lib/services';
+import { notificationService, riderOperationsService } from '@/lib/services';
+import { useAuthStore } from '@/store/authStore';
 import { selectActiveOrder, useOrderStore } from '@/store/orderStore';
 import { useRiderStore } from '@/store/riderStore';
-import { formatPrice, orderStatusLabel } from '@/utils/format';
-
-const RIDER = riders[0]!;
+import { orderStatusLabel } from '@/utils/format';
 
 export default function RiderHomePage() {
   const available = useRiderStore((state) => state.available);
   const setAvailable = useRiderStore((state) => state.setAvailable);
   const orders = useOrderStore((state) => state.orders);
   const active = selectActiveOrder(orders);
+  const riderName = useAuthStore((state) => state.identity?.displayName ?? 'Repartidor');
 
-  const deliveredToday = orders.filter((order) => order.status === 'delivered');
-  const earnings = deliveredToday.reduce((sum, order) => sum + order.deliveryFee + 2.5, 0);
+  useEffect(() => {
+    void riderOperationsService.getAvailability()
+      .then((status) => setAvailable(status === 'available'))
+      .catch(() => undefined);
+  }, [setAvailable]);
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-5 lg:px-8 lg:py-8">
       <header className="text-white">
         <p className="text-sm text-white/70">Hola,</p>
-        <h1 className="font-display text-2xl font-bold">{RIDER.name}</h1>
+        <h1 className="font-display text-2xl font-bold">{riderName}</h1>
       </header>
 
       {/* Disponibilidad */}
@@ -44,11 +47,18 @@ export default function RiderHomePage() {
           tone="sun"
           className="[&_span]:text-white"
           onChange={(value) => {
-            setAvailable(value);
-            notificationService.notify(
-              value ? 'Ahora estás disponible' : 'Ya no recibirás pedidos',
-              value ? 'success' : 'info',
-            );
+            void riderOperationsService.setAvailability(value).then(() => {
+              setAvailable(value);
+              notificationService.notify(
+                value ? 'Ahora estás disponible' : 'Ya no recibirás pedidos',
+                value ? 'success' : 'info',
+              );
+            }).catch((error: unknown) => {
+              notificationService.notify(
+                error instanceof Error ? error.message : 'No pudimos cambiar tu disponibilidad.',
+                'danger',
+              );
+            });
           }}
         />
       </section>
@@ -75,24 +85,9 @@ export default function RiderHomePage() {
           </div>
         ) : (
           <p className="mt-2 text-sm text-white/70">
-            No tienes un viaje asignado. Cuando un cliente confirme un pedido en la demo aparecerá
-            aquí automáticamente.
+            No tienes un viaje asignado. Operaciones te avisará cuando exista una entrega disponible.
           </p>
         )}
-      </section>
-
-      {/* Métricas demo */}
-      <section className="grid grid-cols-2 gap-3">
-        <div className="rounded-card border border-white/10 bg-white/5 p-4 text-white">
-          <Wallet className="h-5 w-5 text-suya-lime" aria-hidden="true" />
-          <p className="mt-2 text-xs uppercase tracking-wider text-white/60">Ganancia demo</p>
-          <p className="font-display text-2xl font-bold">{formatPrice(earnings)}</p>
-        </div>
-        <div className="rounded-card border border-white/10 bg-white/5 p-4 text-white">
-          <TrendingUp className="h-5 w-5 text-suya-lime" aria-hidden="true" />
-          <p className="mt-2 text-xs uppercase tracking-wider text-white/60">Entregas</p>
-          <p className="font-display text-2xl font-bold">{deliveredToday.length}</p>
-        </div>
       </section>
 
       <Link

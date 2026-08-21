@@ -4,7 +4,7 @@ import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { Select, Textarea } from '@/components/common/Input';
 import { cn } from '@/lib/cn';
-import { notificationService } from '@/lib/services';
+import { notificationService, safetyOperationsService } from '@/lib/services';
 import { INCIDENT_LABELS, useRiderStore } from '@/store/riderStore';
 import { formatDateTime } from '@/utils/format';
 import type { IncidentCategory, LatLng } from '@/types';
@@ -16,25 +16,38 @@ const OPTIONS = (Object.keys(INCIDENT_LABELS) as IncidentCategory[]).map((key) =
 
 interface IncidentFormProps {
   position: LatLng | null;
+  orderId: string | null;
 }
 
-export function IncidentForm({ position }: IncidentFormProps) {
+export function IncidentForm({ position, orderId }: IncidentFormProps) {
   const incidents = useRiderStore((state) => state.incidents);
   const addIncident = useRiderStore((state) => state.addIncident);
 
   const [category, setCategory] = useState<IncidentCategory>('zona-insegura');
   const [description, setDescription] = useState('');
   const [error, setError] = useState<string | undefined>();
+  const [submitting, setSubmitting] = useState(false);
 
-  function submit() {
+  async function submit() {
     if (description.trim().length < 10) {
       setError('Describe lo ocurrido con al menos 10 caracteres.');
       return;
     }
     setError(undefined);
-    addIncident({ category, description: description.trim(), position });
-    setDescription('');
-    notificationService.notify('Incidente registrado en este dispositivo', 'success');
+    setSubmitting(true);
+    try {
+      await safetyOperationsService.reportIncident({
+        requestId: crypto.randomUUID(), orderId, category,
+        description: description.trim(), position, sos: false,
+      });
+      addIncident({ category, description: description.trim(), position });
+      setDescription('');
+      notificationService.notify('Incidente enviado al centro de operaciones', 'success');
+    } catch {
+      notificationService.notify('No pudimos enviar el incidente. Revisa la conexión.', 'danger');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -46,7 +59,7 @@ export function IncidentForm({ position }: IncidentFormProps) {
         <div>
           <h2 className="font-display text-lg font-bold">Reportar incidente</h2>
           <p className="mt-0.5 text-sm text-[#6B7076]">
-            Se guarda con fecha, hora y tu ubicación actual, solo en este dispositivo.
+            Se registra en operaciones con fecha, hora y ubicación disponible.
           </p>
         </div>
       </div>
@@ -71,10 +84,12 @@ export function IncidentForm({ position }: IncidentFormProps) {
         <MapPin className="h-3.5 w-3.5" aria-hidden="true" />
         {position
           ? `Ubicación automática: ${position.lat.toFixed(5)}, ${position.lng.toFixed(5)}`
-          : 'Sin ubicación disponible: activa el GPS o el modo simulado.'}
+          : 'Sin ubicación disponible: activa el GPS.'}
       </p>
 
-      <Button onClick={submit}>Registrar incidente</Button>
+      <Button onClick={() => void submit()} disabled={submitting}>
+        {submitting ? 'Enviando…' : 'Registrar incidente'}
+      </Button>
 
       {incidents.length > 0 && (
         <div className="border-t border-suya-mist pt-3">

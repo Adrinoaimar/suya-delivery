@@ -15,6 +15,7 @@ export function formatEta(min: number, max: number): string {
 }
 
 export function formatDistance(km: number): string {
+  if (km <= 0) return 'Por calcular';
   return km < 1 ? `${Math.round(km * 1000)} m` : `${km.toFixed(1)} km`;
 }
 

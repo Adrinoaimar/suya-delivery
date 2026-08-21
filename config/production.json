@@ -1,0 +1,20 @@
+{
+  "supabaseProjectRef": null,
+  "apps": {
+    "customer": {
+      "cloudflareProject": "suya-customer",
+      "origin": "https://suya-customer.pages.dev",
+      "smokePath": "/help"
+    },
+    "rider": {
+      "cloudflareProject": "suya-rider",
+      "origin": "https://suya-rider.pages.dev",
+      "smokePath": "/rider/login"
+    },
+    "backoffice": {
+      "cloudflareProject": "suya-backoffice",
+      "origin": "https://suya-backoffice.pages.dev",
+      "smokePath": "/login"
+    }
+  }
+}

@@ -1,7 +1,4 @@
-/**
- * Modelos de dominio de Suya Delivery.
- * Todos los datos que alimentan estos tipos son DEMO DATA locales (`src/data`).
- */
+/** Modelos de dominio compartidos por las aplicaciones de Suya Delivery. */
 
 export type Accent = 'green' | 'lime' | 'sun';
 
@@ -32,6 +29,8 @@ export interface Store {
   distanceKm: number;
   isLocal: boolean;
   isFeatured: boolean;
+  /** Control operativo del backend; si falta se conserva el cálculo por horario legado. */
+  acceptingOrders?: boolean;
   /** Marca real: se muestra con tarjeta neutra, nunca con un logo recreado. */
   isRealBrand: boolean;
   /** Negocio incorporado en fase beta: carta y datos aún por confirmar con el comercio. */
@@ -162,6 +161,10 @@ export interface Order {
   status: OrderStatus;
   history: OrderStatusEvent[];
   customer: CustomerInfo;
+  /** Punto confirmado por cliente; nunca inferido con geocodificación pública. */
+  deliveryPosition: LatLng | null;
+  /** Ubicación registrada por negocio. */
+  storePosition: LatLng | null;
   paymentMethod: PaymentMethod;
   riderId: string | null;
   etaMinutes: number;
@@ -169,8 +172,6 @@ export interface Order {
   deliveryCode: string;
   /** Código de 4 dígitos que hay que escribir para cancelar el pedido. */
   cancelCode: string;
-  /** Marca de tiempo (ms) desde la que corre la simulación local de estados. */
-  simulationStartedAt: number | null;
 }
 
 export interface LatLng {
@@ -190,33 +191,10 @@ export interface DemoRoute {
   points: LatLng[];
 }
 
-export interface UserProfile {
-  name: string;
-  phone: string;
-  address: string;
-  reference: string;
-  role: 'customer' | 'rider';
-}
-
 export interface TrustedContact {
   name: string;
   phone: string;
   relation: string;
-}
-
-export type SharingStatus = 'idle' | 'sharing' | 'stopped' | 'error';
-
-export interface SharedLocationSnapshot {
-  token: string;
-  riderName: string;
-  position: LatLng | null;
-  accuracy: number | null;
-  updatedAt: number;
-  status: SharingStatus;
-  battery: number;
-  sos: boolean;
-  startedAt: number;
-  simulated: boolean;
 }
 
 export type IncidentCategory =

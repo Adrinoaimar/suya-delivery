@@ -1,18 +1,17 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowRight, Heart, Sparkles, Store as StoreIcon } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ButtonLink } from '@/components/common/Button';
 import { SectionHeader } from '@/components/common/Card';
+import { ErrorState } from '@/components/common/ErrorState';
 import { Logo } from '@/components/common/Logo';
 import { SearchInput } from '@/components/common/SearchInput';
+import { StoreListSkeleton } from '@/components/common/Skeleton';
 import { CategoryRail } from '@/components/marketplace/CategoryRail';
-import { PromoCard } from '@/components/marketplace/PromoCard';
 import { StoreCard } from '@/components/marketplace/StoreCard';
-import { MapProvider } from '@/components/map/MapProvider';
-import { categories, demoRoute, promotions } from '@/data';
-import { storeService } from '@/lib/services';
+import { useCatalogStore } from '@/store/catalogStore';
 import { useUserStore } from '@/store/userStore';
-import { isOpenNow } from '@/utils/schedule';
+import { isStoreAcceptingOrders } from '@/utils/schedule';
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -20,12 +19,24 @@ export default function HomePage() {
   const pushSearch = useUserStore((state) => state.pushSearch);
   const favorites = useUserStore((state) => state.favorites);
 
-  const stores = useMemo(() => storeService.listStores(), []);
+  const stores = useCatalogStore((state) => state.stores);
+  const categories = useCatalogStore((state) => state.categories);
+  const storesStatus = useCatalogStore((state) => state.storesStatus);
+  const storesError = useCatalogStore((state) => state.storesError);
+  const loadStores = useCatalogStore((state) => state.loadStores);
+  const loadCategories = useCatalogStore((state) => state.loadCategories);
+
+  useEffect(() => {
+    void loadStores();
+    void loadCategories();
+  }, [loadStores, loadCategories]);
+
+  const storesLoading = storesStatus === 'idle' || storesStatus === 'loading';
+  const storesReady = storesStatus === 'ready';
   const featured = stores.filter((store) => store.isFeatured);
   const locals = stores.filter((store) => store.isLocal);
   const recommended = [...stores].sort((a, b) => b.rating - a.rating).slice(0, 4);
   const favoriteStores = stores.filter((store) => favorites.includes(store.id));
-  const mainPromo = promotions[0]!;
 
   function submitSearch() {
     const term = query.trim();
@@ -66,7 +77,9 @@ export default function HomePage() {
             <dl className="mt-9 flex gap-8">
               <div>
                 <dt className="text-sm text-[#6B7076]">Negocios</dt>
-                <dd className="font-display text-2xl font-bold">{stores.length}</dd>
+                <dd className="font-display text-2xl font-bold">
+                  {storesReady ? stores.length : '…'}
+                </dd>
               </div>
               <div>
                 <dt className="text-sm text-[#6B7076]">Entrega promedio</dt>
@@ -82,13 +95,16 @@ export default function HomePage() {
           {/* Composición: mapa + teléfono + repartidor */}
           <div className="relative h-[380px]">
             <div className="absolute inset-0 overflow-hidden rounded-promo border border-suya-mist bg-suya-ivory shadow-soft">
-              <MapProvider
-                points={demoRoute.points}
-                origin={demoRoute.origin}
-                destination={demoRoute.destination}
-                rider={demoRoute.points[7]}
-                label="Mapa ilustrativo de una entrega en Sullana"
-              />
+              <div className="flex h-full flex-col justify-between bg-gradient-to-br from-suya-lime-soft via-white to-suya-sun-soft p-8">
+                <div className="max-w-xs rounded-card bg-white/90 p-4 shadow-card">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-suya-green">Cobertura inicial</p>
+                  <p className="mt-1 font-display text-2xl font-bold">Sullana</p>
+                  <p className="mt-1 text-sm text-[#6B7076]">Ubicación exacta se solicita solo al confirmar un pedido.</p>
+                </div>
+                <div className="flex items-center gap-3 text-sm font-semibold text-suya-green-dark">
+                  <span className="h-3 w-3 rounded-full bg-suya-green" /> Negocios locales conectados
+                </div>
+              </div>
             </div>
             <div className="absolute -bottom-2 right-6 w-[212px] overflow-hidden rounded-[26px] border-[7px] border-suya-carbon bg-white shadow-soft">
               <div className="bg-suya-green px-3 py-2.5 text-white">
@@ -126,11 +142,7 @@ export default function HomePage() {
           <CategoryRail categories={categories} />
         </section>
 
-        <section>
-          <PromoCard promotion={mainPromo} size="lg" className="w-full" />
-        </section>
-
-        {favoriteStores.length > 0 && (
+        {storesReady && favoriteStores.length > 0 && (
           <section>
             <SectionHeader
               title="Tus favoritos"
@@ -164,44 +176,51 @@ export default function HomePage() {
               </Link>
             }
           />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {featured.map((store) => (
-              <StoreCard key={store.id} store={store} />
-            ))}
-          </div>
-        </section>
-
-        <section>
-          <SectionHeader title="Promociones" subtitle="Cupones y beneficios de demostración" />
-          <div className="hide-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:px-0 lg:grid-cols-4">
-            {promotions.slice(1).map((promotion) => (
-              <PromoCard key={promotion.id} promotion={promotion} />
-            ))}
-          </div>
-        </section>
-
-        <section>
-          <SectionHeader
-            title="Negocios locales"
-            subtitle="Emprendimientos sullaneros en la plataforma"
-          />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {locals.map((store) => (
-              <StoreCard key={store.id} store={store} layout="row" />
-            ))}
-          </div>
-        </section>
-
-        <section>
-          <SectionHeader title="Recomendados para ti" subtitle="Mejor calificados y abiertos ahora" />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {recommended
-              .filter((store) => isOpenNow(store.schedule))
-              .map((store) => (
+          {storesError ? (
+            <ErrorState description={storesError} onRetry={() => void loadStores(true)} />
+          ) : storesLoading ? (
+            <div role="status" aria-busy="true">
+              <span className="sr-only">Cargando tiendas…</span>
+              <StoreListSkeleton count={4} />
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {featured.map((store) => (
                 <StoreCard key={store.id} store={store} />
               ))}
-          </div>
+            </div>
+          )}
         </section>
+
+        {storesReady && (
+          <section>
+            <SectionHeader
+              title="Negocios locales"
+              subtitle="Emprendimientos sullaneros en la plataforma"
+            />
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {locals.map((store) => (
+                <StoreCard key={store.id} store={store} layout="row" />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {storesReady && (
+          <section>
+            <SectionHeader
+              title="Recomendados para ti"
+              subtitle="Mejor calificados y abiertos ahora"
+            />
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {recommended
+                .filter((store) => isStoreAcceptingOrders(store))
+                .map((store) => (
+                  <StoreCard key={store.id} store={store} />
+                ))}
+            </div>
+          </section>
+        )}
 
         {/* Banner editorial */}
         <section className="overflow-hidden rounded-promo bg-suya-green px-5 py-7 text-white sm:px-8">

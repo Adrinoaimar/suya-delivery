@@ -1,4 +1,4 @@
-import type { Schedule } from '@/types';
+import type { Schedule, Store } from '@/types';
 
 function toMinutes(value: string): number {
   const [hours = '0', minutes = '0'] = value.split(':');
@@ -16,5 +16,11 @@ export function isOpenNow(schedule: Schedule, now: Date = new Date()): boolean {
 }
 
 export function scheduleLabel(schedule: Schedule): string {
+  if (schedule.opens === schedule.closes) return 'Horario por confirmar';
   return `${schedule.opens} – ${schedule.closes}`;
+}
+
+/** Prioriza el control operativo del backend y mantiene compatibilidad con datos locales. */
+export function isStoreAcceptingOrders(store: Store, now: Date = new Date()): boolean {
+  return store.acceptingOrders ?? isOpenNow(store.schedule, now);
 }

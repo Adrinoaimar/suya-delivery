@@ -7,23 +7,24 @@
  */
 import type {
   CartItem,
+  Category,
   CustomerInfo,
   LatLng,
   Order,
   OrderStatus,
   PaymentMethod,
   Product,
-  SharedLocationSnapshot,
-  SharingStatus,
   Store,
+  IncidentCategory,
 } from '@/types';
 
 export interface StoreService {
-  listStores(): Store[];
-  getStore(id: string): Store | undefined;
-  listProducts(storeId: string): Product[];
-  getProduct(id: string): Product | undefined;
-  search(query: string): { stores: Store[]; products: Product[] };
+  listCategories(): Promise<Category[]>;
+  listStores(): Promise<Store[]>;
+  getStore(id: string): Promise<Store | undefined>;
+  listProducts(storeId: string): Promise<Product[]>;
+  getProduct(id: string): Promise<Product | undefined>;
+  search(query: string): Promise<{ stores: Store[]; products: Product[] }>;
 }
 
 export interface CreateOrderInput {
@@ -33,6 +34,7 @@ export interface CreateOrderInput {
   deliveryFee: number;
   discount: number;
   customer: CustomerInfo;
+  deliveryPosition: LatLng;
   paymentMethod: PaymentMethod;
 }
 
@@ -48,16 +50,52 @@ export const CODE_ERROR_MESSAGES: Record<CodeFailure, string> = {
 };
 
 export interface OrderService {
-  list(): Order[];
-  get(id: string): Order | undefined;
-  create(input: CreateOrderInput): Order;
-  updateStatus(id: string, status: OrderStatus): Order | undefined;
+  list(): Promise<Order[]>;
+  get(id: string): Promise<Order | undefined>;
+  create(input: CreateOrderInput): Promise<Order>;
+  updateStatus(id: string, status: OrderStatus): Promise<Order | undefined>;
   /** Requiere el código de cancelación del pedido. */
-  cancel(id: string, code: string): CodeResult;
+  cancel(id: string, code: string): Promise<CodeResult>;
   /** Requiere el código de entrega que el cliente le da al repartidor. */
-  confirmDelivery(id: string, code: string): CodeResult;
-  restartSimulation(id: string): Order | undefined;
-  save(orders: Order[]): void;
+  confirmDelivery(id: string, code: string): Promise<CodeResult>;
+  subscribe(listener: () => void): () => void;
+}
+
+export interface AvailableRider {
+  id: string;
+  name: string;
+  phone: string;
+  vehicleType: string;
+  vehicleColor: string;
+  vehiclePlate: string;
+  rating: number;
+  deliveries: number;
+}
+
+export interface DispatchService {
+  listAvailableRiders(restaurantId: string): Promise<AvailableRider[]>;
+  assignRider(orderId: string, riderId: string | null): Promise<boolean>;
+  cancelOrder(orderId: string, reason: string): Promise<boolean>;
+}
+
+export interface RiderOperationsService {
+  getAvailability(): Promise<'available' | 'offline' | 'busy'>;
+  setAvailability(available: boolean): Promise<'available' | 'offline'>;
+}
+
+export interface SafetyOperationsService {
+  publishLocation(orderId: string, reading: LocationReading): Promise<boolean>;
+  reportIncident(input: {
+    requestId: string;
+    orderId: string | null;
+    category: IncidentCategory;
+    description: string;
+    position: LatLng | null;
+    sos: boolean;
+  }): Promise<string>;
+  resolveSos(incidentId: string): Promise<boolean>;
+  latestLocation(orderId: string): Promise<LatLng | null>;
+  subscribeLocation(orderId: string, listener: (position: LatLng) => void): () => void;
 }
 
 export type LocationPermission = 'unknown' | 'granted' | 'denied' | 'unsupported';
@@ -85,7 +123,7 @@ export interface PaymentResult {
 }
 
 export interface PaymentService {
-  /** Simulación local: NO procesa cobros reales bajo ninguna circunstancia. */
+  /** La confirmación final de pagos digitales siempre proviene del backend/webhook. */
   authorize(method: PaymentMethod, amount: number): Promise<PaymentResult>;
 }
 
@@ -94,27 +132,4 @@ export type NotificationLevel = 'info' | 'success' | 'warning' | 'danger';
 export interface NotificationService {
   notify(message: string, level?: NotificationLevel): void;
   subscribe(listener: (message: string, level: NotificationLevel) => void): () => void;
-}
-
-export interface LocationSharingService {
-  start(payload: { token: string; riderName: string; simulated: boolean }): Promise<void>;
-  stop(): Promise<void>;
-  /** Cambia el token del enlace activo e invalida el anterior. */
-  rotateToken(token: string): Promise<void>;
-  publish(snapshot: Partial<SharedLocationSnapshot>): void;
-  getStatus(): SharingStatus;
-  getSnapshot(): SharedLocationSnapshot | null;
-  subscribe(listener: (snapshot: SharedLocationSnapshot | null) => void): () => void;
-}
-
-export interface MapAdapterInfo {
-  id: 'mock' | 'leaflet' | 'google';
-  label: string;
-  requiresApiKey: boolean;
-  available: boolean;
-}
-
-export interface MapService {
-  listAdapters(): MapAdapterInfo[];
-  getActiveAdapterId(): MapAdapterInfo['id'];
 }

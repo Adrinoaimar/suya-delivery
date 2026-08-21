@@ -1,42 +1,71 @@
-import { useMemo, useState } from 'react';
-import { ArrowLeft, MapPin, RotateCcw, XCircle } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, MapPin, XCircle } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
 import { Button, ButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
+import { ErrorState } from '@/components/common/ErrorState';
+import { Skeleton } from '@/components/common/Skeleton';
 import { ExpandableSheet } from '@/components/common/BottomSheet';
 import { CodeDialog } from '@/components/order/CodeDialog';
 import { OrderCodes } from '@/components/order/OrderCodes';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
-import { RiderCard } from '@/components/rider/RiderCard';
 import { MapProvider } from '@/components/map/MapProvider';
-import { demoRoute, riders } from '@/data';
-import { SIMULATION_TOTAL_SECONDS, notificationService } from '@/lib/services';
+import { notificationService, safetyOperationsService } from '@/lib/services';
 import { useOrderStore } from '@/store/orderStore';
-import { useRouteProgress, useOrderStatusNotifier } from '@/hooks/useOrderSimulation';
+import { orderRouteProgress, useOrderStatusNotifier } from '@/hooks/useOrders';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { formatPrice, orderStatusLabel } from '@/utils/format';
-import { pointAtProgress } from '@/utils/geo';
+import type { LatLng } from '@/types';
 
 export default function OrderTrackPage() {
   const { id = '' } = useParams();
   const order = useOrderStore((state) => state.getOrder(id));
+  const status = useOrderStore((state) => state.status);
+  const error = useOrderStore((state) => state.error);
+  const refresh = useOrderStore((state) => state.refresh);
   const cancelOrder = useOrderStore((state) => state.cancelOrder);
-  const restartSimulation = useOrderStore((state) => state.restartSimulation);
   const [expanded, setExpanded] = useState(true);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [riderPosition, setRiderPosition] = useState<LatLng | null>(null);
   const isDesktop = useIsDesktop();
 
-  const progress = useRouteProgress(order);
+  const progress = orderRouteProgress(order);
   useOrderStatusNotifier(order);
 
-  const riderPosition = useMemo(
-    () => pointAtProgress(demoRoute.points, progress),
-    [progress],
-  );
+  useEffect(() => {
+    if (!order?.riderId || !['picked_up', 'on_the_way'].includes(order.status)) {
+      setRiderPosition(null);
+      return undefined;
+    }
+    let active = true;
+    void safetyOperationsService.latestLocation(order.id)
+      .then((position) => { if (active) setRiderPosition(position); })
+      .catch(() => undefined);
+    const unsubscribe = safetyOperationsService.subscribeLocation(order.id, (position) => {
+      if (active) setRiderPosition(position);
+    });
+    return () => { active = false; unsubscribe(); };
+  }, [order?.id, order?.riderId, order?.status]);
 
   if (!order) {
+    if (status === 'idle' || status === 'loading') {
+      return (
+        <div className="shell space-y-3 py-10" role="status" aria-busy="true">
+          <span className="sr-only">Cargando seguimiento…</span>
+          <Skeleton className="h-72 w-full rounded-card" />
+          <Skeleton className="h-32 w-full rounded-card" />
+        </div>
+      );
+    }
+    if (status === 'error') {
+      return (
+        <div className="shell py-10">
+          <ErrorState description={error ?? undefined} onRetry={() => void refresh()} />
+        </div>
+      );
+    }
     return (
       <div className="shell py-10">
         <EmptyState
@@ -48,7 +77,8 @@ export default function OrderTrackPage() {
     );
   }
 
-  const rider = riders.find((item) => item.id === order.riderId);
+  const mapReady = order.storePosition !== null && order.deliveryPosition !== null;
+  const mapPoints = mapReady ? [order.storePosition!, order.deliveryPosition!] : [];
   const delivered = order.status === 'delivered';
   const cancelled = order.status === 'cancelled';
   const etaMinutes = Math.max(1, Math.round(order.etaMinutes * (1 - progress)));
@@ -73,10 +103,10 @@ export default function OrderTrackPage() {
 
       <TrackingTimeline order={order} compact />
 
-      {rider && !cancelled && (
-        <div className="rounded-card border border-suya-mist p-3">
-          <RiderCard rider={rider} />
-        </div>
+      {order.riderId && !cancelled && (
+        <p className="rounded-card border border-suya-mist p-3 text-sm text-[#4A4F55]">
+          Repartidor asignado. Su ubicación aparecerá cuando recoja el pedido y comparta GPS.
+        </p>
       )}
 
       <div className="rounded-card border border-suya-mist p-3">
@@ -105,10 +135,6 @@ export default function OrderTrackPage() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button variant="secondary" size="sm" onClick={() => restartSimulation(order.id)}>
-          <RotateCcw className="h-4 w-4" aria-hidden="true" />
-          Reiniciar simulación
-        </Button>
         {!delivered && !cancelled && (
           <Button variant="ghost" size="sm" onClick={() => setConfirmCancel(true)}>
             <XCircle className="h-4 w-4" aria-hidden="true" />
@@ -120,10 +146,6 @@ export default function OrderTrackPage() {
         </ButtonLink>
       </div>
 
-      <p className="text-xs text-[#9AA0A6]">
-        DEMO LOCAL: el avance del pedido se simula en el navegador ({SIMULATION_TOTAL_SECONDS} s de
-        principio a fin). En producción llegará por WebSocket o push desde el backend.
-      </p>
     </div>
   );
 
@@ -133,13 +155,13 @@ export default function OrderTrackPage() {
       {!isDesktop && (
       <div className="flex h-[calc(100dvh-var(--header-h)-var(--bottom-nav-h))] flex-col lg:hidden">
         <div className="relative h-[45%] shrink-0 overflow-hidden bg-suya-ivory">
-          <MapProvider
-            points={demoRoute.points}
-            origin={demoRoute.origin}
-            destination={demoRoute.destination}
+          {mapReady ? <MapProvider
+            points={mapPoints}
+            origin={{ ...order.storePosition!, label: order.storeName }}
+            destination={{ ...order.deliveryPosition!, label: 'Punto de entrega' }}
             rider={cancelled ? null : riderPosition}
-            label={`Ruta del pedido ${order.code}`}
-          />
+            label={`Ubicaciones del pedido ${order.code}`}
+          /> : <MapUnavailable />}
           <Link
             to="/orders"
             aria-label="Volver a mis pedidos"
@@ -184,13 +206,13 @@ export default function OrderTrackPage() {
             <Card>{detail}</Card>
           </div>
           <div className="sticky top-24 h-[calc(100dvh-140px)] overflow-hidden rounded-card border border-suya-mist bg-white">
-            <MapProvider
-              points={demoRoute.points}
-              origin={demoRoute.origin}
-              destination={demoRoute.destination}
+            {mapReady ? <MapProvider
+              points={mapPoints}
+              origin={{ ...order.storePosition!, label: order.storeName }}
+              destination={{ ...order.deliveryPosition!, label: 'Punto de entrega' }}
               rider={cancelled ? null : riderPosition}
-              label={`Ruta del pedido ${order.code}`}
-            />
+              label={`Ubicaciones del pedido ${order.code}`}
+            /> : <MapUnavailable />}
           </div>
         </div>
       </div>
@@ -208,5 +230,13 @@ export default function OrderTrackPage() {
         onSuccess={() => notificationService.notify('Pedido cancelado', 'info')}
       />
     </>
+  );
+}
+
+function MapUnavailable() {
+  return (
+    <div className="flex h-full items-center justify-center bg-suya-ivory p-6 text-center text-sm text-[#6B7076]" role="status">
+      Este pedido no tiene ambos puntos verificados. Usa dirección y referencia para coordinar.
+    </div>
   );
 }

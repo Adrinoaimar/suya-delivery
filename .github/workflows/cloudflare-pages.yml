@@ -1,0 +1,71 @@
+name: Desplegar Cloudflare Pages
+
+on:
+  workflow_dispatch:
+    inputs:
+      allow_initial_release:
+        description: Permitir primera publicación sin rollback previo
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-pages-production
+  cancel-in-progress: false
+
+jobs:
+  production:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: cloudflare-production
+    env:
+      CI: 'true'
+      VITE_BACKEND: supabase
+      VITE_MAP_PROVIDER: osm
+      VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      VITE_EXPECTED_SUPABASE_PROJECT_REF: ${{ vars.VITE_EXPECTED_SUPABASE_PROJECT_REF }}
+      VITE_CUSTOMER_APP_URL: ${{ vars.VITE_CUSTOMER_APP_URL }}
+      VITE_RIDER_APP_URL: ${{ vars.VITE_RIDER_APP_URL }}
+      VITE_BACKOFFICE_APP_URL: ${{ vars.VITE_BACKOFFICE_APP_URL }}
+      VITE_OSM_TILE_URL: ${{ vars.VITE_OSM_TILE_URL }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_CUSTOMER_PROJECT: ${{ vars.CLOUDFLARE_CUSTOMER_PROJECT || 'suya-customer' }}
+      CLOUDFLARE_RIDER_PROJECT: ${{ vars.CLOUDFLARE_RIDER_PROJECT || 'suya-rider' }}
+      CLOUDFLARE_BACKOFFICE_PROJECT: ${{ vars.CLOUDFLARE_BACKOFFICE_PROJECT || 'suya-backoffice' }}
+      SUYA_ALLOW_INITIAL_RELEASE: ${{ inputs.allow_initial_release }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Gates de código y configuración
+        run: |
+          node scripts/check-cloudflare-config.mjs --deployment
+          npm run security:secrets
+          npm run typecheck
+          npm run lint
+          npm run test
+
+      - name: Construir y rechazar simulaciones
+        run: |
+          npm run build:apps
+          npm run verify:production
+
+      - name: Verificar proyectos Pages existentes
+        run: |
+          npx --yes wrangler@4.123.0 pages project list --json > "$RUNNER_TEMP/pages-projects.json"
+          node scripts/check-cloudflare-config.mjs --deployment --projects "$RUNNER_TEMP/pages-projects.json"
+
+      - name: Publicar candidatos, probar y promover con rollback
+        run: node scripts/release-cloudflare-pages.mjs

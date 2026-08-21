@@ -14,15 +14,12 @@ interface TrackingState {
   error: string | null;
   permission: LocationPermission;
   active: boolean;
-  /** Compartiendo con el contacto de confianza (independiente de la disponibilidad). */
-  sharing: boolean;
   setSnapshot: (snapshot: {
     reading: LocationReading | null;
     error: string | null;
     permission: LocationPermission;
     active: boolean;
   }) => void;
-  setSharing: (value: boolean) => void;
 }
 
 export const useTrackingStore = create<TrackingState>((set) => ({
@@ -30,13 +27,9 @@ export const useTrackingStore = create<TrackingState>((set) => ({
   error: null,
   permission: 'unknown',
   active: false,
-  sharing: false,
 
   setSnapshot(snapshot) {
     set(snapshot);
   },
 
-  setSharing(value) {
-    set({ sharing: value });
-  },
 }));

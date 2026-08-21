@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ShoppingBag, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button, ButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
+import { ErrorState } from '@/components/common/ErrorState';
 import { Modal } from '@/components/common/Modal';
+import { ProductRowSkeleton } from '@/components/common/Skeleton';
 import { CartLine } from '@/components/order/CartLine';
-import { FREE_DELIVERY_THRESHOLD } from '@/data';
-import { storeService } from '@/lib/services';
+import { FREE_DELIVERY_ENABLED, FREE_DELIVERY_THRESHOLD } from '@/lib/commerce';
+import { useCatalogStore } from '@/store/catalogStore';
 import { cartTotals, useCartStore } from '@/store/cartStore';
 import { formatPrice } from '@/utils/format';
 
@@ -19,7 +21,17 @@ export default function CartPage() {
   const clear = useCartStore((state) => state.clear);
   const [confirmClear, setConfirmClear] = useState(false);
 
-  const store = storeId ? storeService.getStore(storeId) : undefined;
+  const store = useCatalogStore((state) =>
+    storeId ? state.stores.find((entry) => entry.id === storeId) : undefined,
+  );
+  const storesStatus = useCatalogStore((state) => state.storesStatus);
+  const storesError = useCatalogStore((state) => state.storesError);
+  const loadStores = useCatalogStore((state) => state.loadStores);
+
+  useEffect(() => {
+    void loadStores();
+  }, [loadStores]);
+
   const totals = cartTotals(items, store, FREE_DELIVERY_THRESHOLD);
   const missingForFreeDelivery = Math.max(0, FREE_DELIVERY_THRESHOLD - totals.subtotal);
 
@@ -32,6 +44,27 @@ export default function CartPage() {
           description="Explora los negocios de Sullana y arma tu pedido."
           action={<ButtonLink to="/stores">Explorar tiendas</ButtonLink>}
         />
+      </div>
+    );
+  }
+
+  if (storeId && storesError) {
+    return (
+      <div className="shell py-10">
+        <ErrorState description={storesError} onRetry={() => void loadStores(true)} />
+      </div>
+    );
+  }
+
+  // Mientras el catálogo carga no mostramos el resumen: el mínimo y el envío
+  // dependen del negocio y no queremos habilitar el pago con datos a medias.
+  if (storeId && !store && storesStatus !== 'ready') {
+    return (
+      <div className="shell space-y-3 py-10" role="status" aria-busy="true">
+        <span className="sr-only">Cargando tu carrito…</span>
+        {Array.from({ length: 3 }).map((_, index) => (
+          <ProductRowSkeleton key={index} />
+        ))}
       </div>
     );
   }
@@ -78,7 +111,7 @@ export default function CartPage() {
         </Card>
 
         <div className="space-y-3 lg:sticky lg:top-24">
-          {store?.isLocal && missingForFreeDelivery > 0 && (
+          {FREE_DELIVERY_ENABLED && store?.isLocal && missingForFreeDelivery > 0 && (
             <div className="rounded-card bg-suya-sun-soft px-4 py-3 text-sm text-suya-carbon">
               Te faltan <strong>{formatPrice(missingForFreeDelivery)}</strong> para el envío gratis
               en negocios locales.

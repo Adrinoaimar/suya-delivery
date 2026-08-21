@@ -11,6 +11,20 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.*
+!.env.example
+
+# Supabase local y archivos de credenciales
+.supabase/
+supabase/.temp/
+.playwright-cli/
+.playwright-daemon/
+.playwright-local/
+.playwright-browsers/
+output/playwright/
+.npm-cache/
+.xdg/
 
 # Editor directories and files
 .vscode/*

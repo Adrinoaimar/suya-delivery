@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { CSSProperties } from 'react';
 import {
   ArrowLeft,
@@ -14,19 +14,21 @@ import { Link, useParams } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
 import { ButtonLink } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
+import { ErrorState } from '@/components/common/ErrorState';
 import { Rating } from '@/components/common/Rating';
+import { ProductRowSkeleton, Skeleton } from '@/components/common/Skeleton';
 import { Thumb } from '@/components/common/Thumb';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { ProductSheet } from '@/components/marketplace/ProductSheet';
 import { StoreGallery } from '@/components/marketplace/StoreGallery';
-import { FREE_DELIVERY_THRESHOLD } from '@/data';
 import { cn } from '@/lib/cn';
-import { storeService } from '@/lib/services';
+import { FREE_DELIVERY_THRESHOLD } from '@/lib/commerce';
+import { useCatalogStore } from '@/store/catalogStore';
 import { cartTotals, useCartStore } from '@/store/cartStore';
 import { useUserStore } from '@/store/userStore';
 import { assetUrl } from '@/utils/asset';
 import { formatEta, formatPrice } from '@/utils/format';
-import { isOpenNow, scheduleLabel } from '@/utils/schedule';
+import { isStoreAcceptingOrders, scheduleLabel } from '@/utils/schedule';
 import type { Product, Store } from '@/types';
 
 /**
@@ -45,8 +47,14 @@ function themeStyle(theme: Store['theme']): CSSProperties | undefined {
 
 export default function StoreDetailPage() {
   const { id = '' } = useParams();
-  const store = useMemo(() => storeService.getStore(id), [id]);
-  const products = useMemo(() => storeService.listProducts(id), [id]);
+  const store = useCatalogStore((state) => state.stores.find((entry) => entry.id === id));
+  const storesStatus = useCatalogStore((state) => state.storesStatus);
+  const storesError = useCatalogStore((state) => state.storesError);
+  const productsData = useCatalogStore((state) => state.productsByStore[id]);
+  const productsStatus = useCatalogStore((state) => state.productsStatus[id] ?? 'idle');
+  const productsError = useCatalogStore((state) => state.productsError[id] ?? null);
+  const loadStores = useCatalogStore((state) => state.loadStores);
+  const loadProducts = useCatalogStore((state) => state.loadProducts);
   const [selected, setSelected] = useState<Product | null>(null);
   const [section, setSection] = useState<string | null>(null);
 
@@ -55,7 +63,42 @@ export default function StoreDetailPage() {
   const items = useCartStore((state) => state.items);
   const cartStoreId = useCartStore((state) => state.storeId);
 
+  useEffect(() => {
+    void loadStores();
+    void loadProducts(id);
+  }, [id, loadStores, loadProducts]);
+
   if (!store) {
+    if (storesError) {
+      return (
+        <div className="shell py-10">
+          <ErrorState
+            description={storesError}
+            onRetry={() => {
+              void loadStores(true);
+              void loadProducts(id, true);
+            }}
+          />
+        </div>
+      );
+    }
+
+    if (storesStatus !== 'ready') {
+      return (
+        <div className="shell space-y-4 py-10" role="status" aria-busy="true">
+          <span className="sr-only">Cargando el negocio…</span>
+          <Skeleton className="h-44 w-full rounded-promo sm:h-56" />
+          <Skeleton className="h-6 w-1/2" />
+          <Skeleton className="h-4 w-2/3" />
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <ProductRowSkeleton key={index} />
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="shell py-10">
         <EmptyState
@@ -68,7 +111,10 @@ export default function StoreDetailPage() {
     );
   }
 
-  const open = isOpenNow(store.schedule);
+  const products = productsData ?? [];
+  const productsLoading = productsStatus !== 'ready' && productsError === null;
+
+  const open = isStoreAcceptingOrders(store);
   const isFavorite = favorites.includes(store.id);
   const sections = store.sections.filter((name) =>
     products.some((product) => product.section === name),
@@ -240,12 +286,6 @@ export default function StoreDetailPage() {
             </div>
           )}
 
-          {store.isRealBrand && (
-            <p className="mt-3 text-xs text-[#9AA0A6]">
-              Marca mostrada sin logotipo oficial. Precios, horarios y promociones son datos de
-              demostración.
-            </p>
-          )}
         </section>
 
         {store.gallery && <StoreGallery gallery={store.gallery} storeName={store.name} />}
@@ -294,7 +334,21 @@ export default function StoreDetailPage() {
 
         {/* Productos */}
         <div className="space-y-7 pb-6">
-          {visibleSections.map((name) => (
+          {productsError ? (
+            <ErrorState
+              title="No pudimos cargar el menú"
+              description={productsError}
+              onRetry={() => void loadProducts(id, true)}
+            />
+          ) : productsLoading ? (
+            <div className="space-y-3" role="status" aria-busy="true">
+              <span className="sr-only">Cargando el menú…</span>
+              {Array.from({ length: 4 }).map((_, index) => (
+                <ProductRowSkeleton key={index} />
+              ))}
+            </div>
+          ) : (
+            visibleSections.map((name) => (
             <section key={name} aria-labelledby={`seccion-${name}`}>
               <h2 id={`seccion-${name}`} className="section-title mb-3">
                 {name}
@@ -317,9 +371,10 @@ export default function StoreDetailPage() {
                   ))}
               </div>
             </section>
-          ))}
+            ))
+          )}
 
-          {!open && (
+          {!open && !productsLoading && !productsError && (
             <p className="rounded-card border border-suya-mist bg-white p-4 text-sm text-[#6B7076]">
               Este negocio está cerrado ahora. Su horario es {scheduleLabel(store.schedule)}; podrás
               pedir cuando vuelva a abrir.

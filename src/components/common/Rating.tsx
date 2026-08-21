@@ -8,6 +8,10 @@ interface RatingProps {
 }
 
 export function Rating({ value, reviews, className }: RatingProps) {
+  if (value <= 0 || reviews === 0) {
+    return <span className={cn('text-sm text-[#6B7076]', className)}>Sin reseñas</span>;
+  }
+
   return (
     <span
       className={cn('inline-flex items-center gap-1 text-sm text-suya-carbon', className)}

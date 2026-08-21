@@ -1,34 +1,42 @@
-import { useState } from 'react';
-import { Bike, Heart, RefreshCw, ShieldCheck, User } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button, ButtonLink } from '@/components/common/Button';
+import { useEffect, useState } from 'react';
+import { Heart, User } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
+import { ErrorState } from '@/components/common/ErrorState';
 import { Input } from '@/components/common/Input';
-import { Modal } from '@/components/common/Modal';
+import { StoreListSkeleton } from '@/components/common/Skeleton';
 import { Toggle } from '@/components/common/Toggle';
 import { StoreCard } from '@/components/marketplace/StoreCard';
-import { clearSuyaStorage } from '@/lib/storage';
-import { notificationService, storeService } from '@/lib/services';
+import { notificationService } from '@/lib/services';
+import { useCatalogStore } from '@/store/catalogStore';
 import { useUserStore } from '@/store/userStore';
+import { useAuthStore } from '@/store/authStore';
 
 export default function ProfilePage() {
-  const navigate = useNavigate();
-  const profile = useUserStore((state) => state.profile);
+  const identity = useAuthStore((state) => state.identity);
+  const updateProfile = useAuthStore((state) => state.updateProfile);
   const preferences = useUserStore((state) => state.preferences);
   const favorites = useUserStore((state) => state.favorites);
-  const setProfile = useUserStore((state) => state.setProfile);
-  const setRole = useUserStore((state) => state.setRole);
   const setPreferences = useUserStore((state) => state.setPreferences);
 
   const [form, setForm] = useState({
-    name: profile.name,
-    phone: profile.phone,
-    address: profile.address,
-    reference: profile.reference,
+    name: identity?.displayName ?? '',
+    phone: identity?.phone ?? '',
+    address: identity?.defaultAddress ?? '',
+    reference: identity?.defaultReference ?? '',
   });
-  const [confirmReset, setConfirmReset] = useState(false);
 
-  const favoriteStores = storeService.listStores().filter((store) => favorites.includes(store.id));
+  const allStores = useCatalogStore((state) => state.stores);
+  const storesStatus = useCatalogStore((state) => state.storesStatus);
+  const storesError = useCatalogStore((state) => state.storesError);
+  const loadStores = useCatalogStore((state) => state.loadStores);
+
+  useEffect(() => {
+    void loadStores();
+  }, [loadStores]);
+
+  const favoriteStores = allStores.filter((store) => favorites.includes(store.id));
 
   return (
     <div className="shell space-y-4 py-4 lg:py-8">
@@ -42,10 +50,8 @@ export default function ProfilePage() {
                 <User className="h-6 w-6" />
               </span>
               <div>
-                <p className="font-display text-lg font-bold">{profile.name}</p>
-                <p className="text-sm text-[#6B7076]">
-                  {profile.role === 'rider' ? 'Perfil de repartidor' : 'Perfil de cliente'}
-                </p>
+                <p className="font-display text-lg font-bold">{identity?.displayName}</p>
+                <p className="text-sm text-[#6B7076]">{identity?.email}</p>
               </div>
             </div>
 
@@ -80,44 +86,20 @@ export default function ProfilePage() {
             <Button
               className="mt-3"
               onClick={() => {
-                setProfile(form);
-                notificationService.notify('Datos guardados', 'success');
+                void updateProfile({
+                  displayName: form.name,
+                  phone: form.phone,
+                  defaultAddress: form.address,
+                  defaultReference: form.reference,
+                })
+                  .then(() => notificationService.notify('Datos guardados', 'success'))
+                  .catch(() => notificationService.notify('No pudimos guardar tus datos.', 'danger'));
               }}
             >
               Guardar cambios
             </Button>
           </Card>
 
-          <Card>
-            <h2 className="font-display text-[15px] font-bold">¿Cómo quieres entrar?</h2>
-            <p className="mt-1 text-sm text-[#6B7076]">
-              La demo no usa credenciales: elige el perfil con el que quieres navegar.
-            </p>
-            <div className="mt-3 grid gap-2 sm:grid-cols-2">
-              <Button
-                variant={profile.role === 'customer' ? 'primary' : 'secondary'}
-                fullWidth
-                onClick={() => {
-                  setRole('customer');
-                  navigate('/');
-                }}
-              >
-                <User className="h-4 w-4" aria-hidden="true" />
-                Entrar como cliente
-              </Button>
-              <Button
-                variant={profile.role === 'rider' ? 'primary' : 'secondary'}
-                fullWidth
-                onClick={() => {
-                  setRole('rider');
-                  navigate('/rider');
-                }}
-              >
-                <Bike className="h-4 w-4" aria-hidden="true" />
-                Entrar como repartidor
-              </Button>
-            </div>
-          </Card>
         </div>
 
         <div className="space-y-4">
@@ -139,34 +121,7 @@ export default function ProfilePage() {
             </div>
           </Card>
 
-          <Card>
-            <h2 className="font-display text-[15px] font-bold">Seguridad del repartidor</h2>
-            <p className="mt-1 text-sm text-[#6B7076]">
-              Compartir ubicación con una persona de confianza, botón SOS y reporte de incidentes.
-            </p>
-            <ButtonLink to="/rider/safety" variant="secondary" className="mt-3">
-              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-              Abrir seguridad en ruta
-            </ButtonLink>
-          </Card>
 
-          <Card>
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <h2 className="font-display text-[15px] font-bold">Datos de la demo</h2>
-                <p className="mt-1 text-sm text-[#6B7076]">
-                  Todo se guarda solo en este navegador.
-                </p>
-              </div>
-              <span className="shrink-0 rounded-full bg-suya-mist px-2.5 py-1 text-[11px] font-semibold text-[#4A4F55]">
-                Modo demo local
-              </span>
-            </div>
-            <Button variant="ghost" className="mt-3" onClick={() => setConfirmReset(true)}>
-              <RefreshCw className="h-4 w-4" aria-hidden="true" />
-              Reiniciar datos demo
-            </Button>
-          </Card>
         </div>
       </div>
 
@@ -175,7 +130,14 @@ export default function ProfilePage() {
           <Heart className="h-4 w-4 text-suya-danger" aria-hidden="true" />
           <h2 className="section-title">Favoritos</h2>
         </div>
-        {favoriteStores.length === 0 ? (
+        {storesError ? (
+          <ErrorState description={storesError} onRetry={() => void loadStores(true)} />
+        ) : storesStatus !== 'ready' ? (
+          <div role="status" aria-busy="true">
+            <span className="sr-only">Cargando tus favoritos…</span>
+            <StoreListSkeleton count={2} />
+          </div>
+        ) : favoriteStores.length === 0 ? (
           <p className="rounded-card border border-dashed border-suya-mist bg-white p-5 text-sm text-[#6B7076]">
             Todavía no guardaste negocios. Toca el corazón en cualquier tienda para verla aquí.{' '}
             <Link to="/stores" className="font-semibold text-suya-green">
@@ -191,31 +153,6 @@ export default function ProfilePage() {
         )}
       </section>
 
-      <Modal
-        open={confirmReset}
-        onClose={() => setConfirmReset(false)}
-        title="¿Reiniciar los datos de la demo?"
-        description="Se borran el carrito, los pedidos, favoritos y la configuración del repartidor guardados en este navegador."
-        size="sm"
-        footer={
-          <div className="flex gap-2">
-            <Button variant="ghost" fullWidth onClick={() => setConfirmReset(false)}>
-              Cancelar
-            </Button>
-            <Button
-              variant="danger"
-              fullWidth
-              onClick={() => {
-                clearSuyaStorage();
-                // `BASE_URL` respeta la subruta de GitHub Pages; '/' saldría del sitio.
-                window.location.href = import.meta.env.BASE_URL;
-              }}
-            >
-              Reiniciar
-            </Button>
-          </div>
-        }
-      />
     </div>
   );
 }

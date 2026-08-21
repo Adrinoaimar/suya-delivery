@@ -1,8 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import {
-  BrowserLocationServiceImpl,
-  SimulatedLocationServiceImpl,
-} from '@/lib/services/BrowserLocationService';
+import { BrowserLocationServiceImpl } from '@/lib/services/BrowserLocationService';
 import { boundsOf, distanceKm, pointAtProgress, projectToUnit } from '@/utils/geo';
 import { demoRoute } from '@/data';
 
@@ -43,23 +40,6 @@ describe('ubicación', () => {
     service.watch(vi.fn(), onError);
 
     expect(onError).toHaveBeenCalledWith('No tenemos permiso para acceder a tu ubicación.');
-  });
-
-  it('el modo simulado emite lecturas sobre la ruta demo', () => {
-    vi.useFakeTimers();
-    const service = new SimulatedLocationServiceImpl();
-    const onReading = vi.fn();
-
-    const stop = service.watch(onReading, vi.fn());
-    expect(onReading).toHaveBeenCalledTimes(1);
-
-    vi.advanceTimersByTime(4000);
-    expect(onReading.mock.calls.length).toBeGreaterThanOrEqual(3);
-
-    const reading = onReading.mock.calls[0]![0];
-    expect(reading.simulated).toBe(true);
-    expect(typeof reading.position.lat).toBe('number');
-    stop();
   });
 
   it('interpola la posición sin saltos entre puntos', () => {

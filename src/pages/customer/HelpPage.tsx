@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, LifeBuoy, MessageSquare, ShieldCheck } from 'lucide-react';
-import { ButtonLink } from '@/components/common/Button';
+import { ButtonLink, ExternalButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { cn } from '@/lib/cn';
 
@@ -11,24 +11,24 @@ const FAQ = [
       'Elige un negocio, agrega productos al carrito y confirma en el checkout. Verás el seguimiento apenas se cree el pedido.',
   },
   {
-    question: '¿Los pagos son reales?',
+    question: '¿Cómo pago?',
     answer:
-      'No. Esta versión es una demostración local: efectivo, Yape y tarjeta se simulan en el navegador y nunca se envía información a una pasarela.',
+      'Por ahora solo aceptamos efectivo al recibir. Los pagos digitales seguirán deshabilitados hasta integrar confirmación segura del proveedor.',
   },
   {
     question: '¿Puedo seguir mi pedido?',
     answer:
-      'Sí. En «Pedidos» abre el pedido en curso: verás el mapa, el estado y el avance del repartidor con tiempos simulados.',
+      'Sí. En «Pedidos» abre el pedido en curso. Verás estados reales y GPS del repartidor cuando recoja el pedido.',
   },
   {
-    question: '¿Qué es el modo demo local?',
+    question: '¿Cómo protegemos mi ubicación?',
     answer:
-      'Todos los datos (carrito, pedidos, favoritos, seguridad) se guardan solo en este navegador con localStorage. No hay base de datos ni servidor.',
+      'El punto exacto se solicita solo al confirmar. No enviamos tu dirección a geocodificadores públicos; Supabase aplica permisos por participante.',
   },
   {
-    question: '¿Cómo funciona compartir ubicación?',
+    question: '¿Puedo compartir un enlace público?',
     answer:
-      'En la demo la ubicación se comparte entre pestañas del mismo navegador. En producción hará falta un servicio en tiempo real para enlazar dos dispositivos distintos.',
+      'Todavía no. Esta opción está deshabilitada hasta contar con tokens criptográficos, vencimiento y revocación server-side.',
   },
   {
     question: '¿Puedo instalarla como aplicación?',
@@ -38,6 +38,7 @@ const FAQ = [
 ];
 
 export default function HelpPage() {
+  const riderAppUrl = import.meta.env.VITE_RIDER_APP_URL;
   const [open, setOpen] = useState<number | null>(0);
 
   return (
@@ -61,9 +62,16 @@ export default function HelpPage() {
           <p className="mt-1 text-sm text-[#6B7076]">
             Herramientas para repartidores: ubicación compartida, contacto de confianza y SOS.
           </p>
-          <ButtonLink to="/rider/safety" variant="secondary" size="sm" className="mt-3">
-            Abrir seguridad
-          </ButtonLink>
+          {riderAppUrl && (
+            <ExternalButtonLink
+              href={`${riderAppUrl.replace(/\/$/, '')}/rider/safety`}
+              variant="secondary"
+              size="sm"
+              className="mt-3"
+            >
+              Abrir seguridad
+            </ExternalButtonLink>
+          )}
         </Card>
       </div>
 
@@ -103,8 +111,8 @@ export default function HelpPage() {
       <Card className="flex items-start gap-3">
         <LifeBuoy className="mt-0.5 h-5 w-5 shrink-0 text-suya-green" aria-hidden="true" />
         <p className="text-sm text-[#4A4F55]">
-          Esta es una demostración para validar la experiencia antes de conectar un backend real. No
-          existe atención al cliente ni números de contacto operativos.
+          Soporte humano y teléfono operativo todavía no están habilitados. Para un pedido activo,
+          revisa su detalle y estado. En una emergencia real usa los números oficiales 105 o 116.
         </p>
       </Card>
     </div>

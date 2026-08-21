@@ -6,8 +6,8 @@ import type { MapViewProps } from './types';
 
 /**
  * Proveedor de mapa real sobre OpenStreetMap (Leaflet), con la misma lectura que un
- * mapa de navegación: calles, ruta trazada y el repartidor moviéndose sobre ella.
- * Necesita conexión para descargar los tiles; `MapProvider` cae a `MockMap` si no hay red.
+ * mapa de ubicaciones: calles, puntos confirmados y repartidor. La línea entre puntos
+ * es referencia visual, no una ruta calculada.
  */
 export default function LeafletMap({
   points,
@@ -33,9 +33,11 @@ export default function LeafletMap({
     });
     mapRef.current = map;
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    const tileUrl = import.meta.env.VITE_OSM_TILE_URL?.trim() ||
+      'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    L.tileLayer(tileUrl, {
       maxZoom: 19,
-      attribution: '© OpenStreetMap',
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
 
     const latlngs = points.map((point) => [point.lat, point.lng] as [number, number]);

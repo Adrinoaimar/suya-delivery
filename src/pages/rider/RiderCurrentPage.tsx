@@ -1,36 +1,31 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Check, KeyRound, MapPin, Navigation, PackageCheck, Phone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/common/Button';
 import { MapProvider } from '@/components/map/MapProvider';
 import { CodeDialog } from '@/components/order/CodeDialog';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
-import { demoRoute } from '@/data';
-import { notificationService, orderService } from '@/lib/services';
-import { useRouteProgress } from '@/hooks/useOrderSimulation';
+import { notificationService } from '@/lib/services';
 import { selectActiveOrder, useOrderStore } from '@/store/orderStore';
+import { useTrackingStore } from '@/store/trackingStore';
 import { formatPrice, orderStatusLabel } from '@/utils/format';
-import { pointAtProgress } from '@/utils/geo';
 import type { OrderStatus } from '@/types';
 
 /**
  * El último paso no avanza solo: exige el código de 4 dígitos del cliente.
  */
 const NEXT_ACTION: Partial<Record<OrderStatus, { label: string; next: OrderStatus }>> = {
-  confirmed: { label: 'Marcar en preparación', next: 'preparing' },
   preparing: { label: 'Recogí el pedido', next: 'picked_up' },
   picked_up: { label: 'Voy en camino', next: 'on_the_way' },
 };
 
 export default function RiderCurrentPage() {
   const orders = useOrderStore((state) => state.orders);
-  const refresh = useOrderStore((state) => state.refresh);
+  const updateOrderStatus = useOrderStore((state) => state.updateOrderStatus);
   const confirmDelivery = useOrderStore((state) => state.confirmDelivery);
   const active = selectActiveOrder(orders);
-  const progress = useRouteProgress(active);
+  const reading = useTrackingStore((state) => state.reading);
   const [codeOpen, setCodeOpen] = useState(false);
-
-  const riderPosition = useMemo(() => pointAtProgress(demoRoute.points, progress), [progress]);
 
   if (!active) {
     return (
@@ -39,13 +34,13 @@ export default function RiderCurrentPage() {
           <Navigation className="mx-auto h-8 w-8 text-suya-lime" aria-hidden="true" />
           <h1 className="mt-3 font-display text-xl font-bold">Sin viaje activo</h1>
           <p className="mt-1 text-sm text-white/70">
-            Crea un pedido desde la vista de cliente para ver aquí el viaje del repartidor.
+            No tienes una entrega asignada en este momento.
           </p>
           <Link
-            to="/stores"
+            to="/rider"
             className="press mt-4 inline-flex h-11 items-center rounded-btn bg-suya-lime px-4 font-display text-sm font-semibold text-suya-carbon"
           >
-            Ir a la tienda
+            Volver al inicio
           </Link>
         </div>
       </div>
@@ -53,6 +48,8 @@ export default function RiderCurrentPage() {
   }
 
   const action = NEXT_ACTION[active.status];
+  const mapReady = active.storePosition !== null && active.deliveryPosition !== null;
+  const mapPoints = mapReady ? [active.storePosition!, active.deliveryPosition!] : [];
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-4 px-4 py-5 lg:px-8 lg:py-8">
@@ -64,13 +61,17 @@ export default function RiderCurrentPage() {
       </header>
 
       <div className="h-56 overflow-hidden rounded-card border border-white/10 sm:h-72">
-        <MapProvider
-          points={demoRoute.points}
-          origin={demoRoute.origin}
-          destination={demoRoute.destination}
-          rider={riderPosition}
-          label="Ruta asignada"
-        />
+        {mapReady ? <MapProvider
+          points={mapPoints}
+          origin={{ ...active.storePosition!, label: active.storeName }}
+          destination={{ ...active.deliveryPosition!, label: 'Punto de entrega' }}
+          rider={reading?.position ?? null}
+          label="Ubicaciones de entrega"
+        /> : (
+          <div className="flex h-full items-center justify-center bg-white p-6 text-center text-sm text-[#6B7076]">
+            Pedido sin ambos puntos verificados. Usa dirección y referencia.
+          </div>
+        )}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
@@ -104,10 +105,7 @@ export default function RiderCurrentPage() {
           <div className="mt-3 flex flex-wrap gap-2">
             {action && (
               <Button
-                onClick={() => {
-                  orderService.updateStatus(active.id, action.next);
-                  refresh();
-                }}
+                onClick={() => void updateOrderStatus(active.id, action.next)}
               >
                 <PackageCheck className="h-4 w-4" aria-hidden="true" />
                 {action.label}

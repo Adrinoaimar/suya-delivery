@@ -14,7 +14,7 @@ interface CodeDialogProps {
   helper?: string;
   confirmLabel: string;
   tone?: 'primary' | 'danger';
-  onSubmit: (code: string) => CodeResult;
+  onSubmit: (code: string) => Promise<CodeResult>;
   onSuccess?: (order: Order) => void;
 }
 
@@ -32,20 +32,31 @@ export function CodeDialog({
 }: CodeDialogProps) {
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
       setCode('');
       setError(null);
+      setSubmitting(false);
     }
   }, [open]);
 
-  function submit() {
+  async function submit() {
     if (code.length !== 4) {
       setError('Escribe los 4 dígitos del código.');
       return;
     }
-    const result = onSubmit(code);
+    setSubmitting(true);
+    let result: CodeResult;
+    try {
+      result = await onSubmit(code);
+    } catch {
+      setError('No pudimos verificar el código. Inténtalo nuevamente.');
+      setSubmitting(false);
+      return;
+    }
+    setSubmitting(false);
     if (!result.ok) {
       setError(CODE_ERROR_MESSAGES[result.reason]);
       return;
@@ -70,10 +81,10 @@ export function CodeDialog({
           <Button
             variant={tone === 'danger' ? 'danger' : 'primary'}
             fullWidth
-            onClick={submit}
-            disabled={code.length !== 4}
+            onClick={() => void submit()}
+            disabled={code.length !== 4 || submitting}
           >
-            {confirmLabel}
+            {submitting ? 'Verificando…' : confirmLabel}
           </Button>
         </div>
       }
@@ -97,7 +108,7 @@ export function CodeDialog({
             setError(null);
           }}
           onKeyDown={(event) => {
-            if (event.key === 'Enter') submit();
+            if (event.key === 'Enter') void submit();
           }}
           className="h-16 w-full rounded-btn border border-suya-mist bg-white text-center font-display text-3xl font-bold tracking-[0.6em] text-suya-carbon focus:border-suya-green focus:outline-none focus:ring-2 focus:ring-suya-lime/50"
           placeholder="0000"

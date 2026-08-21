@@ -1,31 +1,22 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { BadgeCheck, Banknote, CreditCard, Smartphone, TicketPercent } from 'lucide-react';
+import { Banknote, LocateFixed, MapPin, TicketPercent } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button, ButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
+import { ErrorState } from '@/components/common/ErrorState';
 import { Input, Textarea } from '@/components/common/Input';
-import { FREE_DELIVERY_THRESHOLD } from '@/data';
-import { cn } from '@/lib/cn';
-import { notificationService, paymentService, storeService } from '@/lib/services';
+import { Skeleton } from '@/components/common/Skeleton';
+import { FREE_DELIVERY_THRESHOLD } from '@/lib/commerce';
+import { notificationService, paymentService } from '@/lib/services';
+import { useCatalogStore } from '@/store/catalogStore';
 import { cartTotals, useCartStore } from '@/store/cartStore';
 import { useOrderStore } from '@/store/orderStore';
-import { useUserStore } from '@/store/userStore';
+import { useAuthStore } from '@/store/authStore';
 import { formatPrice } from '@/utils/format';
 import type { PaymentMethod } from '@/types';
-
-const METHODS: { id: PaymentMethod; label: string; description: string; icon: typeof Banknote }[] = [
-  { id: 'cash', label: 'Efectivo', description: 'Pagas al recibir', icon: Banknote },
-  { id: 'yape', label: 'Yape', description: 'Simulado, sin cobro real', icon: Smartphone },
-  { id: 'card', label: 'Tarjeta', description: 'Simulada, sin cobro real', icon: CreditCard },
-];
-
-/** Cupones de demostración. */
-const COUPONS: Record<string, { label: string; freeDelivery?: boolean; percent?: number }> = {
-  SUYA20: { label: 'Envío gratis', freeDelivery: true },
-  DULCE15: { label: '15% de descuento', percent: 0.15 },
-};
+import type { LatLng } from '@/types';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
@@ -33,29 +24,37 @@ export default function CheckoutPage() {
   const storeId = useCartStore((state) => state.storeId);
   const clearCart = useCartStore((state) => state.clear);
   const createOrder = useOrderStore((state) => state.createOrder);
-  const profile = useUserStore((state) => state.profile);
-  const setProfile = useUserStore((state) => state.setProfile);
+  const identity = useAuthStore((state) => state.identity);
 
-  const store = storeId ? storeService.getStore(storeId) : undefined;
+  const store = useCatalogStore((state) =>
+    storeId ? state.stores.find((entry) => entry.id === storeId) : undefined,
+  );
+  const storesStatus = useCatalogStore((state) => state.storesStatus);
+  const storesError = useCatalogStore((state) => state.storesError);
+  const loadStores = useCatalogStore((state) => state.loadStores);
+
+  useEffect(() => {
+    void loadStores();
+  }, [loadStores]);
+
   const [form, setForm] = useState({
-    name: profile.name === 'Invitado' ? '' : profile.name,
-    phone: profile.phone,
-    address: profile.address,
-    reference: profile.reference,
+    name: identity?.displayName ?? '',
+    phone: identity?.phone ?? '',
+    address: identity?.defaultAddress ?? '',
+    reference: identity?.defaultReference ?? '',
   });
-  const [method, setMethod] = useState<PaymentMethod>('cash');
-  const [couponInput, setCouponInput] = useState('');
-  const [coupon, setCoupon] = useState<string | null>(null);
+  const method: PaymentMethod = 'cash';
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [deliveryPosition, setDeliveryPosition] = useState<LatLng | null>(null);
+  const [locating, setLocating] = useState(false);
 
-  const applied = coupon ? COUPONS[coupon] : undefined;
   const base = cartTotals(items, store, FREE_DELIVERY_THRESHOLD);
-  const discount = applied?.percent ? base.subtotal * applied.percent : 0;
-  const deliveryFee = applied?.freeDelivery ? 0 : base.deliveryFee;
-  const total = Math.max(0, base.subtotal + deliveryFee - discount);
+  const discount = 0;
+  const deliveryFee = base.deliveryFee;
+  const total = base.subtotal + deliveryFee;
 
-  if (items.length === 0 || !store) {
+  if (items.length === 0) {
     return (
       <div className="shell py-10">
         <EmptyState
@@ -68,14 +67,37 @@ export default function CheckoutPage() {
     );
   }
 
-  function applyCoupon() {
-    const code = couponInput.trim().toUpperCase();
-    if (COUPONS[code]) {
-      setCoupon(code);
-      notificationService.notify(`Cupón aplicado: ${COUPONS[code]!.label}`, 'success');
-    } else {
-      notificationService.notify('Ese cupón no es válido en la demo.', 'warning');
+  if (storesError) {
+    return (
+      <div className="shell py-10">
+        <ErrorState description={storesError} onRetry={() => void loadStores(true)} />
+      </div>
+    );
+  }
+
+  if (!store) {
+    // El catálogo ya llegó y el negocio no existe: no retenemos al cliente cargando.
+    if (storesStatus === 'ready') {
+      return (
+        <div className="shell py-10">
+          <EmptyState
+            icon={<TicketPercent className="h-6 w-6" />}
+            title="Este negocio ya no está disponible"
+            description="Vuelve al catálogo y arma tu pedido en otro negocio de Sullana."
+            action={<ButtonLink to="/stores">Explorar tiendas</ButtonLink>}
+          />
+        </div>
+      );
     }
+
+    return (
+      <div className="shell space-y-4 py-10" role="status" aria-busy="true">
+        <span className="sr-only">Cargando el checkout…</span>
+        <Skeleton className="h-8 w-56" />
+        <Skeleton className="h-44 w-full rounded-card" />
+        <Skeleton className="h-32 w-full rounded-card" />
+      </div>
+    );
   }
 
   function validate(): boolean {
@@ -87,8 +109,35 @@ export default function CheckoutPage() {
     if (digits.length < 6 || digits.length > 15) next.phone = 'Escribe un teléfono válido.';
 
     if (form.address.trim().length < 6) next.address = 'Indica la dirección de entrega.';
+    if (!deliveryPosition) next.location = 'Confirma el punto de entrega con GPS.';
     setErrors(next);
     return Object.keys(next).length === 0;
+  }
+
+  function locateDelivery(): void {
+    if (!navigator.geolocation) {
+      setErrors((current) => ({ ...current, location: 'Este dispositivo no ofrece ubicación.' }));
+      return;
+    }
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        setDeliveryPosition({ lat: coords.latitude, lng: coords.longitude });
+        setErrors((current) => {
+          const { location: _location, ...rest } = current;
+          return rest;
+        });
+        setLocating(false);
+      },
+      () => {
+        setErrors((current) => ({
+          ...current,
+          location: 'No pudimos obtener tu ubicación. Activa GPS y permiso del navegador.',
+        }));
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, maximumAge: 30_000, timeout: 15_000 },
+    );
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -106,49 +155,45 @@ export default function CheckoutPage() {
     }
 
     setSubmitting(true);
-    const payment = await paymentService.authorize(method, total);
-    setSubmitting(false);
-    if (!payment.ok) {
-      notificationService.notify('No pudimos registrar el pago simulado.', 'danger');
-      return;
+    try {
+      const payment = await paymentService.authorize(method, total);
+      if (!payment.ok) {
+        notificationService.notify(payment.message, 'danger');
+        return;
+      }
+
+      const order = await createOrder({
+        storeId: store.id,
+        items,
+        subtotal: base.subtotal,
+        deliveryFee,
+        discount,
+        customer: {
+          name: form.name.trim(),
+          phone: form.phone.trim(),
+          address: form.address.trim(),
+          reference: form.reference.trim(),
+        },
+        deliveryPosition: deliveryPosition!,
+        paymentMethod: method,
+      });
+
+      clearCart();
+      notificationService.notify(
+        `Pedido confirmado. Pagarás ${formatPrice(order.total)} en efectivo al recibirlo.`,
+        'success',
+      );
+      navigate(`/orders/${order.id}/track`, { replace: true });
+    } catch {
+      notificationService.notify('No pudimos crear el pedido. Inténtalo nuevamente.', 'danger');
+    } finally {
+      setSubmitting(false);
     }
-
-    setProfile({
-      name: form.name,
-      phone: form.phone,
-      address: form.address,
-      reference: form.reference,
-    });
-
-    const order = createOrder({
-      storeId: store.id,
-      items,
-      subtotal: base.subtotal,
-      deliveryFee,
-      discount,
-      customer: {
-        name: form.name.trim(),
-        phone: form.phone.trim(),
-        address: form.address.trim(),
-        reference: form.reference.trim(),
-      },
-      paymentMethod: method,
-    });
-
-    clearCart();
-    notificationService.notify(payment.message, 'success');
-    navigate(`/orders/${order.id}/track`, { replace: true });
   }
 
   return (
     <form onSubmit={handleSubmit} className="shell space-y-4 py-4 lg:py-8">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="section-title">Confirmar pedido</h1>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-suya-mist px-3 py-1 text-xs font-semibold text-[#4A4F55]">
-          <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
-          Modo demostración: no se realizan cobros reales
-        </span>
-      </div>
+      <h1 className="section-title">Confirmar pedido</h1>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px] lg:items-start">
         <div className="space-y-4">
@@ -191,65 +236,40 @@ export default function CheckoutPage() {
                   onChange={(event) => setForm({ ...form, reference: event.target.value })}
                 />
               </div>
+              <div className="sm:col-span-2 rounded-btn border border-suya-mist p-3">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="flex items-center gap-2 text-sm font-semibold">
+                    <MapPin className="h-4 w-4 text-suya-green" aria-hidden="true" />
+                    Punto exacto de entrega
+                  </span>
+                  <Button type="button" variant="ghost" size="sm" onClick={locateDelivery} disabled={locating}>
+                    <LocateFixed className="h-4 w-4" aria-hidden="true" />
+                    {locating ? 'Ubicando…' : deliveryPosition ? 'Actualizar GPS' : 'Usar mi ubicación'}
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-[#6B7076]">
+                  {deliveryPosition
+                    ? `Punto confirmado: ${deliveryPosition.lat.toFixed(5)}, ${deliveryPosition.lng.toFixed(5)}`
+                    : 'Solo se solicita al tocar el botón. No enviamos tu dirección a geocodificadores públicos.'}
+                </p>
+                {errors.location && <p className="mt-1 text-xs text-red-700" role="alert">{errors.location}</p>}
+              </div>
             </div>
           </Card>
 
           <Card>
             <h2 className="mb-3 font-display text-[15px] font-bold">Método de pago</h2>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {METHODS.map((option) => {
-                const Icon = option.icon;
-                const active = method === option.id;
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => setMethod(option.id)}
-                    aria-pressed={active}
-                    className={cn(
-                      'press flex items-center gap-3 rounded-btn border p-3 text-left transition-colors',
-                      active
-                        ? 'border-suya-green bg-suya-lime-soft'
-                        : 'border-suya-mist hover:border-suya-lime',
-                    )}
-                  >
-                    <Icon
-                      aria-hidden="true"
-                      className={cn('h-5 w-5', active ? 'text-suya-green' : 'text-[#6B7076]')}
-                    />
-                    <span>
-                      <span className="block text-[15px] font-semibold">{option.label}</span>
-                      <span className="block text-xs text-[#6B7076]">{option.description}</span>
-                    </span>
-                  </button>
-                );
-              })}
+            <div className="flex items-center gap-3 rounded-btn border border-suya-green bg-suya-lime-soft p-3">
+              <Banknote aria-hidden="true" className="h-5 w-5 text-suya-green" />
+              <span>
+                <span className="block text-[15px] font-semibold">Efectivo</span>
+                <span className="block text-xs text-[#6B7076]">Paga al recibir tu pedido</span>
+              </span>
             </div>
             <p className="mt-3 text-xs text-[#6B7076]">
-              Ningún dato de pago se envía a un servidor: la autorización es simulada localmente.
+              Próximamente habilitaremos pagos digitales mediante una pasarela confirmada por el
+              servidor.
             </p>
-          </Card>
-
-          <Card>
-            <h2 className="mb-3 font-display text-[15px] font-bold">Cupón</h2>
-            <div className="flex items-end gap-2">
-              <div className="flex-1">
-                <Input
-                  label="Código de cupón"
-                  value={couponInput}
-                  placeholder="SUYA20"
-                  onChange={(event) => setCouponInput(event.target.value)}
-                />
-              </div>
-              <Button variant="secondary" onClick={applyCoupon} className="mb-[2px]">
-                Aplicar
-              </Button>
-            </div>
-            {applied && (
-              <p className="mt-2 text-sm font-medium text-suya-green">
-                Cupón {coupon} activo: {applied.label}
-              </p>
-            )}
           </Card>
         </div>
 
@@ -295,7 +315,7 @@ export default function CheckoutPage() {
               {submitting ? 'Procesando…' : `Confirmar pedido · ${formatPrice(total)}`}
             </Button>
             <p className="mt-2 text-center text-xs text-[#6B7076]">
-              Al confirmar se genera un pedido local con seguimiento simulado.
+              Revisa la dirección y el teléfono antes de confirmar.
             </p>
           </Card>
         </div>
