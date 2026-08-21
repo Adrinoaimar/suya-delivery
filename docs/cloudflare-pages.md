@@ -31,8 +31,8 @@ El workflow manual `cloudflare-pages.yml` solo despliega desde `main` y el envir
 `VITE_SUPABASE_PUBLISHABLE_KEY`; las demás variables están enumeradas en el workflow. El token debe
 tener solo permiso de edición de Pages en la cuenta elegida.
 
-`config/production.json` es la identidad canónica versionada. El primer project ref está vacío a
-propósito: el release falla cerrado hasta crear el Supabase exclusivo y registrar allí su ref real.
+`config/production.json` es la identidad canónica versionada. Suya usa el proyecto Supabase dedicado
+`cggxooilzhqlcnofgtmi` en `us-east-1`.
 Las variables del environment deben coincidir con ese archivo; así no basta cambiar juntas una URL y
 una ref equivocadas, ni se pueden permutar las tres aplicaciones.
 
