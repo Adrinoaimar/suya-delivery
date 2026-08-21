@@ -43,6 +43,7 @@ interface ProductRow {
   description: string;
   price: number | string;
   image_url: string | null;
+  image_is_stock: boolean;
   popular: boolean;
   extras: unknown;
   sort_order: number;
@@ -116,6 +117,7 @@ function mapProduct(row: ProductRow): Product {
     description: row.description,
     price: number(row.price),
     image: row.image_url,
+    imageIsStock: row.image_is_stock,
     popular: row.popular,
     extras: mapExtras(row.extras),
   };
@@ -207,7 +209,7 @@ export class SupabaseStoreServiceImpl implements StoreService {
     let query = this.client
       .from('products')
       .select(
-        'id, restaurant_id, section, name, description, price, image_url, popular, extras, sort_order',
+        'id, restaurant_id, section, name, description, price, image_url, image_is_stock, popular, extras, sort_order',
       )
       .eq('active', true);
     if (restaurantId) query = query.eq('restaurant_id', restaurantId);
@@ -247,7 +249,7 @@ export class SupabaseStoreServiceImpl implements StoreService {
     const { data, error } = await this.client
       .from('products')
       .select(
-        'id, restaurant_id, section, name, description, price, image_url, popular, extras, sort_order',
+        'id, restaurant_id, section, name, description, price, image_url, image_is_stock, popular, extras, sort_order',
       )
       .eq('active', true)
       .eq('id', id)

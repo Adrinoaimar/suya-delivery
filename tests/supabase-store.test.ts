@@ -118,6 +118,7 @@ const productRow: Row = {
   description: 'Con ají panca y papa dorada',
   price: '12.90',
   image_url: null,
+  image_is_stock: false,
   popular: true,
   extras: [
     { id: 'e1', label: 'Extra ají', price: '1.50' },
@@ -263,6 +264,7 @@ describe('SupabaseStoreService', () => {
       description: 'Con ají panca y papa dorada',
       price: 12.9,
       image: null,
+      imageIsStock: false,
       popular: true,
       extras: [
         { id: 'e1', label: 'Extra ají', price: 1.5 },

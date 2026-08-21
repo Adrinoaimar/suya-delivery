@@ -73,6 +73,8 @@ export interface Product {
   description: string;
   price: number;
   image: string | null;
+  /** true cuando `image` es una foto genérica de stock, no una foto real del plato del negocio. */
+  imageIsStock: boolean;
   popular: boolean;
   extras: ProductExtra[];
 }

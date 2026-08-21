@@ -27,8 +27,13 @@ export function ProductCard({
         className,
       )}
     >
-      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-suya-ivory">
+      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-suya-ivory">
         <Thumb name={product.name} src={product.image} variant="product" rounded="rounded-xl" />
+        {product.image && product.imageIsStock && (
+          <span className="absolute bottom-0 left-0 right-0 bg-black/60 py-0.5 text-center text-[9px] font-semibold uppercase tracking-wide text-white">
+            Ilustrativa
+          </span>
+        )}
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col">

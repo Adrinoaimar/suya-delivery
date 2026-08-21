@@ -76,7 +76,7 @@ export function ProductSheet({ product, onClose }: ProductSheetProps) {
       }
     >
       <div className="space-y-4">
-        <div className="h-40 overflow-hidden rounded-card bg-suya-ivory">
+        <div className="relative h-40 overflow-hidden rounded-card bg-suya-ivory">
           <Thumb
             name={product.name}
             src={product.image}
@@ -84,6 +84,11 @@ export function ProductSheet({ product, onClose }: ProductSheetProps) {
             rounded="rounded-card"
             textClassName="text-4xl"
           />
+          {product.image && product.imageIsStock && (
+            <span className="absolute bottom-2 left-2 rounded-full bg-black/60 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-white">
+              Foto ilustrativa, no del negocio
+            </span>
+          )}
         </div>
 
         <div>
