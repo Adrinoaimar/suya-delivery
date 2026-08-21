@@ -31,7 +31,13 @@ export default function OrdersOperationsPage() {
       await dispatchService.listAvailableRiders(restaurantId),
     ] as const)).then((entries) => {
       if (active) setRiders(Object.fromEntries(entries));
-    }).catch(() => undefined);
+    }).catch((cause) => {
+      if (!active) return;
+      notificationService.notify(
+        cause instanceof Error ? cause.message : 'No pudimos cargar los repartidores disponibles.',
+        'danger',
+      );
+    });
     return () => { active = false; };
   }, [restaurantIds]);
 

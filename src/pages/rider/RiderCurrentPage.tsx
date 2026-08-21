@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Check, KeyRound, MapPin, Navigation, PackageCheck, Phone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/common/Button';
@@ -26,6 +26,7 @@ export default function RiderCurrentPage() {
   const active = selectActiveOrder(orders);
   const reading = useTrackingStore((state) => state.reading);
   const [codeOpen, setCodeOpen] = useState(false);
+  const [advancing, setAdvancing] = useState(false);
 
   if (!active) {
     return (
@@ -49,7 +50,31 @@ export default function RiderCurrentPage() {
 
   const action = NEXT_ACTION[active.status];
   const mapReady = active.storePosition !== null && active.deliveryPosition !== null;
-  const mapPoints = mapReady ? [active.storePosition!, active.deliveryPosition!] : [];
+  // Referencias estables: LeafletMap remonta el mapa entero si origin/destination cambian de identidad.
+  const mapPoints = useMemo(
+    () => (mapReady ? [active.storePosition!, active.deliveryPosition!] : []),
+    [mapReady, active.storePosition, active.deliveryPosition],
+  );
+  const mapOrigin = useMemo(
+    () => (active.storePosition ? { ...active.storePosition, label: active.storeName } : undefined),
+    [active.storePosition, active.storeName],
+  );
+  const mapDestination = useMemo(
+    () => (active.deliveryPosition ? { ...active.deliveryPosition, label: 'Punto de entrega' } : undefined),
+    [active.deliveryPosition],
+  );
+
+  async function advance(next: OrderStatus) {
+    setAdvancing(true);
+    try {
+      await updateOrderStatus(active.id, next);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No pudimos actualizar el pedido.';
+      notificationService.notify(message, 'danger');
+    } finally {
+      setAdvancing(false);
+    }
+  }
 
   return (
     <div className="mx-auto w-full max-w-4xl space-y-4 px-4 py-5 lg:px-8 lg:py-8">
@@ -63,8 +88,8 @@ export default function RiderCurrentPage() {
       <div className="h-56 overflow-hidden rounded-card border border-white/10 sm:h-72">
         {mapReady ? <MapProvider
           points={mapPoints}
-          origin={{ ...active.storePosition!, label: active.storeName }}
-          destination={{ ...active.deliveryPosition!, label: 'Punto de entrega' }}
+          origin={mapOrigin}
+          destination={mapDestination}
           rider={reading?.position ?? null}
           label="Ubicaciones de entrega"
         /> : (
@@ -104,15 +129,13 @@ export default function RiderCurrentPage() {
 
           <div className="mt-3 flex flex-wrap gap-2">
             {action && (
-              <Button
-                onClick={() => void updateOrderStatus(active.id, action.next)}
-              >
+              <Button disabled={advancing} onClick={() => void advance(action.next)}>
                 <PackageCheck className="h-4 w-4" aria-hidden="true" />
-                {action.label}
+                {advancing ? 'Actualizando…' : action.label}
               </Button>
             )}
             {active.status === 'on_the_way' && (
-              <Button onClick={() => setCodeOpen(true)}>
+              <Button disabled={advancing} onClick={() => setCodeOpen(true)}>
                 <Check className="h-4 w-4" aria-hidden="true" />
                 Entregué el pedido
               </Button>

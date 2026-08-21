@@ -142,7 +142,14 @@ export default function CheckoutPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!validate() || !store) return;
+    if (!store) return;
+    if (!validate()) {
+      notificationService.notify(
+        'Revisa los datos de entrega: falta algo antes de confirmar.',
+        'warning',
+      );
+      return;
+    }
 
     // El mínimo también se comprueba aquí: llegar por URL directa o con el teclado
     // no debe permitir saltarse la restricción del negocio.
@@ -184,8 +191,9 @@ export default function CheckoutPage() {
         'success',
       );
       navigate(`/orders/${order.id}/track`, { replace: true });
-    } catch {
-      notificationService.notify('No pudimos crear el pedido. Inténtalo nuevamente.', 'danger');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'No pudimos crear el pedido. Inténtalo nuevamente.';
+      notificationService.notify(message, 'danger');
     } finally {
       setSubmitting(false);
     }
