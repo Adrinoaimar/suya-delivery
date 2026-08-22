@@ -58,6 +58,7 @@ export interface OrderService {
   cancel(id: string, code: string): Promise<CodeResult>;
   /** Requiere el código de entrega que el cliente le da al repartidor. */
   confirmDelivery(id: string, code: string): Promise<CodeResult>;
+  cancelByRider(id: string, reason: string): Promise<boolean>;
   subscribe(listener: () => void): () => void;
 }
 

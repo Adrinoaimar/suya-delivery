@@ -16,6 +16,7 @@ interface OrderState {
   updateOrderStatus: (id: string, status: OrderStatus) => Promise<Order | undefined>;
   cancelOrder: (id: string, code: string) => Promise<CodeResult>;
   confirmDelivery: (id: string, code: string) => Promise<CodeResult>;
+  cancelByRider: (id: string, reason: string) => Promise<boolean>;
   getOrder: (id: string) => Order | undefined;
   reset: () => void;
 }
@@ -97,6 +98,13 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       set((state) => ({ orders: replaceOrder(state.orders, result.order) }));
     }
     return result;
+  },
+
+  async cancelByRider(id, reason) {
+    const generation = orderGeneration;
+    const cancelled = await orderService.cancelByRider(id, reason);
+    if (cancelled && generation === orderGeneration) await get().refresh();
+    return cancelled;
   },
 
   getOrder(id) {

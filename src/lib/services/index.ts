@@ -73,6 +73,9 @@ export const orderService: OrderService = {
   async confirmDelivery(id, code) {
     return (await resolveOrderService()).confirmDelivery(id, code);
   },
+  async cancelByRider(id, reason) {
+    return (await resolveOrderService()).cancelByRider(id, reason);
+  },
   subscribe(listener) {
     let unsubscribe: () => void = () => undefined;
     let cancelled = false;

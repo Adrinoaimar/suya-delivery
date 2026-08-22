@@ -56,6 +56,7 @@ export class MockOrderServiceImpl implements OrderService {
       etaMinutes: store?.etaMax ?? 30,
       deliveryCode,
       cancelCode: createPinCode(deliveryCode),
+      cancellationReason: null,
     };
 
     this.cache = [order, ...this.load()];
@@ -151,6 +152,22 @@ export class MockOrderServiceImpl implements OrderService {
     return { ok: true, order: this.find(order.id)! };
   }
 
+  async cancelByRider(id: string, reason: string): Promise<boolean> {
+    const order = this.find(id);
+    const cleanReason = reason.trim();
+    if (!order || !order.riderId || !['confirmed', 'preparing'].includes(order.status)) return false;
+    if (cleanReason.length < 3 || cleanReason.length > 300) return false;
+    const now = new Date().toISOString();
+    this.cache = this.load().map((item) => item.id === order.id ? {
+      ...item,
+      status: 'cancelled' as OrderStatus,
+      cancellationReason: cleanReason,
+      history: [...item.history, { status: 'cancelled' as OrderStatus, at: now }],
+    } : item);
+    this.persist();
+    return true;
+  }
+
   subscribe(): () => void {
     return () => undefined;
   }
@@ -211,6 +228,7 @@ export class MockOrderServiceImpl implements OrderService {
         etaMinutes: store?.etaMax ?? 30,
         deliveryCode: createPinCode(),
         cancelCode: createPinCode(),
+        cancellationReason: null,
       } as Order;
     });
 
