@@ -266,7 +266,8 @@ export class SupabaseOrderServiceImpl
     if (profileError) throw new Error(profileError.message);
 
     const requestId = requestIdFor(input);
-    const { data, error } = await this.client.rpc('create_cash_order', {
+    const rpcName = input.tableId ? 'create_table_cash_order' : 'create_cash_order';
+    const rpcPayload = {
       p_restaurant_id: input.storeId,
       p_items: input.items.map((item) => ({
         product_id: item.productId,
@@ -278,7 +279,9 @@ export class SupabaseOrderServiceImpl
       p_delivery_address: input.customer.address,
       p_delivery_reference: input.customer.reference,
       p_request_id: requestId,
-    });
+      ...(input.tableId ? { p_table_id: input.tableId, p_table_session_id: input.tableSessionId ?? null } : {}),
+    };
+    const { data, error } = await this.client.rpc(rpcName, rpcPayload);
     if (error) throw new Error(error.message);
     const result = first(data as ({ order_id: string } & OrderCodes)[] | null);
     if (!result) throw new Error('Supabase no devolvió el pedido creado.');

@@ -35,6 +35,7 @@ interface ButtonLinkProps {
   className?: string;
   children: ReactNode;
   state?: unknown;
+  onClick?: () => void;
 }
 
 export function ButtonLink({
@@ -45,9 +46,10 @@ export function ButtonLink({
   className,
   children,
   state,
+  onClick,
 }: ButtonLinkProps) {
   return (
-    <Link to={to} state={state} className={cn(buttonClasses(variant, size, fullWidth), className)}>
+    <Link to={to} state={state} onClick={onClick} className={cn(buttonClasses(variant, size, fullWidth), className)}>
       {children}
     </Link>
   );

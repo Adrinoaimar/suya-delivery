@@ -36,6 +36,22 @@ export interface CreateOrderInput {
   customer: CustomerInfo;
   deliveryPosition: LatLng;
   paymentMethod: PaymentMethod;
+  /** Contexto opcional de un pedido iniciado desde QR de mesa. */
+  tableId?: string;
+  tableSessionId?: string;
+}
+
+export interface TableQrResolution {
+  tableId: string;
+  restaurantId: string;
+  tableNumber: string;
+  restaurantName: string;
+  sessionId: string | null;
+}
+
+export interface TableService {
+  resolve(token: string): Promise<TableQrResolution | null>;
+  open(tableId: string): Promise<string>;
 }
 
 export type CodeFailure = 'not_found' | 'invalid_code' | 'already_closed' | 'invalid_status';
