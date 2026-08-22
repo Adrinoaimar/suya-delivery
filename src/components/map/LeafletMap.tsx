@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { cn } from '@/lib/cn';
@@ -21,6 +21,8 @@ export default function LeafletMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const riderMarkerRef = useRef<L.Marker | null>(null);
+  const routeBoundsRef = useRef<L.LatLngBounds | null>(null);
+  const [tileError, setTileError] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return undefined;
@@ -35,31 +37,35 @@ export default function LeafletMap({
 
     const tileUrl = import.meta.env.VITE_OSM_TILE_URL?.trim() ||
       'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-    L.tileLayer(tileUrl, {
+    const tiles = L.tileLayer(tileUrl, {
       maxZoom: 19,
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
+    tiles.on('tileerror', () => setTileError(true));
 
     const latlngs = points.map((point) => [point.lat, point.lng] as [number, number]);
     if (latlngs.length > 0) {
       // Trazo doble: base verde Suya + línea amarilla punteada, como la ruta de la marca.
       L.polyline(latlngs, { color: '#0E6B44', weight: 7, opacity: 0.95, lineCap: 'round' }).addTo(map);
       L.polyline(latlngs, { color: '#FFC107', weight: 2.5, dashArray: '8 10' }).addTo(map);
-      map.fitBounds(L.latLngBounds(latlngs).pad(0.25));
+      routeBoundsRef.current = L.latLngBounds(latlngs);
+      map.fitBounds(routeBoundsRef.current.pad(0.25));
     } else {
       map.setView([-4.8941, -80.6899], 14);
     }
 
     if (origin) {
-      L.marker([origin.lat, origin.lng], { icon: originIcon(), keyboard: false })
+      L.marker([origin.lat, origin.lng], { icon: originIcon(), keyboard: true, title: origin.label ?? 'Negocio' })
         .addTo(map)
-        .bindTooltip(origin.label ?? 'Negocio', { direction: 'top' });
+        .bindTooltip(origin.label ?? 'Negocio', { direction: 'top' })
+        .bindPopup(`<strong>${escapeHtml(origin.label ?? 'Negocio')}</strong>`);
     }
 
     if (destination) {
-      L.marker([destination.lat, destination.lng], { icon: destinationIcon(), keyboard: false })
+      L.marker([destination.lat, destination.lng], { icon: destinationIcon(), keyboard: true, title: destination.label ?? 'Tu dirección' })
         .addTo(map)
-        .bindTooltip(destination.label ?? 'Tu dirección', { direction: 'top' });
+        .bindTooltip(destination.label ?? 'Tu dirección', { direction: 'top' })
+        .bindPopup(`<strong>${escapeHtml(destination.label ?? 'Tu dirección')}</strong>`);
     }
 
     // Al cambiar el tamaño del contenedor (hoja inferior que se expande, rotación del
@@ -94,14 +100,41 @@ export default function LeafletMap({
     }
   }, [rider]);
 
+  function recenterRoute() {
+    const map = mapRef.current;
+    const bounds = routeBoundsRef.current;
+    if (map && bounds?.isValid()) map.fitBounds(bounds.pad(0.25), { animate: true, duration: 0.5 });
+  }
+
   return (
-    <div
-      ref={containerRef}
-      role="img"
-      aria-label={label ?? 'Mapa de la ruta en Sullana'}
-      className={cn('h-full w-full', className)}
-    />
+    <div className={cn('relative h-full w-full', className)}>
+      <div
+        ref={containerRef}
+        role="img"
+        aria-label={label ?? 'Mapa de la ruta en Sullana'}
+        className="h-full w-full"
+      />
+      {interactive && points.length > 1 && (
+        <button
+          type="button"
+          onClick={recenterRoute}
+          className="absolute right-3 top-3 z-[500] rounded-full bg-white px-3 py-2 text-xs font-semibold text-[#0E6B44] shadow-md ring-1 ring-black/10 transition hover:bg-suya-ivory focus:outline-none focus:ring-2 focus:ring-[#0E6B44]"
+          aria-label="Centrar mapa en la ruta"
+        >
+          Centrar ruta
+        </button>
+      )}
+      {tileError && (
+        <div role="status" className="absolute inset-x-3 bottom-3 z-[500] rounded-xl bg-white/95 px-3 py-2 text-xs text-[#6B7076] shadow-md ring-1 ring-black/10">
+          No se pudieron cargar algunas calles. La ruta y las direcciones siguen disponibles.
+        </div>
+      )}
+    </div>
   );
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character] ?? character));
 }
 
 function divIcon(html: string, size: number): L.DivIcon {
