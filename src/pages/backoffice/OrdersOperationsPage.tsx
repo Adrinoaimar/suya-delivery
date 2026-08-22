@@ -138,6 +138,30 @@ export default function OrdersOperationsPage() {
               </div>
             </div>
 
+            <div className="rounded-btn border border-suya-lime/60 bg-suya-lime-soft/45 p-3" aria-label={`Preparación del pedido ${order.code}`}>
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="flex items-center gap-2 font-display text-sm font-bold text-suya-green-dark">
+                  <UtensilsCrossed className="h-4 w-4" aria-hidden="true" />
+                  Para preparar
+                </h2>
+                <span className="text-xs font-medium text-suya-green-dark">
+                  {order.items.reduce((total, item) => total + item.quantity, 0)} artículos
+                </span>
+              </div>
+              <ul className="mt-2 divide-y divide-suya-green/15 text-sm text-[#33423A]">
+                {order.items.map((item) => (
+                  <li key={item.lineId} className="py-2 first:pt-0 last:pb-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <span><strong>{item.quantity} ×</strong> {item.name}</span>
+                      <span className="shrink-0 font-medium">{formatPrice(item.unitPrice * item.quantity)}</span>
+                    </div>
+                    {item.extras.length > 0 && <p className="mt-0.5 text-xs text-[#68716C]">Extras: {item.extras.map((extra) => extra.label).join(', ')}</p>}
+                    {item.note && <p className="mt-0.5 text-xs font-medium text-suya-green-dark">Nota: {item.note}</p>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
             {assignable && (
               <div className="grid gap-3 border-t border-[#E0E5E2] pt-3 md:grid-cols-[1fr_auto]">
                 <label className="text-sm font-medium">
