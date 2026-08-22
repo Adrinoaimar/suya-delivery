@@ -14,8 +14,8 @@ export default function TableQrPage() {
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [resolved, setResolved] = useState<{ tableNumber: string; restaurantId: string; tableId: string; sessionId: string | null } | null>(null);
-  const tableNumber = params.get('table') ?? resolved?.tableNumber ?? decodeTableNumber(token);
-  const restaurantId = params.get('restaurant') ?? resolved?.restaurantId ?? decodeRestaurantId(token);
+  const tableNumber = params.get('table') ?? resolved?.tableNumber ?? null;
+  const restaurantId = params.get('restaurant') ?? resolved?.restaurantId ?? null;
 
   useEffect(() => {
     let active = true;
@@ -37,6 +37,3 @@ export default function TableQrPage() {
     <div className="space-y-5 p-6">{!store ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Este QR todavía no está vinculado a un restaurante activo. Pide al encargado que genere nuevamente el QR desde Operaciones.</div> : <><div className="flex items-start gap-3"><Store className="mt-0.5 h-5 w-5 text-suya-green" aria-hidden="true" /><div><p className="font-semibold">{store.name}</p><p className="text-sm text-[#68716C]">{store.address}</p></div></div><div className="flex items-start gap-3"><Utensils className="mt-0.5 h-5 w-5 text-suya-green" aria-hidden="true" /><p className="text-sm text-[#68716C]">Tu pedido llegará directamente a cocina con el número de mesa.</p></div><ButtonLink onClick={() => { if (resolved) sessionStorage.setItem('suya.tableContext', JSON.stringify(resolved)); }} to={`/store/${store.id}?table=${encodeURIComponent(tableNumber ?? '')}&tableToken=${encodeURIComponent(token)}`} size="lg" className="w-full justify-center">Ver carta <ArrowRight className="h-4 w-4" aria-hidden="true" /></ButtonLink></>}<Link to="/" className="block text-center text-sm font-semibold text-suya-green hover:underline">Volver a Suya</Link></div>
   </Card></main>;
 }
-
-function decodeRestaurantId(token: string): string | null { const [restaurant] = token.split(':'); return restaurant && restaurant !== token ? restaurant : null; }
-function decodeTableNumber(token: string): string | null { const [, table] = token.split(':'); return table || null; }

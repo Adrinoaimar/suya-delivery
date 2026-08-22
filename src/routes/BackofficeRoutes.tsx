@@ -11,9 +11,9 @@ import TablesOperationsPage from '@/pages/backoffice/TablesOperationsPage';
 export function BackofficeRoutes() {
   return (
     <Routes>
-      <Route path="login" element={<LoginPage title="Acceso de operaciones" allowed={['platform_admin']} defaultPath="/" />} />
+      <Route path="login" element={<LoginPage title="Acceso de operaciones" allowed={['platform_admin', 'restaurant_staff']} defaultPath="/" />} />
       <Route path="unauthorized" element={<UnauthorizedPage />} />
-      <Route element={<RequireAccess anyOf={['platform_admin']} />}>
+      <Route element={<RequireAccess anyOf={['platform_admin', 'restaurant_staff']} />}>
         <Route element={<BackofficeLayout />}>
           <Route index element={<OperationsSummaryPage />} />
           <Route path="orders" element={<OrdersOperationsPage />} />

@@ -52,6 +52,17 @@ export interface TableQrResolution {
 export interface TableService {
   resolve(token: string): Promise<TableQrResolution | null>;
   open(tableId: string): Promise<string>;
+  list(restaurantIds: string[]): Promise<TableSummary[]>;
+}
+
+export interface TableSummary {
+  id: string;
+  restaurantId: string;
+  tableNumber: string;
+  status: 'available' | 'occupied' | 'awaiting_payment' | 'paid';
+  sessionId: string | null;
+  sessionStatus: 'open' | 'payment_pending' | 'paid' | 'closed' | null;
+  total: number;
 }
 
 export type CodeFailure = 'not_found' | 'invalid_code' | 'already_closed' | 'invalid_status';

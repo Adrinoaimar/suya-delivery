@@ -27,9 +27,10 @@ function resolveTableService(): Promise<TableService> {
   if (resolvedTableService) return resolvedTableService;
   resolvedTableService = import.meta.env.VITE_BACKEND === 'supabase'
     ? Promise.resolve(new SupabaseTableService())
-    : Promise.resolve({
+      : Promise.resolve({
         async resolve() { return null; },
         async open() { throw new Error('Las mesas QR requieren Supabase.'); },
+        async list() { return []; },
       });
   return resolvedTableService;
 }
@@ -37,6 +38,7 @@ function resolveTableService(): Promise<TableService> {
 export const tableService: TableService = {
   async resolve(token) { return (await resolveTableService()).resolve(token); },
   async open(tableId) { return (await resolveTableService()).open(tableId); },
+  async list(restaurantIds) { return (await resolveTableService()).list(restaurantIds); },
 };
 
 let resolvedStoreService: Promise<StoreService> | null = null;
