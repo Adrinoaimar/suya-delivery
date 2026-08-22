@@ -46,7 +46,13 @@ export default function OrderTrackPage() {
     const unsubscribe = safetyOperationsService.subscribeLocation(order.id, (position) => {
       if (active) setRiderPosition(position);
     });
-    return () => { active = false; unsubscribe(); };
+    // Fallback para redes donde WebSocket/realtime está bloqueado: conserva ubicación visible.
+    const poll = window.setInterval(() => {
+      void safetyOperationsService.latestLocation(order.id)
+        .then((position) => { if (active && position) setRiderPosition(position); })
+        .catch(() => undefined);
+    }, 8_000);
+    return () => { active = false; unsubscribe(); window.clearInterval(poll); };
   }, [order?.id, order?.riderId, order?.status]);
 
   if (!order) {
