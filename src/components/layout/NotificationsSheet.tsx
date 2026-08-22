@@ -62,13 +62,13 @@ export function NotificationsSheet({ open, onClose }: NotificationsSheetProps) {
                     <Button size="sm" variant="ghost" onClick={() => { onClose(); navigate(`/orders/${event.orderId}/track`); }}>
                       <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /> Ver estado
                     </Button>
-                    {['confirmed', 'preparing'].includes(event.status) && (
+                    {['confirmed', 'preparing', 'picked_up', 'on_the_way'].includes(event.status) && (
                       <Button size="sm" variant="danger" onClick={() => setCancelId(event.orderId)}>
                         <XCircle className="h-3.5 w-3.5" aria-hidden="true" /> Cancelar
                       </Button>
                     )}
                     {['picked_up', 'on_the_way'].includes(event.status) && (
-                      <p className="basis-full text-xs text-[#6B7076]">Ya fue recogido; solo puedes ver su estado.</p>
+                      <p className="basis-full text-xs text-[#6B7076]">Se cancelará con confirmación y código, aunque ya esté en ruta.</p>
                     )}
                   </div>
                 )}
