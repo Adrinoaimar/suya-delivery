@@ -49,7 +49,8 @@ export default function HomePage() {
   }
 
   return (
-    <div className="pb-8">
+    <div className="pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-8">
+      {/* Reserve space for the fixed mobile navigation so the final CTA is never obscured. */}
       {/* Hero de escritorio */}
       <section className="hidden bg-white lg:block">
         <div className="shell grid grid-cols-2 items-center gap-10 py-14">
