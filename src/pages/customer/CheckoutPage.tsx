@@ -296,7 +296,7 @@ export default function CheckoutPage() {
                 onChange={(event) => setForm({ ...form, name: event.target.value })}
               />
               <Input
-                label="Número de celular"
+                label={isMenuOrder ? 'Número de celular' : 'Teléfono'}
                 type="tel"
                 inputMode="tel"
                 value={form.phone}
