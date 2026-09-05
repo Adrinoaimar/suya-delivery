@@ -52,7 +52,7 @@ begin
   end if;
 
   update public.restaurant_tables
-  set qr_token = encode(gen_random_bytes(18), 'hex'), active = true
+  set qr_token = encode(gen_random_bytes(18), 'hex')
   where id = p_table_id
   returning * into v_table;
   return query select v_table.id, v_table.restaurant_id, v_table.table_number,
@@ -120,6 +120,7 @@ begin
   join public.restaurant_tables t on t.id = s.table_id
   where s.table_id = p_table_id
     and s.restaurant_id = p_restaurant_id
+    and t.active
     and s.status in ('open','payment_pending')
     and (p_table_session_id is null or s.id = p_table_session_id)
   order by s.opened_at desc
