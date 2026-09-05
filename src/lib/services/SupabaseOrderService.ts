@@ -33,6 +33,7 @@ interface OrderRow {
   restaurant_id: string;
   rider_id: string | null;
   status: OrderStatus;
+  origin?: 'delivery' | 'menu';
   payment_method: Order['paymentMethod'];
   cancellation_reason: string | null;
   subtotal: number | string;
@@ -59,7 +60,7 @@ interface OrderCodes {
 }
 
 const ORDER_SELECT = `
-  id, code, customer_id, restaurant_id, rider_id, status, payment_method, cancellation_reason,
+  id, code, customer_id, restaurant_id, rider_id, status, origin, payment_method, cancellation_reason,
   subtotal, delivery_fee, discount, total, customer_name, customer_phone,
   delivery_address, delivery_reference, estimated_minutes, created_at,
   delivery_latitude, delivery_longitude,
@@ -130,6 +131,7 @@ function mapOrder(row: OrderRow, codes?: OrderCodes): Order {
     total: amount(row.total),
     createdAt: row.created_at,
     status: row.status,
+    origin: row.origin === 'menu' ? 'suya_menu' : 'delivery',
     history,
     customer: {
       name: row.customer_name,
@@ -266,7 +268,7 @@ export class SupabaseOrderServiceImpl
     if (profileError) throw new Error(profileError.message);
 
     const requestId = requestIdFor(input);
-    const rpcName = input.tableId ? 'create_table_cash_order' : 'create_cash_order';
+    const rpcName = input.tableId ? 'create_table_cash_order' : input.origin === 'suya_menu' ? 'create_menu_order' : 'create_cash_order';
     const rpcPayload = {
       p_restaurant_id: input.storeId,
       p_items: input.items.map((item) => ({
@@ -299,6 +301,10 @@ export class SupabaseOrderServiceImpl
     if (!row) throw new Error('El pedido fue creado, pero no pudo recuperarse. Reintenta.');
     clearRequest(requestId);
     return mapOrder(row, result);
+  }
+
+  async createMenuOrder(input: CreateOrderInput): Promise<Order> {
+    return this.create({ ...input, origin: 'suya_menu' });
   }
 
   async updateStatus(id: string, status: OrderStatus): Promise<Order | undefined> {

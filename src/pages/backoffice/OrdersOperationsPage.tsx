@@ -130,6 +130,7 @@ export default function OrdersOperationsPage() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="font-display font-bold">#{order.code} · {order.storeName}</p>
+                {order.origin === 'suya_menu' && <span className="mt-1 inline-flex rounded-full bg-suya-sun/25 px-2 py-0.5 text-xs font-semibold text-suya-green-dark">Suya Menús</span>}
                 <p className="text-sm text-[#68716C]">
                   {order.customer.name} · {order.customer.address}
                 </p>

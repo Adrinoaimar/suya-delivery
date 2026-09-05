@@ -23,6 +23,7 @@ export default function CheckoutPage() {
   const items = useCartStore((state) => state.items);
   const storeId = useCartStore((state) => state.storeId);
   const clearCart = useCartStore((state) => state.clear);
+  const orderOrigin = useCartStore((state) => state.origin);
   const createOrder = useOrderStore((state) => state.createOrder);
   const identity = useAuthStore((state) => state.identity);
 
@@ -193,6 +194,7 @@ export default function CheckoutPage() {
         paymentMethod: method,
         tableId: tableContext?.tableId,
         tableSessionId,
+        origin: tableContext?.tableId ? 'table_qr' : orderOrigin,
       });
 
       clearCart();

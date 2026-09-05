@@ -7,6 +7,10 @@ create table if not exists public.restaurant_menu_settings (
   accent_color text not null default '#183b3b' check (accent_color ~ '^#[0-9A-Fa-f]{6}$'), font_family text not null default 'DM Sans' check (length(font_family) between 1 and 80), hero_image_url text,
   updated_at timestamptz not null default now(), created_at timestamptz not null default now()
 );
+insert into public.restaurant_menu_settings (restaurant_id, public_slug)
+select id, slug || '-menu' from public.restaurants
+where slug is not null and length(slug) between 3 and 75
+on conflict (restaurant_id) do nothing;
 alter table public.restaurant_menu_settings enable row level security;
 create policy restaurant_menu_settings_owner on public.restaurant_menu_settings for all to authenticated using (private.has_restaurant_role(restaurant_id, array['owner','manager']::public.restaurant_role[])) with check (private.has_restaurant_role(restaurant_id, array['owner','manager']::public.restaurant_role[]));
 create policy restaurant_menu_settings_public on public.restaurant_menu_settings for select to anon, authenticated using (published and exists (select 1 from public.restaurants r where r.id = restaurant_id and r.active));
@@ -32,3 +36,14 @@ $$;
 revoke execute on function public.create_menu_order(uuid,jsonb,text,text,text,uuid) from public, anon;
 grant execute on function public.create_menu_order(uuid,jsonb,text,text,text,uuid) to authenticated;
 comment on column public.orders.origin is 'Order acquisition channel; server-controlled: delivery or menu.';
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('menu-branding', 'menu-branding', true, 5242880, array['image/jpeg','image/png','image/webp'])
+on conflict (id) do update set public = excluded.public, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
+create policy menu_branding_staff_insert on storage.objects for insert to authenticated
+with check (bucket_id = 'menu-branding' and private.has_restaurant_role(((storage.foldername(name))[1])::uuid, array['owner','manager']::public.restaurant_role[]));
+create policy menu_branding_staff_update on storage.objects for update to authenticated
+using (bucket_id = 'menu-branding' and private.has_restaurant_role(((storage.foldername(name))[1])::uuid, array['owner','manager']::public.restaurant_role[]))
+with check (bucket_id = 'menu-branding' and private.has_restaurant_role(((storage.foldername(name))[1])::uuid, array['owner','manager']::public.restaurant_role[]));
+create policy menu_branding_staff_delete on storage.objects for delete to authenticated
+using (bucket_id = 'menu-branding' and private.has_restaurant_role(((storage.foldername(name))[1])::uuid, array['owner','manager']::public.restaurant_role[]));
