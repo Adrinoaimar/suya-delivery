@@ -62,11 +62,25 @@ export default function StoreDetailPage() {
   const toggleFavorite = useUserStore((state) => state.toggleFavorite);
   const items = useCartStore((state) => state.items);
   const cartStoreId = useCartStore((state) => state.storeId);
+  const setOrigin = useCartStore((state) => state.setOrigin);
 
   useEffect(() => {
     void loadStores();
     void loadProducts(id);
   }, [id, loadStores, loadProducts]);
+
+  // Entrar desde el catálogo general siempre es el canal Delivery. Un contexto
+  // QR de mesa explícito conserva su canal y permite checkout invitado.
+  useEffect(() => {
+    let tableOrder = false;
+    try {
+      const value = JSON.parse(sessionStorage.getItem('suya.tableContext') ?? 'null') as { tableId?: unknown } | null;
+      tableOrder = typeof value?.tableId === 'string' && value.tableId.length > 0;
+    } catch {
+      tableOrder = false;
+    }
+    if (!tableOrder) setOrigin('delivery');
+  }, [id, setOrigin]);
 
   if (!store) {
     if (storesError) {
