@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Bike, RefreshCw, UtensilsCrossed } from 'lucide-react';
+import { Bike, Filter, RefreshCw, UtensilsCrossed } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -19,10 +19,22 @@ export default function OrdersOperationsPage() {
   const [riders, setRiders] = useState<Record<string, AvailableRider[]>>({});
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [busyOrder, setBusyOrder] = useState<string | null>(null);
+  const [channel, setChannel] = useState<'all' | 'delivery' | 'suya_menu' | 'table_qr'>('all');
   const restaurantIds = useMemo(
     () => [...new Set(orders.map((order) => order.storeId))],
     [orders],
   );
+  const visibleOrders = useMemo(
+    () => channel === 'all'
+      ? orders
+      : orders.filter((order) => (order.origin ?? 'delivery') === channel),
+    [channel, orders],
+  );
+  const channelLabel = (origin: typeof channel) => origin === 'suya_menu'
+    ? 'Suya Menús'
+    : origin === 'table_qr'
+      ? 'Mesa QR'
+      : 'Delivery';
 
   useEffect(() => {
     let active = true;
@@ -109,18 +121,31 @@ export default function OrdersOperationsPage() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-bold">Pedidos</h1>
-          <p className="text-sm text-[#68716C]">Preparación, asignación y cancelación auditadas.</p>
+          <p className="text-sm text-[#68716C]">Preparación, asignación y cancelación auditadas por canal.</p>
         </div>
-        <Button variant="secondary" onClick={() => void refresh()}>
-          <RefreshCw className="h-4 w-4" aria-hidden="true" />
-          Actualizar
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="flex items-center gap-2 rounded-btn border border-[#CDD4D0] bg-white px-3 text-sm font-medium">
+            <Filter className="h-4 w-4 text-[#68716C]" aria-hidden="true" />
+            <span className="sr-only">Filtrar pedidos por canal</span>
+            <select aria-label="Filtrar pedidos por canal" value={channel} onChange={(event) => setChannel(event.target.value as typeof channel)} className="h-10 bg-transparent pr-2 outline-none">
+              <option value="all">Todos ({orders.length})</option>
+              <option value="delivery">Delivery ({orders.filter((order) => (order.origin ?? 'delivery') === 'delivery').length})</option>
+              <option value="suya_menu">Suya Menús ({orders.filter((order) => order.origin === 'suya_menu').length})</option>
+              <option value="table_qr">Mesa QR ({orders.filter((order) => order.origin === 'table_qr').length})</option>
+            </select>
+          </label>
+          <Button variant="secondary" onClick={() => void refresh()}>
+            <RefreshCw className="h-4 w-4" aria-hidden="true" />
+            Actualizar
+          </Button>
+        </div>
       </div>
 
-      {orders.map((order) => {
+      {visibleOrders.length === 0 && <Card className="border-dashed py-10 text-center text-sm text-[#68716C]">No hay pedidos en el canal seleccionado.</Card>}
+      {visibleOrders.map((order) => {
         const open = order.status !== 'delivered' && order.status !== 'cancelled';
         const assignable = order.status === 'confirmed' || order.status === 'preparing';
         const isCompleted = order.status === 'delivered' || order.status === 'cancelled';
@@ -130,7 +155,9 @@ export default function OrdersOperationsPage() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="font-display font-bold">#{order.code} · {order.storeName}</p>
-                {order.origin === 'suya_menu' && <span className="mt-1 inline-flex rounded-full bg-suya-sun/25 px-2 py-0.5 text-xs font-semibold text-suya-green-dark">Suya Menús</span>}
+                <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${order.origin === 'table_qr' ? 'bg-suya-green/10 text-suya-green-dark' : order.origin === 'suya_menu' ? 'bg-suya-sun/25 text-suya-green-dark' : 'bg-[#E9EEEB] text-[#52605A]'}`}>
+                  {channelLabel(order.origin ?? 'delivery')}
+                </span>
                 <p className="text-sm text-[#68716C]">
                   {order.customer.name} · {order.customer.address}
                 </p>
@@ -177,6 +204,7 @@ export default function OrdersOperationsPage() {
                 <label className="text-sm font-medium">
                   <span className="mb-1 block">Repartidor</span>
                   <select
+                    aria-label={`Repartidor para pedido ${order.code}`}
                     className="h-11 w-full rounded-btn border border-[#CDD4D0] bg-white px-3"
                     value={order.riderId ?? ''}
                     disabled={busyOrder === order.id}

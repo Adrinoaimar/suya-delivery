@@ -31,6 +31,9 @@ function resolveTableService(): Promise<TableService> {
         async resolve() { return null; },
         async open() { throw new Error('Las mesas QR requieren Supabase.'); },
         async list() { return []; },
+        async create() { throw new Error('Las mesas QR requieren Supabase.'); },
+        async regenerateQr() { throw new Error('Las mesas QR requieren Supabase.'); },
+        async setActive() { throw new Error('Las mesas QR requieren Supabase.'); },
       });
   return resolvedTableService;
 }
@@ -39,6 +42,9 @@ export const tableService: TableService = {
   async resolve(token) { return (await resolveTableService()).resolve(token); },
   async open(tableId) { return (await resolveTableService()).open(tableId); },
   async list(restaurantIds) { return (await resolveTableService()).list(restaurantIds); },
+  async create(restaurantId, tableNumber) { return (await resolveTableService()).create(restaurantId, tableNumber); },
+  async regenerateQr(tableId) { return (await resolveTableService()).regenerateQr(tableId); },
+  async setActive(tableId, active) { return (await resolveTableService()).setActive(tableId, active); },
 };
 
 let resolvedStoreService: Promise<StoreService> | null = null;

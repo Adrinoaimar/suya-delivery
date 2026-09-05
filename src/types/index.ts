@@ -177,6 +177,8 @@ export interface Order {
   cancellationReason?: string | null;
   /** Canal de entrada del pedido; permite distinguir QR/menu digital en operaciones. */
   origin?: 'delivery' | 'suya_menu' | 'table_qr';
+  /** Mesa asociada cuando el pedido nació desde un QR de mesa. */
+  tableId?: string | null;
 }
 
 export interface LatLng {

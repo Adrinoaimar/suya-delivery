@@ -60,45 +60,86 @@ export default function MenuPage() {
   const open = isStoreAcceptingOrders(store);
   const ownCart = cartStoreId === store.id && items.length > 0;
   const totals = cartTotals(ownCart ? items : [], store, FREE_DELIVERY_THRESHOLD);
-  const theme = { '--menu-primary': brand.primaryColor, '--menu-accent': brand.accentColor, fontFamily: brand.fontFamily } as CSSProperties;
+  // La identidad de Suya usa Montserrat para titulares e Inter para lectura. La configuración
+  // antigua podía guardar familias que no están cargadas (DM Sans, Poppins, etc.); las reducimos
+  // a una pila local conocida para evitar que el navegador caiga en una tipografía inesperada.
+  const menuFont = brand.fontFamily.trim().toLowerCase() === 'montserrat'
+    ? 'Montserrat, system-ui, sans-serif'
+    : 'Inter, system-ui, sans-serif';
+  const theme = {
+    '--menu-primary': brand.primaryColor || '#0E6B44',
+    '--menu-accent': brand.accentColor || '#8CC63F',
+    fontFamily: menuFont,
+  } as CSSProperties;
 
   return (
-    <div style={theme} className="min-h-screen bg-[#F8F5EE] pb-28 lg:pb-10">
-      <header className="border-b border-black/5 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-          <img src={menuLogo} alt="Suya Menús" className="h-12 w-auto object-contain sm:h-14" />
-          <span className="rounded-full bg-[#0E6B44]/10 px-3 py-1.5 text-xs font-bold text-[#0E6B44]">{open ? 'Recibiendo pedidos' : 'Cerrado ahora'}</span>
+    <div style={theme} className="min-h-screen bg-[#F8F5EE] pb-28 font-sans text-suya-carbon lg:pb-10">
+      <header className="sticky top-0 z-20 border-b border-suya-carbon/5 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex h-[68px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Link to="/" aria-label="Volver a Suya Delivery" className="rounded-xl transition-opacity hover:opacity-80">
+            <img src={menuLogo} alt="Suya Menús" className="h-10 w-auto object-contain sm:h-11" />
+          </Link>
+          <div className="flex items-center gap-3">
+            <span className="hidden text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7D847E] sm:inline">Carta digital</span>
+            <span role="status" className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold ${open ? 'bg-[#0E6B44]/10 text-[#0E6B44]' : 'bg-suya-carbon/10 text-suya-carbon'}`}>
+              <span className={`h-2 w-2 rounded-full ${open ? 'bg-[#55A66C]' : 'bg-suya-carbon/40'}`} aria-hidden="true" />
+              {open ? 'Recibiendo pedidos' : 'Cerrado ahora'}
+            </span>
+          </div>
         </div>
       </header>
 
       <main className="mx-auto max-w-7xl lg:grid lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:py-8">
-        <aside className="lg:sticky lg:top-6 lg:self-start lg:overflow-hidden lg:rounded-3xl lg:bg-white lg:shadow-card">
-          <div className="relative h-44 bg-[var(--menu-primary)] sm:h-52 lg:h-56">
-            {brand.heroImageUrl || store.image ? <img src={brand.heroImageUrl ?? store.image ?? ''} alt={`Portada de ${store.name}`} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center bg-[var(--menu-primary)] text-5xl font-black text-white/30">S</div>}
+        <aside className="overflow-hidden border-b border-suya-carbon/5 bg-white lg:sticky lg:top-[92px] lg:self-start lg:rounded-3xl lg:border lg:shadow-card">
+          <div className="relative h-48 bg-[var(--menu-primary)] sm:h-56 lg:h-60">
+            {brand.heroImageUrl || store.image ? <img src={brand.heroImageUrl ?? store.image ?? ''} alt={`Portada de ${store.name}`} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center bg-[var(--menu-primary)] text-6xl font-black text-white/30">S</div>}
+            <div className="pointer-events-none absolute inset-0 bg-black/10" aria-hidden="true" />
+            <span className="absolute bottom-4 left-4 rounded-full bg-white/90 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-suya-carbon">Menú público</span>
           </div>
-          <div className="relative px-4 pb-5 sm:px-6 lg:px-5">
+          <div className="relative px-4 pb-6 sm:px-6 lg:px-5">
             <div className="-mt-10 h-20 w-20 overflow-hidden rounded-2xl border-4 border-[#F8F5EE] bg-white shadow-card lg:border-white">
               {brand.logoUrl || store.logo ? <img src={brand.logoUrl ?? store.logo ?? ''} alt={`Logo de ${store.name}`} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-2xl font-black text-[var(--menu-primary)]">{store.name.slice(0, 1)}</div>}
             </div>
-            <h1 className="mt-3 font-display text-2xl font-bold text-suya-carbon lg:text-3xl">{store.name}</h1>
-            <p className="mt-1 text-sm leading-6 text-[#626963]">{store.description}</p>
-            <p className="mt-3 text-xs font-semibold text-[#626963]">{store.address}</p>
+            <div className="mt-4 flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--menu-primary)]">{store.tags[0] ?? 'Restaurante'}</p>
+                <h1 className="mt-1 font-display text-2xl font-bold leading-tight text-suya-carbon lg:text-[27px]">{store.name}</h1>
+              </div>
+              <span className="mt-1 shrink-0 rounded-full bg-suya-ivory px-2.5 py-1 text-[10px] font-semibold text-[#626963]">{store.etaMin}–{store.etaMax} min</span>
+            </div>
+            <p className="mt-2 text-sm leading-6 text-[#626963]">{store.description}</p>
+            <div className="mt-4 flex items-center gap-2 border-t border-suya-carbon/5 pt-4 text-xs font-semibold text-[#626963]">
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-suya-ivory text-[var(--menu-primary)]" aria-hidden="true">⌖</span>
+              <span className="truncate">{store.address || 'Ubicación por confirmar'}</span>
+            </div>
           </div>
         </aside>
 
-        <section className="px-4 py-5 sm:px-6 lg:px-0 lg:py-0">
-          <div className="mb-5 flex items-center gap-3 rounded-2xl border border-black/10 bg-white px-4 shadow-sm focus-within:ring-2 focus-within:ring-[var(--menu-primary)]">
-            <Search className="h-5 w-5 text-[#707770]" aria-hidden="true" />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} className="h-12 min-w-0 flex-1 bg-transparent text-sm outline-none" placeholder="Buscar platos o bebidas" aria-label="Buscar en el menú" />
+        <section className="px-4 py-7 sm:px-6 lg:px-0 lg:py-0">
+          <div className="mb-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--menu-primary)]">Nuestra carta</p>
+              <h2 className="mt-2 font-display text-3xl font-bold leading-tight tracking-[-0.03em] text-suya-carbon sm:text-4xl">Elige algo rico</h2>
+              <p className="mt-2 max-w-md text-sm leading-6 text-[#626963]">Todo preparado al momento. Agrega tus favoritos y envía tu pedido en pocos pasos.</p>
+            </div>
+            <span className="text-xs font-semibold text-[#7D847E]">{products.length} opciones disponibles</span>
           </div>
-          <nav aria-label="Categorías del menú" className="hide-scrollbar mb-6 flex gap-2 overflow-x-auto pb-1">
-            {sections.map((name) => <button key={name} type="button" onClick={() => setSection(name)} className={`h-11 shrink-0 rounded-full border px-5 text-sm font-semibold ${section === name ? 'border-[var(--menu-primary)] bg-[var(--menu-primary)] text-white' : 'border-black/10 bg-white text-suya-carbon'}`}>{name}</button>)}
+          <div className="mb-5 flex items-center gap-3 rounded-2xl border border-suya-carbon/10 bg-white px-4 shadow-card transition-shadow focus-within:border-[var(--menu-primary)] focus-within:shadow-soft">
+            <Search className="h-5 w-5 shrink-0 text-[#707770]" aria-hidden="true" />
+            <input value={query} onChange={(event) => setQuery(event.target.value)} className="h-14 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-[#9AA09A]" placeholder="Buscar platos o bebidas" aria-label="Buscar en el menú" />
+          </div>
+          <nav aria-label="Categorías del menú" className="hide-scrollbar mb-8 flex gap-2 overflow-x-auto pb-1">
+            {sections.map((name) => <button key={name} type="button" onClick={() => setSection(name)} aria-current={section === name ? 'page' : undefined} className={`h-11 shrink-0 rounded-full border px-5 text-sm font-semibold transition-colors ${section === name ? 'border-[var(--menu-primary)] bg-[var(--menu-primary)] text-white shadow-sm' : 'border-suya-carbon/10 bg-white text-suya-carbon hover:border-[var(--menu-primary)]'}`}>{name}</button>)}
           </nav>
-          {visible.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{visible.map((product) => <ProductCard key={product.id} product={product} disabled={!open} onSelect={setSelected} accentClassName="bg-[var(--menu-primary)] hover:brightness-90" />)}</div> : <EmptyState icon={<Utensils className="h-6 w-6" />} title="No hay resultados" description="Prueba otra búsqueda o categoría." />}
+          <div className="mb-4 flex items-baseline justify-between gap-3">
+            <h3 className="font-display text-xl font-bold text-suya-carbon">{section === 'Todos' ? 'Todos los platos' : section}</h3>
+            <span className="text-xs font-medium text-[#7D847E]">{visible.length} {visible.length === 1 ? 'plato' : 'platos'}</span>
+          </div>
+          {visible.length ? <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">{visible.map((product) => <ProductCard key={product.id} product={product} disabled={!open} onSelect={setSelected} accentClassName="bg-[var(--menu-primary)] hover:brightness-90" className="border-suya-carbon/10 p-3.5 shadow-none transition-all hover:-translate-y-0.5 hover:border-[var(--menu-primary)]/30 hover:shadow-soft" />)}</div> : <EmptyState icon={<Utensils className="h-6 w-6" />} title="No hay resultados" description="Prueba otra búsqueda o categoría." />}
         </section>
       </main>
 
-      {ownCart && <div className="fixed inset-x-0 bottom-4 z-30 px-4"><Link to="/cart" className="mx-auto flex max-w-xl items-center justify-between rounded-2xl bg-suya-carbon px-5 py-4 font-semibold text-white shadow-soft"><span className="flex items-center gap-2"><ShoppingBag className="h-5 w-5" />Ver pedido ({totals.count})</span><span>{formatPrice(totals.total)}</span></Link></div>}
+      {ownCart && <div className="fixed inset-x-0 bottom-4 z-30 px-4 lg:inset-x-auto lg:right-8 lg:w-[420px] lg:max-w-[calc(100vw-4rem)]"><Link to="/cart" className="mx-auto flex min-h-14 max-w-xl items-center justify-between rounded-2xl bg-suya-carbon px-5 py-4 font-semibold text-white shadow-soft transition-transform hover:-translate-y-0.5"><span className="flex items-center gap-2"><ShoppingBag className="h-5 w-5" />Ver pedido ({totals.count})</span><span>{formatPrice(totals.total)}</span></Link></div>}
       <ProductSheet product={selected} onClose={() => setSelected(null)} />
     </div>
   );

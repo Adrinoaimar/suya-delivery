@@ -118,7 +118,7 @@ if (process.env.SMOKE_BUSINESS === 'true') {
     await opsPage.getByRole('heading', { name: 'Pedidos' }).waitFor();
     // QA/prod pueden tener nombres distintos; selecciona el primer repartidor
     // disponible en vez de depender de una etiqueta sembrada localmente.
-    await opsPage.locator('select').first().selectOption({ index: 1 });
+    await opsPage.getByLabel(/Repartidor para pedido/).first().selectOption({ index: 1 });
     await opsPage.getByRole('button', { name: 'Iniciar preparación' }).first().click();
     await opsPage.getByText('En preparación', { exact: true }).waitFor({ timeout: 20_000 });
     console.log('business/backoffice-assign-and-prepare: OK');
