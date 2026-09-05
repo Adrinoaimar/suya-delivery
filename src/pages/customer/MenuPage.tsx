@@ -101,7 +101,7 @@ export default function MenuPage() {
           </div>
           <div className="relative px-4 pb-6 sm:px-6 lg:px-5">
             <div className="-mt-10 h-20 w-20 overflow-hidden rounded-2xl border-4 border-[#F8F5EE] bg-white shadow-card lg:border-white">
-              {brand.logoUrl || store.logo ? <img src={brand.logoUrl ?? store.logo ?? ''} alt={`Logo de ${store.name}`} className="h-full w-full object-cover" /> : <div className="grid h-full place-items-center text-2xl font-black text-[var(--menu-primary)]">{store.name.slice(0, 1)}</div>}
+              {brand.logoUrl || store.logo ? <img src={brand.logoUrl ?? store.logo ?? ''} alt={`Logo de ${store.name}`} className="h-full w-full object-contain bg-white p-1" /> : <div className="grid h-full place-items-center text-2xl font-black text-[var(--menu-primary)]">{store.name.slice(0, 1)}</div>}
             </div>
             <div className="mt-4 flex items-start justify-between gap-3">
               <div className="min-w-0">
