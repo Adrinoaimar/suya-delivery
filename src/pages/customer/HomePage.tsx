@@ -97,6 +97,9 @@ export default function HomePage() {
             <div className="absolute inset-0 overflow-hidden rounded-promo border border-suya-mist bg-suya-ivory shadow-soft">
               <div className="flex h-full flex-col justify-between bg-gradient-to-br from-suya-lime-soft via-white to-suya-sun-soft p-8">
                 <div className="max-w-xs rounded-card bg-white/90 p-4 shadow-card">
+                  <div className="mb-3 rounded-xl border border-suya-mist/70 bg-suya-ivory/75 px-3 py-2">
+                    <Logo variant="master" size="sm" className="h-8 max-w-[150px]" />
+                  </div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-suya-green">Cobertura inicial</p>
                   <p className="mt-1 font-display text-2xl font-bold">Sullana</p>
                   <p className="mt-1 text-sm text-[#6B7076]">Ubicación exacta se solicita solo al confirmar un pedido.</p>
