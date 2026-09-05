@@ -33,7 +33,8 @@ interface OrderRow {
   restaurant_id: string;
   rider_id: string | null;
   status: OrderStatus;
-  origin?: 'delivery' | 'menu';
+  origin?: 'delivery' | 'menu' | 'table_qr';
+  table_id?: string | null;
   payment_method: Order['paymentMethod'];
   cancellation_reason: string | null;
   subtotal: number | string;
@@ -60,7 +61,7 @@ interface OrderCodes {
 }
 
 const ORDER_SELECT = `
-  id, code, customer_id, restaurant_id, rider_id, status, origin, payment_method, cancellation_reason,
+  id, code, customer_id, restaurant_id, rider_id, status, origin, table_id, payment_method, cancellation_reason,
   subtotal, delivery_fee, discount, total, customer_name, customer_phone,
   delivery_address, delivery_reference, estimated_minutes, created_at,
   delivery_latitude, delivery_longitude,
@@ -131,7 +132,8 @@ function mapOrder(row: OrderRow, codes?: OrderCodes): Order {
     total: amount(row.total),
     createdAt: row.created_at,
     status: row.status,
-    origin: row.origin === 'menu' ? 'suya_menu' : 'delivery',
+    origin: row.origin === 'menu' ? 'suya_menu' : row.origin === 'table_qr' ? 'table_qr' : 'delivery',
+    tableId: row.table_id ?? null,
     history,
     customer: {
       name: row.customer_name,

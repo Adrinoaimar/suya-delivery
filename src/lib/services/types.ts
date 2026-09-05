@@ -81,6 +81,9 @@ export interface TableService {
   resolve(token: string): Promise<TableQrResolution | null>;
   open(tableId: string): Promise<string>;
   list(restaurantIds: string[]): Promise<TableSummary[]>;
+  create(restaurantId: string, tableNumber: string): Promise<TableSummary>;
+  regenerateQr(tableId: string): Promise<TableSummary>;
+  setActive(tableId: string, active: boolean): Promise<boolean>;
 }
 
 export interface TableSummary {
@@ -91,6 +94,8 @@ export interface TableSummary {
   sessionId: string | null;
   sessionStatus: 'open' | 'payment_pending' | 'paid' | 'closed' | null;
   total: number;
+  qrToken: string;
+  active: boolean;
 }
 
 export type CodeFailure = 'not_found' | 'invalid_code' | 'already_closed' | 'invalid_status';

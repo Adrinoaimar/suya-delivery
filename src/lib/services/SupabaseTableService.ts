@@ -1,9 +1,35 @@
 import { supabase } from '@/lib/supabase/client';
-import type { TableQrResolution, TableSummary } from './types';
+import type { TableQrResolution, TableService, TableSummary } from './types';
 
-export interface TableService {
-  resolve(token: string): Promise<TableQrResolution | null>;
-  open(tableId: string): Promise<string>;
+type TableRow = {
+  table_id: string;
+  restaurant_id: string;
+  table_number: string;
+  qr_token: string;
+  status: TableSummary['status'];
+  active: boolean;
+  session_id: string | null;
+  session_status: TableSummary['sessionStatus'];
+  total: number | string;
+};
+
+function mapTable(row: TableRow): TableSummary {
+  return {
+    id: String(row.table_id),
+    restaurantId: String(row.restaurant_id),
+    tableNumber: String(row.table_number),
+    status: row.status,
+    sessionId: row.session_id ? String(row.session_id) : null,
+    sessionStatus: row.session_status ?? null,
+    total: Number(row.total ?? 0),
+    qrToken: String(row.qr_token),
+    active: Boolean(row.active),
+  };
+}
+
+function firstRow(data: unknown): TableRow | null {
+  if (Array.isArray(data)) return (data[0] as TableRow | undefined) ?? null;
+  return data && typeof data === 'object' ? data as TableRow : null;
 }
 
 export class SupabaseTableService implements TableService {
@@ -32,21 +58,39 @@ export class SupabaseTableService implements TableService {
   async list(restaurantIds: string[]): Promise<TableSummary[]> {
     if (!supabase) throw new Error('Supabase no está configurado.');
     if (restaurantIds.length === 0) return [];
-    const { data, error } = await supabase
-      .from('restaurant_tables')
-      .select('id, restaurant_id, table_number, status, table_sessions(id, status, total)')
-      .in('restaurant_id', restaurantIds)
-      .order('table_number');
+    const { data, error } = await supabase.rpc('list_restaurant_tables', { p_restaurant_ids: restaurantIds });
     if (error) throw new Error(error.message);
-    return ((data ?? []) as Array<Record<string, unknown>>).map((row) => {
-      const sessions = Array.isArray(row.table_sessions) ? row.table_sessions : [];
-      const session = sessions.find((item) => ['open', 'payment_pending'].includes(String((item as Record<string, unknown>).status))) as Record<string, unknown> | undefined;
-      return {
-        id: String(row.id), restaurantId: String(row.restaurant_id), tableNumber: String(row.table_number),
-        status: row.status as TableSummary['status'], sessionId: session ? String(session.id) : null,
-        sessionStatus: session ? session.status as TableSummary['sessionStatus'] : null,
-        total: Number(session?.total ?? 0),
-      };
+    return ((data ?? []) as TableRow[]).map(mapTable);
+  }
+
+  async create(restaurantId: string, tableNumber: string): Promise<TableSummary> {
+    if (!supabase) throw new Error('Supabase no está configurado.');
+    const { data, error } = await supabase.rpc('create_restaurant_table', {
+      p_restaurant_id: restaurantId,
+      p_table_number: tableNumber.trim(),
     });
+    if (error) throw new Error(error.message);
+    const row = firstRow(data);
+    if (!row) throw new Error('Supabase no devolvió la mesa creada.');
+    return mapTable(row);
+  }
+
+  async regenerateQr(tableId: string): Promise<TableSummary> {
+    if (!supabase) throw new Error('Supabase no está configurado.');
+    const { data, error } = await supabase.rpc('regenerate_restaurant_table_qr', { p_table_id: tableId });
+    if (error) throw new Error(error.message);
+    const row = firstRow(data);
+    if (!row) throw new Error('Supabase no devolvió el QR actualizado.');
+    return mapTable(row);
+  }
+
+  async setActive(tableId: string, active: boolean): Promise<boolean> {
+    if (!supabase) throw new Error('Supabase no está configurado.');
+    const { data, error } = await supabase.rpc('set_restaurant_table_active', {
+      p_table_id: tableId,
+      p_active: active,
+    });
+    if (error) throw new Error(error.message);
+    return data === true;
   }
 }
