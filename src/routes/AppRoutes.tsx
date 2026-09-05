@@ -15,6 +15,7 @@ const OrderDetailPage = lazy(() => import('@/pages/customer/OrderDetailPage'));
 const OrderTrackPage = lazy(() => import('@/pages/customer/OrderTrackPage'));
 const ProfilePage = lazy(() => import('@/pages/customer/ProfilePage'));
 const HelpPage = lazy(() => import('@/pages/customer/HelpPage'));
+const TableQrPage = lazy(() => import('@/pages/customer/TableQrPage'));
 
 const RiderHomePage = lazy(() => import('@/pages/rider/RiderHomePage'));
 const RiderCurrentPage = lazy(() => import('@/pages/rider/RiderCurrentPage'));
@@ -36,6 +37,7 @@ export function AppRoutes() {
   return (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
+        <Route path="table/:token" element={<TableQrPage />} />
         <Route element={<CustomerLayout />}>
           <Route index element={<HomePage />} />
           <Route path="stores" element={<StoresPage />} />

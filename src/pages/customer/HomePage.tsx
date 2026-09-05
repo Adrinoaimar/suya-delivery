@@ -49,7 +49,8 @@ export default function HomePage() {
   }
 
   return (
-    <div className="pb-8">
+    <div className="pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-8">
+      {/* Reserve space for the fixed mobile navigation so the final CTA is never obscured. */}
       {/* Hero de escritorio */}
       <section className="hidden bg-white lg:block">
         <div className="shell grid grid-cols-2 items-center gap-10 py-14">
@@ -59,9 +60,8 @@ export default function HomePage() {
               Hecho para Sullana
             </span>
             <h1 className="mt-4 font-display text-5xl font-bold leading-[1.05]">
-              Todo lo que necesitas,
-              <br />
-              de tu ciudad a tu puerta.
+              <span className="block">Todo lo que necesitas,</span>
+              <span className="block">de tu ciudad a tu puerta.</span>
             </h1>
             <p className="mt-4 max-w-md text-lg text-[#4A4F55]">
               Restaurantes, tiendas y negocios de Sullana en un solo lugar.
@@ -192,7 +192,7 @@ export default function HomePage() {
           )}
         </section>
 
-        {storesReady && (
+        {storesReady && stores.length > 1 && (
           <section>
             <SectionHeader
               title="Negocios locales"
@@ -206,7 +206,7 @@ export default function HomePage() {
           </section>
         )}
 
-        {storesReady && (
+        {storesReady && stores.length > 1 && (
           <section>
             <SectionHeader
               title="Recomendados para ti"

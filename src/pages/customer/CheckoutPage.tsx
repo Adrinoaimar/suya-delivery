@@ -48,6 +48,9 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [deliveryPosition, setDeliveryPosition] = useState<LatLng | null>(null);
   const [locating, setLocating] = useState(false);
+  const [tableContext] = useState(() => {
+    try { return JSON.parse(sessionStorage.getItem('suya.tableContext') ?? 'null') as { tableId?: string; sessionId?: string | null } | null; } catch { return null; }
+  });
 
   const base = cartTotals(items, store, FREE_DELIVERY_THRESHOLD);
   const discount = 0;
@@ -169,6 +172,11 @@ export default function CheckoutPage() {
         return;
       }
 
+      let tableSessionId = tableContext?.sessionId ?? undefined;
+      if (tableContext?.tableId && !tableSessionId) {
+        const { tableService } = await import('@/lib/services');
+        tableSessionId = await tableService.open(tableContext.tableId);
+      }
       const order = await createOrder({
         storeId: store.id,
         items,
@@ -183,9 +191,12 @@ export default function CheckoutPage() {
         },
         deliveryPosition: deliveryPosition!,
         paymentMethod: method,
+        tableId: tableContext?.tableId,
+        tableSessionId,
       });
 
       clearCart();
+      sessionStorage.removeItem('suya.tableContext');
       notificationService.notify(
         `Pedido confirmado. Pagarás ${formatPrice(order.total)} en efectivo al recibirlo.`,
         'success',

@@ -34,6 +34,7 @@ interface OrderRow {
   rider_id: string | null;
   status: OrderStatus;
   payment_method: Order['paymentMethod'];
+  cancellation_reason: string | null;
   subtotal: number | string;
   delivery_fee: number | string;
   discount: number | string;
@@ -58,7 +59,7 @@ interface OrderCodes {
 }
 
 const ORDER_SELECT = `
-  id, code, customer_id, restaurant_id, rider_id, status, payment_method,
+  id, code, customer_id, restaurant_id, rider_id, status, payment_method, cancellation_reason,
   subtotal, delivery_fee, discount, total, customer_name, customer_phone,
   delivery_address, delivery_reference, estimated_minutes, created_at,
   delivery_latitude, delivery_longitude,
@@ -146,6 +147,7 @@ function mapOrder(row: OrderRow, codes?: OrderCodes): Order {
     etaMinutes: row.estimated_minutes,
     deliveryCode: codes?.delivery_code ?? '',
     cancelCode: codes?.cancel_code ?? '',
+    cancellationReason: row.cancellation_reason,
   };
 }
 
@@ -264,7 +266,8 @@ export class SupabaseOrderServiceImpl
     if (profileError) throw new Error(profileError.message);
 
     const requestId = requestIdFor(input);
-    const { data, error } = await this.client.rpc('create_cash_order', {
+    const rpcName = input.tableId ? 'create_table_cash_order' : 'create_cash_order';
+    const rpcPayload = {
       p_restaurant_id: input.storeId,
       p_items: input.items.map((item) => ({
         product_id: item.productId,
@@ -276,7 +279,9 @@ export class SupabaseOrderServiceImpl
       p_delivery_address: input.customer.address,
       p_delivery_reference: input.customer.reference,
       p_request_id: requestId,
-    });
+      ...(input.tableId ? { p_table_id: input.tableId, p_table_session_id: input.tableSessionId ?? null } : {}),
+    };
+    const { data, error } = await this.client.rpc(rpcName, rpcPayload);
     if (error) throw new Error(error.message);
     const result = first(data as ({ order_id: string } & OrderCodes)[] | null);
     if (!result) throw new Error('Supabase no devolvió el pedido creado.');
@@ -340,6 +345,12 @@ export class SupabaseOrderServiceImpl
     if (data !== true) return { ok: false, reason: 'invalid_code' };
     const order = await this.get(before.id);
     return order ? { ok: true, order } : { ok: false, reason: 'not_found' };
+  }
+
+  async cancelByRider(id: string, reason: string): Promise<boolean> {
+    const { data, error } = await this.client.rpc('cancel_order_by_rider', { target_order: id, reason });
+    if (error) throw new Error(error.message);
+    return data === true;
   }
 
   subscribe(listener: () => void): () => void {

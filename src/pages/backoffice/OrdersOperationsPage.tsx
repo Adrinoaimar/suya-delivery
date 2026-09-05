@@ -123,6 +123,8 @@ export default function OrdersOperationsPage() {
       {orders.map((order) => {
         const open = order.status !== 'delivered' && order.status !== 'cancelled';
         const assignable = order.status === 'confirmed' || order.status === 'preparing';
+        const isCompleted = order.status === 'delivered' || order.status === 'cancelled';
+        const itemCount = order.items.reduce((total, item) => total + item.quantity, 0);
         return (
           <Card key={order.id} className="space-y-3">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -136,6 +138,37 @@ export default function OrdersOperationsPage() {
                 <p className="font-semibold">{orderStatusLabel(order.status)}</p>
                 <p className="text-sm text-[#68716C]">{formatPrice(order.total)}</p>
               </div>
+            </div>
+
+            <div
+              className={`rounded-btn border p-3 ${
+                isCompleted
+                  ? 'border-[#E0E5E2] bg-[#F7F9F8]'
+                  : 'border-suya-lime/60 bg-suya-lime-soft/45'
+              }`}
+              aria-label={`${isCompleted ? 'Detalle' : 'Preparación'} del pedido ${order.code}`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <h2 className={`flex items-center gap-2 font-display text-sm font-bold ${isCompleted ? 'text-[#47544E]' : 'text-suya-green-dark'}`}>
+                  <UtensilsCrossed className="h-4 w-4" aria-hidden="true" />
+                  {isCompleted ? 'Detalle del pedido' : 'Para preparar'}
+                </h2>
+                <span className={`text-xs font-medium ${isCompleted ? 'text-[#68716C]' : 'text-suya-green-dark'}`}>
+                  {itemCount} {itemCount === 1 ? 'artículo' : 'artículos'}
+                </span>
+              </div>
+              <ul className="mt-2 divide-y divide-suya-green/15 text-sm text-[#33423A]">
+                {order.items.map((item) => (
+                  <li key={item.lineId} className="py-2 first:pt-0 last:pb-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <span><strong>{item.quantity} ×</strong> {item.name}</span>
+                      <span className="shrink-0 font-medium">{formatPrice(item.unitPrice * item.quantity)}</span>
+                    </div>
+                    {item.extras.length > 0 && <p className="mt-0.5 text-xs text-[#68716C]">Extras: {item.extras.map((extra) => extra.label).join(', ')}</p>}
+                    {item.note && <p className="mt-0.5 text-xs font-medium text-suya-green-dark">Nota: {item.note}</p>}
+                  </li>
+                ))}
+              </ul>
             </div>
 
             {assignable && (

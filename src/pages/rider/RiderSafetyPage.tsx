@@ -4,6 +4,7 @@ import { IncidentForm } from '@/components/safety/IncidentForm';
 import { LocationShareCard } from '@/components/safety/LocationShareCard';
 import { SosButton } from '@/components/safety/SosButton';
 import { TrustedContactForm } from '@/components/safety/TrustedContactForm';
+import { SafetyZonesCard } from '@/components/safety/SafetyZonesCard';
 import { selectActiveOrder, useOrderStore } from '@/store/orderStore';
 import { useTrackingStore } from '@/store/trackingStore';
 
@@ -30,6 +31,7 @@ export default function RiderSafetyPage() {
         <TrustedContactForm />
         <SosButton position={position} orderId={activeOrder?.id ?? null} />
         <IncidentForm position={position} orderId={activeOrder?.id ?? null} />
+        <SafetyZonesCard />
       </div>
 
       <Link

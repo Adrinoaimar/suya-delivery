@@ -174,6 +174,7 @@ export interface Order {
   deliveryCode: string;
   /** Código de 4 dígitos que hay que escribir para cancelar el pedido. */
   cancelCode: string;
+  cancellationReason?: string | null;
 }
 
 export interface LatLng {

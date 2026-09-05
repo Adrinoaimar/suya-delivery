@@ -36,6 +36,33 @@ export interface CreateOrderInput {
   customer: CustomerInfo;
   deliveryPosition: LatLng;
   paymentMethod: PaymentMethod;
+  /** Contexto opcional de un pedido iniciado desde QR de mesa. */
+  tableId?: string;
+  tableSessionId?: string;
+}
+
+export interface TableQrResolution {
+  tableId: string;
+  restaurantId: string;
+  tableNumber: string;
+  restaurantName: string;
+  sessionId: string | null;
+}
+
+export interface TableService {
+  resolve(token: string): Promise<TableQrResolution | null>;
+  open(tableId: string): Promise<string>;
+  list(restaurantIds: string[]): Promise<TableSummary[]>;
+}
+
+export interface TableSummary {
+  id: string;
+  restaurantId: string;
+  tableNumber: string;
+  status: 'available' | 'occupied' | 'awaiting_payment' | 'paid';
+  sessionId: string | null;
+  sessionStatus: 'open' | 'payment_pending' | 'paid' | 'closed' | null;
+  total: number;
 }
 
 export type CodeFailure = 'not_found' | 'invalid_code' | 'already_closed' | 'invalid_status';
@@ -58,6 +85,7 @@ export interface OrderService {
   cancel(id: string, code: string): Promise<CodeResult>;
   /** Requiere el código de entrega que el cliente le da al repartidor. */
   confirmDelivery(id: string, code: string): Promise<CodeResult>;
+  cancelByRider(id: string, reason: string): Promise<boolean>;
   subscribe(listener: () => void): () => void;
 }
 

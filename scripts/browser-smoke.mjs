@@ -116,7 +116,9 @@ if (process.env.SMOKE_BUSINESS === 'true') {
     await opsPage.waitForURL(/\/$|\/orders$/, { timeout: 20_000 });
     await opsPage.goto(`${backofficeOrigin}/orders`, { waitUntil: 'networkidle', timeout: 20_000 });
     await opsPage.getByRole('heading', { name: 'Pedidos' }).waitFor();
-    await opsPage.locator('select').first().selectOption({ label: 'Repartidor E2E Suya · Moto' });
+    // QA/prod pueden tener nombres distintos; selecciona el primer repartidor
+    // disponible en vez de depender de una etiqueta sembrada localmente.
+    await opsPage.locator('select').first().selectOption({ index: 1 });
     await opsPage.getByRole('button', { name: 'Iniciar preparación' }).first().click();
     await opsPage.getByText('En preparación', { exact: true }).waitFor({ timeout: 20_000 });
     console.log('business/backoffice-assign-and-prepare: OK');
@@ -128,7 +130,9 @@ if (process.env.SMOKE_BUSINESS === 'true') {
     await riderPage.getByRole('button', { name: 'Ingresar' }).click();
     await riderPage.waitForURL(/\/rider(?:\/current)?$/, { timeout: 20_000 });
     await riderPage.goto(`${riderOrigin}/rider`, { waitUntil: 'networkidle', timeout: 20_000 });
-    await riderPage.getByText('Disponible', { exact: true }).waitFor({ timeout: 20_000 });
+    // Al asignarse un pedido el backend puede marcar al rider como ocupado;
+    // ambas etiquetas confirman que la pantalla de disponibilidad cargó.
+    await riderPage.getByRole('main').getByText(/^(Disponible|No disponible)$/, { exact: true }).waitFor({ timeout: 20_000 });
     await riderPage.goto(`${riderOrigin}/rider/current`, { waitUntil: 'networkidle', timeout: 20_000 });
     await riderPage.getByRole('heading', { name: 'Viaje actual' }).waitFor();
     await riderPage.getByRole('button', { name: 'Recogí el pedido' }).click();

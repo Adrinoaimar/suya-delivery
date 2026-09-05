@@ -20,7 +20,7 @@ export default function RiderSettingsPage() {
         </h1>
       </header>
 
-      <section className="rounded-card bg-white p-4">
+      <section className="rounded-card bg-white p-4 text-suya-carbon">
         <h2 className="font-display text-[15px] font-bold">Cuenta de repartidor</h2>
         <dl className="mt-2 grid gap-3 text-sm sm:grid-cols-2">
           <div>
@@ -34,7 +34,7 @@ export default function RiderSettingsPage() {
         </dl>
       </section>
 
-      <section className="space-y-4 rounded-card bg-white p-4">
+      <section className="space-y-4 rounded-card bg-white p-4 text-suya-carbon">
         <h2 className="font-display text-[15px] font-bold">Preferencias</h2>
         <Toggle
           label="Disponible para pedidos"

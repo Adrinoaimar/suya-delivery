@@ -1,10 +1,20 @@
 import { useMemo, useState } from 'react';
-import { Check, KeyRound, MapPin, Navigation, PackageCheck, Phone } from 'lucide-react';
+import {
+  AlertTriangle,
+  Check,
+  KeyRound,
+  MapPin,
+  Navigation,
+  PackageCheck,
+  Phone,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/common/Button';
 import { MapProvider } from '@/components/map/MapProvider';
+import { MapUnavailable } from '@/components/map/MapUnavailable';
 import { CodeDialog } from '@/components/order/CodeDialog';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
+import { RiderCancelDialog } from '@/components/order/RiderCancelDialog';
 import { notificationService } from '@/lib/services';
 import { selectActiveOrder, useOrderStore } from '@/store/orderStore';
 import { useTrackingStore } from '@/store/trackingStore';
@@ -23,23 +33,35 @@ export default function RiderCurrentPage() {
   const orders = useOrderStore((state) => state.orders);
   const updateOrderStatus = useOrderStore((state) => state.updateOrderStatus);
   const confirmDelivery = useOrderStore((state) => state.confirmDelivery);
+  const cancelByRider = useOrderStore((state) => state.cancelByRider);
   const active = selectActiveOrder(orders);
   const reading = useTrackingStore((state) => state.reading);
   const [codeOpen, setCodeOpen] = useState(false);
   const [advancing, setAdvancing] = useState(false);
+  const [cancelOpen, setCancelOpen] = useState(false);
 
-  const mapReady = active?.storePosition != null && active?.deliveryPosition != null;
+  // Mostrar mapa con cualquier punto verificado; restaurante puede no tener coordenadas aún.
+  const mapReady = active?.storePosition != null || active?.deliveryPosition != null;
   // Referencias estables: LeafletMap remonta el mapa entero si origin/destination cambian de identidad.
   const mapPoints = useMemo(
-    () => (mapReady ? [active!.storePosition!, active!.deliveryPosition!] : []),
+    () =>
+      mapReady
+        ? [active?.storePosition, active?.deliveryPosition].filter(
+            (point): point is NonNullable<typeof point> => point != null,
+          )
+        : [],
     [mapReady, active?.storePosition, active?.deliveryPosition],
   );
   const mapOrigin = useMemo(
-    () => (active?.storePosition ? { ...active.storePosition, label: active.storeName } : undefined),
+    () =>
+      active?.storePosition ? { ...active.storePosition, label: active.storeName } : undefined,
     [active?.storePosition, active?.storeName],
   );
   const mapDestination = useMemo(
-    () => (active?.deliveryPosition ? { ...active.deliveryPosition, label: 'Punto de entrega' } : undefined),
+    () =>
+      active?.deliveryPosition
+        ? { ...active.deliveryPosition, label: 'Punto de entrega' }
+        : undefined,
     [active?.deliveryPosition],
   );
 
@@ -87,16 +109,21 @@ export default function RiderCurrentPage() {
       </header>
 
       <div className="h-56 overflow-hidden rounded-card border border-white/10 sm:h-72">
-        {mapReady ? <MapProvider
-          points={mapPoints}
-          origin={mapOrigin}
-          destination={mapDestination}
-          rider={reading?.position ?? null}
-          label="Ubicaciones de entrega"
-        /> : (
-          <div className="flex h-full items-center justify-center bg-white p-6 text-center text-sm text-[#6B7076]">
-            Pedido sin ambos puntos verificados. Usa dirección y referencia.
-          </div>
+        {mapReady ? (
+          <MapProvider
+            points={mapPoints}
+            origin={mapOrigin}
+            destination={mapDestination}
+            rider={reading?.position ?? null}
+            label="Ubicaciones de entrega"
+          />
+        ) : (
+          <MapUnavailable
+            address={active.customer.address}
+            reference={active.customer.reference}
+            phone={active.customer.phone}
+            audience="rider"
+          />
         )}
       </div>
 
@@ -141,6 +168,12 @@ export default function RiderCurrentPage() {
                 Entregué el pedido
               </Button>
             )}
+            {(['confirmed', 'preparing'] as OrderStatus[]).includes(active.status) && (
+              <Button variant="danger" disabled={advancing} onClick={() => setCancelOpen(true)}>
+                <AlertTriangle className="h-4 w-4" aria-hidden="true" />
+                Cancelar asignación
+              </Button>
+            )}
             <a
               href={`tel:${active.customer.phone.replace(/\s/g, '')}`}
               className="press inline-flex h-12 items-center gap-2 rounded-btn border border-suya-green px-4 font-display text-[15px] font-semibold text-suya-green"
@@ -174,6 +207,16 @@ export default function RiderCurrentPage() {
         confirmLabel="Confirmar entrega"
         onSubmit={(code) => confirmDelivery(active.id, code)}
         onSuccess={() => notificationService.notify('Entrega confirmada', 'success')}
+      />
+      <RiderCancelDialog
+        open={cancelOpen}
+        onClose={() => setCancelOpen(false)}
+        onSubmit={(reason) =>
+          cancelByRider(active.id, reason).then((ok) => {
+            if (ok) notificationService.notify('Asignación cancelada', 'success');
+            return ok;
+          })
+        }
       />
     </div>
   );

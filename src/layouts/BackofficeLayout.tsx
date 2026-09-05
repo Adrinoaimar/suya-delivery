@@ -1,4 +1,4 @@
-import { Building2, ClipboardList, LayoutDashboard, LogOut, Settings, Store, Users } from 'lucide-react';
+import { Building2, ClipboardList, LayoutDashboard, LogOut, Settings, Store, Table2, Users } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { LogoMark } from '@/components/common/Logo';
 import { cn } from '@/lib/cn';
@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 const navigation = [
   { to: '/', label: 'Resumen', icon: LayoutDashboard, end: true },
   { to: '/orders', label: 'Pedidos', icon: ClipboardList },
+  { to: '/tables', label: 'Mesas y QR', icon: Table2 },
   { to: '/catalog', label: 'Catálogo', icon: Store },
   { to: '/riders', label: 'Repartidores', icon: Users },
   { to: '/restaurants', label: 'Restaurantes', icon: Building2 },

@@ -316,4 +316,18 @@ describe('SupabaseOrderServiceImpl', () => {
     });
     expect(order?.status).toBe('picked_up');
   });
+
+  it('solicita cancelación segura del rider con motivo', async () => {
+    const { client, rpc } = createFakeClient({
+      rpc: async (name) => {
+        expect(name).toBe('cancel_order_by_rider');
+        return { data: true, error: null };
+      },
+    });
+    await expect(new SupabaseOrderServiceImpl(client).cancelByRider(buildRow().id, 'Vehículo averiado')).resolves.toBe(true);
+    expect(rpc).toHaveBeenCalledWith('cancel_order_by_rider', {
+      target_order: buildRow().id,
+      reason: 'Vehículo averiado',
+    });
+  });
 });

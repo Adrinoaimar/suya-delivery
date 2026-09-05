@@ -12,6 +12,7 @@ import { CodeDialog } from '@/components/order/CodeDialog';
 import { OrderCodes } from '@/components/order/OrderCodes';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
 import { MapProvider } from '@/components/map/MapProvider';
+import { MapUnavailable as MapUnavailableCard } from '@/components/map/MapUnavailable';
 import { notificationService, safetyOperationsService } from '@/lib/services';
 import { useOrderStore } from '@/store/orderStore';
 import { orderRouteProgress, useOrderStatusNotifier } from '@/hooks/useOrders';
@@ -40,13 +41,29 @@ export default function OrderTrackPage() {
       return undefined;
     }
     let active = true;
-    void safetyOperationsService.latestLocation(order.id)
-      .then((position) => { if (active) setRiderPosition(position); })
+    void safetyOperationsService
+      .latestLocation(order.id)
+      .then((position) => {
+        if (active) setRiderPosition(position);
+      })
       .catch(() => undefined);
     const unsubscribe = safetyOperationsService.subscribeLocation(order.id, (position) => {
       if (active) setRiderPosition(position);
     });
-    return () => { active = false; unsubscribe(); };
+    // Fallback para redes donde WebSocket/realtime está bloqueado: conserva ubicación visible.
+    const poll = window.setInterval(() => {
+      void safetyOperationsService
+        .latestLocation(order.id)
+        .then((position) => {
+          if (active && position) setRiderPosition(position);
+        })
+        .catch(() => undefined);
+    }, 8_000);
+    return () => {
+      active = false;
+      unsubscribe();
+      window.clearInterval(poll);
+    };
   }, [order?.id, order?.riderId, order?.status]);
 
   if (!order) {
@@ -77,8 +94,10 @@ export default function OrderTrackPage() {
     );
   }
 
-  const mapReady = order.storePosition !== null && order.deliveryPosition !== null;
-  const mapPoints = mapReady ? [order.storePosition!, order.deliveryPosition!] : [];
+  const mapReady = order.storePosition !== null || order.deliveryPosition !== null;
+  const mapPoints = [order.storePosition, order.deliveryPosition].filter(
+    (point): point is NonNullable<typeof point> => point !== null,
+  );
   const delivered = order.status === 'delivered';
   const cancelled = order.status === 'cancelled';
   const etaMinutes = Math.max(1, Math.round(order.etaMinutes * (1 - progress)));
@@ -145,7 +164,6 @@ export default function OrderTrackPage() {
           Ver detalle
         </ButtonLink>
       </div>
-
     </div>
   );
 
@@ -153,69 +171,99 @@ export default function OrderTrackPage() {
     <>
       {/* Se monta un solo mapa: dos instancias de Leaflet a la vez duplicarían los tiles. */}
       {!isDesktop && (
-      <div className="flex h-[calc(100dvh-var(--header-h)-var(--bottom-nav-h))] flex-col lg:hidden">
-        <div className="relative h-[45%] shrink-0 overflow-hidden bg-suya-ivory">
-          {mapReady ? <MapProvider
-            points={mapPoints}
-            origin={{ ...order.storePosition!, label: order.storeName }}
-            destination={{ ...order.deliveryPosition!, label: 'Punto de entrega' }}
-            rider={cancelled ? null : riderPosition}
-            label={`Ubicaciones del pedido ${order.code}`}
-          /> : <MapUnavailable />}
-          <Link
-            to="/orders"
-            aria-label="Volver a mis pedidos"
-            className="press absolute left-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 shadow-card"
+        <div className="flex h-[calc(100dvh-var(--header-h)-var(--bottom-nav-h))] flex-col lg:hidden">
+          <div className="relative h-[45%] shrink-0 overflow-hidden bg-suya-ivory">
+            {mapReady ? (
+              <MapProvider
+                points={mapPoints}
+                origin={
+                  order.storePosition
+                    ? { ...order.storePosition, label: order.storeName }
+                    : undefined
+                }
+                destination={
+                  order.deliveryPosition
+                    ? { ...order.deliveryPosition, label: 'Punto de entrega' }
+                    : undefined
+                }
+                rider={cancelled ? null : riderPosition}
+                label={`Ubicaciones del pedido ${order.code}`}
+              />
+            ) : (
+              <MapUnavailableCard
+                address={order.customer.address}
+                reference={order.customer.reference}
+              />
+            )}
+            <Link
+              to="/orders"
+              aria-label="Volver a mis pedidos"
+              className="press absolute left-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 shadow-card"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+            <Badge tone="green" className="absolute right-3 top-3 shadow-card">
+              {etaLabel}
+            </Badge>
+          </div>
+          <ExpandableSheet
+            title="Resumen del pedido"
+            expanded={expanded}
+            onToggle={() => setExpanded((value) => !value)}
+            summary={summary}
+            className="-mt-4 flex-1 overflow-hidden"
           >
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <Badge tone="green" className="absolute right-3 top-3 shadow-card">
-            {etaLabel}
-          </Badge>
+            {detail}
+          </ExpandableSheet>
         </div>
-        <ExpandableSheet
-          title="Resumen del pedido"
-          expanded={expanded}
-          onToggle={() => setExpanded((value) => !value)}
-          summary={summary}
-          className="-mt-4 flex-1 overflow-hidden"
-        >
-          {detail}
-        </ExpandableSheet>
-      </div>
       )}
 
       {/* Escritorio: panel + mapa */}
       {isDesktop && (
-      <div className="hidden lg:block">
-        <div className="shell grid grid-cols-[380px_1fr] gap-5 py-8">
-          <div className="space-y-4">
-            <Link
-              to="/orders"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-[#6B7076] hover:text-suya-green"
-            >
-              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-              Mis pedidos
-            </Link>
-            <div>
-              <h1 className="section-title">{orderStatusLabel(order.status)}</h1>
-              <p className="text-sm text-[#6B7076]">
-                {delivered || cancelled ? order.storeName : `Llega en ${etaLabel}`}
-              </p>
+        <div className="hidden lg:block">
+          <div className="shell grid grid-cols-[380px_1fr] gap-5 py-8">
+            <div className="space-y-4">
+              <Link
+                to="/orders"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-[#6B7076] hover:text-suya-green"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+                Mis pedidos
+              </Link>
+              <div>
+                <h1 className="section-title">{orderStatusLabel(order.status)}</h1>
+                <p className="text-sm text-[#6B7076]">
+                  {delivered || cancelled ? order.storeName : `Llega en ${etaLabel}`}
+                </p>
+              </div>
+              <Card>{detail}</Card>
             </div>
-            <Card>{detail}</Card>
-          </div>
-          <div className="sticky top-24 h-[calc(100dvh-140px)] overflow-hidden rounded-card border border-suya-mist bg-white">
-            {mapReady ? <MapProvider
-              points={mapPoints}
-              origin={{ ...order.storePosition!, label: order.storeName }}
-              destination={{ ...order.deliveryPosition!, label: 'Punto de entrega' }}
-              rider={cancelled ? null : riderPosition}
-              label={`Ubicaciones del pedido ${order.code}`}
-            /> : <MapUnavailable />}
+            <div className="sticky top-24 h-[calc(100dvh-140px)] overflow-hidden rounded-card border border-suya-mist bg-white">
+              {mapReady ? (
+                <MapProvider
+                  points={mapPoints}
+                  origin={
+                    order.storePosition
+                      ? { ...order.storePosition, label: order.storeName }
+                      : undefined
+                  }
+                  destination={
+                    order.deliveryPosition
+                      ? { ...order.deliveryPosition, label: 'Punto de entrega' }
+                      : undefined
+                  }
+                  rider={cancelled ? null : riderPosition}
+                  label={`Ubicaciones del pedido ${order.code}`}
+                />
+              ) : (
+                <MapUnavailableCard
+                  address={order.customer.address}
+                  reference={order.customer.reference}
+                />
+              )}
+            </div>
           </div>
         </div>
-      </div>
       )}
 
       <CodeDialog
@@ -230,13 +278,5 @@ export default function OrderTrackPage() {
         onSuccess={() => notificationService.notify('Pedido cancelado', 'info')}
       />
     </>
-  );
-}
-
-function MapUnavailable() {
-  return (
-    <div className="flex h-full items-center justify-center bg-suya-ivory p-6 text-center text-sm text-[#6B7076]" role="status">
-      Este pedido no tiene ambos puntos verificados. Usa dirección y referencia para coordinar.
-    </div>
   );
 }
