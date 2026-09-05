@@ -19,10 +19,15 @@ export default function TableQrPage() {
 
   useEffect(() => {
     let active = true;
-    void tableService.resolve(token).then((table) => {
-      if (table && active) setResolved({ tableNumber: table.tableNumber, restaurantId: table.restaurantId, tableId: table.tableId, sessionId: table.sessionId });
-      return storeService.listStores();
-    }).then((stores) => {
+    void tableService.resolve(token).then(async (table) => {
+      if (!table) return { table: null, stores: await storeService.listStores() };
+      // A public QR may not have an open session yet. Open/reuse it through the
+      // token-gated RPC before the guest reaches checkout; authenticated table
+      // flow remains compatible because existing sessions are reused.
+      const sessionId = table.sessionId ?? await tableService.openGuest(token);
+      if (active) setResolved({ tableNumber: table.tableNumber, restaurantId: table.restaurantId, tableId: table.tableId, sessionId });
+      return { table, stores: await storeService.listStores() };
+    }).then(({ stores }) => {
       if (!active) return;
       setStore(restaurantId ? stores.find((candidate) => candidate.id === restaurantId) ?? null : null);
     }).catch(() => { if (active) setFailed(true); }).finally(() => { if (active) setLoading(false); });

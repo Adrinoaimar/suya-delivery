@@ -48,6 +48,15 @@ export class SupabaseTableService implements TableService {
     };
   }
 
+  async openGuest(token: string): Promise<string> {
+    if (!supabase) throw new Error('Supabase no está configurado.');
+    const { data, error } = await supabase.rpc('open_guest_table_session', { p_token: token.trim() });
+    if (error) throw new Error(error.message);
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row?.session_id) throw new Error('No pudimos abrir la sesión de esta mesa.');
+    return String(row.session_id);
+  }
+
   async open(tableId: string): Promise<string> {
     if (!supabase) throw new Error('Supabase no está configurado.');
     const { data, error } = await supabase.rpc('open_table_session', { p_table_id: tableId });

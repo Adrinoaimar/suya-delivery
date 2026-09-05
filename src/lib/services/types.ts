@@ -61,7 +61,8 @@ export interface CreateOrderInput {
   deliveryFee: number;
   discount: number;
   customer: CustomerInfo;
-  deliveryPosition: LatLng;
+  /** Null for table QR orders: table context replaces a delivery coordinate. */
+  deliveryPosition: LatLng | null;
   paymentMethod: PaymentMethod;
   /** Contexto opcional de un pedido iniciado desde QR de mesa. */
   tableId?: string;
@@ -79,6 +80,8 @@ export interface TableQrResolution {
 
 export interface TableService {
   resolve(token: string): Promise<TableQrResolution | null>;
+  /** Opens/reuses table session after server validates public QR token. */
+  openGuest(token: string): Promise<string>;
   open(tableId: string): Promise<string>;
   list(restaurantIds: string[]): Promise<TableSummary[]>;
   create(restaurantId: string, tableNumber: string): Promise<TableSummary>;

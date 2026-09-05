@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Banknote, LocateFixed, MapPin, TicketPercent } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Banknote, CircleUserRound, LocateFixed, MapPin, TicketPercent } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, ButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -20,12 +20,24 @@ import type { LatLng } from '@/types';
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const items = useCartStore((state) => state.items);
   const storeId = useCartStore((state) => state.storeId);
   const clearCart = useCartStore((state) => state.clear);
   const orderOrigin = useCartStore((state) => state.origin);
+  const menuSlug = useCartStore((state) => state.menuSlug);
   const createOrder = useOrderStore((state) => state.createOrder);
   const identity = useAuthStore((state) => state.identity);
+  const [tableContext] = useState(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem('suya.tableContext') ?? 'null') as {
+        tableId?: string;
+        tableNumber?: string;
+        sessionId?: string | null;
+      } | null;
+    } catch { return null; }
+  });
+  const isTableOrder = Boolean(tableContext?.tableId);
 
   const store = useCatalogStore((state) =>
     storeId ? state.stores.find((entry) => entry.id === storeId) : undefined,
@@ -41,7 +53,7 @@ export default function CheckoutPage() {
   const [form, setForm] = useState({
     name: identity?.displayName ?? '',
     phone: identity?.phone ?? '',
-    address: identity?.defaultAddress ?? '',
+    address: identity?.defaultAddress ?? (isTableOrder ? `Mesa ${tableContext?.tableNumber ?? ''}`.trim() : ''),
     reference: identity?.defaultReference ?? '',
   });
   const method: PaymentMethod = 'cash';
@@ -49,13 +61,12 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [deliveryPosition, setDeliveryPosition] = useState<LatLng | null>(null);
   const [locating, setLocating] = useState(false);
-  const [tableContext] = useState(() => {
-    try { return JSON.parse(sessionStorage.getItem('suya.tableContext') ?? 'null') as { tableId?: string; sessionId?: string | null } | null; } catch { return null; }
-  });
+  const isMenuOrder = orderOrigin === 'suya_menu' || Boolean(tableContext?.tableId);
+  const isGuestMenuOrder = isMenuOrder && !identity;
 
   const base = cartTotals(items, store, FREE_DELIVERY_THRESHOLD);
   const discount = 0;
-  const deliveryFee = base.deliveryFee;
+  const deliveryFee = isTableOrder ? 0 : base.deliveryFee;
   const total = base.subtotal + deliveryFee;
 
   if (items.length === 0) {
@@ -112,8 +123,8 @@ export default function CheckoutPage() {
     const digits = form.phone.replace(/\D/g, '');
     if (digits.length < 6 || digits.length > 15) next.phone = 'Escribe un teléfono válido.';
 
-    if (form.address.trim().length < 6) next.address = 'Indica la dirección de entrega.';
-    if (!deliveryPosition) next.location = 'Confirma el punto de entrega con GPS.';
+    if (!isTableOrder && form.address.trim().length < 6) next.address = 'Indica la dirección de entrega.';
+    if (!isTableOrder && !deliveryPosition) next.location = 'Confirma el punto de entrega con GPS.';
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -149,7 +160,7 @@ export default function CheckoutPage() {
     if (!store) return;
     if (!validate()) {
       notificationService.notify(
-        'Revisa los datos de entrega: falta algo antes de confirmar.',
+        `Revisa los datos ${isTableOrder ? 'del pedido' : 'de entrega'}: falta algo antes de confirmar.`,
         'warning',
       );
       return;
@@ -187,23 +198,36 @@ export default function CheckoutPage() {
         customer: {
           name: form.name.trim(),
           phone: form.phone.trim(),
-          address: form.address.trim(),
+          address: isTableOrder ? `Mesa ${tableContext?.tableNumber ?? 'asignada'}` : form.address.trim(),
           reference: form.reference.trim(),
         },
-        deliveryPosition: deliveryPosition!,
+        deliveryPosition: isTableOrder ? null : deliveryPosition!,
         paymentMethod: method,
         tableId: tableContext?.tableId,
         tableSessionId,
         origin: tableContext?.tableId ? 'table_qr' : orderOrigin,
       });
 
+      const publicOrderPath = isGuestMenuOrder
+        ? (orderOrigin === 'suya_menu' && menuSlug
+          ? `/menu/${menuSlug}/pedido/${order.id}`
+          : `/pedido/${order.id}`)
+        : null;
       clearCart();
       sessionStorage.removeItem('suya.tableContext');
+      if (publicOrderPath) {
+        try { sessionStorage.setItem('suya.guestOrder', JSON.stringify(order)); } catch { /* storage unavailable */ }
+      }
       notificationService.notify(
-        `Pedido confirmado. Pagarás ${formatPrice(order.total)} en efectivo al recibirlo.`,
+        isMenuOrder
+          ? `Pedido confirmado. Pagarás ${formatPrice(order.total)} en efectivo.`
+          : `Pedido confirmado. Pagarás ${formatPrice(order.total)} en efectivo al recibirlo.`,
         'success',
       );
-      navigate(`/orders/${order.id}/track`, { replace: true });
+      navigate(publicOrderPath ?? `/orders/${order.id}/track`, {
+        replace: true,
+        state: publicOrderPath ? { guestOrder: order } : undefined,
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'No pudimos crear el pedido. Inténtalo nuevamente.';
       notificationService.notify(message, 'danger');
@@ -214,12 +238,42 @@ export default function CheckoutPage() {
 
   return (
     <form onSubmit={handleSubmit} className="shell space-y-4 py-4 lg:py-8">
-      <h1 className="section-title">Confirmar pedido</h1>
+      <div>
+        <p className="text-xs font-bold uppercase tracking-[0.18em] text-suya-green">
+          {isMenuOrder ? 'Suya Menús' : 'Suya Delivery'}
+        </p>
+        <h1 className="section-title">Confirmar pedido</h1>
+        {isGuestMenuOrder && (
+          <p className="mt-1 text-sm text-[#68716C]">Puedes pedir como invitado. No necesitas crear una cuenta.</p>
+        )}
+      </div>
+
+      {isGuestMenuOrder && (
+        <Card className="border-suya-sun bg-suya-sun-soft">
+          <div className="flex items-start gap-3">
+            <CircleUserRound className="mt-0.5 h-5 w-5 shrink-0 text-[#8A6100]" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <h2 className="font-display text-[15px] font-bold text-suya-carbon">Suya Account es opcional</h2>
+              <p className="mt-1 text-sm leading-5 text-[#5E511F]">
+                Ingresa para guardar tus datos, ver beneficios exclusivos y consultar tus pedidos desde cualquier dispositivo. También puedes continuar sin cuenta.
+              </p>
+              <ButtonLink to="/login" state={{ from: location.pathname }} variant="ghost" size="sm" className="mt-3 border-[#8A6100]/30 text-[#6B5100]">
+                Ingresar a Suya Account
+              </ButtonLink>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px] lg:items-start">
         <div className="space-y-4">
           <Card>
-            <h2 className="mb-3 font-display text-[15px] font-bold">Datos de entrega</h2>
+            <h2 className="mb-3 font-display text-[15px] font-bold">{isTableOrder ? 'Datos de contacto' : 'Datos de entrega'}</h2>
+            {isTableOrder && (
+              <p className="mb-3 rounded-btn bg-suya-lime-soft px-3 py-2 text-sm text-suya-green-dark">
+                Pedido para <strong>Mesa {tableContext?.tableNumber ?? 'asignada'}</strong>. No necesitas indicar dirección ni activar GPS.
+              </p>
+            )}
             <div className="grid gap-3 sm:grid-cols-2">
               <Input
                 label="Nombre y apellido"
@@ -238,7 +292,7 @@ export default function CheckoutPage() {
                 placeholder="987 654 321"
                 onChange={(event) => setForm({ ...form, phone: event.target.value })}
               />
-              <div className="sm:col-span-2">
+              {!isTableOrder && <div className="sm:col-span-2">
                 <Input
                   label="Dirección"
                   value={form.address}
@@ -247,7 +301,7 @@ export default function CheckoutPage() {
                   placeholder="Av. José de Lama 480, Sullana"
                   onChange={(event) => setForm({ ...form, address: event.target.value })}
                 />
-              </div>
+              </div>}
               <div className="sm:col-span-2">
                 <Textarea
                   label="Referencia"
@@ -257,7 +311,7 @@ export default function CheckoutPage() {
                   onChange={(event) => setForm({ ...form, reference: event.target.value })}
                 />
               </div>
-              <div className="sm:col-span-2 rounded-btn border border-suya-mist p-3">
+              {!isTableOrder && <div className="sm:col-span-2 rounded-btn border border-suya-mist p-3">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <span className="flex items-center gap-2 text-sm font-semibold">
                     <MapPin className="h-4 w-4 text-suya-green" aria-hidden="true" />
@@ -274,7 +328,7 @@ export default function CheckoutPage() {
                     : 'Solo se solicita al tocar el botón. No enviamos tu dirección a geocodificadores públicos.'}
                 </p>
                 {errors.location && <p className="mt-1 text-xs text-red-700" role="alert">{errors.location}</p>}
-              </div>
+              </div>}
             </div>
           </Card>
 
@@ -284,7 +338,7 @@ export default function CheckoutPage() {
               <Banknote aria-hidden="true" className="h-5 w-5 text-suya-green" />
               <span>
                 <span className="block text-[15px] font-semibold">Efectivo</span>
-                <span className="block text-xs text-[#6B7076]">Paga al recibir tu pedido</span>
+                <span className="block text-xs text-[#6B7076]">{isTableOrder ? 'Paga en caja o al solicitar la cuenta' : 'Paga al recibir tu pedido'}</span>
               </span>
             </div>
             <p className="mt-3 text-xs text-[#6B7076]">
@@ -312,7 +366,7 @@ export default function CheckoutPage() {
                 <dd className="font-medium">{formatPrice(base.subtotal)}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-[#6B7076]">Envío</dt>
+                <dt className="text-[#6B7076]">{isTableOrder ? 'Atención en mesa' : 'Envío'}</dt>
                 <dd className="font-medium">
                   {deliveryFee === 0 ? (
                     <span className="text-suya-green">Gratis</span>
