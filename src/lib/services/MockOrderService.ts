@@ -10,6 +10,7 @@ function round2(value: number): number {
 }
 
 export class MockOrderServiceImpl implements OrderService {
+  async createMenuOrder(input: CreateOrderInput): Promise<Order> { return this.create({ ...input, origin: 'suya_menu' }); }
   private cache: Order[] | null = null;
 
   async list(): Promise<Order[]> {

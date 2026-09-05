@@ -13,25 +13,38 @@ export interface AddToCartInput {
 interface CartState {
   items: CartItem[];
   storeId: string | null;
+  origin: 'delivery' | 'suya_menu';
+  menuSlug: string | null;
   /** Devuelve false si el carrito ya tiene productos de otro negocio. */
   addItem: (input: AddToCartInput, options?: { replaceStore?: boolean }) => boolean;
   increment: (lineId: string) => void;
   decrement: (lineId: string) => void;
   removeItem: (lineId: string) => void;
   clear: () => void;
+  setOrigin: (origin: 'delivery' | 'suya_menu', menuSlug?: string | null) => void;
 }
 
 interface PersistedCart {
   items: CartItem[];
   storeId: string | null;
+  origin: 'delivery' | 'suya_menu';
+  menuSlug: string | null;
 }
 
 function load(): PersistedCart {
-  return readLocal<PersistedCart>(STORAGE_KEYS.cart, { items: [], storeId: null });
+  const saved = readLocal<Partial<PersistedCart>>(STORAGE_KEYS.cart, {
+    items: [], storeId: null, origin: 'delivery', menuSlug: null,
+  });
+  return {
+    items: saved.items ?? [],
+    storeId: saved.storeId ?? null,
+    origin: saved.origin === 'suya_menu' ? 'suya_menu' : 'delivery',
+    menuSlug: saved.menuSlug ?? null,
+  };
 }
 
 function persist(state: PersistedCart): void {
-  writeLocal(STORAGE_KEYS.cart, { items: state.items, storeId: state.storeId });
+  writeLocal(STORAGE_KEYS.cart, state);
 }
 
 /** Firma de una línea: producto + extras + nota. Permite sumar líneas idénticas. */
@@ -84,7 +97,12 @@ export const useCartStore = create<CartState>((set, get) => ({
           },
         ];
 
-    const next = { items: nextItems, storeId: input.product.storeId };
+    const next = {
+      items: nextItems,
+      storeId: input.product.storeId,
+      origin: get().origin,
+      menuSlug: get().menuSlug,
+    };
     persist(next);
     set(next);
     return true;
@@ -94,7 +112,7 @@ export const useCartStore = create<CartState>((set, get) => ({
     const items = get().items.map((item) =>
       item.lineId === lineId ? { ...item, quantity: item.quantity + 1 } : item,
     );
-    const next = { items, storeId: get().storeId };
+    const next = { items, storeId: get().storeId, origin: get().origin, menuSlug: get().menuSlug };
     persist(next);
     set(next);
   },
@@ -105,22 +123,28 @@ export const useCartStore = create<CartState>((set, get) => ({
         item.lineId === lineId ? { ...item, quantity: item.quantity - 1 } : item,
       )
       .filter((item) => item.quantity > 0);
-    const next = { items, storeId: items.length > 0 ? get().storeId : null };
+    const next = { items, storeId: items.length > 0 ? get().storeId : null, origin: get().origin, menuSlug: get().menuSlug };
     persist(next);
     set(next);
   },
 
   removeItem(lineId) {
     const items = get().items.filter((item) => item.lineId !== lineId);
-    const next = { items, storeId: items.length > 0 ? get().storeId : null };
+    const next = { items, storeId: items.length > 0 ? get().storeId : null, origin: get().origin, menuSlug: get().menuSlug };
     persist(next);
     set(next);
   },
 
   clear() {
-    const next = { items: [], storeId: null };
+    const next = { items: [], storeId: null, origin: 'delivery' as const, menuSlug: null };
     persist(next);
     set(next);
+  },
+
+  setOrigin(origin, menuSlug = null) {
+    const next = { items: get().items, storeId: get().storeId, origin, menuSlug };
+    persist(next);
+    set({ origin, menuSlug });
   },
 }));
 

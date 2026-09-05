@@ -175,6 +175,8 @@ export interface Order {
   /** Código de 4 dígitos que hay que escribir para cancelar el pedido. */
   cancelCode: string;
   cancellationReason?: string | null;
+  /** Canal de entrada del pedido; permite distinguir QR/menu digital en operaciones. */
+  origin?: 'delivery' | 'suya_menu' | 'table_qr';
 }
 
 export interface LatLng {

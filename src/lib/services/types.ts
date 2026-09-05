@@ -22,9 +22,36 @@ export interface StoreService {
   listCategories(): Promise<Category[]>;
   listStores(): Promise<Store[]>;
   getStore(id: string): Promise<Store | undefined>;
+  getPublishedMenu(slug: string): Promise<PublishedMenu | undefined>;
+  getMenuSettings(restaurantId: string): Promise<MenuSettings | undefined>;
+  saveMenuSettings(settings: MenuSettings): Promise<MenuSettings>;
+  uploadMenuImage(restaurantId: string, kind: 'logo' | 'hero', file: File): Promise<string>;
   listProducts(storeId: string): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
   search(query: string): Promise<{ stores: Store[]; products: Product[] }>;
+}
+
+export interface MenuSettings {
+  restaurantId: string;
+  slug: string;
+  published: boolean;
+  logoUrl: string | null;
+  heroImageUrl: string | null;
+  primaryColor: string;
+  accentColor: string;
+  fontFamily: string;
+}
+
+export interface PublishedMenu {
+  store: Store;
+  slug: string;
+  brand: {
+    logoUrl: string | null;
+    heroImageUrl: string | null;
+    primaryColor: string;
+    accentColor: string;
+    fontFamily: string;
+  };
 }
 
 export interface CreateOrderInput {
@@ -39,6 +66,7 @@ export interface CreateOrderInput {
   /** Contexto opcional de un pedido iniciado desde QR de mesa. */
   tableId?: string;
   tableSessionId?: string;
+  origin?: 'delivery' | 'suya_menu' | 'table_qr';
 }
 
 export interface TableQrResolution {
@@ -80,6 +108,7 @@ export interface OrderService {
   list(): Promise<Order[]>;
   get(id: string): Promise<Order | undefined>;
   create(input: CreateOrderInput): Promise<Order>;
+  createMenuOrder(input: CreateOrderInput): Promise<Order>;
   updateStatus(id: string, status: OrderStatus): Promise<Order | undefined>;
   /** Requiere el código de cancelación del pedido. */
   cancel(id: string, code: string): Promise<CodeResult>;

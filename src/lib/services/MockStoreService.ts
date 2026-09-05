@@ -1,7 +1,7 @@
 import { categories, products, stores } from '@/data';
 import { normalize } from '@/utils/format';
 import type { Category, Product, Store } from '@/types';
-import type { StoreService } from './types';
+import type { MenuSettings, PublishedMenu, StoreService } from './types';
 
 /** Implementación local asíncrona sobre los JSON de `src/data`. */
 export class MockStoreServiceImpl implements StoreService {
@@ -15,6 +15,22 @@ export class MockStoreServiceImpl implements StoreService {
 
   async getStore(id: string): Promise<Store | undefined> {
     return stores.find((store) => store.id === id);
+  }
+
+  async getPublishedMenu(_slug: string): Promise<PublishedMenu | undefined> {
+    return undefined;
+  }
+
+  async getMenuSettings(_restaurantId: string): Promise<MenuSettings | undefined> {
+    return undefined;
+  }
+
+  async saveMenuSettings(_settings: MenuSettings): Promise<MenuSettings> {
+    throw new Error('La publicación de menús requiere Supabase.');
+  }
+
+  async uploadMenuImage(_restaurantId: string, _kind: 'logo' | 'hero', _file: File): Promise<string> {
+    throw new Error('La carga de imágenes requiere Supabase.');
   }
 
   async listProducts(storeId: string): Promise<Product[]> {

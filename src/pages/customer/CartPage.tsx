@@ -19,6 +19,8 @@ export default function CartPage() {
   const increment = useCartStore((state) => state.increment);
   const decrement = useCartStore((state) => state.decrement);
   const clear = useCartStore((state) => state.clear);
+  const origin = useCartStore((state) => state.origin);
+  const menuSlug = useCartStore((state) => state.menuSlug);
   const [confirmClear, setConfirmClear] = useState(false);
 
   const store = useCatalogStore((state) =>
@@ -93,7 +95,7 @@ export default function CartPage() {
                   Entrega estimada {store.etaMin}–{store.etaMax} min
                 </p>
               </div>
-              <Link to={`/store/${store.id}`} className="text-sm font-semibold text-suya-green">
+              <Link to={origin === 'suya_menu' && menuSlug ? `/menu/${menuSlug}` : `/store/${store.id}`} className="text-sm font-semibold text-suya-green">
                 Agregar más
               </Link>
             </div>

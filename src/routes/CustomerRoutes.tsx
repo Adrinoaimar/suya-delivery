@@ -16,6 +16,7 @@ const OrderTrackPage = lazy(() => import('@/pages/customer/OrderTrackPage'));
 const ProfilePage = lazy(() => import('@/pages/customer/ProfilePage'));
 const HelpPage = lazy(() => import('@/pages/customer/HelpPage'));
 const TableQrPage = lazy(() => import('@/pages/customer/TableQrPage'));
+const MenuPage = lazy(() => import('@/pages/customer/MenuPage'));
 const NotFoundPage = lazy(() => import('@/pages/shared/NotFoundPage'));
 const LoginPage = lazy(() => import('@/pages/shared/LoginPage'));
 const UnauthorizedPage = lazy(() => import('@/pages/shared/UnauthorizedPage'));
@@ -25,6 +26,7 @@ export function CustomerRoutes() {
     <Suspense fallback={<RouteFallback />}>
       <Routes>
         <Route path="table/:token" element={<TableQrPage />} />
+        <Route path="menu/:slug" element={<MenuPage />} />
         <Route element={<CustomerLayout />}>
           <Route index element={<HomePage />} />
           <Route path="stores" element={<StoresPage />} />

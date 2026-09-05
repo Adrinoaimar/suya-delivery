@@ -62,6 +62,18 @@ export const storeService: StoreService = {
   async getStore(id) {
     return (await resolveStoreService()).getStore(id);
   },
+  async getPublishedMenu(slug) {
+    return (await resolveStoreService()).getPublishedMenu(slug);
+  },
+  async getMenuSettings(restaurantId) {
+    return (await resolveStoreService()).getMenuSettings(restaurantId);
+  },
+  async saveMenuSettings(settings) {
+    return (await resolveStoreService()).saveMenuSettings(settings);
+  },
+  async uploadMenuImage(restaurantId, kind, file) {
+    return (await resolveStoreService()).uploadMenuImage(restaurantId, kind, file);
+  },
   async listProducts(storeId) {
     return (await resolveStoreService()).listProducts(storeId);
   },
@@ -89,6 +101,7 @@ export const orderService: OrderService = {
   async list() { return (await resolveOrderService()).list(); },
   async get(id) { return (await resolveOrderService()).get(id); },
   async create(input) { return (await resolveOrderService()).create(input); },
+  async createMenuOrder(input) { return (await resolveOrderService()).createMenuOrder(input); },
   async updateStatus(id, status) { return (await resolveOrderService()).updateStatus(id, status); },
   async cancel(id, code) { return (await resolveOrderService()).cancel(id, code); },
   async confirmDelivery(id, code) {

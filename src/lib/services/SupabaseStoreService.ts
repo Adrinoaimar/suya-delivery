@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
 import { normalize } from '@/utils/format';
 import type { Accent, Category, Product, ProductExtra, Schedule, Store } from '@/types';
-import type { StoreService } from './types';
+import type { MenuSettings, PublishedMenu, StoreService } from './types';
 
 type JsonObject = Record<string, unknown>;
 
@@ -33,6 +33,30 @@ interface RestaurantRow {
   data_note: string | null;
   promo_label: string | null;
   categories: { slug: string; name: string } | { slug: string; name: string }[];
+}
+
+interface MenuSettingsRow {
+  restaurant_id: string;
+  public_slug: string;
+  logo_url: string | null;
+  hero_image_url: string | null;
+  primary_color: string;
+  accent_color: string;
+  font_family: string;
+  published: boolean;
+}
+
+function mapMenuSettings(row: MenuSettingsRow): MenuSettings {
+  return {
+    restaurantId: row.restaurant_id,
+    slug: row.public_slug,
+    published: row.published,
+    logoUrl: row.logo_url,
+    heroImageUrl: row.hero_image_url,
+    primaryColor: row.primary_color,
+    accentColor: row.accent_color,
+    fontFamily: row.font_family,
+  };
 }
 
 interface ProductRow {
@@ -239,6 +263,82 @@ export class SupabaseStoreServiceImpl implements StoreService {
       this.productRows(id),
     ]);
     return restaurant ? mapStore(restaurant, [...new Set(products.map((row) => row.section))]) : undefined;
+  }
+
+  async getPublishedMenu(slug: string): Promise<PublishedMenu | undefined> {
+    const normalizedSlug = slug.trim().toLowerCase();
+    if (!normalizedSlug) return undefined;
+
+    const { data, error } = await this.client
+      .from('restaurant_menu_settings')
+      .select(
+        'restaurant_id, public_slug, published, logo_url, hero_image_url, primary_color, accent_color, font_family',
+      )
+      .eq('public_slug', normalizedSlug)
+      .eq('published', true)
+      .maybeSingle();
+    if (error) throw error;
+    if (!data) return undefined;
+
+    const settings = data as MenuSettingsRow;
+    const store = await this.getStore(settings.restaurant_id);
+    if (!store) return undefined;
+
+    return {
+      slug: settings.public_slug,
+      store,
+      brand: {
+        logoUrl: settings.logo_url,
+        heroImageUrl: settings.hero_image_url,
+        primaryColor: settings.primary_color,
+        accentColor: settings.accent_color,
+        fontFamily: settings.font_family,
+      },
+    };
+  }
+
+  async getMenuSettings(restaurantId: string): Promise<MenuSettings | undefined> {
+    const { data, error } = await this.client
+      .from('restaurant_menu_settings')
+      .select('restaurant_id, public_slug, published, logo_url, hero_image_url, primary_color, accent_color, font_family')
+      .eq('restaurant_id', restaurantId)
+      .maybeSingle();
+    if (error) throw error;
+    return data ? mapMenuSettings(data as MenuSettingsRow) : undefined;
+  }
+
+  async saveMenuSettings(settings: MenuSettings): Promise<MenuSettings> {
+    const { data, error } = await this.client
+      .from('restaurant_menu_settings')
+      .upsert({
+        restaurant_id: settings.restaurantId,
+        public_slug: settings.slug.trim().toLowerCase(),
+        published: settings.published,
+        logo_url: settings.logoUrl,
+        hero_image_url: settings.heroImageUrl,
+        primary_color: settings.primaryColor,
+        accent_color: settings.accentColor,
+        font_family: settings.fontFamily,
+      }, { onConflict: 'restaurant_id' })
+      .select('restaurant_id, public_slug, published, logo_url, hero_image_url, primary_color, accent_color, font_family')
+      .single();
+    if (error) throw error;
+    return mapMenuSettings(data as MenuSettingsRow);
+  }
+
+  async uploadMenuImage(restaurantId: string, kind: 'logo' | 'hero', file: File): Promise<string> {
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      throw new Error('Usa una imagen JPG, PNG o WebP.');
+    }
+    if (file.size > 5 * 1024 * 1024) throw new Error('La imagen no puede superar 5 MB.');
+    const extension = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+    const path = `${restaurantId}/${kind}-${crypto.randomUUID()}.${extension}`;
+    const { error } = await this.client.storage.from('menu-branding').upload(path, file, {
+      contentType: file.type,
+      upsert: false,
+    });
+    if (error) throw error;
+    return this.client.storage.from('menu-branding').getPublicUrl(path).data.publicUrl;
   }
 
   async listProducts(storeId: string): Promise<Product[]> {
