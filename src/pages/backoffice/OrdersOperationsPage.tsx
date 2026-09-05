@@ -204,6 +204,7 @@ export default function OrdersOperationsPage() {
                 <label className="text-sm font-medium">
                   <span className="mb-1 block">Repartidor</span>
                   <select
+                    aria-label={`Repartidor para pedido ${order.code}`}
                     className="h-11 w-full rounded-btn border border-[#CDD4D0] bg-white px-3"
                     value={order.riderId ?? ''}
                     disabled={busyOrder === order.id}
