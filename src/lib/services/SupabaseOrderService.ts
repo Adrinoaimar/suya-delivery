@@ -351,6 +351,10 @@ export class SupabaseOrderServiceImpl
   async get(id: string): Promise<Order | undefined> {
     const { data: userData, error: userError } = await this.client.auth.getUser();
     if (userError && !isMissingSession(userError)) throw new Error(userError.message);
+    if (!userData.user) {
+      const guest = await this.guestRow(id, guestToken(id) ?? '');
+      return guest ? mapGuestOrder(guest) : undefined;
+    }
     const row = await this.row(id);
     if (!row) {
       const guest = await this.guestRow(id, guestToken(id) ?? '');
