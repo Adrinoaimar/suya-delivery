@@ -24,7 +24,7 @@ begin
   end if;
 
   insert into public.restaurant_tables (restaurant_id, table_number, qr_token)
-  values (p_restaurant_id, v_number, encode(gen_random_bytes(18), 'hex'))
+  values (p_restaurant_id, v_number, encode(extensions.gen_random_bytes(18), 'hex'))
   returning * into v_table;
 
   return query select v_table.id, v_table.restaurant_id, v_table.table_number,
@@ -52,7 +52,7 @@ begin
   end if;
 
   update public.restaurant_tables
-  set qr_token = encode(gen_random_bytes(18), 'hex')
+  set qr_token = encode(extensions.gen_random_bytes(18), 'hex')
   where id = p_table_id
   returning * into v_table;
   return query select v_table.id, v_table.restaurant_id, v_table.table_number,
