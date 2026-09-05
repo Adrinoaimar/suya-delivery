@@ -29,7 +29,7 @@ interface OrderEventRow {
 interface OrderRow {
   id: string;
   code: string;
-  customer_id: string;
+  customer_id: string | null;
   restaurant_id: string;
   rider_id: string | null;
   status: OrderStatus;
@@ -60,6 +60,41 @@ interface OrderCodes {
   cancel_code: string;
 }
 
+interface GuestOrderItemRow {
+  id: string;
+  product_id: string | null;
+  product_name: string;
+  unit_price: number | string;
+  quantity: number;
+  extras: unknown;
+  note: string;
+  image_url: string | null;
+}
+
+interface GuestOrderRow {
+  order_id: string;
+  code: string;
+  restaurant_id: string;
+  origin: 'menu' | 'table_qr';
+  status: OrderStatus;
+  table_id: string | null;
+  customer_name: string;
+  customer_phone: string;
+  delivery_address: string;
+  delivery_reference: string;
+  subtotal: number | string;
+  delivery_fee: number | string;
+  discount: number | string;
+  total: number | string;
+  estimated_minutes: number;
+  created_at: string;
+  cancellation_reason: string | null;
+  delivery_code: string;
+  cancel_code: string;
+  items: GuestOrderItemRow[];
+  events: { status: OrderStatus; created_at: string }[];
+}
+
 const ORDER_SELECT = `
   id, code, customer_id, restaurant_id, rider_id, status, origin, table_id, payment_method, cancellation_reason,
   subtotal, delivery_fee, discount, total, customer_name, customer_phone,
@@ -70,6 +105,20 @@ const ORDER_SELECT = `
   order_events(status, created_at)
 `;
 const PENDING_REQUEST_KEY = 'suya.pending-cash-order';
+const GUEST_TOKEN_PREFIX = 'suya.guest-order-token:';
+
+function isMissingSession(error: { message?: string } | null | undefined): boolean {
+  return Boolean(error?.message && /auth session missing|session not found|jwt/i.test(error.message));
+}
+
+function saveGuestToken(orderId: string, token: string | null | undefined): void {
+  if (!token) return;
+  try { sessionStorage.setItem(`${GUEST_TOKEN_PREFIX}${orderId}`, token); } catch { /* storage unavailable */ }
+}
+
+function guestToken(orderId: string): string | null {
+  try { return sessionStorage.getItem(`${GUEST_TOKEN_PREFIX}${orderId}`); } catch { return null; }
+}
 
 function requireClient(): SupabaseClient {
   if (!supabase) throw new Error('Supabase no está configurado para Suya Delivery.');
@@ -155,6 +204,54 @@ function mapOrder(row: OrderRow, codes?: OrderCodes): Order {
   };
 }
 
+function mapGuestOrder(row: GuestOrderRow): Order {
+  const items: CartItem[] = (row.items ?? []).map((item) => ({
+    lineId: item.id,
+    productId: item.product_id ?? item.id,
+    storeId: row.restaurant_id,
+    name: item.product_name,
+    unitPrice: amount(item.unit_price),
+    quantity: item.quantity,
+    extras: extras(item.extras),
+    note: item.note,
+    image: item.image_url,
+  }));
+  const history = [...(row.events ?? [])]
+    .sort((a, b) => a.created_at.localeCompare(b.created_at))
+    .map((event) => ({ status: event.status, at: event.created_at }));
+  if (history.length === 0) history.push({ status: row.status, at: row.created_at });
+  return {
+    id: row.order_id,
+    code: row.code,
+    storeId: row.restaurant_id,
+    storeName: 'Suya Menús',
+    items,
+    subtotal: amount(row.subtotal),
+    deliveryFee: amount(row.delivery_fee),
+    discount: amount(row.discount),
+    total: amount(row.total),
+    createdAt: row.created_at,
+    status: row.status,
+    origin: row.origin === 'table_qr' ? 'table_qr' : 'suya_menu',
+    tableId: row.table_id,
+    history,
+    customer: {
+      name: row.customer_name,
+      phone: row.customer_phone,
+      address: row.delivery_address,
+      reference: row.delivery_reference,
+    },
+    deliveryPosition: null,
+    storePosition: null,
+    paymentMethod: 'cash',
+    riderId: null,
+    etaMinutes: row.estimated_minutes,
+    deliveryCode: row.delivery_code,
+    cancelCode: row.cancel_code,
+    cancellationReason: row.cancellation_reason,
+  };
+}
+
 function first<T>(value: T | T[] | null): T | null {
   return Array.isArray(value) ? (value[0] ?? null) : value;
 }
@@ -226,12 +323,23 @@ export class SupabaseOrderServiceImpl
     return (data as unknown as OrderRow | null) ?? undefined;
   }
 
+  private async guestRow(id: string, token: string): Promise<GuestOrderRow | undefined> {
+    if (!token) return undefined;
+    const { data, error } = await this.client.rpc('get_guest_order', {
+      p_order_id: id,
+      p_access_token: token,
+    });
+    if (error) throw new Error(error.message);
+    const row = first(data as GuestOrderRow[] | GuestOrderRow | null);
+    return row ?? undefined;
+  }
+
   async list(): Promise<Order[]> {
     const [{ data: userData, error: userError }, { data, error }] = await Promise.all([
       this.client.auth.getUser(),
       this.client.from('orders').select(ORDER_SELECT).order('created_at', { ascending: false }),
     ]);
-    if (userError) throw new Error(userError.message);
+    if (userError && !isMissingSession(userError)) throw new Error(userError.message);
     if (error) throw new Error(error.message);
     const userId = userData.user?.id;
     const rows = (data ?? []) as unknown as OrderRow[];
@@ -241,12 +349,13 @@ export class SupabaseOrderServiceImpl
   }
 
   async get(id: string): Promise<Order | undefined> {
-    const [{ data: userData, error: userError }, row] = await Promise.all([
-      this.client.auth.getUser(),
-      this.row(id),
-    ]);
-    if (userError) throw new Error(userError.message);
-    if (!row) return undefined;
+    const { data: userData, error: userError } = await this.client.auth.getUser();
+    if (userError && !isMissingSession(userError)) throw new Error(userError.message);
+    const row = await this.row(id);
+    if (!row) {
+      const guest = await this.guestRow(id, guestToken(id) ?? '');
+      return guest ? mapGuestOrder(guest) : undefined;
+    }
     const codes = userData.user?.id === row.customer_id ? await this.codes(row.id) : undefined;
     return mapOrder(row, codes);
   }
@@ -256,22 +365,30 @@ export class SupabaseOrderServiceImpl
       throw new Error('Solo el pago en efectivo está habilitado actualmente.');
     }
     const { data: userData, error: userError } = await this.client.auth.getUser();
-    if (userError) throw new Error(userError.message);
-    if (!userData.user) throw new Error('Inicia sesión para confirmar el pedido.');
-    const { error: profileError } = await this.client
-      .from('profiles')
-      .update({
-        display_name: input.customer.name.trim(),
-        phone: input.customer.phone.trim(),
-        default_address: input.customer.address.trim(),
-        default_reference: input.customer.reference.trim(),
-      })
-      .eq('id', userData.user.id);
-    if (profileError) throw new Error(profileError.message);
+    if (userError && !isMissingSession(userError)) throw new Error(userError.message);
+    const user = userData.user ?? null;
+    const publicMenuChannel = input.origin === 'suya_menu' || Boolean(input.tableId);
+    if (!user && !publicMenuChannel) throw new Error('Inicia sesión para confirmar el pedido.');
+    if (user) {
+      const { error: profileError } = await this.client
+        .from('profiles')
+        .update({
+          display_name: input.customer.name.trim(),
+          phone: input.customer.phone.trim(),
+          default_address: input.customer.address.trim(),
+          default_reference: input.customer.reference.trim(),
+        })
+        .eq('id', user.id);
+      if (profileError) throw new Error(profileError.message);
+    }
 
     const requestId = requestIdFor(input);
-    const rpcName = input.tableId ? 'create_table_cash_order' : input.origin === 'suya_menu' ? 'create_menu_order' : 'create_cash_order';
-    const rpcPayload = {
+    const rpcName = input.tableId
+      ? 'create_table_cash_order_with_customer'
+      : input.origin === 'suya_menu'
+        ? 'create_menu_order_with_customer'
+        : 'create_cash_order';
+    const rpcPayload: Record<string, unknown> = {
       p_restaurant_id: input.storeId,
       p_items: input.items.map((item) => ({
         product_id: item.productId,
@@ -283,22 +400,47 @@ export class SupabaseOrderServiceImpl
       p_delivery_address: input.customer.address,
       p_delivery_reference: input.customer.reference,
       p_request_id: requestId,
+      ...(publicMenuChannel ? { p_customer_name: input.customer.name } : {}),
       ...(input.tableId ? { p_table_id: input.tableId, p_table_session_id: input.tableSessionId ?? null } : {}),
     };
     const { data, error } = await this.client.rpc(rpcName, rpcPayload);
     if (error) throw new Error(error.message);
-    const result = first(data as ({ order_id: string } & OrderCodes)[] | null);
+    const result = first(data as ({ order_id: string } & OrderCodes & { guest_access_token?: string | null })[] | null);
     if (!result) throw new Error('Supabase no devolvió el pedido creado.');
-    const { data: positioned, error: positionError } = await this.client.rpc(
-      'set_order_delivery_coordinates',
-      {
-        target_order: result.order_id,
-        latitude: input.deliveryPosition.lat,
-        longitude: input.deliveryPosition.lng,
-      },
-    );
-    if (positionError) throw new Error(positionError.message);
-    if (positioned !== true) throw new Error('No pudimos confirmar el punto de entrega.');
+    saveGuestToken(result.order_id, result.guest_access_token);
+    const accessToken = result.guest_access_token ?? guestToken(result.order_id);
+    if (input.deliveryPosition && accessToken) {
+      const { data: positioned, error: positionError } = await this.client.rpc(
+        'set_guest_order_delivery_coordinates',
+        {
+          p_order_id: result.order_id,
+          p_access_token: accessToken,
+          p_latitude: input.deliveryPosition.lat,
+          p_longitude: input.deliveryPosition.lng,
+        },
+      );
+      if (positionError) throw new Error(positionError.message);
+      if (positioned !== true) throw new Error('No pudimos confirmar el punto de entrega.');
+    } else if (input.deliveryPosition) {
+      const { data: positioned, error: positionError } = await this.client.rpc(
+        'set_order_delivery_coordinates',
+        {
+          target_order: result.order_id,
+          latitude: input.deliveryPosition.lat,
+          longitude: input.deliveryPosition.lng,
+        },
+      );
+      if (positionError) throw new Error(positionError.message);
+      if (positioned !== true) throw new Error('No pudimos confirmar el punto de entrega.');
+    } else if (!input.tableId) {
+      throw new Error('No pudimos confirmar el punto de entrega.');
+    }
+    if (accessToken) {
+      const guest = await this.guestRow(result.order_id, accessToken);
+      if (!guest) throw new Error('El pedido fue creado, pero no pudo recuperarse. Reintenta.');
+      clearRequest(requestId);
+      return mapGuestOrder(guest);
+    }
     const row = await this.row(result.order_id);
     if (!row) throw new Error('El pedido fue creado, pero no pudo recuperarse. Reintenta.');
     clearRequest(requestId);

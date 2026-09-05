@@ -26,9 +26,10 @@ let resolvedTableService: Promise<TableService> | null = null;
 function resolveTableService(): Promise<TableService> {
   if (resolvedTableService) return resolvedTableService;
   resolvedTableService = import.meta.env.VITE_BACKEND === 'supabase'
-    ? Promise.resolve(new SupabaseTableService())
+      ? Promise.resolve(new SupabaseTableService())
       : Promise.resolve({
         async resolve() { return null; },
+        async openGuest() { throw new Error('Las mesas QR requieren Supabase.'); },
         async open() { throw new Error('Las mesas QR requieren Supabase.'); },
         async list() { return []; },
         async create() { throw new Error('Las mesas QR requieren Supabase.'); },
@@ -40,6 +41,7 @@ function resolveTableService(): Promise<TableService> {
 
 export const tableService: TableService = {
   async resolve(token) { return (await resolveTableService()).resolve(token); },
+  async openGuest(token) { return (await resolveTableService()).openGuest(token); },
   async open(tableId) { return (await resolveTableService()).open(tableId); },
   async list(restaurantIds) { return (await resolveTableService()).list(restaurantIds); },
   async create(restaurantId, tableNumber) { return (await resolveTableService()).create(restaurantId, tableNumber); },
