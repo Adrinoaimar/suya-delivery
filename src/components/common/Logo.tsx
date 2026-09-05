@@ -1,4 +1,5 @@
 import { cn } from '@/lib/cn';
+import { assetUrl } from '@/utils/asset';
 
 interface LogoMarkProps {
   className?: string;
@@ -49,6 +50,8 @@ interface LogoProps {
   tone?: 'brand' | 'onDark';
   showCity?: boolean;
   size?: 'sm' | 'md' | 'lg';
+  /** Neutral SUYA master lockup; default keeps the historical Delivery lockup. */
+  variant?: 'delivery' | 'master';
 }
 
 const TEXT_SIZES = {
@@ -58,7 +61,17 @@ const TEXT_SIZES = {
 };
 
 /** Logotipo horizontal: símbolo + «Suya / DELIVERY / SULLANA, PERÚ». */
-export function Logo({ className, tone = 'brand', showCity = false, size = 'md' }: LogoProps) {
+export function Logo({ className, tone = 'brand', showCity = false, size = 'md', variant = 'delivery' }: LogoProps) {
+  if (variant === 'master') {
+    const masterSizes = { sm: 'h-8', md: 'h-10', lg: 'h-14' } as const;
+    return (
+      <img
+        src={assetUrl('/brand/suya-master-logo.png')}
+        alt="Suya"
+        className={cn('w-auto object-contain', masterSizes[size], className)}
+      />
+    );
+  }
   const sizes = TEXT_SIZES[size];
   const nameColor = tone === 'onDark' ? 'text-white' : 'text-suya-green';
   const wordColor = tone === 'onDark' ? 'text-white/85' : 'text-suya-carbon';
