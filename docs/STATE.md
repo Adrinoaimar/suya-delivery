@@ -10,6 +10,10 @@ producción.
 ## Estado actual
 
 - Rama de trabajo: `feat/suya-mobile-app`, basada en `origin/main`.
+- F12 rediseño: cliente, repartidor y backoffice usan el sistema visual `Suya Lens`, con superficies
+  Liquid Glass selectivas, tipografía Bricolage Grotesque/DM Sans, jerarquía más limpia, contraste AA,
+  blancos sólidos de respaldo y blur reducido en móvil. El APK debug fue recompilado y validado en
+  Android 15; navegación, catálogo real y rutas protegidas pasan smoke.
 - F11 móvil: un único APK Capacitor contiene cliente, Delivery/repartidor y backoffice bajo rutas y
   guards por rol; branding nativo, GPS con permiso explícito y build Android instalable de pruebas.
   El APK unificado incluye ofertas exclusivas visibles solo en app, gestión autorizada en

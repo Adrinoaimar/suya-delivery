@@ -1,8 +1,5 @@
-@import '@fontsource/montserrat/600.css';
-@import '@fontsource/montserrat/700.css';
-@import '@fontsource/inter/400.css';
-@import '@fontsource/inter/500.css';
-@import '@fontsource/inter/600.css';
+@import '@fontsource-variable/bricolage-grotesque';
+@import '@fontsource-variable/dm-sans';
 
 @tailwind base;
 @tailwind components;
@@ -17,22 +14,27 @@
      */
     color-scheme: only light;
 
-    /* Design tokens de Suya Delivery */
-    --suya-green: #0e6b44;
-    --suya-green-dark: #0a5335;
-    --suya-lime: #8cc63f;
-    --suya-sun: #ffc107;
-    --suya-ivory: #faf7f1;
+    /* Sistema Suya Lens: cada superficie translúcida conserva respaldo sólido. */
+    --suya-green: #0b7048;
+    --suya-green-dark: #075738;
+    --suya-lime: #74b85b;
+    --suya-sun: #e9b52b;
+    --suya-ivory: #f0f7f3;
     --suya-white: #ffffff;
-    --suya-carbon: #1f2023;
-    --suya-mist: #e6e7e9;
-    --suya-muted: #6b7076;
+    --suya-carbon: #152a20;
+    --suya-mist: #dde9e2;
+    --suya-muted: #52675d;
+    --suya-border: rgba(190, 213, 201, 0.75);
+    --suya-surface: rgba(250, 253, 251, 0.88);
+    --suya-surface-glass: rgba(250, 253, 251, 0.72);
+    --suya-elevated: rgba(255, 255, 255, 0.92);
+    --suya-rider: #10251c;
 
-    --radius-btn: 12px;
-    --radius-card: 16px;
-    --radius-promo: 20px;
+    --radius-btn: 14px;
+    --radius-card: 20px;
+    --radius-promo: 28px;
 
-    --shadow-soft: 0 8px 30px rgba(31, 32, 35, 0.08);
+    --shadow-soft: 0 18px 48px rgba(12, 49, 32, 0.12);
 
     --header-h: 60px;
     --bottom-nav-h: 64px;
@@ -54,12 +56,13 @@
   h2,
   h3,
   h4 {
-    @apply font-display font-bold tracking-tight;
+    @apply font-display font-semibold tracking-tight;
+    letter-spacing: -0.025em;
     text-wrap: balance;
   }
 
   :focus-visible {
-    outline: 3px solid var(--suya-lime);
+    outline: 3px solid var(--suya-green);
     outline-offset: 2px;
     border-radius: 4px;
   }
@@ -85,11 +88,47 @@
   }
 
   .surface {
-    @apply rounded-card border border-suya-mist bg-white;
+    @apply rounded-card border border-suya-border bg-white/90;
+    box-shadow: 0 8px 24px rgba(12, 49, 32, 0.06);
   }
 
   .press {
-    @apply transition-transform duration-150 active:scale-[0.98];
+    @apply transition-transform duration-150 active:scale-[0.985];
+  }
+
+  .suya-lens {
+    background: rgba(250, 253, 251, 0.94);
+    border: 1px solid var(--suya-border);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.86),
+      var(--shadow-soft);
+  }
+
+  .suya-lens-dark {
+    background: rgba(16, 37, 28, 0.94);
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.1),
+      0 18px 48px rgba(0, 0, 0, 0.2);
+  }
+
+  .suya-lens-dark :focus-visible,
+  .rider-shell :focus-visible {
+    outline-color: var(--suya-white);
+  }
+
+  .suya-lens-nav {
+    background: rgba(250, 253, 251, 0.97);
+    border: 1px solid var(--suya-border);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      var(--shadow-soft);
+  }
+
+  .suya-elevated {
+    background: var(--suya-elevated);
+    border: 1px solid var(--suya-border);
+    box-shadow: 0 8px 24px rgba(12, 49, 32, 0.07);
   }
 
   .hide-scrollbar {
@@ -126,6 +165,47 @@
   }
 }
 
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .suya-lens {
+    background: rgba(250, 253, 251, 0.82);
+    -webkit-backdrop-filter: blur(12px) saturate(118%);
+    backdrop-filter: blur(12px) saturate(118%);
+  }
+
+  .suya-lens-dark {
+    background: rgba(16, 37, 28, 0.84);
+    -webkit-backdrop-filter: blur(12px) saturate(112%);
+    backdrop-filter: blur(12px) saturate(112%);
+  }
+
+  .suya-lens-nav {
+    background: rgba(250, 253, 251, 0.93);
+    -webkit-backdrop-filter: blur(12px) saturate(118%);
+    backdrop-filter: blur(12px) saturate(118%);
+  }
+}
+
+@media (min-width: 1024px) {
+  @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .suya-lens,
+    .suya-lens-dark,
+    .suya-lens-nav {
+      -webkit-backdrop-filter: blur(16px) saturate(118%);
+      backdrop-filter: blur(16px) saturate(118%);
+    }
+  }
+}
+
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .backdrop-blur,
+  .backdrop-blur-md,
+  .backdrop-blur-xl,
+  .backdrop-blur-2xl {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -134,5 +214,9 @@
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
+  }
+
+  .press:active {
+    transform: none !important;
   }
 }

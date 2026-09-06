@@ -6,10 +6,10 @@ import { MobileHeader } from '@/components/layout/MobileHeader';
 
 export function CustomerLayout() {
   return (
-    <div className="flex min-h-dvh flex-col bg-suya-ivory">
+    <div className="flex min-h-dvh flex-col bg-transparent">
       <MobileHeader />
       <DesktopHeader />
-      <main id="contenido" className="flex-1 pb-nav lg:pb-0">
+      <main id="contenido" className="pb-nav flex-1 lg:pb-0">
         <Outlet />
       </main>
       <Footer />

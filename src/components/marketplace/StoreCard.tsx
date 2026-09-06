@@ -43,7 +43,7 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
   return (
     <article
       className={cn(
-        'group relative overflow-hidden rounded-card border border-suya-mist bg-white shadow-card transition-shadow hover:shadow-soft',
+        'group relative overflow-hidden rounded-card border border-suya-border bg-white/90 shadow-card transition-[transform,box-shadow] duration-300 ease-out active:scale-[0.985] motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-soft',
         layout === 'row' && 'flex',
         className,
       )}
@@ -51,7 +51,7 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
       <div
         className={cn(
           'relative shrink-0 overflow-hidden bg-suya-ivory',
-          layout === 'grid' ? 'h-32 w-full' : 'h-auto w-28',
+          layout === 'grid' ? 'h-40 w-full' : 'min-h-32 w-32',
         )}
       >
         <Thumb
@@ -90,9 +90,13 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
           <button
             type="button"
             onClick={() => toggleFavorite(store.id)}
-            aria-label={isFavorite ? `Quitar ${store.name} de favoritos` : `Guardar ${store.name} en favoritos`}
+            aria-label={
+              isFavorite
+                ? `Quitar ${store.name} de favoritos`
+                : `Guardar ${store.name} en favoritos`
+            }
             aria-pressed={isFavorite}
-            className="relative z-10 -mr-1 -mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#6B7076] transition-colors hover:bg-suya-mist/70"
+            className="relative z-10 -mr-2 -mt-2 flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-suya-muted transition-colors hover:bg-suya-mist/70"
           >
             <Heart
               className={cn('h-[18px] w-[18px]', isFavorite && 'fill-suya-danger text-suya-danger')}
@@ -100,13 +104,13 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
           </button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#6B7076]">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-suya-muted">
           <Rating value={store.rating} reviews={store.reviews} className="text-xs" />
           <span aria-hidden="true">·</span>
           <span>{store.tags[0]}</span>
         </div>
 
-        <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-xs text-[#6B7076]">
+        <div className="mt-auto flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-xs text-suya-muted">
           {meta}
         </div>
 

@@ -27,7 +27,7 @@ export function BottomSheet({ open, onClose, title, children, footer }: BottomSh
         aria-label="Cerrar"
         tabIndex={-1}
         onClick={onClose}
-        className="absolute inset-0 h-full w-full cursor-default bg-suya-carbon/45 animate-fade-in"
+        className="absolute inset-0 h-full w-full animate-fade-in cursor-default bg-suya-carbon/45"
       />
       <div
         ref={panelRef}
@@ -35,15 +35,22 @@ export function BottomSheet({ open, onClose, title, children, footer }: BottomSh
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="relative z-10 flex max-h-[88dvh] w-full max-w-lg flex-col rounded-t-sheet bg-white shadow-sheet animate-sheet-up"
+        className="relative z-10 flex max-h-[88dvh] w-full max-w-lg animate-sheet-up flex-col rounded-t-sheet border border-b-0 border-suya-border bg-white/95 shadow-sheet"
       >
         <div className="flex flex-col items-center px-4 pt-2.5">
-          <span aria-hidden="true" className="h-1.5 w-11 rounded-full bg-suya-mist" />
+          <span aria-hidden="true" className="h-1 w-12 rounded-full bg-suya-border" />
           <h2 id={titleId} className="mt-2.5 w-full font-display text-lg font-bold">
             {title}
           </h2>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 pb-4 pt-3">{children}</div>
+        <div
+          className={cn(
+            'flex-1 overflow-y-auto px-4 pt-3',
+            footer ? 'pb-4' : 'pb-[calc(16px+env(safe-area-inset-bottom))]',
+          )}
+        >
+          {children}
+        </div>
         {footer && (
           <div className="border-t border-suya-mist px-4 pb-[calc(12px+env(safe-area-inset-bottom))] pt-3">
             {footer}
@@ -80,7 +87,7 @@ export function ExpandableSheet({
   return (
     <section
       className={cn(
-        'rounded-t-sheet border-t border-suya-mist bg-white shadow-sheet',
+        'rounded-t-sheet border border-b-0 border-suya-border bg-white/95 shadow-sheet',
         className,
       )}
       aria-label={title}
@@ -90,9 +97,9 @@ export function ExpandableSheet({
         onClick={onToggle}
         aria-expanded={expanded}
         aria-controls={contentId}
-        className="flex w-full flex-col items-center gap-1.5 rounded-t-sheet px-4 pb-1 pt-2.5"
+        className="flex min-h-12 w-full flex-col items-center gap-1.5 rounded-t-sheet px-4 pb-1 pt-2.5"
       >
-        <span aria-hidden="true" className="h-1.5 w-11 rounded-full bg-suya-mist" />
+        <span aria-hidden="true" className="h-1 w-12 rounded-full bg-suya-border" />
         <span className="flex w-full items-center justify-between gap-2">
           <span className="text-left">{summary}</span>
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-suya-mist/70 text-suya-carbon">
