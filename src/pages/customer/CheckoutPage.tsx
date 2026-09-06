@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Banknote, CircleUserRound, LocateFixed, MapPin, TicketPercent } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, ButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
@@ -9,13 +10,13 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { Input, Textarea } from '@/components/common/Input';
 import { Skeleton } from '@/components/common/Skeleton';
 import { FREE_DELIVERY_THRESHOLD } from '@/lib/commerce';
-import { locationService, notificationService, paymentService } from '@/lib/services';
+import { locationService, notificationService, offerService, paymentService } from '@/lib/services';
 import { useCatalogStore } from '@/store/catalogStore';
 import { cartTotals, useCartStore } from '@/store/cartStore';
 import { useOrderStore } from '@/store/orderStore';
 import { useAuthStore } from '@/store/authStore';
 import { formatPrice } from '@/utils/format';
-import type { PaymentMethod } from '@/types';
+import type { AppOffer, PaymentMethod } from '@/types';
 import type { LatLng } from '@/types';
 
 export default function CheckoutPage() {
@@ -26,6 +27,8 @@ export default function CheckoutPage() {
   const clearCart = useCartStore((state) => state.clear);
   const orderOrigin = useCartStore((state) => state.origin);
   const menuSlug = useCartStore((state) => state.menuSlug);
+  const offerCode = useCartStore((state) => state.offerCode);
+  const setOfferCode = useCartStore((state) => state.setOfferCode);
   const createOrder = useOrderStore((state) => state.createOrder);
   const identity = useAuthStore((state) => state.identity);
   const [tableContext] = useState(() => {
@@ -61,14 +64,39 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [deliveryPosition, setDeliveryPosition] = useState<LatLng | null>(null);
   const [locating, setLocating] = useState(false);
+  const [offerInput, setOfferInput] = useState(offerCode ?? '');
+  const [offers, setOffers] = useState<AppOffer[]>([]);
   const isMenuOrder = orderOrigin === 'suya_menu' || Boolean(tableContext?.tableId);
   const isDeliveryOrder = !isMenuOrder;
   const isGuestMenuOrder = isMenuOrder && !identity;
 
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    void offerService.listActive().then(setOffers).catch(() => setOffers([]));
+  }, []);
+  useEffect(() => { setOfferInput(offerCode ?? ''); }, [offerCode]);
+
   const base = cartTotals(items, store, FREE_DELIVERY_THRESHOLD);
-  const discount = 0;
+  const selectedOffer = offers.find((offer) => offer.code === offerCode && (!offer.restaurantId || offer.restaurantId === storeId));
+  const offerMeetsMinimum = selectedOffer ? base.subtotal >= selectedOffer.minimumSubtotal : false;
+  const rawDiscount = selectedOffer && offerMeetsMinimum
+    ? selectedOffer.discountType === 'percent'
+      ? base.subtotal * selectedOffer.discountValue / 100
+      : selectedOffer.discountValue
+    : 0;
+  const discount = Math.min(rawDiscount, base.subtotal + (isDeliveryOrder ? base.deliveryFee : 0));
   const deliveryFee = isDeliveryOrder ? base.deliveryFee : 0;
-  const total = base.subtotal + deliveryFee;
+  const total = Math.max(0, base.subtotal + deliveryFee - discount);
+
+  function applyOffer() {
+    const code = offerInput.trim().toUpperCase();
+    const offer = offers.find((item) => item.code === code);
+    if (!offer) { notificationService.notify('Esa oferta no está vigente en la app.', 'warning'); return; }
+    if (offer.restaurantId && offer.restaurantId !== storeId) { notificationService.notify('Esta oferta no aplica a este negocio.', 'warning'); return; }
+    if (base.subtotal < offer.minimumSubtotal) { notificationService.notify(`Compra al menos ${formatPrice(offer.minimumSubtotal)} para usarla.`, 'warning'); return; }
+    setOfferCode(code);
+    notificationService.notify('Oferta aplicada. El servidor validará el descuento al confirmar.', 'success');
+  }
 
   if (items.length === 0) {
     return (
@@ -210,6 +238,7 @@ export default function CheckoutPage() {
         tableId: tableContext?.tableId,
         tableSessionId,
         origin: tableContext?.tableId ? 'table_qr' : orderOrigin,
+        offerCode: selectedOffer?.code,
       });
 
       const publicOrderPath = isGuestMenuOrder
@@ -348,6 +377,17 @@ export default function CheckoutPage() {
               </div>}
             </div>
           </Card>
+
+          {Capacitor.isNativePlatform() && (
+            <Card>
+              <h2 className="mb-3 flex items-center gap-2 font-display text-[15px] font-bold"><TicketPercent className="h-4 w-4 text-suya-green" />Oferta exclusiva de la app</h2>
+              <div className="flex flex-col gap-2 sm:flex-row"><Input label="Código de oferta" value={offerInput} onChange={(event) => setOfferInput(event.target.value.toUpperCase())} placeholder="SUYA10" /><Button type="button" variant="secondary" className="self-end sm:mb-0.5" onClick={applyOffer}>Aplicar</Button></div>
+              {selectedOffer && offerMeetsMinimum && <p className="mt-2 text-sm font-semibold text-suya-green">{selectedOffer.title}: − {formatPrice(discount)} aplicado.</p>}
+              {offerCode && !selectedOffer && <p className="mt-2 text-sm text-red-700">La oferta ya no está vigente o no aplica a este negocio.</p>}
+              {selectedOffer && !offerMeetsMinimum && <p className="mt-2 text-sm text-[#6B7076]">Compra mínima: {formatPrice(selectedOffer.minimumSubtotal)}.</p>}
+              {offerCode && <button type="button" className="mt-2 text-xs font-semibold text-[#6B7076] underline" onClick={() => setOfferCode(null)}>Quitar oferta</button>}
+            </Card>
+          )}
 
           <Card>
             <h2 className="mb-3 font-display text-[15px] font-bold">Método de pago</h2>

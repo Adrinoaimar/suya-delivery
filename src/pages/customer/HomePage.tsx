@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, Heart, Sparkles, Store as StoreIcon } from 'lucide-react';
+import { ArrowRight, Heart, Sparkles, Store as StoreIcon, TicketPercent } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
 import { Link, useNavigate } from 'react-router-dom';
 import { ButtonLink } from '@/components/common/Button';
 import { SectionHeader } from '@/components/common/Card';
@@ -10,6 +11,9 @@ import { StoreListSkeleton } from '@/components/common/Skeleton';
 import { CategoryRail } from '@/components/marketplace/CategoryRail';
 import { StoreCard } from '@/components/marketplace/StoreCard';
 import { useCatalogStore } from '@/store/catalogStore';
+import { offerService } from '@/lib/services';
+import type { AppOffer } from '@/types';
+import { useCartStore } from '@/store/cartStore';
 import { useUserStore } from '@/store/userStore';
 import { isStoreAcceptingOrders } from '@/utils/schedule';
 
@@ -18,6 +22,8 @@ export default function HomePage() {
   const [query, setQuery] = useState('');
   const pushSearch = useUserStore((state) => state.pushSearch);
   const favorites = useUserStore((state) => state.favorites);
+  const setOfferCode = useCartStore((state) => state.setOfferCode);
+  const [offers, setOffers] = useState<AppOffer[]>([]);
 
   const stores = useCatalogStore((state) => state.stores);
   const categories = useCatalogStore((state) => state.categories);
@@ -30,6 +36,11 @@ export default function HomePage() {
     void loadStores();
     void loadCategories();
   }, [loadStores, loadCategories]);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    void offerService.listActive().then(setOffers).catch(() => setOffers([]));
+  }, []);
 
   const storesLoading = storesStatus === 'idle' || storesStatus === 'loading';
   const storesReady = storesStatus === 'ready';
@@ -144,6 +155,20 @@ export default function HomePage() {
           <SectionHeader title="¿Qué necesitas hoy?" />
           <CategoryRail categories={categories} />
         </section>
+
+        {Capacitor.isNativePlatform() && offers.length > 0 && (
+          <section aria-label="Ofertas exclusivas de la app">
+            <SectionHeader title="Ofertas exclusivas de la app" subtitle="Beneficios que solo ves aquí" />
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {offers.map((offer) => (
+                <article key={offer.id} className="flex flex-col justify-between rounded-promo bg-suya-green p-4 text-white shadow-card">
+                  <div><p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-suya-lime"><TicketPercent className="h-3.5 w-3.5" />Exclusiva</p><h2 className="mt-2 font-display text-lg font-bold">{offer.title}</h2><p className="mt-1 text-sm text-white/85">{offer.description}</p><p className="mt-3 font-display text-2xl font-bold">{offer.discountType === 'percent' ? `${offer.discountValue}% menos` : `${offer.discountValue.toFixed(2)} menos`}</p></div>
+                  <div className="mt-4 flex items-center justify-between gap-2"><span className="rounded-full bg-white/15 px-2.5 py-1 text-xs font-bold tracking-wider">{offer.code}</span><button type="button" className="rounded-btn bg-suya-lime px-3 py-2 text-xs font-bold text-suya-green-dark" onClick={() => { setOfferCode(offer.code); navigate(offer.restaurantId ? `/store/${offer.restaurantId}` : '/stores'); }}>Usar oferta</button></div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         {storesReady && favoriteStores.length > 0 && (
           <section>

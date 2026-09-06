@@ -40,6 +40,11 @@ const forbiddenByApp = {
     'MockStoreService',
     'MockPaymentService',
   ],
+  mobile: [
+    'MockOrderService',
+    'MockStoreService',
+    'MockPaymentService',
+  ],
 };
 
 async function filesBelow(directory) {
@@ -54,7 +59,7 @@ async function filesBelow(directory) {
 }
 
 const requested = process.argv[2];
-const apps = requested ? [requested] : Object.keys(forbiddenByApp);
+const apps = requested ? [requested] : ['customer', 'rider', 'backoffice'];
 const failures = [];
 
 for (const app of apps) {

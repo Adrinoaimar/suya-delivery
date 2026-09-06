@@ -15,6 +15,7 @@ interface CartState {
   storeId: string | null;
   origin: 'delivery' | 'suya_menu';
   menuSlug: string | null;
+  offerCode: string | null;
   /** Devuelve false si el carrito ya tiene productos de otro negocio. */
   addItem: (input: AddToCartInput, options?: { replaceStore?: boolean }) => boolean;
   increment: (lineId: string) => void;
@@ -22,6 +23,7 @@ interface CartState {
   removeItem: (lineId: string) => void;
   clear: () => void;
   setOrigin: (origin: 'delivery' | 'suya_menu', menuSlug?: string | null) => void;
+  setOfferCode: (code: string | null) => void;
 }
 
 interface PersistedCart {
@@ -29,17 +31,19 @@ interface PersistedCart {
   storeId: string | null;
   origin: 'delivery' | 'suya_menu';
   menuSlug: string | null;
+  offerCode: string | null;
 }
 
 function load(): PersistedCart {
   const saved = readLocal<Partial<PersistedCart>>(STORAGE_KEYS.cart, {
-    items: [], storeId: null, origin: 'delivery', menuSlug: null,
+    items: [], storeId: null, origin: 'delivery', menuSlug: null, offerCode: null,
   });
   return {
     items: saved.items ?? [],
     storeId: saved.storeId ?? null,
     origin: saved.origin === 'suya_menu' ? 'suya_menu' : 'delivery',
     menuSlug: saved.menuSlug ?? null,
+    offerCode: typeof saved.offerCode === 'string' ? saved.offerCode : null,
   };
 }
 
@@ -102,6 +106,7 @@ export const useCartStore = create<CartState>((set, get) => ({
       storeId: input.product.storeId,
       origin: get().origin,
       menuSlug: get().menuSlug,
+      offerCode: get().offerCode,
     };
     persist(next);
     set(next);
@@ -112,7 +117,7 @@ export const useCartStore = create<CartState>((set, get) => ({
     const items = get().items.map((item) =>
       item.lineId === lineId ? { ...item, quantity: item.quantity + 1 } : item,
     );
-    const next = { items, storeId: get().storeId, origin: get().origin, menuSlug: get().menuSlug };
+    const next = { items, storeId: get().storeId, origin: get().origin, menuSlug: get().menuSlug, offerCode: get().offerCode };
     persist(next);
     set(next);
   },
@@ -123,28 +128,35 @@ export const useCartStore = create<CartState>((set, get) => ({
         item.lineId === lineId ? { ...item, quantity: item.quantity - 1 } : item,
       )
       .filter((item) => item.quantity > 0);
-    const next = { items, storeId: items.length > 0 ? get().storeId : null, origin: get().origin, menuSlug: get().menuSlug };
+    const next = { items, storeId: items.length > 0 ? get().storeId : null, origin: get().origin, menuSlug: get().menuSlug, offerCode: get().offerCode };
     persist(next);
     set(next);
   },
 
   removeItem(lineId) {
     const items = get().items.filter((item) => item.lineId !== lineId);
-    const next = { items, storeId: items.length > 0 ? get().storeId : null, origin: get().origin, menuSlug: get().menuSlug };
+    const next = { items, storeId: items.length > 0 ? get().storeId : null, origin: get().origin, menuSlug: get().menuSlug, offerCode: get().offerCode };
     persist(next);
     set(next);
   },
 
   clear() {
-    const next = { items: [], storeId: null, origin: 'delivery' as const, menuSlug: null };
+    const next = { items: [], storeId: null, origin: 'delivery' as const, menuSlug: null, offerCode: null };
     persist(next);
     set(next);
   },
 
   setOrigin(origin, menuSlug = null) {
-    const next = { items: get().items, storeId: get().storeId, origin, menuSlug };
+    const next = { items: get().items, storeId: get().storeId, origin, menuSlug, offerCode: get().offerCode };
     persist(next);
     set({ origin, menuSlug });
+  },
+
+  setOfferCode(code) {
+    const normalized = code?.trim().toUpperCase() || null;
+    const next = { items: get().items, storeId: get().storeId, origin: get().origin, menuSlug: get().menuSlug, offerCode: normalized };
+    persist(next);
+    set({ offerCode: normalized });
   },
 }));
 

@@ -3,7 +3,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.suya.app',
   appName: 'Suya',
-  webDir: 'dist/customer',
+  webDir: 'dist/mobile',
   server: {
     androidScheme: 'https',
   },

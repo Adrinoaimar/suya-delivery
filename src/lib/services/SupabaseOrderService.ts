@@ -402,6 +402,7 @@ export class SupabaseOrderServiceImpl
       p_request_id: requestId,
       ...(publicMenuChannel ? { p_customer_name: input.customer.name } : {}),
       ...(input.tableId ? { p_table_id: input.tableId, p_table_session_id: input.tableSessionId ?? null } : {}),
+      ...(input.offerCode ? { p_offer_code: input.offerCode.trim().toUpperCase() } : {}),
     };
     const { data, error } = await this.client.rpc(rpcName, rpcPayload);
     if (error) throw new Error(error.message);

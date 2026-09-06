@@ -13,6 +13,7 @@ import { SupabaseStoreServiceImpl } from './SupabaseStoreService';
 import { SupabaseOrderServiceImpl } from './SupabaseOrderService';
 import { SupabaseSafetyServiceImpl } from './SupabaseSafetyService';
 import { SupabaseTableService } from './SupabaseTableService';
+import { SupabaseOfferServiceImpl } from './SupabaseOfferService';
 import { Capacitor } from '@capacitor/core';
 import { CapacitorLocationService } from './CapacitorLocationService';
 import { BrowserLocationService } from './BrowserLocationService';
@@ -23,7 +24,29 @@ import type {
   SafetyOperationsService,
   StoreService,
   TableService,
+  OfferService,
 } from './types';
+
+let resolvedOfferService: Promise<OfferService> | null = null;
+function resolveOfferService(): Promise<OfferService> {
+  if (resolvedOfferService) return resolvedOfferService;
+  resolvedOfferService = import.meta.env.VITE_BACKEND === 'supabase'
+    ? Promise.resolve(new SupabaseOfferServiceImpl())
+    : Promise.resolve({
+      async listActive() { return []; },
+      async listManageable() { return []; },
+      async create() { throw new Error('Las ofertas requieren Supabase.'); },
+      async setActive() { throw new Error('Las ofertas requieren Supabase.'); },
+    });
+  return resolvedOfferService;
+}
+
+export const offerService: OfferService = {
+  async listActive() { return (await resolveOfferService()).listActive(); },
+  async listManageable() { return (await resolveOfferService()).listManageable(); },
+  async create(input) { return (await resolveOfferService()).create(input); },
+  async setActive(id, active) { return (await resolveOfferService()).setActive(id, active); },
+};
 
 let resolvedTableService: Promise<TableService> | null = null;
 function resolveTableService(): Promise<TableService> {

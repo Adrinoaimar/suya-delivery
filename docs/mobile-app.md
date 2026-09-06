@@ -1,13 +1,16 @@
 # Suya móvil
 
-Suya móvil reutiliza la aplicación customer existente mediante Capacitor. El WebView comparte React,
-React Router, Zustand y los servicios Supabase de la web; no duplica catálogo, pedidos ni reglas RLS.
+Suya móvil empaqueta en un único APK las experiencias de cliente, repartidor y backoffice. El WebView
+comparte React, React Router, Zustand y los servicios Supabase de la web; no duplica catálogo, pedidos
+ni reglas RLS.
 
 ## Targets
 
 - Android: `android/`, application id `com.suya.app`.
 - iOS: `ios/`, bundle id `com.suya.app`.
-- Web assets: `dist/customer`.
+- Web assets del APK unificado: `dist/mobile`.
+- Rutas nativas: cliente en `/`, repartidor en `/rider` y backoffice protegido en `/backoffice`.
+- Los builds web separados (`customer`, `rider`, `backoffice`) se mantienen para Cloudflare Pages.
 
 ## Build local
 
@@ -20,6 +23,11 @@ cd android
 ```
 
 APK: `android/app/build/outputs/apk/debug/app-debug.apk`.
+
+La sección "Ofertas exclusivas de la app" solo se muestra en el APK. El equipo autorizado crea y
+activa campañas en `/backoffice/offers`; el cliente puede guardar el código y aplicarlo en checkout.
+Fecha, negocio, mínimo, límite de redenciones y descuento se validan de nuevo en Supabase mediante
+RPC transaccional, con una redención por pedido.
 
 En Windows, Android requiere JDK 21, Android SDK y Build Tools. iOS requiere macOS/Xcode para
 compilar o firmar. El workflow `Compilar Suya iOS` valida el proyecto en macOS y publica una

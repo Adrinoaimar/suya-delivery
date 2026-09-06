@@ -10,7 +10,7 @@
     "build:customer": "tsc -b && node scripts/build-apps.mjs customer && node scripts/verify-app-bundles.mjs customer",
     "build:rider": "tsc -b && node scripts/build-apps.mjs rider && node scripts/verify-app-bundles.mjs rider",
     "build:backoffice": "tsc -b && node scripts/build-apps.mjs backoffice && node scripts/verify-app-bundles.mjs backoffice",
-    "build:mobile": "npm run build:customer && npx cap sync",
+    "build:mobile": "tsc -b && node scripts/build-apps.mjs mobile && node scripts/verify-app-bundles.mjs mobile && npx cap sync",
     "mobile:sync": "npx cap sync",
     "mobile:copy": "npx cap copy",
     "mobile:android": "npm run build:mobile && npx cap open android",

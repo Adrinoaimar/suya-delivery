@@ -89,6 +89,25 @@ export interface Promotion {
   image: string | null;
 }
 
+export type AppOfferDiscountType = 'percent' | 'fixed';
+
+/** Oferta publicada para clientes del APK; el importe final lo calcula Postgres. */
+export interface AppOffer {
+  id: string;
+  restaurantId: string | null;
+  title: string;
+  description: string;
+  code: string;
+  discountType: AppOfferDiscountType;
+  discountValue: number;
+  minimumSubtotal: number;
+  startsAt: string;
+  endsAt: string;
+  maxRedemptions: number | null;
+  redeemedCount: number;
+  active: boolean;
+}
+
 export interface Vehicle {
   type: string;
   color: string;

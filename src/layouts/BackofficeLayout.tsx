@@ -1,22 +1,25 @@
-import { Building2, ClipboardList, LayoutDashboard, LogOut, Settings, Store, Table2, Users } from 'lucide-react';
+import { Building2, ClipboardList, LayoutDashboard, LogOut, Settings, Store, Table2, Tag, Users } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { LogoMark } from '@/components/common/Logo';
 import { cn } from '@/lib/cn';
 import { useAuthStore } from '@/store/authStore';
 
-const navigation = [
-  { to: '/', label: 'Resumen', icon: LayoutDashboard, end: true },
-  { to: '/orders', label: 'Pedidos', icon: ClipboardList },
-  { to: '/tables', label: 'Mesas y QR', icon: Table2 },
-  { to: '/catalog', label: 'Catálogo', icon: Store },
-  { to: '/riders', label: 'Repartidores', icon: Users },
-  { to: '/restaurants', label: 'Restaurantes', icon: Building2 },
-  { to: '/settings', label: 'Configuración', icon: Settings },
-];
+interface BackofficeLayoutProps { basePath?: string }
 
-export function BackofficeLayout() {
+export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
   const identity = useAuthStore((state) => state.identity);
   const signOut = useAuthStore((state) => state.signOut);
+  const prefix = basePath.replace(/\/$/, '');
+  const navigation = [
+    { to: `${prefix}/`, label: 'Resumen', icon: LayoutDashboard, end: true },
+    { to: `${prefix}/orders`, label: 'Pedidos', icon: ClipboardList },
+    { to: `${prefix}/tables`, label: 'Mesas y QR', icon: Table2 },
+    { to: `${prefix}/catalog`, label: 'Catálogo', icon: Store },
+    { to: `${prefix}/offers`, label: 'Ofertas', icon: Tag },
+    { to: `${prefix}/riders`, label: 'Repartidores', icon: Users },
+    { to: `${prefix}/restaurants`, label: 'Restaurantes', icon: Building2 },
+    { to: `${prefix}/settings`, label: 'Configuración', icon: Settings },
+  ];
   return (
     <div className="min-h-dvh bg-[#F4F6F8] text-[#20242A] lg:grid lg:grid-cols-[250px_1fr]">
       <aside className="border-b border-white/10 bg-[#15231D] p-4 text-white lg:min-h-dvh lg:border-b-0 lg:border-r">
