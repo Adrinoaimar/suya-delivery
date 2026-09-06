@@ -42,8 +42,7 @@ jobs:
       - name: Verificar y copiar aplicación web
         run: |
           npm run security:secrets
-          npm run build:customer
-          npx cap sync ios
+          npm run build:mobile
 
       - name: Compilar para simulador sin firma
         run: |
