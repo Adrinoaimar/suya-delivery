@@ -11,7 +11,7 @@ producción.
 
 - Rama de trabajo: `feat/suya-mobile-app`, basada en `origin/main`.
 - F11 móvil: proyectos Capacitor Android/iOS, branding nativo, GPS con permiso explícito y build
-  Android instalable de pruebas. El workflow macOS queda preparado para validar iOS sin firma.
+  Android instalable de pruebas. El target iOS para simulador compiló correctamente en macOS CI.
 - Checkpoint F7 verificado: puntos de entrega consentidos, mapas OSM, GPS real limitado, tracking
   participante, incidentes y SOS persistentes. CI aprobó 138 pgTAP; frontend aprobó 81 pruebas.
 - F8A local: simulaciones productivas retiradas. Gate validó 352 artefactos sin mocks ni secretos.
