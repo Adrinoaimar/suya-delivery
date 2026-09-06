@@ -11,7 +11,8 @@ producción.
 
 - Rama de trabajo: `feat/suya-mobile-app`, basada en `origin/main`.
 - F11 móvil: proyectos Capacitor Android/iOS, branding nativo, GPS con permiso explícito y build
-  Android instalable de pruebas. El target iOS para simulador compiló correctamente en macOS CI.
+  Android instalable de pruebas. El APK pasó smoke en Android 15 con catálogo real, ficha de negocio,
+  producto y carrito; el target iOS para simulador compiló correctamente en macOS CI.
 - Checkpoint F7 verificado: puntos de entrega consentidos, mapas OSM, GPS real limitado, tracking
   participante, incidentes y SOS persistentes. CI aprobó 138 pgTAP; frontend aprobó 81 pruebas.
 - F8A local: simulaciones productivas retiradas. Gate validó 352 artefactos sin mocks ni secretos.
@@ -50,8 +51,8 @@ producción.
 
 ## Siguiente acción
 
-Ejecutar el workflow macOS de iOS y el smoke del APK en un dispositivo Android. Para distribución,
-crear firma Android de release y configurar Apple Developer Team, certificado y provisioning profile.
+Para distribución, crear firma Android de release y configurar Apple Developer Team, certificado y
+provisioning profile. Después, ejecutar smoke final en dispositivos físicos Android e iPhone.
 
 ## Gate productivo pendiente
 
