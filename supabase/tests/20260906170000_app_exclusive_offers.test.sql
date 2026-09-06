@@ -67,8 +67,12 @@ select ok(
   'helper bloquea oferta y actualiza contador de redenciones'
 );
 select ok(
-  (select pg_get_constraintdef(oid) like '%discount_type%'
-   from pg_constraint where conrelid = 'public.app_offers'::regclass and contype = 'c'),
+  exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.app_offers'::regclass
+      and contype = 'c'
+      and pg_get_constraintdef(oid) like '%discount_type%'
+  ),
   'ofertas restringen tipo de descuento'
 );
 
