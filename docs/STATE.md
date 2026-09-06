@@ -1,6 +1,6 @@
 # Estado de ejecución
 
-Actualizado: 20 de agosto de 2026 (`America/Lima`)
+Actualizado: 6 de septiembre de 2026 (`America/Lima`)
 
 ## Objetivo
 
@@ -9,7 +9,9 @@ producción.
 
 ## Estado actual
 
-- Rama: `main`.
+- Rama de trabajo: `feat/suya-mobile-app`, basada en `origin/main`.
+- F11 móvil: proyectos Capacitor Android/iOS, branding nativo, GPS con permiso explícito y build
+  Android instalable de pruebas. El workflow macOS queda preparado para validar iOS sin firma.
 - Checkpoint F7 verificado: puntos de entrega consentidos, mapas OSM, GPS real limitado, tracking
   participante, incidentes y SOS persistentes. CI aprobó 138 pgTAP; frontend aprobó 81 pruebas.
 - F8A local: simulaciones productivas retiradas. Gate validó 352 artefactos sin mocks ni secretos.
@@ -48,8 +50,8 @@ producción.
 
 ## Siguiente acción
 
-Ejecutar E2E multirol remoto con cuentas de prueba controladas, pruebas de desconexión y carga.
-Las tres Pages ya están desplegadas; automatización CI requiere token Cloudflare dedicado de mínimo privilegio.
+Ejecutar el workflow macOS de iOS y el smoke del APK en un dispositivo Android. Para distribución,
+crear firma Android de release y configurar Apple Developer Team, certificado y provisioning profile.
 
 ## Gate productivo pendiente
 
@@ -58,6 +60,9 @@ El sitio GitHub Pages actual es legado. Producción canónica usa `suya-customer
 
 La máquina actual no tiene Docker ni Podman. Las pruebas pgTAP y `db lint` se ejecutan en GitHub CI;
 localmente se habilitarán cuando exista uno de esos runtimes.
+
+La máquina Windows no puede producir un `.ipa`. El proyecto Xcode y el build de simulador son
+verificables en CI; un artefacto instalable exige firma Apple externa.
 
 
 

@@ -13,6 +13,9 @@ import { SupabaseStoreServiceImpl } from './SupabaseStoreService';
 import { SupabaseOrderServiceImpl } from './SupabaseOrderService';
 import { SupabaseSafetyServiceImpl } from './SupabaseSafetyService';
 import { SupabaseTableService } from './SupabaseTableService';
+import { Capacitor } from '@capacitor/core';
+import { CapacitorLocationService } from './CapacitorLocationService';
+import { BrowserLocationService } from './BrowserLocationService';
 import type {
   DispatchService,
   OrderService,
@@ -197,4 +200,7 @@ export const safetyOperationsService: SafetyOperationsService = {
 export { CashPaymentService as paymentService } from './CashPaymentService';
 export { LocalNotificationService as notificationService } from './LocalNotificationService';
 export { BrowserLocationService } from './BrowserLocationService';
+export const locationService = Capacitor.isNativePlatform()
+  ? CapacitorLocationService
+  : BrowserLocationService;
 export * from './types';

@@ -1,0 +1,71 @@
+name: Compilar Suya iOS
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/mobile-ios.yml'
+      - 'capacitor.config.ts'
+      - 'ios/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'src/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  simulator:
+    runs-on: macos-15
+    timeout-minutes: 30
+    env:
+      CI: 'true'
+      VITE_BACKEND: supabase
+      VITE_MAP_PROVIDER: osm
+      VITE_SUPABASE_URL: https://cggxooilzhqlcnofgtmi.supabase.co
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      VITE_EXPECTED_SUPABASE_PROJECT_REF: cggxooilzhqlcnofgtmi
+      VITE_CUSTOMER_APP_URL: https://suya-customer.pages.dev
+      VITE_RIDER_APP_URL: https://suya-rider.pages.dev
+      VITE_BACKOFFICE_APP_URL: https://suya-backoffice.pages.dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Verificar y copiar aplicación web
+        run: |
+          npm run security:secrets
+          npm run build:customer
+          npx cap sync ios
+
+      - name: Compilar para simulador sin firma
+        run: |
+          xcodebuild \
+            -project ios/App/App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath "$RUNNER_TEMP/SuyaDerivedData" \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Empaquetar aplicación de simulador
+        shell: bash
+        run: |
+          app_path=$(find "$RUNNER_TEMP/SuyaDerivedData/Build/Products/Debug-iphonesimulator" -maxdepth 1 -name '*.app' -print -quit)
+          test -n "$app_path"
+          ditto -c -k --sequesterRsrc --keepParent "$app_path" Suya-iOS-Simulator.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Suya-iOS-Simulator
+          path: Suya-iOS-Simulator.zip
+          if-no-files-found: error
+          retention-days: 14

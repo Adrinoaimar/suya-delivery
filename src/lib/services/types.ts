@@ -175,6 +175,7 @@ export interface LocationReading {
 export interface LocationService {
   isSupported(): boolean;
   getPermission(): Promise<LocationPermission>;
+  getCurrent(): Promise<LocationReading>;
   watch(
     onReading: (reading: LocationReading) => void,
     onError: (message: string) => void,

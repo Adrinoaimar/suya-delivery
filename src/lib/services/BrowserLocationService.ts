@@ -22,6 +22,29 @@ export class BrowserLocationServiceImpl implements LocationService {
     }
   }
 
+  getCurrent(): Promise<LocationReading> {
+    if (!this.isSupported()) {
+      return Promise.reject(new Error('Este dispositivo no permite acceder a la ubicación.'));
+    }
+
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => resolve({
+          position: { lat: position.coords.latitude, lng: position.coords.longitude },
+          accuracy: position.coords.accuracy,
+          timestamp: position.timestamp,
+          simulated: false,
+        }),
+        (error) => reject(new Error(
+          error.code === error.PERMISSION_DENIED
+            ? 'No tenemos permiso para acceder a tu ubicación.'
+            : 'No pudimos obtener tu ubicación. Activa el GPS e inténtalo de nuevo.',
+        )),
+        { enableHighAccuracy: true, maximumAge: 30_000, timeout: 15_000 },
+      );
+    });
+  }
+
   watch(
     onReading: (reading: LocationReading) => void,
     onError: (message: string) => void,

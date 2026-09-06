@@ -9,7 +9,7 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { Input, Textarea } from '@/components/common/Input';
 import { Skeleton } from '@/components/common/Skeleton';
 import { FREE_DELIVERY_THRESHOLD } from '@/lib/commerce';
-import { notificationService, paymentService } from '@/lib/services';
+import { locationService, notificationService, paymentService } from '@/lib/services';
 import { useCatalogStore } from '@/store/catalogStore';
 import { cartTotals, useCartStore } from '@/store/cartStore';
 import { useOrderStore } from '@/store/orderStore';
@@ -130,30 +130,29 @@ export default function CheckoutPage() {
     return Object.keys(next).length === 0;
   }
 
-  function locateDelivery(): void {
-    if (!navigator.geolocation) {
+  async function locateDelivery(): Promise<void> {
+    if (!locationService.isSupported()) {
       setErrors((current) => ({ ...current, location: 'Este dispositivo no ofrece ubicación.' }));
       return;
     }
     setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
-        setDeliveryPosition({ lat: coords.latitude, lng: coords.longitude });
-        setErrors((current) => {
-          const { location: _location, ...rest } = current;
-          return rest;
-        });
-        setLocating(false);
-      },
-      () => {
-        setErrors((current) => ({
-          ...current,
-          location: 'No pudimos obtener tu ubicación. Activa GPS y permiso del navegador.',
-        }));
-        setLocating(false);
-      },
-      { enableHighAccuracy: true, maximumAge: 30_000, timeout: 15_000 },
-    );
+    try {
+      const reading = await locationService.getCurrent();
+      setDeliveryPosition(reading.position);
+      setErrors((current) => {
+        const { location: _location, ...rest } = current;
+        return rest;
+      });
+    } catch (error) {
+      setErrors((current) => ({
+        ...current,
+        location: error instanceof Error
+          ? error.message
+          : 'No pudimos obtener tu ubicación. Activa GPS y permiso de Suya.',
+      }));
+    } finally {
+      setLocating(false);
+    }
   }
 
   async function handleSubmit(event: FormEvent) {
