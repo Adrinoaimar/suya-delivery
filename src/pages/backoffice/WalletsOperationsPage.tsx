@@ -35,7 +35,9 @@ function dateLabel(value: string | null): string {
 }
 
 export default function WalletsOperationsPage() {
-  const restaurantIds = useAuthStore((state) => state.identity?.restaurantIds ?? []);
+  const identity = useAuthStore((state) => state.identity);
+  const restaurantIds = identity?.restaurantIds ?? [];
+  const isPlatformAdmin = identity?.access.includes('platform_admin') ?? false;
   const [stores, setStores] = useState<Store[]>([]);
   const [devices, setDevices] = useState<WalletObserverDevice[]>([]);
   const [observations, setObservations] = useState<WalletObservation[]>([]);
@@ -50,12 +52,13 @@ export default function WalletsOperationsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [allStores, nextDevices, nextObservations] = await Promise.all([
-        storeService.listStores(),
-        walletObserverService.listDevices(restaurantIds),
-        walletObserverService.listObservations(restaurantIds),
+      const allStores = await storeService.listStores();
+      const visibleStores = allStores.filter((store) => isPlatformAdmin || restaurantIds.includes(store.id));
+      const scopedRestaurantIds = visibleStores.map((store) => store.id);
+      const [nextDevices, nextObservations] = await Promise.all([
+        walletObserverService.listDevices(scopedRestaurantIds),
+        walletObserverService.listObservations(scopedRestaurantIds),
       ]);
-      const visibleStores = allStores.filter((store) => restaurantIds.includes(store.id));
       setStores(visibleStores);
       setDevices(nextDevices);
       setObservations(nextObservations);
@@ -65,7 +68,7 @@ export default function WalletsOperationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [restaurantIds]);
+  }, [isPlatformAdmin, restaurantIds]);
 
   useEffect(() => { void load(); }, [load]);
 
