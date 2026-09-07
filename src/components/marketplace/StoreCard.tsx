@@ -49,7 +49,7 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
   return (
     <article
       className={cn(
-        'group relative overflow-hidden rounded-card border border-suya-border bg-white/90 shadow-card transition-[transform,box-shadow] duration-300 ease-out active:scale-[0.985] motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-soft',
+        'motion-press group relative overflow-hidden rounded-card border border-suya-border bg-white/90 shadow-card transition-[transform,box-shadow] duration-300 ease-out motion-safe:active:scale-[0.985] motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-soft',
         layout === 'row' && 'flex',
         className,
       )}

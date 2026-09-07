@@ -123,7 +123,7 @@ export default function StoresPage() {
           action={<ButtonLink to="/stores">Ver todas las tiendas</ButtonLink>}
         />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {stores.map((store) => (
             <StoreCard key={store.id} store={store} />
           ))}

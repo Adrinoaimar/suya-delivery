@@ -144,7 +144,7 @@ export default function StoreDetailPage() {
       {/* Hero: con marca propia, el fondo usa la paleta del negocio en vez del genérico. */}
       <div
         className={cn(
-          'relative h-44 overflow-hidden sm:h-56 lg:h-64',
+          'motion-enter relative h-44 overflow-hidden sm:h-56 lg:h-64',
           theme ? 'bg-[var(--store-primary)]' : 'bg-suya-ivory',
         )}
       >
@@ -205,7 +205,7 @@ export default function StoreDetailPage() {
             se pinta encima de esta tarjeta y oculta el nombre del negocio. */}
         <section
           className={cn(
-            'relative z-10 -mt-10 rounded-card border bg-white p-4 shadow-soft',
+            'motion-enter relative z-10 -mt-10 rounded-card border bg-white p-4 shadow-soft',
             theme ? 'border-[var(--store-primary)]/30' : 'border-suya-mist',
           )}
         >
@@ -307,12 +307,12 @@ export default function StoreDetailPage() {
 
         </section>
 
-        {store.gallery && <StoreGallery gallery={store.gallery} storeName={store.name} />}
+        {store.gallery && <div className="motion-enter"><StoreGallery gallery={store.gallery} storeName={store.name} /></div>}
 
         {/* Categorías internas */}
         <nav
           aria-label="Categorías del negocio"
-          className="sticky top-[60px] z-20 -mx-4 bg-suya-ivory/95 px-4 py-3 backdrop-blur lg:top-[72px] lg:mx-0 lg:px-0"
+          className="sticky top-[60px] z-20 -mx-4 border-y border-suya-mist/70 bg-suya-ivory/95 px-4 py-3 backdrop-blur lg:top-[72px] lg:mx-0 lg:px-0"
         >
           <div className="hide-scrollbar flex gap-2 overflow-x-auto">
             <button
@@ -368,7 +368,7 @@ export default function StoreDetailPage() {
             </div>
           ) : (
             visibleSections.map((name) => (
-            <section key={name} aria-labelledby={`seccion-${name}`}>
+              <section key={name} aria-labelledby={`seccion-${name}`} className="motion-enter">
               <h2 id={`seccion-${name}`} className="section-title mb-3">
                 {name}
               </h2>

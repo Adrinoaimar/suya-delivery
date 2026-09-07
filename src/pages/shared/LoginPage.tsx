@@ -135,7 +135,7 @@ export default function LoginPage({ title, allowed, allowCustomerSignup = false,
   return (
     <main id="contenido" className="relative grid min-h-dvh place-items-center overflow-hidden bg-suya-cream px-4 py-8">
       <div className="pointer-events-none absolute -left-24 top-12 h-64 w-64 rounded-full bg-suya-green/10 blur-3xl" aria-hidden="true" />
-      <div className="pointer-events-none absolute -right-20 bottom-8 h-72 w-72 rounded-full bg-suya-yellow/20 blur-3xl" aria-hidden="true" />
+      <div className="pointer-events-none absolute -right-20 bottom-8 h-72 w-72 rounded-full bg-suya-sun/20 blur-3xl" aria-hidden="true" />
       <section className="relative w-full max-w-md animate-slide-up overflow-hidden rounded-card border border-white/80 bg-white/90 p-6 shadow-card backdrop-blur-xl sm:p-8">
         <div className="flex items-start justify-between gap-4">
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-suya-green text-white shadow-lg shadow-suya-green/20">

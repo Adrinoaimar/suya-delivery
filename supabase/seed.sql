@@ -105,3 +105,11 @@ on conflict (id) do update set
   image_is_stock = excluded.image_is_stock,
   popular = excluded.popular, extras = excluded.extras, active = excluded.active,
   sort_order = excluded.sort_order;
+
+-- Casillero de onboarding sin correo, contraseña ni usuario Auth inventados.
+insert into public.restaurant_account_registry (restaurant_id, account_status, notes)
+select r.id, 'pending_contact',
+  'Falta correo y representante confirmado. No se crea usuario Auth automáticamente.'
+from public.restaurants r
+where r.slug = 'anda-paya'
+on conflict (restaurant_id) do nothing;

@@ -59,6 +59,20 @@
     overflow-x: hidden;
   }
 
+  /* Android 15/16 draws the WebView behind the transparent status bar. Keep
+   * the safe-area strip branded so light system icons never float over ivory. */
+  @media (max-width: 1023px) {
+    html::before {
+      content: '';
+      position: fixed;
+      inset: 0 0 auto;
+      z-index: 1000;
+      height: env(safe-area-inset-top, 0px);
+      background: var(--suya-green);
+      pointer-events: none;
+    }
+  }
+
   h1,
   h2,
   h3,
@@ -110,6 +124,12 @@
 
   .press:active {
     transform: scale(0.985);
+  }
+
+  /* Cards also expose a pressed state, but keep it opt-in for reduced motion. */
+  html[data-reduce-motion='true'] .motion-press:hover,
+  html[data-reduce-motion='true'] .motion-press:active {
+    transform: none !important;
   }
 
   .motion-enter {

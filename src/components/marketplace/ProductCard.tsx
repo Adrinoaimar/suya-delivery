@@ -23,7 +23,7 @@ export function ProductCard({
   return (
     <article
       className={cn(
-        'relative flex gap-3 rounded-card border border-suya-border bg-white/90 p-3 shadow-card transition-[transform,box-shadow] duration-300 ease-out active:scale-[0.985] motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-soft',
+        'motion-press relative flex gap-3 rounded-card border border-suya-border bg-white/90 p-3 shadow-card transition-[transform,box-shadow] duration-300 ease-out motion-safe:active:scale-[0.985] motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-soft',
         className,
       )}
     >

@@ -18,7 +18,9 @@ const config: CapacitorConfig = {
       showSpinner: false,
     },
     StatusBar: {
-      style: 'LIGHT',
+      // Brand-green bar keeps light icons readable on every route, including
+      // the cream Home and StoreDetail surfaces on Samsung WebView.
+      style: 'DARK',
       backgroundColor: '#0B7048',
       overlaysWebView: false,
     },

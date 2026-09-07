@@ -63,7 +63,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="lg:pb-8">
+    <div className="motion-enter lg:pb-8">
       {/* Hero de escritorio */}
       <section className="hidden px-6 pt-8 lg:block">
         <div className="suya-lens shell grid grid-cols-[0.9fr_1.1fr] items-center gap-10 overflow-hidden rounded-promo px-10 py-12 xl:px-14">
@@ -177,7 +177,7 @@ export default function HomePage() {
               title="Ofertas exclusivas de la app"
               subtitle="Beneficios que solo ves aquí"
             />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {offers.map((offer) => (
                 <article
                   key={offer.id}
@@ -230,7 +230,7 @@ export default function HomePage() {
                 </Link>
               }
             />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {favoriteStores.slice(0, 4).map((store) => (
                 <StoreCard key={store.id} store={store} />
               ))}
@@ -259,7 +259,7 @@ export default function HomePage() {
               <StoreListSkeleton count={4} />
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {featured.map((store) => (
                 <StoreCard key={store.id} store={store} />
               ))}
@@ -273,7 +273,7 @@ export default function HomePage() {
               title="Negocios locales"
               subtitle="Emprendimientos sullaneros en la plataforma"
             />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {locals.map((store) => (
                 <StoreCard key={store.id} store={store} layout="row" />
               ))}
@@ -287,7 +287,7 @@ export default function HomePage() {
               title="Recomendados para ti"
               subtitle="Mejor calificados y abiertos ahora"
             />
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {recommended
                 .filter((store) => isStoreAcceptingOrders(store))
                 .map((store) => (
@@ -298,7 +298,7 @@ export default function HomePage() {
         )}
 
         {/* Banner editorial */}
-        <section className="suya-lens-dark overflow-hidden rounded-promo px-5 py-7 text-white sm:px-8">
+        <section className="motion-enter suya-lens-dark overflow-hidden rounded-promo px-5 py-7 text-white sm:px-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="max-w-lg">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
