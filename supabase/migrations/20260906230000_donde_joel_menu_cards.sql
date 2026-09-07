@@ -4,7 +4,7 @@
 do $$
 declare
   restaurant_category_id uuid;
-  restaurant_id constant uuid := '23000000-0000-4000-8000-000000000001';
+  target_restaurant_id constant uuid := '23000000-0000-4000-8000-000000000001';
 begin
   insert into public.categories (id, slug, name, icon, accent, sort_order, active)
   values ('10000000-0000-4000-8000-000000000001', 'restaurantes', 'Restaurantes', 'utensils', 'green', 10, true)
@@ -30,7 +30,7 @@ begin
     image_url, logo_url, gallery, active, verified_at, tags, featured,
     local_business, accepting_orders, data_note, promo_label
   ) values (
-    restaurant_id,
+    target_restaurant_id,
     'donde-joel',
     restaurant_category_id,
     'Donde Joel',
@@ -229,7 +229,7 @@ begin
   )
   select
     md5('suya:donde-joel:' || source_key)::uuid,
-    restaurant_id,
+    target_restaurant_id,
     section,
     name,
     description,
@@ -258,7 +258,7 @@ begin
     restaurant_id, public_slug, published, logo_url, hero_image_url,
     primary_color, accent_color, font_family
   ) values (
-    restaurant_id,
+    target_restaurant_id,
     'donde-joel-menu',
     true,
     null,
