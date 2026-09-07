@@ -17,6 +17,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
@@ -26,7 +27,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Experimental, local-only Yape notification observer.
+ * Experimental, local-only wallet notification observer.
  *
  * This service deliberately never marks an order as paid and never sends data
  * to Suya. A notification can be forged or delayed; only an authenticated
@@ -36,18 +37,32 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     private static final String PREFS = "suya_yape_lab";
     private static final String EVENTS_KEY = "observed_events";
     private static final int MAX_EVENTS = 100;
-    private static final Set<String> ALLOWED_PACKAGES = new HashSet<>();
-    private static final Pattern AMOUNT_PATTERN = Pattern.compile("(?:s\\/?|s\\.)\\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern CODE_PATTERN = Pattern.compile("(?:c[oó]digo(?:\\s+(?:de\\s+)?(?:seguridad|operaci[oó]n|aprobaci[oó]n))?|operaci[oó]n)\\s*[:#-]?\\s*([0-9]{3,12})", Pattern.CASE_INSENSITIVE);
-
-    static {
-        ALLOWED_PACKAGES.add("com.bcp.innovacxion.yapeapp");
-        ALLOWED_PACKAGES.add("com.bcp.yape.app");
-    }
+    private static final Pattern MONEY_PATTERN = Pattern.compile("(S\\/?|S\\.|PEN|ARS|USD|US\\$|\\$)\\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern CODE_PATTERN = Pattern.compile("(?:c[oó]digo(?:\\s+(?:de\\s+)?(?:seguridad|operaci[oó]n|aprobaci[oó]n))?|operaci[oó]n|referencia|reference|ref\\.?|id(?:\\s+de)?\\s+(?:transferencia|operaci[oó]n))\\b\\s*[:#-]?\\s*([a-z0-9-]{3,20})", Pattern.CASE_INSENSITIVE);
+    private static final WalletAdapter[] ADAPTERS = new WalletAdapter[]{
+            new WalletAdapter("yape", "yape_notification",
+                    new String[]{"com.bcp.innovacxion.yapeapp", "com.bcp.yape.app"},
+                    new String[]{"yape", "recib"}, new String[]{"PEN"}),
+            // Verified from Lemon's official Google Play listing. Do not add guessed package IDs.
+            new WalletAdapter("lemon", "lemon_notification", new String[]{"com.applemoncash"},
+                    new String[]{"lemon", "recib", "received", "transfer"},
+                    new String[]{"PEN", "ARS", "USD"}),
+            // Plin notifications arrive through participating bank apps. IDs are official listings.
+            new WalletAdapter("plin", "plin_notification",
+                    new String[]{"com.bbva.nxt_peru", "pe.com.interbank.mobilebanking", "pe.com.scotiabank.blpm.android.client"},
+                    new String[]{"plin"}, new String[]{"PEN"}),
+            // Verified from Mercado Pago's official Google Play listing.
+            new WalletAdapter("mercado_pago", "mercado_pago_notification",
+                    new String[]{"com.mercadopago.wallet"},
+                    new String[]{"mercado pago", "mercadopago", "recib", "received", "transfer"},
+                    new String[]{"PEN"})
+    };
 
     @Override
     public void onNotificationPosted(StatusBarNotification statusBarNotification) {
-        if (statusBarNotification == null || !ALLOWED_PACKAGES.contains(statusBarNotification.getPackageName())) return;
+        if (statusBarNotification == null) return;
+        WalletAdapter adapter = findAdapter(statusBarNotification.getPackageName());
+        if (adapter == null) return;
         Notification notification = statusBarNotification.getNotification();
         if (notification == null || notification.extras == null) return;
 
@@ -56,31 +71,54 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         String bigText = notification.extras.getCharSequence(Notification.EXTRA_BIG_TEXT, "").toString();
         String combined = TextUtils.join(" ", new String[]{title, text, bigText}).replaceAll("\\s+", " ").trim();
         String lower = combined.toLowerCase(new Locale("es", "PE"));
-        if (combined.isEmpty() || (!lower.contains("yape") && !lower.contains("recib"))) return;
+        if (combined.isEmpty() || !adapter.matchesText(lower)) return;
 
-        Matcher amountMatcher = AMOUNT_PATTERN.matcher(combined);
+        Matcher amountMatcher = MONEY_PATTERN.matcher(combined);
         if (!amountMatcher.find()) return;
-        Long amountCents = normalizeAmount(amountMatcher.group(1));
-        if (amountCents == null || amountCents <= 0) return;
+        Money money = parseMoney(amountMatcher.group(1), amountMatcher.group(2));
+        if (money == null || !adapter.currencies.contains(money.currency)) return;
 
         Matcher codeMatcher = CODE_PATTERN.matcher(combined);
         String code = codeMatcher.find() ? codeMatcher.group(1) : null;
         String observedAt = isoNow();
-        String eventId = sha256(statusBarNotification.getPackageName() + "|" + statusBarNotification.getPostTime() + "|" + amountCents + "|" + (code == null ? "" : code));
+        String eventId = sha256(adapter.source + "|" + statusBarNotification.getPackageName() + "|" + statusBarNotification.getPostTime() + "|" + money.amountCents + "|" + money.currency + "|" + (code == null ? "" : code));
 
         JSONObject event = new JSONObject();
         try {
             event.put("eventId", eventId);
-            event.put("source", "yape_notification");
+            event.put("provider", adapter.provider);
+            event.put("source", adapter.source);
             event.put("verification", "unverified");
-            event.put("amountCents", amountCents);
-            event.put("currency", "PEN");
+            event.put("amountCents", money.amountCents);
+            event.put("currency", money.currency);
             event.put("code", code == null ? JSONObject.NULL : code);
             event.put("observedAt", observedAt);
         } catch (JSONException ignored) {
             return;
         }
         appendEvent(event);
+    }
+
+    @Nullable
+    private static WalletAdapter findAdapter(String packageName) {
+        for (WalletAdapter adapter : ADAPTERS) {
+            if (adapter.packageNames.contains(packageName)) return adapter;
+        }
+        return null;
+    }
+
+    @Nullable
+    private static Money parseMoney(String prefix, String rawAmount) {
+        Long amountCents = normalizeAmount(rawAmount);
+        if (amountCents == null || amountCents <= 0) return null;
+        String normalized = prefix.toUpperCase(Locale.US);
+        String currency = "USD";
+        if (normalized.equals("S") || normalized.equals("S/") || normalized.equals("S.") || normalized.equals("PEN")) {
+            currency = "PEN";
+        } else if (normalized.equals("ARS")) {
+            currency = "ARS";
+        }
+        return new Money(amountCents, currency);
     }
 
     @Nullable
@@ -134,6 +172,39 @@ public final class YapeNotificationListenerService extends NotificationListenerS
             return result.toString();
         } catch (NoSuchAlgorithmException error) {
             return Integer.toHexString(value.hashCode());
+        }
+    }
+
+    private static final class Money {
+        private final long amountCents;
+        private final String currency;
+
+        private Money(long amountCents, String currency) {
+            this.amountCents = amountCents;
+            this.currency = currency;
+        }
+    }
+
+    private static final class WalletAdapter {
+        private final String provider;
+        private final String source;
+        private final Set<String> packageNames;
+        private final Set<String> keywords;
+        private final Set<String> currencies;
+
+        private WalletAdapter(String provider, String source, String[] packageNames, String[] keywords, String[] currencies) {
+            this.provider = provider;
+            this.source = source;
+            this.packageNames = new HashSet<>(Arrays.asList(packageNames));
+            this.keywords = new HashSet<>(Arrays.asList(keywords));
+            this.currencies = new HashSet<>(Arrays.asList(currencies));
+        }
+
+        private boolean matchesText(String lowerText) {
+            for (String keyword : keywords) {
+                if (lowerText.contains(keyword)) return true;
+            }
+            return false;
         }
     }
 }
