@@ -112,6 +112,39 @@ export interface TableService {
   setActive(tableId: string, active: boolean): Promise<boolean>;
 }
 
+/** Observaciones de billeteras: nunca representan por sí solas un pago confirmado. */
+export interface WalletObserverDevice {
+  id: string;
+  restaurantId: string;
+  label: string;
+  active: boolean;
+  lastSeenAt: string | null;
+}
+
+export interface CreatedWalletObserverDevice extends WalletObserverDevice {
+  /** Se entrega una sola vez al crear el dispositivo. */
+  deviceToken: string;
+}
+
+export interface WalletObservation {
+  id: string;
+  restaurantId: string;
+  deviceId: string | null;
+  provider: string;
+  senderName: string | null;
+  codeLast4: string | null;
+  amountCents: number;
+  currency: string;
+  observedAt: string;
+  verification: string;
+}
+
+export interface WalletObserverService {
+  listDevices(restaurantIds: string[]): Promise<WalletObserverDevice[]>;
+  createDevice(restaurantId: string, label: string): Promise<CreatedWalletObserverDevice>;
+  listObservations(restaurantIds: string[]): Promise<WalletObservation[]>;
+}
+
 export interface TableSummary {
   id: string;
   restaurantId: string;

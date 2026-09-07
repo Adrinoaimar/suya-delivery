@@ -14,6 +14,7 @@ import { SupabaseOrderServiceImpl } from './SupabaseOrderService';
 import { SupabaseSafetyServiceImpl } from './SupabaseSafetyService';
 import { SupabaseTableService } from './SupabaseTableService';
 import { SupabaseOfferServiceImpl } from './SupabaseOfferService';
+import { SupabaseWalletObserverService } from './SupabaseWalletObserverService';
 import { Capacitor } from '@capacitor/core';
 import { CapacitorLocationService } from './CapacitorLocationService';
 import { BrowserLocationService } from './BrowserLocationService';
@@ -25,7 +26,27 @@ import type {
   StoreService,
   TableService,
   OfferService,
+  WalletObserverService,
 } from './types';
+
+let resolvedWalletObserverService: Promise<WalletObserverService> | null = null;
+function resolveWalletObserverService(): Promise<WalletObserverService> {
+  if (resolvedWalletObserverService) return resolvedWalletObserverService;
+  resolvedWalletObserverService = import.meta.env.VITE_BACKEND === 'supabase'
+    ? Promise.resolve(new SupabaseWalletObserverService())
+    : Promise.resolve({
+      async listDevices() { return []; },
+      async createDevice() { throw new Error('La conexión de billeteras requiere Supabase.'); },
+      async listObservations() { return []; },
+    });
+  return resolvedWalletObserverService;
+}
+
+export const walletObserverService: WalletObserverService = {
+  async listDevices(restaurantIds) { return (await resolveWalletObserverService()).listDevices(restaurantIds); },
+  async createDevice(restaurantId, label) { return (await resolveWalletObserverService()).createDevice(restaurantId, label); },
+  async listObservations(restaurantIds) { return (await resolveWalletObserverService()).listObservations(restaurantIds); },
+};
 
 let resolvedOfferService: Promise<OfferService> | null = null;
 function resolveOfferService(): Promise<OfferService> {

@@ -19,6 +19,7 @@ const OrdersOperationsPage = lazy(() => import('@/pages/backoffice/OrdersOperati
 const TablesOperationsPage = lazy(() => import('@/pages/backoffice/TablesOperationsPage'));
 const CatalogPage = lazy(() => import('@/pages/backoffice/CatalogPage'));
 const OffersPage = lazy(() => import('@/pages/backoffice/OffersPage'));
+const WalletsOperationsPage = lazy(() => import('@/pages/backoffice/WalletsOperationsPage'));
 const BackofficePage = lazy(() => import('@/pages/backoffice/BackofficePage').then((module) => ({ default: module.BackofficePage })));
 
 function MobileRiderRoutes() {
@@ -54,6 +55,7 @@ function MobileBackofficeRoutes() {
           <Route path="tables" element={<TablesOperationsPage />} />
           <Route path="catalog" element={<CatalogPage />} />
           <Route path="offers" element={<OffersPage />} />
+          <Route path="wallets" element={<WalletsOperationsPage />} />
           <Route path="riders" element={<BackofficePage title="Repartidores" description="Disponibilidad, asignaciones e incidencias." />} />
           <Route path="restaurants" element={<BackofficePage title="Restaurantes" description="Altas, membresías y verificación comercial." />} />
           <Route path="settings" element={<BackofficePage title="Configuración" description="Parámetros de operación y seguridad." />} />
