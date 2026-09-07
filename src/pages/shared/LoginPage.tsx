@@ -171,7 +171,7 @@ export default function LoginPage({ title, allowed, allowCustomerSignup = false,
                     mode === option ? 'bg-white text-suya-carbon shadow-sm' : 'text-suya-muted hover:text-suya-carbon'
                   }`}
                 >
-                  {option === 'login' ? 'Ingresar' : 'Crear cuenta'}
+                  {option === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
                 </button>
               ))}
             </div>
