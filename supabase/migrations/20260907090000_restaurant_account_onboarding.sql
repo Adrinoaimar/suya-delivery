@@ -23,7 +23,7 @@ create table if not exists public.restaurant_account_registry (
     (account_status in ('pending_contact', 'ready_to_invite', 'invited') and owner_user_id is null)
     or (account_status in ('active', 'suspended') and owner_user_id is not null)
   ),
-  check (account_status in ('invited', 'active', 'suspended') = (contact_email is not null)),
+  check (account_status in ('ready_to_invite', 'invited', 'active', 'suspended') = (contact_email is not null)),
   check (account_status in ('active', 'suspended') = (owner_user_id is not null)),
   check (account_status = 'pending_contact' or contact_email is not null),
   check (account_status in ('invited', 'active', 'suspended') or invited_at is null),
