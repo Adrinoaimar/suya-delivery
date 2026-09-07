@@ -36,6 +36,8 @@ de aprovisionamiento; esas credenciales no se guardan en el repositorio.
 
 ## Capacidades nativas
 
-Capacitor integra splash, status bar, geolocalización, preferencias, compartir, portapapeles,
-haptics y push notifications. El adaptador nativo de ubicación se usa solo en Android/iOS; navegador
-mantiene `navigator.geolocation`. Push necesita configurar FCM/APNs antes de producción.
+Capacitor integra splash, status bar, navegador OAuth, geolocalización, preferencias, compartir,
+portapapeles, haptics y push notifications. Google Auth usa PKCE, navegador del sistema y callback
+`com.suya.app://auth/callback`; su activación externa se documenta en `docs/setup/google-auth.md`.
+El adaptador nativo de ubicación se usa solo en Android/iOS; navegador mantiene
+`navigator.geolocation`. Push necesita configurar FCM/APNs antes de producción.

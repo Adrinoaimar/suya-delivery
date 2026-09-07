@@ -36,6 +36,13 @@
 
     --shadow-soft: 0 18px 48px rgba(12, 49, 32, 0.12);
 
+    /* Movimiento Suya: corto, legible y sin animar filtros costosos. */
+    --motion-fast: 140ms;
+    --motion-standard: 220ms;
+    --motion-slow: 320ms;
+    --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+
     --header-h: 60px;
     --bottom-nav-h: 64px;
   }
@@ -90,10 +97,63 @@
   .surface {
     @apply rounded-card border border-suya-border bg-white/90;
     box-shadow: 0 8px 24px rgba(12, 49, 32, 0.06);
+    transition:
+      border-color var(--motion-standard) var(--ease-standard),
+      box-shadow var(--motion-standard) var(--ease-standard);
   }
 
   .press {
-    @apply transition-transform duration-150 active:scale-[0.985];
+    transition:
+      transform var(--motion-fast) var(--ease-standard),
+      box-shadow var(--motion-standard) var(--ease-standard);
+  }
+
+  .press:active {
+    transform: scale(0.985);
+  }
+
+  .motion-enter {
+    animation: content-enter var(--motion-slow) var(--ease-emphasized) both;
+  }
+
+  .motion-fade {
+    animation: content-fade var(--motion-standard) var(--ease-standard) both;
+  }
+
+  .motion-stagger > * {
+    animation: content-enter var(--motion-slow) var(--ease-emphasized) both;
+  }
+
+  .motion-stagger > :nth-child(2) {
+    animation-delay: 45ms;
+  }
+
+  .motion-stagger > :nth-child(3) {
+    animation-delay: 90ms;
+  }
+
+  .motion-stagger > :nth-child(4) {
+    animation-delay: 135ms;
+  }
+
+  @keyframes content-enter {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes content-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .suya-lens {
@@ -211,12 +271,34 @@
   *::before,
   *::after {
     animation-duration: 0.001ms !important;
+    animation-delay: 0ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+    transition-delay: 0ms !important;
     scroll-behavior: auto !important;
   }
 
   .press:active {
     transform: none !important;
   }
+}
+
+/* Preferencia manual: mismo contrato que `prefers-reduced-motion`. */
+html[data-reduce-motion='true'] {
+  scroll-behavior: auto !important;
+}
+
+html[data-reduce-motion='true'] *,
+html[data-reduce-motion='true'] *::before,
+html[data-reduce-motion='true'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  transition-delay: 0ms !important;
+  scroll-behavior: auto !important;
+}
+
+html[data-reduce-motion='true'] .press:active {
+  transform: none !important;
 }

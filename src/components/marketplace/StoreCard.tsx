@@ -6,7 +6,7 @@ import { Thumb } from '@/components/common/Thumb';
 import { cn } from '@/lib/cn';
 import { useUserStore } from '@/store/userStore';
 import { formatDistance, formatEta, formatPrice } from '@/utils/format';
-import { isStoreAcceptingOrders } from '@/utils/schedule';
+import { isInformationalStore, isStoreAcceptingOrders } from '@/utils/schedule';
 import type { Store } from '@/types';
 
 interface StoreCardProps {
@@ -19,9 +19,15 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
   const favorites = useUserStore((state) => state.favorites);
   const toggleFavorite = useUserStore((state) => state.toggleFavorite);
   const isFavorite = favorites.includes(store.id);
+  const informationalOnly = isInformationalStore(store);
   const open = isStoreAcceptingOrders(store);
 
-  const meta = (
+  const meta = informationalOnly ? (
+    <span className="inline-flex items-center gap-1 font-medium">
+      <Clock aria-hidden="true" className="h-3.5 w-3.5" />
+      Datos operativos por confirmar
+    </span>
+  ) : (
     <>
       <span className="inline-flex items-center gap-1">
         <Clock aria-hidden="true" className="h-3.5 w-3.5" />
@@ -64,7 +70,7 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
         {!open && (
           <div className="absolute inset-0 flex items-center justify-center bg-suya-carbon/55">
             <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-suya-carbon">
-              Cerrado ahora
+              {informationalOnly ? 'Carta informativa' : 'Cerrado ahora'}
             </span>
           </div>
         )}

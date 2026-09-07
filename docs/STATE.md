@@ -10,6 +10,11 @@ producción.
 ## Estado actual
 
 - Rama de trabajo: `feat/suya-mobile-app`, basada en `origin/main`.
+- F13 acceso y catálogo: clientes tienen registro renovado y Google OAuth PKCE preparado para web,
+  Android e iOS. Donde Joel suma 133 productos verificables y cuatro cartas como catálogo
+  informativo sin pedidos; la carta nueva de Andá Paya se muestra con aviso de revisión por
+  conflictos de precio.
+  Motion respeta preferencia manual/sistema y el APK debug fue recompilado con Browser/deep link.
 - F12 rediseño: cliente, repartidor y backoffice usan el sistema visual `Suya Lens`, con superficies
   Liquid Glass selectivas, tipografía Bricolage Grotesque/DM Sans, jerarquía más limpia, contraste AA,
   blancos sólidos de respaldo y blur reducido en móvil. El APK debug fue recompilado y validado en
@@ -59,10 +64,10 @@ producción.
 
 ## Siguiente acción
 
-Para distribución, crear firma Android de release y configurar Apple Developer Team, certificado y
-provisioning profile. Después, ejecutar smoke final en dispositivos físicos Android e iPhone. En
-backend CI aún debe validar la migración y pruebas pgTAP de ofertas; luego el negocio debe cargar sus
-campañas reales (código, valor, vigencia, mínimo y alcance).
+Habilitar Google en Google Cloud/Supabase, validar OAuth en un dispositivo físico y ejecutar pgTAP en
+CI para la migración de Donde Joel. Después de confirmar sede y logística, desplegar la migración y
+habilitar pedidos. Para distribución, crear firma Android de release y configurar Apple Developer
+Team, certificado y provisioning profile.
 
 ## Gate productivo pendiente
 
@@ -71,6 +76,9 @@ El sitio GitHub Pages actual es legado. Producción canónica usa `suya-customer
 
 La máquina actual no tiene Docker ni Podman. Las pruebas pgTAP y `db lint` se ejecutan en GitHub CI;
 localmente se habilitarán cuando exista uno de esos runtimes.
+
+El código Google OAuth está completo, pero el proveedor sigue desactivado en Supabase hasta cargar
+Client ID/Secret y Redirect URLs externos. Donde Joel tampoco está desplegado al backend remoto.
 
 La máquina Windows no puede producir un `.ipa`. El proyecto Xcode y el build de simulador son
 verificables en CI; un artefacto instalable exige firma Apple externa.

@@ -20,6 +20,11 @@ export function scheduleLabel(schedule: Schedule): string {
   return `${schedule.opens} – ${schedule.closes}`;
 }
 
+/** Catálogo visible sin datos suficientes para aceptar pedidos ni mostrar métricas operativas. */
+export function isInformationalStore(store: Store): boolean {
+  return store.acceptingOrders === false && store.schedule.opens === store.schedule.closes;
+}
+
 /** Prioriza el control operativo del backend y mantiene compatibilidad con datos locales. */
 export function isStoreAcceptingOrders(store: Store, now: Date = new Date()): boolean {
   return store.acceptingOrders ?? isOpenNow(store.schedule, now);

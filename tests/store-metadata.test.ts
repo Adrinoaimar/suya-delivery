@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { stores } from '@/data';
 import { formatDistance } from '@/utils/format';
-import { isStoreAcceptingOrders, scheduleLabel } from '@/utils/schedule';
+import { isInformationalStore, isStoreAcceptingOrders, scheduleLabel } from '@/utils/schedule';
 
 describe('metadatos verificables del negocio', () => {
   it('no inventa horario ni distancia cuando faltan', () => {
@@ -14,5 +14,13 @@ describe('metadatos verificables del negocio', () => {
     expect(isStoreAcceptingOrders(store, new Date('2026-08-20T18:00:00-05:00'))).toBe(false);
 
     expect(isStoreAcceptingOrders({ ...store, acceptingOrders: true })).toBe(true);
+  });
+
+  it('distingue una carta informativa de un cierre operativo temporal', () => {
+    const store = { ...stores[0]!, acceptingOrders: false };
+    expect(isInformationalStore(store)).toBe(false);
+    expect(
+      isInformationalStore({ ...store, schedule: { opens: '00:00', closes: '00:00' } }),
+    ).toBe(true);
   });
 });

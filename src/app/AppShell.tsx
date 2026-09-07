@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react';
+import { useLayoutEffect, type ReactNode } from 'react';
 import { ScrollToTop } from '@/app/ScrollToTop';
 import { SuyaIntroLoader } from '@/components/common/SuyaIntroLoader';
 import { ToastViewport } from '@/components/common/Toast';
 import { useIntro } from '@/hooks/useIntro';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
 function introDurationOverride(): number | undefined {
   if (!import.meta.env.DEV) return undefined;
@@ -13,6 +14,16 @@ function introDurationOverride(): number | undefined {
 
 export function AppShell({ children }: { children: ReactNode }) {
   const intro = useIntro();
+  const reduceMotion = usePrefersReducedMotion();
+
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    root.dataset.reduceMotion = String(reduceMotion);
+
+    return () => {
+      delete root.dataset.reduceMotion;
+    };
+  }, [reduceMotion]);
 
   return (
     <>

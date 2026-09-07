@@ -28,7 +28,7 @@ import { cartTotals, useCartStore } from '@/store/cartStore';
 import { useUserStore } from '@/store/userStore';
 import { assetUrl } from '@/utils/asset';
 import { formatEta, formatPrice } from '@/utils/format';
-import { isStoreAcceptingOrders, scheduleLabel } from '@/utils/schedule';
+import { isInformationalStore, isStoreAcceptingOrders, scheduleLabel } from '@/utils/schedule';
 import type { Product, Store } from '@/types';
 
 /**
@@ -128,6 +128,7 @@ export default function StoreDetailPage() {
   const products = productsData ?? [];
   const productsLoading = productsStatus !== 'ready' && productsError === null;
 
+  const informationalOnly = isInformationalStore(store);
   const open = isStoreAcceptingOrders(store);
   const isFavorite = favorites.includes(store.id);
   const sections = store.sections.filter((name) =>
@@ -217,7 +218,9 @@ export default function StoreDetailPage() {
               <p className="mt-0.5 text-sm text-[#6B7076]">{store.tags.join(' · ')}</p>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1">
-              <Badge tone={open ? 'lime' : 'neutral'}>{open ? 'Abierto' : 'Cerrado'}</Badge>
+              <Badge tone={open ? 'lime' : 'neutral'}>
+                {open ? 'Abierto' : informationalOnly ? 'Carta informativa' : 'Cerrado'}
+              </Badge>
               {store.isBeta && <Badge tone="green">Beta</Badge>}
             </div>
           </div>
@@ -243,7 +246,7 @@ export default function StoreDetailPage() {
                   aria-hidden="true"
                   className={cn('h-4 w-4', theme ? 'text-[var(--store-primary)]' : 'text-suya-green')}
                 />
-                {formatEta(store.etaMin, store.etaMax)}
+                {informationalOnly ? 'Por confirmar' : formatEta(store.etaMin, store.etaMax)}
               </dd>
             </div>
             <div>
@@ -258,12 +261,14 @@ export default function StoreDetailPage() {
                   aria-hidden="true"
                   className={cn('h-4 w-4', theme ? 'text-[var(--store-primary)]' : 'text-suya-green')}
                 />
-                {formatPrice(store.deliveryFee)}
+                {informationalOnly ? 'Por confirmar' : formatPrice(store.deliveryFee)}
               </dd>
             </div>
             <div>
               <dt className="text-xs text-[#6B7076]">Horario</dt>
-              <dd className="mt-0.5 font-medium">{scheduleLabel(store.schedule)}</dd>
+              <dd className="mt-0.5 font-medium">
+                {informationalOnly ? 'Por confirmar' : scheduleLabel(store.schedule)}
+              </dd>
             </div>
           </dl>
 
@@ -390,8 +395,9 @@ export default function StoreDetailPage() {
 
           {!open && !productsLoading && !productsError && (
             <p className="rounded-card border border-suya-mist bg-white p-4 text-sm text-[#6B7076]">
-              Este negocio está cerrado ahora. Su horario es {scheduleLabel(store.schedule)}; podrás
-              pedir cuando vuelva a abrir.
+              {informationalOnly
+                ? 'Esta carta sirve para consulta. Los pedidos se habilitarán cuando el negocio confirme sede, horario, cobertura y condiciones de entrega.'
+                : `Este negocio está cerrado ahora. Su horario es ${scheduleLabel(store.schedule)}; podrás pedir cuando vuelva a abrir.`}
             </p>
           )}
         </div>

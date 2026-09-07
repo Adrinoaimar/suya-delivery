@@ -51,12 +51,24 @@ export default {
           to: { opacity: '1' },
         },
         'slide-up': {
-          from: { opacity: '0', transform: 'translateY(8px)' },
+          from: { opacity: '0', transform: 'translateY(10px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
         'sheet-up': {
           from: { transform: 'translateY(100%)' },
           to: { transform: 'translateY(0)' },
+        },
+        'drawer-left': {
+          from: { transform: 'translateX(-100%)' },
+          to: { transform: 'translateX(0)' },
+        },
+        'drawer-right': {
+          from: { transform: 'translateX(100%)' },
+          to: { transform: 'translateX(0)' },
+        },
+        'soft-pop': {
+          from: { opacity: '0', transform: 'scale(.98)' },
+          to: { opacity: '1', transform: 'scale(1)' },
         },
         'badge-pulse': {
           '0%, 100%': { transform: 'scale(1)' },
@@ -69,9 +81,12 @@ export default {
       animation: {
         // `forwards` (y no `both`): si la animación no llega a ejecutarse, el elemento
         // queda en su posición final correcta en lugar de fuera de pantalla.
-        'fade-in': 'fade-in 200ms ease-out forwards',
-        'slide-up': 'slide-up 280ms cubic-bezier(.16,1,.3,1) forwards',
-        'sheet-up': 'sheet-up 280ms cubic-bezier(.16,1,.3,1) forwards',
+        'fade-in': 'fade-in 180ms cubic-bezier(.2,0,0,1) forwards',
+        'slide-up': 'slide-up 260ms cubic-bezier(.16,1,.3,1) forwards',
+        'sheet-up': 'sheet-up 300ms cubic-bezier(.16,1,.3,1) forwards',
+        'drawer-left': 'drawer-left 300ms cubic-bezier(.16,1,.3,1) forwards',
+        'drawer-right': 'drawer-right 300ms cubic-bezier(.16,1,.3,1) forwards',
+        'soft-pop': 'soft-pop 220ms cubic-bezier(.16,1,.3,1) forwards',
         'badge-pulse': 'badge-pulse 1.6s ease-in-out infinite',
       },
     },

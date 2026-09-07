@@ -201,3 +201,13 @@
     stroke-dashoffset: 0;
   }
 }
+
+html[data-reduce-motion='true'] .suya-intro,
+html[data-reduce-motion='true'] .suya-intro * {
+  animation: none !important;
+  transition: none !important;
+}
+
+html[data-reduce-motion='true'] .intro-draw {
+  stroke-dashoffset: 0;
+}

@@ -37,9 +37,8 @@ export function Drawer({ open, onClose, title, side = 'left', children }: Drawer
         tabIndex={-1}
         className={cn(
           'suya-elevated absolute inset-y-0 flex w-[84%] max-w-xs flex-col shadow-soft',
-          side === 'left' ? 'left-0' : 'right-0',
+          side === 'left' ? 'left-0 animate-drawer-left' : 'right-0 animate-drawer-right',
         )}
-        style={{ animation: 'slide-up 280ms cubic-bezier(.16,1,.3,1) forwards' }}
       >
         <div className="flex items-center justify-between border-b border-suya-border px-4 pb-3 pt-[calc(12px+env(safe-area-inset-top))]">
           <h2 id={titleId} className="font-display text-lg font-bold">
