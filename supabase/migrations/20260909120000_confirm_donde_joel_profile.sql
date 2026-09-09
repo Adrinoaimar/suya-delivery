@@ -20,7 +20,7 @@ begin
         'Pagos: efectivo, Yape, Plin, Lemon, tarjeta y otros.',
         'QR compartido configurable desde backoffice; se solicita comprobante y validación manual.',
         'Datos operativos restantes por confirmar.',
-        'Pedidos permanecen desactivados hasta aplicar configuración operativa y validación del propietario.'
+        'Pedidos desactivados hasta aplicar configuración operativa y validación del propietario.'
       )
   where id = target_restaurant_id;
 
