@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2732 2732" width="2732" height="2732">
+  <rect width="2732" height="2732" fill="#0A5335" />
+  <g transform="translate(1110 650)">
+    <circle cx="214" cy="122" r="64" fill="#FFC107" />
+    <path d="M345 155 C345 110 285 92 235 108 C180 126 168 196 225 222 C288 250 292 292 265 318"
+      fill="none" stroke="#FFFFFF" stroke-width="46" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M345 155 C345 110 285 92 235 108 C180 126 168 196 225 222 C288 250 292 292 265 318"
+      fill="none" stroke="#FFC107" stroke-width="7" stroke-linecap="round" stroke-dasharray="18 24" />
+    <path d="M265 306 c-31 0 -56 25 -56 56 0 40 56 92 56 92 s56 -52 56 -92 c0 -31 -25 -56 -56 -56 z" fill="#FFC107" />
+    <circle cx="265" cy="360" r="20" fill="#0A5335" />
+  </g>
+  <text x="1366" y="1370" text-anchor="middle" font-family="Montserrat, Arial, sans-serif"
+    font-size="250" font-weight="800" fill="#FFFFFF" letter-spacing="12">SUYA</text>
+  <text x="1366" y="1560" text-anchor="middle" font-family="Inter, Arial, sans-serif"
+    font-size="72" font-weight="500" fill="#FFFFFF">Todo lo que buscas, más cerca de ti.</text>
+  <g transform="translate(1070 2240)">
+    <path d="M42 0C19 0 0 19 0 42c0 31 42 72 42 72s42-41 42-72C84 19 65 0 42 0Z" fill="#FFC107" />
+    <circle cx="42" cy="42" r="15" fill="#0A5335" />
+    <text x="122" y="61" font-family="Inter, Arial, sans-serif" font-size="62" font-weight="600" fill="#FFFFFF">Sullana, Piura</text>
+  </g>
+</svg>

@@ -19,7 +19,8 @@ begin
         'Modalidades: delivery, recojo y consumo en local sin reserva.',
         'Pagos: efectivo, Yape, Plin, Lemon, tarjeta y otros.',
         'QR compartido configurable desde backoffice; se solicita comprobante y validación manual.',
-        'Pedidos permanecen desactivados hasta aplicar configuración operativa y validación del propietario.'
+        'Datos operativos restantes por confirmar.',
+        'Pedidos desactivados hasta aplicar configuración operativa y validación del propietario.'
       )
   where id = target_restaurant_id;
 

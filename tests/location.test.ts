@@ -42,6 +42,34 @@ describe('ubicación', () => {
     expect(onError).toHaveBeenCalledWith('No tenemos permiso para acceder a tu ubicación.');
   });
 
+  it('obtiene el punto actual para el checkout', async () => {
+    const service = new BrowserLocationServiceImpl();
+    const getCurrentPosition = vi.fn((success: PositionCallback) => {
+      success({
+        coords: { latitude: -4.9039, longitude: -80.6853, accuracy: 8 },
+        timestamp: 1234,
+      } as GeolocationPosition);
+    });
+    Object.defineProperty(navigator, 'geolocation', {
+      value: { getCurrentPosition },
+      configurable: true,
+    });
+
+    await expect(service.getCurrent()).resolves.toEqual({
+      position: { lat: -4.9039, lng: -80.6853 },
+      accuracy: 8,
+      timestamp: 1234,
+      simulated: false,
+    });
+  });
+
+  it('rechaza el punto actual si no existe geolocalización', async () => {
+    const service = new BrowserLocationServiceImpl();
+    Object.defineProperty(navigator, 'geolocation', { value: undefined, configurable: true });
+
+    await expect(service.getCurrent()).rejects.toThrow('Este dispositivo no permite acceder');
+  });
+
   it('interpola la posición sin saltos entre puntos', () => {
     const start = pointAtProgress(demoRoute.points, 0);
     const middle = pointAtProgress(demoRoute.points, 0.5);

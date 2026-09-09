@@ -17,8 +17,7 @@ export function BottomNavigation() {
   return (
     <nav
       aria-label="Navegación principal"
-      className="fixed inset-x-0 bottom-0 z-30 border-t border-suya-mist bg-white/95 backdrop-blur lg:hidden"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="suya-lens-nav fixed inset-x-3 bottom-[calc(8px+env(safe-area-inset-bottom))] z-30 rounded-card lg:hidden"
     >
       <ul className="mx-auto flex max-w-md">
         {ITEMS.map((item) => {
@@ -30,14 +29,19 @@ export function BottomNavigation() {
                 end={item.end}
                 className={({ isActive }) =>
                   cn(
-                    'relative flex h-16 flex-col items-center justify-center gap-1 text-[11px] font-medium transition-colors',
-                    isActive ? 'text-suya-green' : 'text-[#6B7076]',
+                    'relative flex h-16 min-h-12 flex-col items-center justify-center gap-1 rounded-btn text-[11px] font-semibold transition-colors',
+                    isActive ? 'text-suya-green' : 'text-suya-muted',
                   )
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <span className="relative">
+                    <span
+                      className={cn(
+                        'relative rounded-full px-3 py-0.5',
+                        isActive && 'bg-suya-green/10',
+                      )}
+                    >
                       <Icon
                         aria-hidden="true"
                         className={cn('h-[22px] w-[22px]', isActive && 'stroke-[2.4]')}
@@ -50,12 +54,6 @@ export function BottomNavigation() {
                       )}
                     </span>
                     {item.label}
-                    {isActive && (
-                      <span
-                        aria-hidden="true"
-                        className="absolute inset-x-5 top-0 h-0.5 rounded-full bg-suya-green"
-                      />
-                    )}
                   </>
                 )}
               </NavLink>

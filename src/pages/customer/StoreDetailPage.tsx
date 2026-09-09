@@ -28,7 +28,7 @@ import { cartTotals, useCartStore } from '@/store/cartStore';
 import { useUserStore } from '@/store/userStore';
 import { assetUrl } from '@/utils/asset';
 import { formatEta, formatPrice } from '@/utils/format';
-import { isStoreAcceptingOrders, scheduleLabel } from '@/utils/schedule';
+import { isInformationalStore, isStoreAcceptingOrders, scheduleLabel } from '@/utils/schedule';
 import type { Product, Store } from '@/types';
 
 /**
@@ -128,6 +128,7 @@ export default function StoreDetailPage() {
   const products = productsData ?? [];
   const productsLoading = productsStatus !== 'ready' && productsError === null;
 
+  const informationalOnly = isInformationalStore(store);
   const open = isStoreAcceptingOrders(store);
   const isFavorite = favorites.includes(store.id);
   const sections = store.sections.filter((name) =>
@@ -143,7 +144,7 @@ export default function StoreDetailPage() {
       {/* Hero: con marca propia, el fondo usa la paleta del negocio en vez del genérico. */}
       <div
         className={cn(
-          'relative h-44 overflow-hidden sm:h-56 lg:h-64',
+          'motion-enter relative h-44 overflow-hidden sm:h-56 lg:h-64',
           theme ? 'bg-[var(--store-primary)]' : 'bg-suya-ivory',
         )}
       >
@@ -204,7 +205,7 @@ export default function StoreDetailPage() {
             se pinta encima de esta tarjeta y oculta el nombre del negocio. */}
         <section
           className={cn(
-            'relative z-10 -mt-10 rounded-card border bg-white p-4 shadow-soft',
+            'motion-enter relative z-10 -mt-10 rounded-card border bg-white p-4 shadow-soft',
             theme ? 'border-[var(--store-primary)]/30' : 'border-suya-mist',
           )}
         >
@@ -217,7 +218,9 @@ export default function StoreDetailPage() {
               <p className="mt-0.5 text-sm text-[#6B7076]">{store.tags.join(' · ')}</p>
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1">
-              <Badge tone={open ? 'lime' : 'neutral'}>{open ? 'Abierto' : 'Cerrado'}</Badge>
+              <Badge tone={open ? 'lime' : 'neutral'}>
+                {open ? 'Abierto' : informationalOnly ? 'Carta informativa' : 'Cerrado'}
+              </Badge>
               {store.isBeta && <Badge tone="green">Beta</Badge>}
             </div>
           </div>
@@ -243,7 +246,7 @@ export default function StoreDetailPage() {
                   aria-hidden="true"
                   className={cn('h-4 w-4', theme ? 'text-[var(--store-primary)]' : 'text-suya-green')}
                 />
-                {formatEta(store.etaMin, store.etaMax)}
+                {informationalOnly ? 'Por confirmar' : formatEta(store.etaMin, store.etaMax)}
               </dd>
             </div>
             <div>
@@ -258,12 +261,14 @@ export default function StoreDetailPage() {
                   aria-hidden="true"
                   className={cn('h-4 w-4', theme ? 'text-[var(--store-primary)]' : 'text-suya-green')}
                 />
-                {formatPrice(store.deliveryFee)}
+                {informationalOnly ? 'Por confirmar' : formatPrice(store.deliveryFee)}
               </dd>
             </div>
             <div>
               <dt className="text-xs text-[#6B7076]">Horario</dt>
-              <dd className="mt-0.5 font-medium">{scheduleLabel(store.schedule)}</dd>
+              <dd className="mt-0.5 font-medium">
+                {informationalOnly ? 'Por confirmar' : scheduleLabel(store.schedule)}
+              </dd>
             </div>
           </dl>
 
@@ -302,12 +307,12 @@ export default function StoreDetailPage() {
 
         </section>
 
-        {store.gallery && <StoreGallery gallery={store.gallery} storeName={store.name} />}
+        {store.gallery && <div className="motion-enter"><StoreGallery gallery={store.gallery} storeName={store.name} /></div>}
 
         {/* Categorías internas */}
         <nav
           aria-label="Categorías del negocio"
-          className="sticky top-[60px] z-20 -mx-4 bg-suya-ivory/95 px-4 py-3 backdrop-blur lg:top-[72px] lg:mx-0 lg:px-0"
+          className="sticky top-[60px] z-20 -mx-4 border-y border-suya-mist/70 bg-suya-ivory/95 px-4 py-3 backdrop-blur lg:top-[72px] lg:mx-0 lg:px-0"
         >
           <div className="hide-scrollbar flex gap-2 overflow-x-auto">
             <button
@@ -363,7 +368,7 @@ export default function StoreDetailPage() {
             </div>
           ) : (
             visibleSections.map((name) => (
-            <section key={name} aria-labelledby={`seccion-${name}`}>
+              <section key={name} aria-labelledby={`seccion-${name}`} className="motion-enter">
               <h2 id={`seccion-${name}`} className="section-title mb-3">
                 {name}
               </h2>
@@ -390,8 +395,9 @@ export default function StoreDetailPage() {
 
           {!open && !productsLoading && !productsError && (
             <p className="rounded-card border border-suya-mist bg-white p-4 text-sm text-[#6B7076]">
-              Este negocio está cerrado ahora. Su horario es {scheduleLabel(store.schedule)}; podrás
-              pedir cuando vuelva a abrir.
+              {informationalOnly
+                ? 'Esta carta sirve para consulta. Los pedidos se habilitarán cuando el negocio confirme sede, horario, cobertura y condiciones de entrega.'
+                : `Este negocio está cerrado ahora. Su horario es ${scheduleLabel(store.schedule)}; podrás pedir cuando vuelva a abrir.`}
             </p>
           )}
         </div>

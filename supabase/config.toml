@@ -165,7 +165,8 @@ additional_redirect_urls = [
   "http://localhost:5173/**",
   "https://suya-customer.pages.dev/**",
   "https://suya-rider.pages.dev/**",
-  "https://suya-backoffice.pages.dev/**"
+  "https://suya-backoffice.pages.dev/**",
+  "com.suya.app://auth/callback"
 ]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
@@ -338,6 +339,16 @@ url = ""
 # If enabled, the nonce check will be skipped. Required for local sign in with Google auth.
 skip_nonce_check = false
 # If enabled, it will allow the user to successfully authenticate when the provider does not return an email address.
+email_optional = false
+
+# Google permanece deshabilitado en local hasta aportar credenciales externas.
+# Nunca expongas el secreto como variable VITE_* ni lo confirmes al repositorio.
+[auth.external.google]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+redirect_uri = ""
+skip_nonce_check = false
 email_optional = false
 
 # Allow Solana wallet holders to sign in to your project via the Sign in with Solana (SIWS, EIP-4361) standard.

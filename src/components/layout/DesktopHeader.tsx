@@ -23,9 +23,7 @@ export function DesktopHeader() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const locationLabel = useUserStore((state) => state.preferences.locationLabel);
   const pushSearch = useUserStore((state) => state.pushSearch);
-  const count = useCartStore((state) =>
-    state.items.reduce((sum, item) => sum + item.quantity, 0),
-  );
+  const count = useCartStore((state) => state.items.reduce((sum, item) => sum + item.quantity, 0));
 
   function submitSearch() {
     if (query.trim().length === 0) {
@@ -38,20 +36,24 @@ export function DesktopHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 hidden border-b border-suya-mist bg-white lg:block">
+      <header className="suya-lens-nav sticky top-0 z-30 hidden lg:block">
         <div className="shell flex h-[72px] items-center gap-5">
-          <Link to="/" aria-label="Suya Delivery — Inicio">
+          <Link
+            to="/"
+            aria-label="Suya Delivery — Inicio"
+            className="flex min-h-12 items-center rounded-btn"
+          >
             <Logo size="sm" />
           </Link>
 
           <button
             type="button"
             onClick={() => setLocationOpen(true)}
-            className="press flex shrink-0 items-center gap-1.5 rounded-btn border border-suya-mist px-3 py-2 text-sm font-medium hover:border-suya-lime"
+            className="press flex min-h-12 shrink-0 items-center gap-1.5 rounded-btn border border-suya-border bg-white/60 px-3 text-sm font-medium hover:border-suya-green/50 hover:bg-white"
           >
             <MapPin aria-hidden="true" className="h-4 w-4 text-suya-green" />
             <span className="max-w-[190px] truncate">{locationLabel}</span>
-            <ChevronDown aria-hidden="true" className="h-4 w-4 text-[#6B7076]" />
+            <ChevronDown aria-hidden="true" className="h-4 w-4 text-suya-muted" />
           </button>
 
           <nav aria-label="Principal" className="flex items-center gap-1">
@@ -62,7 +64,7 @@ export function DesktopHeader() {
                 end={link.end}
                 className={({ isActive }) =>
                   cn(
-                    'rounded-btn px-3 py-2 text-sm font-medium transition-colors',
+                    'flex min-h-12 items-center rounded-btn px-3 text-sm font-medium transition-colors',
                     isActive
                       ? 'bg-suya-lime-soft text-suya-green-dark'
                       : 'text-suya-carbon hover:bg-suya-mist/60',
@@ -83,14 +85,14 @@ export function DesktopHeader() {
               type="button"
               onClick={() => setNotificationsOpen(true)}
               aria-label="Notificaciones"
-              className="press flex h-11 w-11 items-center justify-center rounded-full hover:bg-suya-mist/70"
+              className="press flex h-12 w-12 items-center justify-center rounded-full hover:bg-white/70"
             >
               <Bell className="h-5 w-5" />
             </button>
             <Link
               to="/cart"
               aria-label={`Carrito, ${count} ${count === 1 ? 'producto' : 'productos'}`}
-              className="press relative flex h-11 w-11 items-center justify-center rounded-full hover:bg-suya-mist/70"
+              className="press relative flex h-12 w-12 items-center justify-center rounded-full hover:bg-white/70"
             >
               <ShoppingBag className="h-5 w-5" />
               <CounterBadge count={count} />
@@ -98,7 +100,7 @@ export function DesktopHeader() {
             <Link
               to="/profile"
               aria-label="Mi cuenta"
-              className="press flex h-11 w-11 items-center justify-center rounded-full hover:bg-suya-mist/70"
+              className="press flex h-12 w-12 items-center justify-center rounded-full hover:bg-white/70"
             >
               <User className="h-5 w-5" />
             </Link>

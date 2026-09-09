@@ -1,11 +1,16 @@
 import { useId } from 'react';
-import type { InputHTMLAttributes, ReactNode, SelectHTMLAttributes, TextareaHTMLAttributes } from 'react';
+import type {
+  InputHTMLAttributes,
+  ReactNode,
+  SelectHTMLAttributes,
+  TextareaHTMLAttributes,
+} from 'react';
 import { cn } from '@/lib/cn';
 
 const FIELD =
-  'w-full rounded-btn border border-suya-mist bg-white px-3.5 text-[15px] text-suya-carbon ' +
-  'placeholder:text-[#9AA0A6] transition-colors ' +
-  'focus:border-suya-green focus:outline-none focus:ring-2 focus:ring-suya-lime/50';
+  'w-full rounded-btn border border-suya-border bg-white/90 px-3.5 text-[15px] text-suya-carbon shadow-[inset_0_1px_0_rgba(255,255,255,.8)] ' +
+  'placeholder:text-suya-muted/70 transition-[border-color,box-shadow,background-color] ' +
+  'focus:border-suya-green focus:bg-white focus:outline-none focus:ring-2 focus:ring-suya-green/20';
 
 interface FieldShellProps {
   id: string;
@@ -23,7 +28,7 @@ function describedById(id: string): string {
 function FieldShell({ id, label, hint, error, children }: FieldShellProps) {
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-suya-carbon">
+      <label htmlFor={id} className="text-sm font-semibold text-suya-carbon">
         {label}
       </label>
       {children}
@@ -32,7 +37,7 @@ function FieldShell({ id, label, hint, error, children }: FieldShellProps) {
           {error}
         </p>
       ) : hint ? (
-        <p id={describedById(id)} className="text-xs text-[#6B7076]">
+        <p id={describedById(id)} className="text-xs text-suya-muted">
           {hint}
         </p>
       ) : null}
@@ -100,7 +105,8 @@ export function Select({ label, hint, error, options, className, id, ...rest }: 
       <select
         id={fieldId}
         aria-describedby={error || hint ? describedById(fieldId) : undefined}
-        className={cn(FIELD, 'h-12 appearance-none', className)}
+        aria-invalid={error ? true : undefined}
+        className={cn(FIELD, 'h-12 appearance-none', error && 'border-suya-danger', className)}
         {...rest}
       >
         {options.map((option) => (

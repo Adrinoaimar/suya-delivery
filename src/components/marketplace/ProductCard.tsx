@@ -23,7 +23,7 @@ export function ProductCard({
   return (
     <article
       className={cn(
-        'relative flex gap-3 rounded-card border border-suya-mist bg-white p-3 shadow-card transition-shadow hover:shadow-soft',
+        'motion-press relative flex gap-3 rounded-card border border-suya-border bg-white/90 p-3 shadow-card transition-[transform,box-shadow] duration-300 ease-out motion-safe:active:scale-[0.985] motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-soft',
         className,
       )}
     >
@@ -38,7 +38,7 @@ export function ProductCard({
 
       <div className="flex min-w-0 flex-1 flex-col">
         <h3 className="font-display text-[15px] font-bold leading-snug">{product.name}</h3>
-        <p className="mt-0.5 line-clamp-2 text-sm text-[#6B7076]">{product.description}</p>
+        <p className="mt-0.5 line-clamp-2 text-sm text-suya-muted">{product.description}</p>
         <div className="mt-auto flex items-center justify-between gap-2 pt-2">
           <Price value={product.price} />
           <button
@@ -47,7 +47,7 @@ export function ProductCard({
             disabled={disabled}
             aria-label={`Agregar ${product.name}`}
             className={cn(
-              'press flex h-11 w-11 items-center justify-center rounded-btn text-white transition-colors disabled:opacity-40',
+              'press flex h-12 w-12 items-center justify-center rounded-btn text-white shadow-card transition-colors disabled:cursor-not-allowed disabled:bg-suya-mist disabled:text-suya-muted',
               accentClassName ?? 'bg-suya-green hover:bg-suya-green-dark',
             )}
           >

@@ -9,8 +9,9 @@ function safeAuthMessage(error: unknown, fallback: string): string {
   const message = error instanceof Error ? error.message : '';
   if (/invalid login credentials/i.test(message)) return 'Correo o contraseña incorrectos.';
   if (/email not confirmed/i.test(message)) return 'Confirma tu correo antes de ingresar.';
-  if (/provider|oauth|redirect/i.test(message)) return 'No se pudo continuar con Google. Inténtalo de nuevo.';
   if (/password/i.test(message)) return 'La contraseña no cumple los requisitos de seguridad.';
+  if (/provider.*not enabled|unsupported provider/i.test(message)) return 'Acceso con Google aún no está habilitado.';
+  if (/cancel|access_denied/i.test(message)) return 'Acceso con Google cancelado.';
   if (/rate limit|too many/i.test(message)) return 'Demasiados intentos. Espera unos minutos.';
   return fallback;
 }
@@ -21,13 +22,14 @@ interface AuthState {
   error: string | null;
   initialize: () => Promise<() => void>;
   signIn: (credentials: AuthCredentials) => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (returnTo: string) => Promise<void>;
+  completeOAuthCallback: (url: string) => Promise<string | null>;
   signUpCustomer: (input: SignUpInput) => Promise<boolean>;
   signOut: () => Promise<void>;
   updateProfile: (input: ProfileUpdate) => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   status: 'idle',
   identity: null,
   error: null,
@@ -64,12 +66,32 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  async signInWithGoogle() {
+  async signInWithGoogle(returnTo) {
     set({ status: 'loading', error: null });
     try {
-      await authService.signInWithGoogle();
+      await authService.signInWithGoogle(returnTo);
+      // Web abandona esta página. En móvil, el deep link completa la sesión.
+      if (get().status === 'loading') set({ status: 'anonymous' });
     } catch (error) {
-      set({ status: 'anonymous', error: safeAuthMessage(error, 'No se pudo iniciar sesión con Google.') });
+      set({ status: 'anonymous', error: safeAuthMessage(error, 'No se pudo continuar con Google.') });
+      throw error;
+    }
+  },
+
+  async completeOAuthCallback(url) {
+    set({ status: 'loading', error: null });
+    try {
+      const result = await authService.completeOAuthCallback(url);
+      if (!result) {
+        const identity = get().identity;
+        set({ status: identity ? 'authenticated' : 'anonymous' });
+        return null;
+      }
+      authRevision += 1;
+      set({ identity: result.identity, status: 'authenticated', error: null });
+      return result.returnTo;
+    } catch (error) {
+      set({ identity: null, status: 'anonymous', error: safeAuthMessage(error, 'No se pudo completar el acceso con Google.') });
       throw error;
     }
   },
