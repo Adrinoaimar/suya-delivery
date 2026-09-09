@@ -9,7 +9,7 @@ producción.
 
 ## Estado actual
 
-- Rama de trabajo: `main` (`c961456`), con integración móvil, workflow Android reproducible y firma release opt-in.
+- Rama de trabajo: `main` (`70a7be3`), con integración móvil, workflow Android reproducible y firma release opt-in.
 - F13 acceso y catálogo: clientes tienen registro renovado y Google OAuth PKCE preparado para web,
   Android e iOS. Donde Joel suma 133 productos verificables y cuatro cartas como catálogo
   informativo sin pedidos; la carta nueva de Andá Paya se muestra con aviso de revisión por
@@ -52,9 +52,9 @@ producción.
   `accepting_orders` habilitado por autorización comercial; bebidas sin precio no se importaron.
 - Producción no incluye servicios mock, mapa falso, GPS simulado, promociones ficticias ni ganancias
   inventadas. Enlace público de tracking sigue deshabilitado por seguridad.
-- El workflow Android de `main` compila y publica un APK debug unificado como artefacto CI; el último
-  run verde es `34392017329`. Frontend, E2E, iOS de simulador y Suya Menús también quedaron verdes
-  después del merge.
+- El workflow Android de `main` compila y publica APK debug y release unsigned como artefactos CI; el
+  último run verde es `34413494247`. Frontend, base de datos, E2E e iOS de simulador también quedaron
+  verdes después del merge.
 - La auditoría de la app independiente Wallet Observer confirma sincronización opcional en segundo
   plano mediante `ingest_wallet_observation` con URL, publishable key y token de dispositivo. Las
   observaciones siguen `unverified`; no autorizan pedidos ni sustituyen una pasarela oficial.
