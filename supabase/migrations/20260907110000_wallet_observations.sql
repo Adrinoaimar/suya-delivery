@@ -232,7 +232,7 @@ begin
 
   insert into public.wallet_observations (
     device_id, restaurant_id, event_id, provider, sender_name,
-    code_digest, code_last4, amount_cents, currency, observed_at
+    code_digest, code_last4, amount_cents, currency, verification_status, observed_at
   )
   values (
     v_device.id,
@@ -244,6 +244,7 @@ begin
     case when v_code is null then null else right(v_code, 4) end,
     p_amount_cents,
     v_currency,
+    'unverified',
     p_observed_at
   )
   on conflict (device_id, event_id) do nothing
