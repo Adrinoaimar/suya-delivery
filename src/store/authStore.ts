@@ -9,6 +9,7 @@ function safeAuthMessage(error: unknown, fallback: string): string {
   const message = error instanceof Error ? error.message : '';
   if (/invalid login credentials/i.test(message)) return 'Correo o contraseña incorrectos.';
   if (/email not confirmed/i.test(message)) return 'Confirma tu correo antes de ingresar.';
+  if (/provider|oauth|redirect/i.test(message)) return 'No se pudo continuar con Google. Inténtalo de nuevo.';
   if (/password/i.test(message)) return 'La contraseña no cumple los requisitos de seguridad.';
   if (/rate limit|too many/i.test(message)) return 'Demasiados intentos. Espera unos minutos.';
   return fallback;
@@ -20,6 +21,7 @@ interface AuthState {
   error: string | null;
   initialize: () => Promise<() => void>;
   signIn: (credentials: AuthCredentials) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signUpCustomer: (input: SignUpInput) => Promise<boolean>;
   signOut: () => Promise<void>;
   updateProfile: (input: ProfileUpdate) => Promise<void>;
@@ -58,6 +60,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     } catch (error) {
       const message = safeAuthMessage(error, 'No se pudo iniciar sesión.');
       set({ status: 'anonymous', error: message });
+      throw error;
+    }
+  },
+
+  async signInWithGoogle() {
+    set({ status: 'loading', error: null });
+    try {
+      await authService.signInWithGoogle();
+    } catch (error) {
+      set({ status: 'anonymous', error: safeAuthMessage(error, 'No se pudo iniciar sesión con Google.') });
       throw error;
     }
   },

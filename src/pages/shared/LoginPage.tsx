@@ -21,6 +21,7 @@ export default function LoginPage({ title, allowed, allowCustomerSignup = false,
   const status = useAuthStore((state) => state.status);
   const error = useAuthStore((state) => state.error);
   const signIn = useAuthStore((state) => state.signIn);
+  const signInWithGoogle = useAuthStore((state) => state.signInWithGoogle);
   const signUpCustomer = useAuthStore((state) => state.signUpCustomer);
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
@@ -47,6 +48,15 @@ export default function LoginPage({ title, allowed, allowCustomerSignup = false,
         const current = useAuthStore.getState().identity;
         navigate(current && allowed.some((role) => current.access.includes(role)) ? from : '/unauthorized', { replace: true });
       }
+    } catch {
+      // El store expone un mensaje seguro y visible.
+    }
+  }
+
+  async function continueWithGoogle() {
+    setMessage(null);
+    try {
+      await signInWithGoogle();
     } catch {
       // El store expone un mensaje seguro y visible.
     }
@@ -79,9 +89,20 @@ export default function LoginPage({ title, allowed, allowCustomerSignup = false,
         </form>
 
         {allowCustomerSignup && (
-          <button type="button" className="mt-4 w-full text-sm font-semibold text-suya-green" onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}>
-            {mode === 'login' ? 'Crear cuenta de cliente' : 'Ya tengo cuenta'}
-          </button>
+          <>
+            <div className="my-5 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.16em] text-[#9AA0A6]" aria-hidden="true">
+              <span className="h-px flex-1 bg-suya-mist" />
+              <span>o continúa con</span>
+              <span className="h-px flex-1 bg-suya-mist" />
+            </div>
+            <Button type="button" variant="secondary" fullWidth disabled={!isSupabaseConfigured || status === 'loading'} onClick={() => void continueWithGoogle()}>
+              <span className="grid h-5 w-5 place-items-center rounded-full border border-suya-mist bg-white font-display text-sm font-bold text-[#4285F4]" aria-hidden="true">G</span>
+              Continuar con Google
+            </Button>
+            <button type="button" className="mt-4 w-full text-sm font-semibold text-suya-green" onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}>
+              {mode === 'login' ? 'Crear cuenta de cliente' : 'Ya tengo cuenta'}
+            </button>
+          </>
         )}
       </section>
     </main>
