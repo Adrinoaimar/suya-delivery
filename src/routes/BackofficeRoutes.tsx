@@ -10,6 +10,7 @@ import TablesOperationsPage from '@/pages/backoffice/TablesOperationsPage';
 import CatalogPage from '@/pages/backoffice/CatalogPage';
 import OffersPage from '@/pages/backoffice/OffersPage';
 import WalletsOperationsPage from '@/pages/backoffice/WalletsOperationsPage';
+import RestaurantAccountsPage from '@/pages/backoffice/RestaurantAccountsPage';
 
 export function BackofficeRoutes() {
   return (
@@ -25,7 +26,9 @@ export function BackofficeRoutes() {
           <Route path="offers" element={<OffersPage />} />
           <Route path="wallets" element={<WalletsOperationsPage />} />
           <Route path="riders" element={<BackofficePage title="Repartidores" description="Disponibilidad, asignaciones e incidencias." />} />
-          <Route path="restaurants" element={<BackofficePage title="Restaurantes" description="Altas, membresías y verificación comercial." />} />
+          <Route element={<RequireAccess anyOf={['platform_admin']} />}>
+            <Route path="restaurants" element={<RestaurantAccountsPage />} />
+          </Route>
           <Route path="settings" element={<BackofficePage title="Configuración" description="Parámetros de operación y seguridad." />} />
         </Route>
       </Route>
