@@ -1,5 +1,19 @@
 apply plugin: 'com.android.application'
 
+// Release signing is opt-in. Keep keystore material outside repository and APK source tree.
+// CI/local callers provide all four variables only when a signed artifact is required.
+def releaseSigning = [
+    storeFile: System.getenv('SUYA_RELEASE_STORE_FILE'),
+    storePassword: System.getenv('SUYA_RELEASE_STORE_PASSWORD'),
+    keyAlias: System.getenv('SUYA_RELEASE_KEY_ALIAS'),
+    keyPassword: System.getenv('SUYA_RELEASE_KEY_PASSWORD')
+]
+def providedReleaseSigning = releaseSigning.values().count { value -> value != null && !value.trim().isEmpty() }
+if (providedReleaseSigning > 0 && providedReleaseSigning < releaseSigning.size()) {
+    throw new GradleException('Suya release signing requires all four SUYA_RELEASE_* variables.')
+}
+def hasReleaseSigning = providedReleaseSigning == releaseSigning.size()
+
 android {
     namespace = "com.suya.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,12 +30,29 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(releaseSigning.storeFile)
+                storePassword releaseSigning.storePassword
+                keyAlias releaseSigning.keyAlias
+                keyPassword releaseSigning.keyPassword
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
         }
     }
+}
+
+if (!hasReleaseSigning) {
+    logger.lifecycle('Suya release signing not configured; assembleRelease will produce an unsigned APK.')
 }
 
 repositories {

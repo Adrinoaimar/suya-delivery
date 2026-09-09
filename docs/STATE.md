@@ -9,7 +9,7 @@ producción.
 
 ## Estado actual
 
-- Rama de trabajo: `main` (`a3b33f3`), con integración móvil y workflow Android reproducible.
+- Rama de trabajo: `main` (`c961456`), con integración móvil, workflow Android reproducible y firma release opt-in.
 - F13 acceso y catálogo: clientes tienen registro renovado y Google OAuth PKCE preparado para web,
   Android e iOS. Donde Joel suma 133 productos verificables y cuatro cartas como catálogo
   informativo sin pedidos; la carta nueva de Andá Paya se muestra con aviso de revisión por
@@ -58,12 +58,11 @@ producción.
 - La auditoría de la app independiente Wallet Observer confirma sincronización opcional en segundo
   plano mediante `ingest_wallet_observation` con URL, publishable key y token de dispositivo. Las
   observaciones siguen `unverified`; no autorizan pedidos ni sustituyen una pasarela oficial.
-- Backoffice ahora incluye `/restaurants` para `platform_admin`: carga registros reales de
-  `restaurant_account_registry`, guarda representante/correo/notas, prepara `ready_to_invite` y
-  oculta datos de cuentas activas a personal de restaurante. La Edge Function
-  `invite-restaurant-owner` valida rol, envía invitación, verifica correo aceptado y vincula propietario
-  con `service_role` solo en runtime; despliegue queda manual hasta configurar token Supabase y
-  orígenes permitidos.
+- Backoffice incluye `/restaurants` para `platform_admin`: carga `restaurant_account_registry`, guarda
+  representante/correo/notas, prepara `ready_to_invite`, envía invitación segura y activa propietario
+  tras confirmar correo. Edge Function usa `service_role` solo en runtime; workflow de despliegue manual.
+- Android release tiene pipeline unsigned verificable y firma opt-in por variables privadas; ningún
+  keystore ni contraseña entra al repositorio.
 
 ## Reglas de continuidad
 
