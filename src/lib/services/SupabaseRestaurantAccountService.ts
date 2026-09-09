@@ -142,4 +142,17 @@ export class SupabaseRestaurantAccountService implements RestaurantAccountServic
     if (!updated) throw new Error('La invitación se envió, pero no se pudo actualizar el estado.');
     return updated;
   }
+
+  async activate(restaurantId: string): Promise<RestaurantAccount> {
+    if (!restaurantId) throw new Error('Selecciona un restaurante.');
+    const { data, error } = await this.client.functions.invoke('invite-restaurant-owner', {
+      body: { restaurantId, action: 'activate' },
+    });
+    if (error) throw error;
+    if (data?.ok !== true) throw new Error('No se pudo activar el propietario.');
+    const rows = await this.list();
+    const updated = rows.find((row) => row.restaurantId === restaurantId);
+    if (!updated) throw new Error('Propietario activado, pero no se pudo actualizar la pantalla.');
+    return updated;
+  }
 }

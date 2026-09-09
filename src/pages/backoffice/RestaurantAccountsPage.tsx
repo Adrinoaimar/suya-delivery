@@ -27,6 +27,7 @@ export default function RestaurantAccountsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [inviting, setInviting] = useState<string | null>(null);
+  const [activating, setActivating] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -81,6 +82,19 @@ export default function RestaurantAccountsPage() {
     }
   }
 
+  async function activate(row: RestaurantAccount) {
+    setActivating(row.restaurantId);
+    try {
+      const updated = await restaurantAccountService.activate(row.restaurantId);
+      setAccounts((current) => current.map((account) => account.restaurantId === updated.restaurantId ? updated : account));
+      notificationService.notify('Propietario verificado y cuenta activada.', 'success');
+    } catch (cause) {
+      notificationService.notify(cause instanceof Error ? cause.message : 'No se pudo activar el propietario.', 'danger');
+    } finally {
+      setActivating(null);
+    }
+  }
+
   if (error) return <ErrorState description={error} onRetry={() => void load()} />;
 
   return <div className="space-y-5">
@@ -117,7 +131,8 @@ export default function RestaurantAccountsPage() {
           <Textarea label="Notas internas" value={draft.notes} onChange={(event) => updateDraft(row.restaurantId, 'notes', event.target.value)} placeholder="Autorización comercial, sede, observaciones…" maxLength={500} disabled={immutable} />
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-suya-mist pt-3 text-xs text-[#68716C]">
             <div className="flex flex-wrap gap-x-4 gap-y-1"><span className="inline-flex items-center gap-1"><Mail className="h-3.5 w-3.5" aria-hidden="true" />{row.contactEmail || 'Sin correo'}</span><span className="inline-flex items-center gap-1"><Clock3 className="h-3.5 w-3.5" aria-hidden="true" />Actualizada {dateLabel(row.updatedAt)}</span>{row.activatedAt && <span className="inline-flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5 text-suya-green" aria-hidden="true" />Activa desde {dateLabel(row.activatedAt)}</span>}</div>
-            {!immutable && <div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => void save(row)} disabled={saving === row.restaurantId || inviting === row.restaurantId}><Save className="h-4 w-4" />{saving === row.restaurantId ? 'Guardando…' : 'Guardar contacto'}</Button>{row.status === 'ready_to_invite' && <Button onClick={() => void invite(row)} disabled={saving === row.restaurantId || inviting === row.restaurantId}><Mail className="h-4 w-4" />{inviting === row.restaurantId ? 'Enviando…' : 'Enviar invitación'}</Button>}</div>}
+            {!immutable && <div className="flex flex-wrap gap-2"><Button variant="secondary" onClick={() => void save(row)} disabled={saving === row.restaurantId || inviting === row.restaurantId || activating === row.restaurantId}><Save className="h-4 w-4" />{saving === row.restaurantId ? 'Guardando…' : 'Guardar contacto'}</Button>{row.status === 'ready_to_invite' && <Button onClick={() => void invite(row)} disabled={saving === row.restaurantId || inviting === row.restaurantId || activating === row.restaurantId}><Mail className="h-4 w-4" />{inviting === row.restaurantId ? 'Enviando…' : 'Enviar invitación'}</Button>}</div>}
+            {row.status === 'invited' && <Button onClick={() => void activate(row)} disabled={activating === row.restaurantId}><CheckCircle2 className="h-4 w-4" />{activating === row.restaurantId ? 'Verificando…' : 'Activar propietario'}</Button>}
           </div>
         </Card>;
       })}

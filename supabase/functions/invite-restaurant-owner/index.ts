@@ -53,13 +53,15 @@ Deno.serve(async (request) => {
   const caller = await callerResponse.json() as { app_metadata?: { role?: string } };
   if (caller.app_metadata?.role !== 'platform_admin') return json({ error: 'Se requiere rol platform_admin.' }, 403, origin);
 
-  let body: { restaurantId?: unknown };
+  let body: { restaurantId?: unknown; action?: unknown };
   try {
     body = await request.json();
   } catch {
     return json({ error: 'JSON inválido.' }, 400, origin);
   }
   if (!isUuid(body.restaurantId)) return json({ error: 'restaurantId inválido.' }, 400, origin);
+  const action = body.action === 'activate' ? 'activate' : body.action == null ? 'invite' : null;
+  if (!action) return json({ error: 'Acción inválida.' }, 400, origin);
 
   const query = new URL(`${supabaseUrl}/rest/v1/restaurant_account_registry`);
   query.searchParams.set('restaurant_id', `eq.${body.restaurantId}`);
@@ -69,8 +71,30 @@ Deno.serve(async (request) => {
   const rows = await registryResponse.json() as Array<{ restaurant_id?: string; account_status?: string; contact_email?: string | null; contact_name?: string | null }>;
   const account = rows[0];
   if (!account) return json({ error: 'Cuenta de restaurante no encontrada.' }, 404, origin);
-  if (account.account_status !== 'ready_to_invite') return json({ error: 'La cuenta debe estar lista para invitar.' }, 409, origin);
+  if (action === 'invite' && account.account_status !== 'ready_to_invite') return json({ error: 'La cuenta debe estar lista para invitar.' }, 409, origin);
+  if (action === 'activate' && account.account_status !== 'invited') return json({ error: 'La cuenta debe tener invitación aceptada.' }, 409, origin);
   if (!account.contact_email) return json({ error: 'Falta correo de contacto.' }, 422, origin);
+
+  if (action === 'activate') {
+    const usersUrl = new URL(`${supabaseUrl}/auth/v1/admin/users`);
+    usersUrl.searchParams.set('page', '1');
+    usersUrl.searchParams.set('per_page', '1000');
+    const usersResponse = await fetch(usersUrl, { headers: serviceHeaders(serviceRoleKey) });
+    if (!usersResponse.ok) return json({ error: 'No se pudo verificar el propietario.' }, 502, origin);
+    const usersPayload = await usersResponse.json() as { users?: Array<{ id?: string; email?: string; email_confirmed_at?: string | null }> };
+    const owner = (usersPayload.users ?? []).find((user) => user.email?.toLowerCase() === account.contact_email?.toLowerCase());
+    if (!owner?.id) return json({ error: 'El propietario aún no aceptó la invitación.' }, 409, origin);
+    if (!owner.email_confirmed_at) return json({ error: 'El propietario debe confirmar su correo antes de activar.' }, 409, origin);
+    const activateUrl = new URL(`${supabaseUrl}/rest/v1/restaurant_account_registry`);
+    activateUrl.searchParams.set('restaurant_id', `eq.${body.restaurantId}`);
+    const activateResponse = await fetch(activateUrl, {
+      method: 'PATCH',
+      headers: { ...serviceHeaders(serviceRoleKey), Prefer: 'return=minimal' },
+      body: JSON.stringify({ account_status: 'active', owner_user_id: owner.id, activated_at: new Date().toISOString() }),
+    });
+    if (!activateResponse.ok) return json({ error: 'No se pudo activar la cuenta.' }, 502, origin);
+    return json({ ok: true, status: 'active' }, 200, origin);
+  }
 
   const inviteResponse = await fetch(`${supabaseUrl}/auth/v1/admin/invite`, {
     method: 'POST',

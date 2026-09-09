@@ -23,9 +23,9 @@ tokens ni usuarios `auth.users`.
 3. La Edge Function `invite-restaurant-owner` valida sesión `platform_admin`, consulta el casillero,
    usa `auth/v1/admin/invite` y marca `invited`; nunca expone `service_role` en la app ni en SQL
    público. Debe desplegarse con `SUPABASE_SERVICE_ROLE_KEY` y `ALLOWED_ORIGINS` definidos.
-4. Tras el primer inicio de sesión, el administrador vincula `owner_user_id` y cambia el estado a
-   `active`. Un trigger crea o reactiva el miembro `owner` de ese restaurante; cambiar propietario
-   desactiva el miembro anterior.
+4. Tras aceptar y confirmar el correo, el administrador pulsa “Activar propietario”. La misma Edge
+   Function busca el usuario confirmado por correo, vincula `owner_user_id` y cambia a `active`.
+   El trigger crea o reactiva miembro `owner`; cambiar propietario desactiva miembro anterior.
 
 No se crean cuentas live hasta recibir esos cuatro correos y validar identidad comercial. La pantalla
 de backoffice `/restaurants` solo es visible para `platform_admin`; estados `invited` y `active` son

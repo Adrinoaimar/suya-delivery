@@ -3,11 +3,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import RestaurantAccountsPage from '@/pages/backoffice/RestaurantAccountsPage';
 import type { RestaurantAccount } from '@/lib/services/types';
 
-const { list, saveContact, invite } = vi.hoisted(() => ({ list: vi.fn(), saveContact: vi.fn(), invite: vi.fn() }));
+const { list, saveContact, invite, activate } = vi.hoisted(() => ({ list: vi.fn(), saveContact: vi.fn(), invite: vi.fn(), activate: vi.fn() }));
 
 vi.mock('@/lib/services', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/services')>()),
-  restaurantAccountService: { list, saveContact, invite },
+  restaurantAccountService: { list, saveContact, invite, activate },
   notificationService: { notify: vi.fn(), subscribe: vi.fn(() => () => undefined) },
 }));
 
@@ -63,5 +63,16 @@ describe('gestión de cuentas de restaurantes', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Enviar invitación' }));
     await waitFor(() => expect(invite).toHaveBeenCalledWith('rest-1'));
     expect(await screen.findByText('Invitación enviada')).toBeInTheDocument();
+  });
+
+  it('activa propietario solo después de invitación', async () => {
+    const invited = { ...pending, status: 'invited' as const, contactName: 'Joel', contactEmail: 'joel@example.test' };
+    list.mockResolvedValue([invited]);
+    activate.mockResolvedValue({ ...invited, status: 'active' as const, ownerUserId: 'user-1' });
+    render(<RestaurantAccountsPage />);
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Activar propietario' }));
+    await waitFor(() => expect(activate).toHaveBeenCalledWith('rest-1'));
+    expect(await screen.findByText('Activa')).toBeInTheDocument();
   });
 });

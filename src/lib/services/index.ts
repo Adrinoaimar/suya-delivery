@@ -40,6 +40,7 @@ function resolveRestaurantAccountService(): Promise<RestaurantAccountService> {
       async list() { return []; },
       async saveContact() { throw new Error('La gestión de cuentas requiere Supabase.'); },
       async invite() { throw new Error('La gestión de cuentas requiere Supabase.'); },
+      async activate() { throw new Error('La gestión de cuentas requiere Supabase.'); },
     });
   return resolvedRestaurantAccountService;
 }
@@ -48,6 +49,7 @@ export const restaurantAccountService: RestaurantAccountService = {
   async list() { return (await resolveRestaurantAccountService()).list(); },
   async saveContact(input) { return (await resolveRestaurantAccountService()).saveContact(input); },
   async invite(restaurantId) { return (await resolveRestaurantAccountService()).invite(restaurantId); },
+  async activate(restaurantId) { return (await resolveRestaurantAccountService()).activate(restaurantId); },
 };
 
 let resolvedWalletObserverService: Promise<WalletObserverService> | null = null;

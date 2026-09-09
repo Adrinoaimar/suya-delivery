@@ -76,6 +76,7 @@ export interface RestaurantAccountService {
     notes: string;
   }): Promise<RestaurantAccount>;
   invite(restaurantId: string): Promise<RestaurantAccount>;
+  activate(restaurantId: string): Promise<RestaurantAccount>;
 }
 
 export interface MenuSettings {

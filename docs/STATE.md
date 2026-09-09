@@ -61,8 +61,9 @@ producción.
 - Backoffice ahora incluye `/restaurants` para `platform_admin`: carga registros reales de
   `restaurant_account_registry`, guarda representante/correo/notas, prepara `ready_to_invite` y
   oculta datos de cuentas activas a personal de restaurante. La Edge Function
-  `invite-restaurant-owner` valida rol, envía invitación con `service_role` solo en runtime y marca
-  `invited`; despliegue queda manual hasta configurar el token Supabase y orígenes permitidos.
+  `invite-restaurant-owner` valida rol, envía invitación, verifica correo aceptado y vincula propietario
+  con `service_role` solo en runtime; despliegue queda manual hasta configurar token Supabase y
+  orígenes permitidos.
 
 ## Reglas de continuidad
 
