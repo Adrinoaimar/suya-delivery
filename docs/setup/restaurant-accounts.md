@@ -20,10 +20,18 @@ tokens ni usuarios `auth.users`.
 1. Confirmar representante, correo corporativo y autorización de cada restaurante.
 2. Un administrador de plataforma registra el correo en minúsculas y cambia el estado a
    `ready_to_invite`.
-3. Una Edge Function con `service_role` envía la invitación OAuth/Google; nunca se expone esa
-   clave en la app ni en SQL público.
+3. La Edge Function `invite-restaurant-owner` valida sesión `platform_admin`, consulta el casillero,
+   usa `auth/v1/admin/invite` y marca `invited`; nunca expone `service_role` en la app ni en SQL
+   público. Debe desplegarse con `SUPABASE_SERVICE_ROLE_KEY` y `ALLOWED_ORIGINS` definidos.
 4. Tras el primer inicio de sesión, el administrador vincula `owner_user_id` y cambia el estado a
    `active`. Un trigger crea o reactiva el miembro `owner` de ese restaurante; cambiar propietario
    desactiva el miembro anterior.
 
-No se crean cuentas live hasta recibir esos cuatro correos y validar identidad comercial.
+No se crean cuentas live hasta recibir esos cuatro correos y validar identidad comercial. La pantalla
+de backoffice `/restaurants` solo es visible para `platform_admin`; estados `invited` y `active` son
+de solo lectura hasta completar el vínculo del propietario.
+
+El workflow manual `Desplegar Edge Functions Supabase` publica la función cuando exista el secreto
+GitHub `SUPABASE_ACCESS_TOKEN`. En configuración de la función, define `ALLOWED_ORIGINS` con los
+orígenes exactos de customer, rider y backoffice; `SUPABASE_URL` y
+`SUPABASE_SERVICE_ROLE_KEY` los inyecta Supabase en runtime.

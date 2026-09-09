@@ -58,6 +58,11 @@ producción.
 - La auditoría de la app independiente Wallet Observer confirma sincronización opcional en segundo
   plano mediante `ingest_wallet_observation` con URL, publishable key y token de dispositivo. Las
   observaciones siguen `unverified`; no autorizan pedidos ni sustituyen una pasarela oficial.
+- Backoffice ahora incluye `/restaurants` para `platform_admin`: carga registros reales de
+  `restaurant_account_registry`, guarda representante/correo/notas, prepara `ready_to_invite` y
+  oculta datos de cuentas activas a personal de restaurante. La Edge Function
+  `invite-restaurant-owner` valida rol, envía invitación con `service_role` solo en runtime y marca
+  `invited`; despliegue queda manual hasta configurar el token Supabase y orígenes permitidos.
 
 ## Reglas de continuidad
 
