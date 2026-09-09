@@ -6,7 +6,9 @@ export function ScrollToTop() {
   const { pathname } = useLocation();
 
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+    // Navigation starts at the top. `auto` is supported by WebView and keeps
+    // route changes from fighting the global smooth-scroll preference.
+    window.scrollTo({ top: 0, behavior: 'auto' });
   }, [pathname]);
 
   return null;

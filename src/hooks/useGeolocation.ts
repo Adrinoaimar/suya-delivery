@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BrowserLocationService } from '@/lib/services';
+import { locationService } from '@/lib/services';
 import type { LocationPermission, LocationReading } from '@/lib/services';
 
 interface GeolocationState {
@@ -24,7 +24,7 @@ export function useGeolocation(enabled: boolean) {
 
   useEffect(() => {
     let cancelled = false;
-    BrowserLocationService.getPermission().then((permission) => {
+    locationService.getPermission().then((permission) => {
       if (!cancelled) setState((prev) => ({ ...prev, permission }));
     });
     return () => {
@@ -40,7 +40,7 @@ export function useGeolocation(enabled: boolean) {
       return undefined;
     }
 
-    const service = BrowserLocationService;
+    const service = locationService;
     setState((prev) => ({ ...prev, error: null, active: true }));
 
     const stop = service.watch(

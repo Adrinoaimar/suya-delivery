@@ -23,6 +23,7 @@ supabase/.temp/
 .playwright-local/
 .playwright-browsers/
 output/playwright/
+output/android/
 .npm-cache/
 .xdg/
 

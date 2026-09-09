@@ -6,12 +6,13 @@ import path from 'node:path';
 import { assertProductionBuildConfig } from './lib/production-build-config.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const supportedApps = ['customer', 'rider', 'backoffice'];
-const requested = process.argv[2] ? [process.argv[2]] : supportedApps;
+const supportedApps = ['customer', 'rider', 'backoffice', 'mobile'];
+const webApps = ['customer', 'rider', 'backoffice'];
+const requested = process.argv[2] ? [process.argv[2]] : webApps;
 
 assertProductionBuildConfig();
 
-if (requested.length === supportedApps.length) {
+if (requested.length === webApps.length && webApps.every((app) => requested.includes(app))) {
   await rm(path.join(repoRoot, 'dist'), { recursive: true, force: true });
 }
 

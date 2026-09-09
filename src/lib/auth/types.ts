@@ -27,11 +27,17 @@ export interface ProfileUpdate {
   defaultReference: string;
 }
 
+export interface OAuthCompletion {
+  identity: AuthIdentity;
+  returnTo: string;
+}
+
 export interface AuthService {
   getIdentity(): Promise<AuthIdentity | null>;
   subscribe(listener: (identity: AuthIdentity | null) => void): () => void;
   signIn(credentials: AuthCredentials): Promise<AuthIdentity>;
-  signInWithGoogle(): Promise<void>;
+  signInWithGoogle(returnTo: string): Promise<void>;
+  completeOAuthCallback(url: string): Promise<OAuthCompletion | null>;
   signUpCustomer(input: SignUpInput): Promise<{ requiresEmailConfirmation: boolean }>;
   signOut(): Promise<void>;
   updateProfile(input: ProfileUpdate): Promise<AuthIdentity>;

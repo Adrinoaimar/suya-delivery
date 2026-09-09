@@ -17,14 +17,15 @@ export default function RiderHomePage() {
   const riderName = useAuthStore((state) => state.identity?.displayName ?? 'Repartidor');
 
   useEffect(() => {
-    void riderOperationsService.getAvailability()
+    void riderOperationsService
+      .getAvailability()
       .then((status) => setAvailable(status === 'available'))
       .catch(() => undefined);
   }, [setAvailable]);
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-5 lg:px-8 lg:py-8">
-      <header className="text-white">
+      <header className="pb-1 text-white">
         <p className="text-sm text-white/70">Hola,</p>
         <h1 className="font-display text-2xl font-bold">{riderName}</h1>
       </header>
@@ -32,8 +33,8 @@ export default function RiderHomePage() {
       {/* Disponibilidad */}
       <section
         className={cn(
-          'rounded-card border p-4 transition-colors',
-          available ? 'border-suya-lime/50 bg-suya-green' : 'border-white/10 bg-white/5',
+          'suya-lens-dark rounded-card p-4 transition-colors',
+          available && 'border-suya-lime/50',
         )}
       >
         <Toggle
@@ -47,24 +48,27 @@ export default function RiderHomePage() {
           tone="sun"
           className="[&_span]:text-white"
           onChange={(value) => {
-            void riderOperationsService.setAvailability(value).then(() => {
-              setAvailable(value);
-              notificationService.notify(
-                value ? 'Ahora estás disponible' : 'Ya no recibirás pedidos',
-                value ? 'success' : 'info',
-              );
-            }).catch((error: unknown) => {
-              notificationService.notify(
-                error instanceof Error ? error.message : 'No pudimos cambiar tu disponibilidad.',
-                'danger',
-              );
-            });
+            void riderOperationsService
+              .setAvailability(value)
+              .then(() => {
+                setAvailable(value);
+                notificationService.notify(
+                  value ? 'Ahora estás disponible' : 'Ya no recibirás pedidos',
+                  value ? 'success' : 'info',
+                );
+              })
+              .catch((error: unknown) => {
+                notificationService.notify(
+                  error instanceof Error ? error.message : 'No pudimos cambiar tu disponibilidad.',
+                  'danger',
+                );
+              });
           }}
         />
       </section>
 
       {/* Viaje activo */}
-      <section className="rounded-card border border-white/10 bg-white/5 p-4 text-white">
+      <section className="suya-lens-dark rounded-card p-4 text-white">
         <h2 className="flex items-center gap-2 font-display text-[15px] font-bold">
           <Navigation className="h-4 w-4 text-suya-lime" aria-hidden="true" />
           Viaje actual
@@ -78,26 +82,27 @@ export default function RiderHomePage() {
             <p className="mt-1 text-sm text-white/70">Entregar en: {active.customer.address}</p>
             <Link
               to="/rider/current"
-              className="press mt-3 inline-flex h-11 items-center rounded-btn bg-suya-lime px-4 font-display text-sm font-semibold text-suya-carbon"
+              className="press mt-3 inline-flex h-12 items-center rounded-btn bg-suya-lime px-4 font-display text-sm font-semibold text-suya-carbon"
             >
               Abrir viaje
             </Link>
           </div>
         ) : (
           <p className="mt-2 text-sm text-white/70">
-            No tienes un viaje asignado. Operaciones te avisará cuando exista una entrega disponible.
+            No tienes un viaje asignado. Operaciones te avisará cuando exista una entrega
+            disponible.
           </p>
         )}
       </section>
 
       <Link
         to="/rider/safety"
-        className="press flex items-center gap-3 rounded-card border border-suya-lime/40 bg-suya-lime-soft p-4 text-suya-carbon"
+        className="press flex min-h-12 items-center gap-3 rounded-card border border-suya-border bg-white/95 p-4 text-suya-carbon shadow-card"
       >
         <ShieldCheck className="h-6 w-6 text-suya-green" aria-hidden="true" />
         <span className="flex-1">
           <span className="block font-display text-[15px] font-bold">Seguridad en ruta</span>
-          <span className="block text-sm text-[#4A4F55]">
+          <span className="block text-sm text-suya-muted">
             Comparte tu ubicación, registra tu contacto de confianza y activa el SOS.
           </span>
         </span>
@@ -105,7 +110,7 @@ export default function RiderHomePage() {
 
       <Link
         to="/rider/history"
-        className="press flex items-center gap-3 rounded-card border border-white/10 bg-white/5 p-4 text-white"
+        className="press suya-lens-dark flex min-h-12 items-center gap-3 rounded-card p-4 text-white"
       >
         <Bike className="h-5 w-5 text-suya-lime" aria-hidden="true" />
         <span className="flex-1">

@@ -16,6 +16,7 @@ import type {
   Product,
   Store,
   IncidentCategory,
+  AppOffer,
 } from '@/types';
 
 export interface StoreService {
@@ -29,6 +30,26 @@ export interface StoreService {
   listProducts(storeId: string): Promise<Product[]>;
   getProduct(id: string): Promise<Product | undefined>;
   search(query: string): Promise<{ stores: Store[]; products: Product[] }>;
+}
+
+export interface CreateAppOfferInput {
+  restaurantId: string | null;
+  title: string;
+  description: string;
+  code: string;
+  discountType: 'percent' | 'fixed';
+  discountValue: number;
+  minimumSubtotal: number;
+  startsAt: string;
+  endsAt: string;
+  maxRedemptions: number | null;
+}
+
+export interface OfferService {
+  listActive(): Promise<AppOffer[]>;
+  listManageable(): Promise<AppOffer[]>;
+  create(input: CreateAppOfferInput): Promise<AppOffer>;
+  setActive(id: string, active: boolean): Promise<boolean>;
 }
 
 export interface MenuSettings {
@@ -68,6 +89,8 @@ export interface CreateOrderInput {
   tableId?: string;
   tableSessionId?: string;
   origin?: 'delivery' | 'suya_menu' | 'table_qr';
+  /** Código de oferta; el servidor valida vigencia, alcance y descuento final. */
+  offerCode?: string;
 }
 
 export interface TableQrResolution {
@@ -87,6 +110,39 @@ export interface TableService {
   create(restaurantId: string, tableNumber: string): Promise<TableSummary>;
   regenerateQr(tableId: string): Promise<TableSummary>;
   setActive(tableId: string, active: boolean): Promise<boolean>;
+}
+
+/** Observaciones de billeteras: nunca representan por sí solas un pago confirmado. */
+export interface WalletObserverDevice {
+  id: string;
+  restaurantId: string;
+  label: string;
+  active: boolean;
+  lastSeenAt: string | null;
+}
+
+export interface CreatedWalletObserverDevice extends WalletObserverDevice {
+  /** Se entrega una sola vez al crear el dispositivo. */
+  deviceToken: string;
+}
+
+export interface WalletObservation {
+  id: string;
+  restaurantId: string;
+  deviceId: string | null;
+  provider: string;
+  senderName: string | null;
+  codeLast4: string | null;
+  amountCents: number;
+  currency: string;
+  observedAt: string;
+  verification: string;
+}
+
+export interface WalletObserverService {
+  listDevices(restaurantIds: string[]): Promise<WalletObserverDevice[]>;
+  createDevice(restaurantId: string, label: string): Promise<CreatedWalletObserverDevice>;
+  listObservations(restaurantIds: string[]): Promise<WalletObservation[]>;
 }
 
 export interface TableSummary {
@@ -175,6 +231,7 @@ export interface LocationReading {
 export interface LocationService {
   isSupported(): boolean;
   getPermission(): Promise<LocationPermission>;
+  getCurrent(): Promise<LocationReading>;
   watch(
     onReading: (reading: LocationReading) => void,
     onError: (message: string) => void,

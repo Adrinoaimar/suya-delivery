@@ -1,7 +1,22 @@
 import type { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
-import type { AccessRole, AuthCredentials, AuthIdentity, AuthService, ProfileUpdate, SignUpInput } from './types';
+import type {
+  AccessRole,
+  AuthCredentials,
+  AuthIdentity,
+  AuthService,
+  OAuthCompletion,
+  ProfileUpdate,
+  SignUpInput,
+} from './types';
 import { resolveAccess } from './access';
+import {
+  closeOAuthBrowser,
+  googleOAuthRedirectTo,
+  isNativePlatform,
+  openOAuthBrowser,
+  parseNativeOAuthCallback,
+} from './oauth';
 
 async function identityFor(user: User): Promise<AuthIdentity> {
   if (!supabase) throw new Error('Supabase no está configurado.');
@@ -83,14 +98,41 @@ export class SupabaseAuthService implements AuthService {
     return identityFor(data.user);
   }
 
-  async signInWithGoogle(): Promise<void> {
+  async signInWithGoogle(returnTo: string): Promise<void> {
     if (!supabase) throw new Error('Supabase no está configurado.');
-    const redirectTo = `${window.location.origin}${window.location.pathname}`;
-    const { error } = await supabase.auth.signInWithOAuth({
+    const native = isNativePlatform();
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo },
+      options: {
+        redirectTo: googleOAuthRedirectTo(returnTo),
+        skipBrowserRedirect: native,
+        queryParams: { prompt: 'select_account' },
+      },
     });
     if (error) throw new Error(error.message);
+    if (native) {
+      if (!data.url) throw new Error('Google no devolvió una URL de acceso válida.');
+      await openOAuthBrowser(data.url);
+    }
+  }
+
+  async completeOAuthCallback(url: string): Promise<OAuthCompletion | null> {
+    const callback = parseNativeOAuthCallback(url);
+    if (!callback) return null;
+    if (!supabase) throw new Error('Supabase no está configurado.');
+    if (callback.error) {
+      await closeOAuthBrowser();
+      throw new Error(callback.error);
+    }
+    if (!callback.code) {
+      await closeOAuthBrowser();
+      throw new Error('Google no devolvió un código de acceso válido.');
+    }
+
+    const { data, error } = await supabase.auth.exchangeCodeForSession(callback.code);
+    await closeOAuthBrowser();
+    if (error) throw new Error(error.message);
+    return { identity: await identityFor(data.user), returnTo: callback.returnTo };
   }
 
   async signUpCustomer(input: SignUpInput) {

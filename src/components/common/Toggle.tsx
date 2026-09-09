@@ -30,8 +30,12 @@ export function Toggle({
         aria-label={label}
         onClick={() => onChange(!checked)}
         className={cn(
-          'relative h-7 w-12 shrink-0 rounded-full transition-colors',
-          checked ? (tone === 'sun' ? 'bg-suya-sun' : 'bg-suya-green') : 'bg-suya-mist',
+          'relative h-11 w-12 shrink-0 rounded-full before:absolute before:inset-x-0 before:inset-y-2 before:rounded-full before:transition-colors',
+          checked
+            ? tone === 'sun'
+              ? 'before:bg-suya-sun'
+              : 'before:bg-suya-green'
+            : 'before:bg-suya-mist',
         )}
       >
         {/* `left-1` ancla el círculo: sin él, el absoluto parte de su posición estática
@@ -39,7 +43,7 @@ export function Toggle({
         <span
           aria-hidden="true"
           className={cn(
-            'absolute left-1 top-1 h-5 w-5 rounded-full bg-white shadow-card transition-transform',
+            'absolute left-1 top-3 h-5 w-5 rounded-full bg-white shadow-card transition-transform',
             checked ? 'translate-x-5' : 'translate-x-0',
           )}
         />
