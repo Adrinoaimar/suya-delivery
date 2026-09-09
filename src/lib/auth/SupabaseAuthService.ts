@@ -83,6 +83,16 @@ export class SupabaseAuthService implements AuthService {
     return identityFor(data.user);
   }
 
+  async signInWithGoogle(): Promise<void> {
+    if (!supabase) throw new Error('Supabase no está configurado.');
+    const redirectTo = `${window.location.origin}${window.location.pathname}`;
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo },
+    });
+    if (error) throw new Error(error.message);
+  }
+
   async signUpCustomer(input: SignUpInput) {
     if (!supabase) throw new Error('Supabase no está configurado.');
     const { data, error } = await supabase.auth.signUp({

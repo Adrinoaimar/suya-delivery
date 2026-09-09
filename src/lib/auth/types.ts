@@ -31,6 +31,7 @@ export interface AuthService {
   getIdentity(): Promise<AuthIdentity | null>;
   subscribe(listener: (identity: AuthIdentity | null) => void): () => void;
   signIn(credentials: AuthCredentials): Promise<AuthIdentity>;
+  signInWithGoogle(): Promise<void>;
   signUpCustomer(input: SignUpInput): Promise<{ requiresEmailConfirmation: boolean }>;
   signOut(): Promise<void>;
   updateProfile(input: ProfileUpdate): Promise<AuthIdentity>;
