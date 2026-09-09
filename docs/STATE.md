@@ -63,6 +63,8 @@ producción.
   tras confirmar correo. Edge Function usa `service_role` solo en runtime; workflow de despliegue manual.
 - Android release tiene pipeline unsigned verificable y firma opt-in por variables privadas; ningún
   keystore ni contraseña entra al repositorio.
+- Auditoría F16 clasifica publicación completa `not-ready`: código/CI/artefactos listos; Cloudflare,
+  Google OAuth, Edge Function, propietarios y keystore siguen gates externos documentados.
 
 ## Reglas de continuidad
 
