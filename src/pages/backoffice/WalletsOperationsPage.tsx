@@ -19,6 +19,8 @@ const providerLabels: Record<string, string> = {
   mercado: 'Mercado Pago',
 };
 
+const EMPTY_RESTAURANT_IDS: string[] = [];
+
 function providerLabel(value: string): string {
   return providerLabels[value.toLowerCase()] ?? value.replaceAll('_', ' ');
 }
@@ -36,7 +38,7 @@ function dateLabel(value: string | null): string {
 
 export default function WalletsOperationsPage() {
   const identity = useAuthStore((state) => state.identity);
-  const restaurantIds = identity?.restaurantIds ?? [];
+  const restaurantIds = identity?.restaurantIds ?? EMPTY_RESTAURANT_IDS;
   const isPlatformAdmin = identity?.access.includes('platform_admin') ?? false;
   const [stores, setStores] = useState<Store[]>([]);
   const [devices, setDevices] = useState<WalletObserverDevice[]>([]);
