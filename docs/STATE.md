@@ -1,6 +1,6 @@
 # Estado de ejecución
 
-Actualizado: 6 de septiembre de 2026 (`America/Lima`)
+Actualizado: 9 de septiembre de 2026 (`America/Lima`)
 
 ## Objetivo
 
@@ -9,7 +9,7 @@ producción.
 
 ## Estado actual
 
-- Rama de trabajo: `feat/suya-mobile-app`, basada en `origin/main`.
+- Rama de trabajo: `main` (`a3b33f3`), con integración móvil y workflow Android reproducible.
 - F13 acceso y catálogo: clientes tienen registro renovado y Google OAuth PKCE preparado para web,
   Android e iOS. Donde Joel suma 133 productos verificables y cuatro cartas como catálogo
   informativo sin pedidos; la carta nueva de Andá Paya se muestra con aviso de revisión por
@@ -52,6 +52,12 @@ producción.
   `accepting_orders` habilitado por autorización comercial; bebidas sin precio no se importaron.
 - Producción no incluye servicios mock, mapa falso, GPS simulado, promociones ficticias ni ganancias
   inventadas. Enlace público de tracking sigue deshabilitado por seguridad.
+- El workflow Android de `main` compila y publica un APK debug unificado como artefacto CI; el último
+  run verde es `34392017329`. Frontend, E2E, iOS de simulador y Suya Menús también quedaron verdes
+  después del merge.
+- La auditoría de la app independiente Wallet Observer confirma sincronización opcional en segundo
+  plano mediante `ingest_wallet_observation` con URL, publishable key y token de dispositivo. Las
+  observaciones siguen `unverified`; no autorizan pedidos ni sustituyen una pasarela oficial.
 
 ## Reglas de continuidad
 
@@ -77,8 +83,9 @@ El sitio GitHub Pages actual es legado. Producción canónica usa `suya-customer
 La máquina actual no tiene Docker ni Podman. Las pruebas pgTAP y `db lint` se ejecutan en GitHub CI;
 localmente se habilitarán cuando exista uno de esos runtimes.
 
-El código Google OAuth está completo, pero el proveedor sigue desactivado en Supabase hasta cargar
-Client ID/Secret y Redirect URLs externos. Donde Joel tampoco está desplegado al backend remoto.
+El código Google OAuth está completo, pero el proveedor sigue desactivado en Supabase (`external.google=false`)
+hasta cargar Client ID/Secret y Redirect URLs externos. Los secretos OAuth no están en GitHub. Donde
+Joel queda verificado en el backend actual, con pedidos desactivados por decisión comercial.
 
 La máquina Windows no puede producir un `.ipa`. El proyecto Xcode y el build de simulador son
 verificables en CI; un artefacto instalable exige firma Apple externa.
