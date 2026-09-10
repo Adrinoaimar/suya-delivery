@@ -108,7 +108,11 @@ if (projectFile) {
   try {
     const payload = JSON.parse(await readFile(projectFile, 'utf8'));
     const rows = Array.isArray(payload) ? payload : payload.result;
-    const names = new Set((Array.isArray(rows) ? rows : []).map((project) => project.name));
+    const names = new Set(
+      (Array.isArray(rows) ? rows : [])
+        .map((project) => project.name ?? project['Project Name'])
+        .filter(Boolean),
+    );
     for (const name of projects) {
       if (!names.has(name))
         failures.push(`El proyecto Pages ${name} no existe en la cuenta autorizada.`);
