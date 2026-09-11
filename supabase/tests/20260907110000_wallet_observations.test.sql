@@ -60,7 +60,11 @@ select ok(
   'la RPC de ingesta usa security definer controlado'
 );
 select ok(
-  (select proconfig @> array['search_path='] from pg_proc where oid = 'public.ingest_wallet_observation(text,text,text,text,text,bigint,text,timestamptz)'::regprocedure),
+  (select exists (
+    select 1
+    from unnest(coalesce(proconfig, '{}'::text[])) setting
+    where setting like 'search_path=%'
+  ) from pg_proc where oid = 'public.ingest_wallet_observation(text,text,text,text,text,bigint,text,timestamptz)'::regprocedure),
   'la RPC fija search_path'
 );
 select ok(
