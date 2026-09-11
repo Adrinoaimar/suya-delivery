@@ -36,4 +36,51 @@ describe('menús públicos del catálogo local', () => {
       logoUrl: store.logo,
     });
   });
+
+  it('persiste la configuración local y respeta publicación y branding', async () => {
+    const store = stores.find((candidate) => candidate.id === 'kfc')!;
+    const saved = await service.saveMenuSettings({
+      restaurantId: store.id,
+      slug: 'kfc-especial-menu',
+      published: false,
+      logoUrl: '/brand/stores/kfc-logo.png',
+      heroImageUrl: null,
+      primaryColor: '#123456',
+      accentColor: '#abcdef',
+      fontFamily: 'Inter',
+    });
+
+    expect(saved.slug).toBe('kfc-especial-menu');
+    await expect(service.getPublishedMenu('kfc-menu')).resolves.toBeUndefined();
+    await expect(service.getPublishedMenu('kfc-especial-menu')).resolves.toBeUndefined();
+
+    await service.saveMenuSettings({ ...saved, published: true });
+    await expect(service.getPublishedMenu('kfc-especial-menu')).resolves.toMatchObject({
+      brand: {
+        logoUrl: '/brand/stores/kfc-logo.png',
+        primaryColor: '#123456',
+        accentColor: '#abcdef',
+        fontFamily: 'Inter',
+      },
+    });
+  });
+
+  it('lee una imagen local para el editor de branding', async () => {
+    const file = new File(['logo'], 'logo.png', { type: 'image/png' });
+    await expect(service.uploadMenuImage('kfc', 'logo', file)).resolves.toMatch(/^data:image\/png;base64,/);
+  });
+
+  it('aplica la misma regla de slug que Supabase', async () => {
+    const store = stores.find((candidate) => candidate.id === 'kfc')!;
+    await expect(service.saveMenuSettings({
+      restaurantId: store.id,
+      slug: 'KFC menú',
+      published: true,
+      logoUrl: store.logo,
+      heroImageUrl: store.image,
+      primaryColor: '#EF6C3B',
+      accentColor: '#183B3B',
+      fontFamily: 'Montserrat',
+    })).rejects.toThrow('El enlace solo admite');
+  });
 });

@@ -61,6 +61,8 @@ producción.
 - El catálogo local conserva 13 fichas demo con un asset resoluble por tarjeta y ficha. El mock de
   desarrollo publica una carta por ficha con slug estable (`*-menu`), logo, tema y productos; la
   publicación productiva de Supabase sigue limitada a los negocios con datos comerciales verificados.
+  El editor mock conserva ajustes e imágenes locales en el navegador para probar el flujo completo
+  sin tocar datos productivos.
 
 ## Reglas de continuidad
 
