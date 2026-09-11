@@ -56,8 +56,8 @@ producción.
   APK móvil; la suite de regresión cubre ese arranque.
 - Activos de marca: Tío Jhony, La Waka, Donde Joel y Andá Paya tienen activos publicados; Andá Paya
   usa el logo derivado de su carta autorizada y conserva la carta original en galería. Donde Joel
-  también publica su logo en la ficha y en Suya Menús. No se usa el SVG recreado anterior. Ver
-  `docs/data/brand-assets.md`.
+  también publica su logo en la ficha, menú, portada y tarjetas. Las rutas relativas respetan la
+  base pública del despliegue. No se usa el SVG recreado anterior. Ver `docs/data/brand-assets.md`.
 
 ## Reglas de continuidad
 

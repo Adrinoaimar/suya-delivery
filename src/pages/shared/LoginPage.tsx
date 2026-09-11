@@ -180,7 +180,7 @@ export default function LoginPage({ title, allowed, allowCustomerSignup = false,
               type="button"
               onClick={() => void continueWithGoogle()}
               disabled={!isSupabaseConfigured || googleAvailable !== true || busy}
-              aria-busy={busy}
+              aria-busy={busy || googleAvailable === null}
               className="mt-5 flex min-h-12 w-full items-center justify-center gap-3 rounded-btn border border-suya-border bg-white px-4 text-sm font-bold text-suya-carbon shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-suya-green/30 hover:shadow-md active:translate-y-0 disabled:pointer-events-none disabled:opacity-50"
             >
               {busy || googleAvailable === null ? (
@@ -188,7 +188,11 @@ export default function LoginPage({ title, allowed, allowCustomerSignup = false,
               ) : (
                 <GoogleMark />
               )}
-              {googleAvailable === false ? 'Google pendiente de activación' : 'Continuar con Google'}
+              {googleAvailable === null
+                ? 'Verificando Google…'
+                : googleAvailable === false
+                  ? 'Google pendiente de activación'
+                  : 'Continuar con Google'}
             </button>
 
             {googleAvailable === false && (
