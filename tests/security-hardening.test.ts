@@ -22,6 +22,9 @@ describe('Suya hardening guards', () => {
   it('keeps menu image values out of an interpolated CSS declaration', () => {
     const app = source('apps/menu/app.js');
     expect(app).toContain("safeImageUrl(d.imageUrl)");
+    expect(app).toContain("safeImageUrl(m.logoUrl");
+    expect(app).toContain("safeImageUrl(m.coverUrl");
+    expect(app).toContain("safeHexColor(m.primaryColor");
     expect(app).not.toContain("background-image:url('${esc(d.imageUrl)}')");
   });
 

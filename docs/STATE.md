@@ -54,9 +54,9 @@ producción.
   inventadas. Enlace público de tracking sigue deshabilitado por seguridad.
 - La precarga de catálogo inicia negocios y categorías durante la pantalla inicial del cliente y del
   APK móvil; la suite de regresión cubre ese arranque.
-- Activos de marca: Tío Jhony, La Waka y Donde Joel tienen activos publicados; Andá Paya usa la
-  carta original como galería y fallback visual hasta recibir el logo oficial final. No se usa el SVG
-  recreado anterior. Ver `docs/data/brand-assets.md`.
+- Activos de marca: Tío Jhony, La Waka, Donde Joel y Andá Paya tienen activos publicados; Andá Paya
+  usa el logo derivado de su carta autorizada y conserva la carta original en galería. No se usa el
+  SVG recreado anterior. Ver `docs/data/brand-assets.md`.
 
 ## Reglas de continuidad
 
@@ -69,8 +69,8 @@ producción.
 
 ## Siguiente acción
 
-Validar inicio de sesión real en un dispositivo físico, resolver la firma Android release y
-confirmar el logo final de Andá Paya. Después de confirmar sede y logística, habilitar pedidos.
+Validar inicio de sesión real en un dispositivo físico y resolver la firma Android release. Después
+de confirmar sede y logística, habilitar pedidos.
 
 ## Gate productivo pendiente
 

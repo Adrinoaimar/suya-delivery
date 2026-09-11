@@ -20,11 +20,11 @@ values (
   'Cocina marina, ceviches, arroces, platos criollos, parrillas, alitas y hamburguesas.',
   null, 'Sullana, Piura', 0, 0, 25, 45, '{}'::jsonb,
   '{"primary":"#090909","accent":"#F20E18","surface":"#FFF1F1","onPrimary":"#FFFFFF"}'::jsonb,
-  null, null,
+  null, '/brand/stores/anda-paya-logo.webp',
   '[{"src":"/images/stores/anda-paya/menus/carta-2026-09-06.jpg","caption":"Carta recibida el 06/09/2026 · precios pendientes de conciliación"}]'::jsonb,
   true, now(),
   array['Comida norteña', 'Marinos', 'Criollo'], null, null, true, true, true,
-  'Catálogo activo basado en la carta previamente verificada. La carta recibida el 06/09/2026 se muestra como referencia; sus precios están pendientes de conciliación comercial.',
+  'Carta y logotipo entregados por el negocio y autorizados para publicación. Precios y datos operativos quedan sujetos a conciliación comercial.',
   null
 )
 on conflict (id) do update set
