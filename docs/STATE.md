@@ -42,8 +42,8 @@ producción.
   cubre Chrome real, móvil/escritorio, rutas protegidas, accesibilidad básica y reduced motion.
 - F9 cerró el último escape conocido: `build:apps` rechaza configuración incompleta y los bundles
   productivos rechazan chunks `Mock*`; GitHub Pages ya no publica artefactos heredados.
-- F10 añadió runner Playwright y workflow CI para Supabase local; smoke Chrome local cubre nueve
-  combinaciones de viewport/ruta. Backend E2E queda pendiente hasta evidencia CI verde.
+- F10 añadió runner Playwright y workflow CI para Supabase local; smoke Chrome cubre nueve
+  combinaciones de viewport/ruta y el job `test` de pgTAP/E2E queda verde en PR #28.
 - Cliente, repartidor y backoffice tienen entradas/bundles web independientes y también viven dentro
   del APK unificado; las ofertas no se inventan ni se siembran sin datos comerciales autorizados.
 - Auth Supabase y guards por capacidad están implementados; la conexión rechaza un project ref
@@ -69,9 +69,8 @@ producción.
 
 ## Siguiente acción
 
-Validar inicio de sesión real en un dispositivo físico, ejecutar pgTAP en CI para las migraciones
-recientes, resolver la firma Android release y confirmar el logo final de Andá Paya. Después de
-confirmar sede y logística, habilitar pedidos.
+Validar inicio de sesión real en un dispositivo físico, resolver la firma Android release y
+confirmar el logo final de Andá Paya. Después de confirmar sede y logística, habilitar pedidos.
 
 ## Gate productivo pendiente
 
@@ -79,7 +78,7 @@ El sitio GitHub Pages actual es legado. Producción canónica usa `suya-customer
 `suya-rider.pages.dev` y `suya-backoffice.pages.dev`; smoke remoto y verificador de bundles están verdes.
 
 La máquina actual no tiene Docker ni Podman. Las pruebas pgTAP y `db lint` se ejecutan en GitHub CI;
-localmente se habilitarán cuando exista uno de esos runtimes.
+el PR #28 tiene verdes `test`, `browser`, `browser-e2e`, `build`, `simulator` y `debug`.
 
 Google OAuth está activo en Supabase y Google Auth Platform; falta validar una cuenta real en Android.
 Donde Joel tiene perfil, cuatro cartas y activos públicos reproducibles; pedidos siguen desactivados.
