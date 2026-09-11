@@ -4,10 +4,13 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import { AppShell } from '@/app/AppShell';
 import { AuthBootstrap } from '@/app/AuthBootstrap';
+import { CatalogBootstrap } from '@/app/CatalogBootstrap';
 import '@/styles/index.css';
 
 interface MountOptions {
   Bootstrap?: ComponentType;
+  /** Starts the customer catalog while the intro is still visible. */
+  preloadCatalog?: boolean;
   registerServiceWorker?: boolean;
 }
 
@@ -21,6 +24,7 @@ export function mountApp(Routes: ComponentType, options: MountOptions = {}): voi
       <BrowserRouter basename={basename}>
         <AppShell>
           <AuthBootstrap />
+          {options.preloadCatalog && <CatalogBootstrap />}
           {options.Bootstrap && <options.Bootstrap />}
           <Routes />
         </AppShell>

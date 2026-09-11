@@ -136,8 +136,8 @@ export default function StoreDetailPage() {
   const totals = cartTotals(items, store, FREE_DELIVERY_THRESHOLD);
   const cartMatchesStore = cartStoreId === store.id && items.length > 0;
   const theme = store.theme;
-  const normalizedStoreName = store.name.trim().toLocaleLowerCase('es-PE');
-  const storeLogo = store.logo || (normalizedStoreName === 'andá paya' ? '/brand/stores/anda-paya.svg' : null);
+  // Usa marca entregada por el negocio; si aún no existe, muestra una pieza original de su galería.
+  const storeLogo = assetUrl(store.logo || store.gallery?.[0]?.src);
 
   return (
     <div style={themeStyle(theme)} className="pb-24 lg:pb-8">

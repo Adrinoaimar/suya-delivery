@@ -6,6 +6,7 @@ import { Thumb } from '@/components/common/Thumb';
 import { cn } from '@/lib/cn';
 import { useUserStore } from '@/store/userStore';
 import { formatDistance, formatEta, formatPrice } from '@/utils/format';
+import { assetUrl } from '@/utils/asset';
 import { isInformationalStore, isStoreAcceptingOrders } from '@/utils/schedule';
 import type { Store } from '@/types';
 
@@ -14,11 +15,6 @@ interface StoreCardProps {
   layout?: 'grid' | 'row';
   className?: string;
 }
-
-/** Activos propios de la demo cuando el backend todavía no tiene logo publicado. */
-const BRAND_ASSET_FALLBACKS: Record<string, string> = {
-  'anda-paya': '/brand/stores/anda-paya.svg',
-};
 
 /** Dato operativo suelto: se lee de un vistazo, sin cadenas separadas por puntos. */
 function MetaPill({ icon, children }: { icon: ReactNode; children: ReactNode }) {
@@ -36,11 +32,10 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
   const isFavorite = favorites.includes(store.id);
   const informationalOnly = isInformationalStore(store);
   const open = isStoreAcceptingOrders(store);
-  const normalizedName = store.name.trim().toLocaleLowerCase('es-PE');
-  const demoFallback = normalizedName === 'andá paya' ? BRAND_ASSET_FALLBACKS['anda-paya'] : undefined;
-  const visualSrc = store.image || store.logo || demoFallback || BRAND_ASSET_FALLBACKS[store.id] || null;
-  const visualFit = store.image ? 'cover' : 'contain';
-  const compactLogo = layout === 'grid' && !store.image && Boolean(visualSrc);
+  // Cuando falta logo oficial, usa primera imagen original de galería; nunca inventa marca.
+  const visualSrc = assetUrl(store.image || store.logo || store.gallery?.[0]?.src);
+  const visualFit = store.image || store.gallery?.[0]?.src ? 'cover' : 'contain';
+  const compactLogo = layout === 'grid' && !store.image && Boolean(store.logo);
   const stacked = layout === 'grid' && !compactLogo;
   const hasRating = store.rating > 0 && store.reviews !== 0;
 

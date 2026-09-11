@@ -1,6 +1,6 @@
 # Estado de ejecución
 
-Actualizado: 6 de septiembre de 2026 (`America/Lima`)
+Actualizado: 11 de septiembre de 2026 (`America/Lima`)
 
 ## Objetivo
 
@@ -9,8 +9,8 @@ producción.
 
 ## Estado actual
 
-- Rama de trabajo: `feat/suya-mobile-app`, basada en `origin/main`.
-- F13 acceso y catálogo: clientes tienen registro renovado y Google OAuth PKCE preparado para web,
+- Rama de trabajo: `codex/2026-09-11-suya-perfect-app`, checkpoint móvil integrado y listo para revisión.
+- F13 acceso y catálogo: clientes tienen registro renovado y Google OAuth PKCE publicado para web,
   Android e iOS. Donde Joel suma 133 productos verificables y cuatro cartas como catálogo
   informativo sin pedidos; la carta nueva de Andá Paya se muestra con aviso de revisión por
   conflictos de precio.
@@ -52,6 +52,11 @@ producción.
   `accepting_orders` habilitado por autorización comercial; bebidas sin precio no se importaron.
 - Producción no incluye servicios mock, mapa falso, GPS simulado, promociones ficticias ni ganancias
   inventadas. Enlace público de tracking sigue deshabilitado por seguridad.
+- La precarga de catálogo inicia negocios y categorías durante la pantalla inicial del cliente y del
+  APK móvil; la suite de regresión cubre ese arranque.
+- Activos de marca: Tío Jhony, La Waka y Donde Joel tienen activos publicados; Andá Paya usa la
+  carta original como galería y fallback visual hasta recibir el logo oficial final. No se usa el SVG
+  recreado anterior. Ver `docs/data/brand-assets.md`.
 
 ## Reglas de continuidad
 
@@ -64,10 +69,9 @@ producción.
 
 ## Siguiente acción
 
-Habilitar Google en Google Cloud/Supabase, validar OAuth en un dispositivo físico y ejecutar pgTAP en
-CI para la migración de Donde Joel. Después de confirmar sede y logística, desplegar la migración y
-habilitar pedidos. Para distribución, crear firma Android de release y configurar Apple Developer
-Team, certificado y provisioning profile.
+Validar inicio de sesión real en un dispositivo físico, ejecutar pgTAP en CI para las migraciones
+recientes, resolver la firma Android release y confirmar el logo final de Andá Paya. Después de
+confirmar sede y logística, habilitar pedidos.
 
 ## Gate productivo pendiente
 
@@ -77,8 +81,8 @@ El sitio GitHub Pages actual es legado. Producción canónica usa `suya-customer
 La máquina actual no tiene Docker ni Podman. Las pruebas pgTAP y `db lint` se ejecutan en GitHub CI;
 localmente se habilitarán cuando exista uno de esos runtimes.
 
-El código Google OAuth está completo, pero el proveedor sigue desactivado en Supabase hasta cargar
-Client ID/Secret y Redirect URLs externos. Donde Joel tampoco está desplegado al backend remoto.
+Google OAuth está activo en Supabase y Google Auth Platform; falta validar una cuenta real en Android.
+Donde Joel tiene perfil, cuatro cartas y activos públicos reproducibles; pedidos siguen desactivados.
 
 La máquina Windows no puede producir un `.ipa`. El proyecto Xcode y el build de simulador son
 verificables en CI; un artefacto instalable exige firma Apple externa.

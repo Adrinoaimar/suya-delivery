@@ -52,6 +52,38 @@ export interface OfferService {
   setActive(id: string, active: boolean): Promise<boolean>;
 }
 
+export type RestaurantAccountStatus =
+  | 'pending_contact'
+  | 'ready_to_invite'
+  | 'invited'
+  | 'active'
+  | 'suspended';
+
+export interface RestaurantAccount {
+  restaurantId: string;
+  restaurantName: string;
+  status: RestaurantAccountStatus;
+  contactName: string;
+  contactEmail: string;
+  ownerUserId: string | null;
+  invitedAt: string | null;
+  activatedAt: string | null;
+  notes: string;
+  updatedAt: string;
+}
+
+export interface RestaurantAccountService {
+  list(): Promise<RestaurantAccount[]>;
+  saveContact(input: {
+    restaurantId: string;
+    contactName: string;
+    contactEmail: string;
+    notes: string;
+  }): Promise<RestaurantAccount>;
+  invite(restaurantId: string): Promise<RestaurantAccount>;
+  activate(restaurantId: string): Promise<RestaurantAccount>;
+}
+
 export interface MenuSettings {
   restaurantId: string;
   slug: string;

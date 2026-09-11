@@ -15,6 +15,7 @@ import { SupabaseSafetyServiceImpl } from './SupabaseSafetyService';
 import { SupabaseTableService } from './SupabaseTableService';
 import { SupabaseOfferServiceImpl } from './SupabaseOfferService';
 import { SupabaseWalletObserverService } from './SupabaseWalletObserverService';
+import { SupabaseRestaurantAccountService } from './SupabaseRestaurantAccountService';
 import { Capacitor } from '@capacitor/core';
 import { CapacitorLocationService } from './CapacitorLocationService';
 import { BrowserLocationService } from './BrowserLocationService';
@@ -27,7 +28,29 @@ import type {
   TableService,
   OfferService,
   WalletObserverService,
+  RestaurantAccountService,
 } from './types';
+
+let resolvedRestaurantAccountService: Promise<RestaurantAccountService> | null = null;
+function resolveRestaurantAccountService(): Promise<RestaurantAccountService> {
+  if (resolvedRestaurantAccountService) return resolvedRestaurantAccountService;
+  resolvedRestaurantAccountService = import.meta.env.VITE_BACKEND === 'supabase'
+    ? Promise.resolve(new SupabaseRestaurantAccountService())
+    : Promise.resolve({
+      async list() { return []; },
+      async saveContact() { throw new Error('La gestión de cuentas requiere Supabase.'); },
+      async invite() { throw new Error('La gestión de cuentas requiere Supabase.'); },
+      async activate() { throw new Error('La gestión de cuentas requiere Supabase.'); },
+    });
+  return resolvedRestaurantAccountService;
+}
+
+export const restaurantAccountService: RestaurantAccountService = {
+  async list() { return (await resolveRestaurantAccountService()).list(); },
+  async saveContact(input) { return (await resolveRestaurantAccountService()).saveContact(input); },
+  async invite(restaurantId) { return (await resolveRestaurantAccountService()).invite(restaurantId); },
+  async activate(restaurantId) { return (await resolveRestaurantAccountService()).activate(restaurantId); },
+};
 
 let resolvedWalletObserverService: Promise<WalletObserverService> | null = null;
 function resolveWalletObserverService(): Promise<WalletObserverService> {
