@@ -102,7 +102,7 @@ export default function MenuPage() {
           <div className="relative h-48 bg-[var(--menu-primary)] sm:h-56 lg:h-60">
             {heroImage ? <img src={heroImage} alt={`Portada de ${store.name}`} referrerPolicy="no-referrer" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center bg-[var(--menu-primary)] text-6xl font-black text-white/30">S</div>}
             <div className="pointer-events-none absolute inset-0 bg-black/10" aria-hidden="true" />
-            <span className="absolute bottom-4 left-4 rounded-full bg-white/90 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-suya-carbon">Menú público</span>
+            <span className="absolute bottom-4 right-4 rounded-full bg-white/90 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-suya-carbon">Menú público</span>
           </div>
           <div className="relative px-4 pb-6 sm:px-6 lg:px-5">
             <div className="-mt-10 h-20 w-20 overflow-hidden rounded-2xl border-4 border-[#F8F5EE] bg-white shadow-card lg:border-white">
