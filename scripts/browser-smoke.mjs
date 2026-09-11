@@ -83,6 +83,14 @@ if (process.env.SMOKE_BUSINESS === 'true') {
     await page.getByRole('button', { name: 'Ingresar' }).click();
     await page.waitForURL(/\/profile|\/$/, { timeout: 20_000 });
 
+    await page.goto(`${customerOrigin}/menu/anda-paya-menu`, { waitUntil: 'networkidle', timeout: 20_000 });
+    await page.getByRole('heading', { name: 'Andá Paya' }).waitFor();
+    await page.getByRole('img', { name: 'Logo de Andá Paya' }).waitFor();
+    await page.getByText(/\d+ opciones disponibles/, { exact: false }).waitFor();
+    const publicMenuProducts = await page.locator('article').count();
+    if (publicMenuProducts === 0) failures.push('business/customer-public-menu: carta sin productos');
+    console.log(`business/customer-public-menu: OK (${publicMenuProducts} productos visibles)`);
+
     await page.goto(`${customerOrigin}/stores`, { waitUntil: 'networkidle', timeout: 20_000 });
     await page.getByRole('link', { name: 'Andá Paya' }).click();
     await page.getByRole('heading', { name: 'Andá Paya' }).waitFor();
