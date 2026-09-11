@@ -87,11 +87,12 @@ tipos, estilo y pruebas, construye y despliega.
   cocina y de sus otras sedes (`Store.gallery`). Los 20 platos restantes se muestran con la reserva
   neutra a propósito: **solo se asigna una foto cuando retrata ese plato**, nunca se rellena con la
   imagen de otro para que la carta no engañe. Los archivos viven en
-  `public/images/stores/tio-jhony/` y proceden del material del propio restaurante, por lo que su
-  uso debe autorizarse antes de publicar la propuesta.
+  `public/images/stores/tio-jhony/` y proceden del material del propio restaurante; su uso queda
+  registrado como autorizado en la publicación de catálogo.
 - **Andá Paya** sigue en **fase beta**: carta norteña referencial, sin presencia web indexada que
-  permita confirmarla, con distintivo «Beta», nota de datos y un logotipo original creado para la
-  demo que debe sustituirse por el activo oficial cuando el negocio lo entregue.
+  permita confirmarla, con distintivo «Beta», nota de datos y logo derivado de la cabecera de la
+  carta autorizada. La carta original permanece visible en la galería hasta conciliar precios y
+  datos operativos.
 - Carrito persistente de un solo negocio, con extras, notas y cálculo de envío.
 - Checkout con métodos de pago simulados (efectivo, Yape, tarjeta) y cupones demo.
 - Pedido con código `#SUY-XXXXX`, línea de tiempo de estados y seguimiento en mapa.
