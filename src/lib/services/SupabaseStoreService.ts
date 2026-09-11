@@ -53,9 +53,9 @@ function mapMenuSettings(row: MenuSettingsRow): MenuSettings {
     published: row.published,
     logoUrl: row.logo_url,
     heroImageUrl: row.hero_image_url,
-    primaryColor: row.primary_color,
-    accentColor: row.accent_color,
-    fontFamily: row.font_family,
+    primaryColor: hexColor(row.primary_color) ?? '#EF6C3B',
+    accentColor: hexColor(row.accent_color) ?? '#8CC63F',
+    fontFamily: ['Montserrat', 'Inter'].includes(row.font_family) ? row.font_family : 'Inter',
   };
 }
 
@@ -83,6 +83,11 @@ function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
 }
 
+function hexColor(value: unknown): string | null {
+  const candidate = text(value);
+  return candidate && /^#[0-9a-f]{6}$/iu.test(candidate) ? candidate : null;
+}
+
 function number(value: number | string): number {
   const parsed = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(parsed)) throw new Error('Supabase devolvió un monto inválido.');
@@ -100,10 +105,10 @@ function mapSchedule(value: unknown): Schedule {
 
 function mapTheme(value: unknown): Store['theme'] {
   const row = object(value);
-  const primary = text(row?.primary);
-  const accent = text(row?.accent);
-  const surface = text(row?.surface);
-  const onPrimary = text(row?.onPrimary);
+  const primary = hexColor(row?.primary);
+  const accent = hexColor(row?.accent);
+  const surface = hexColor(row?.surface);
+  const onPrimary = hexColor(row?.onPrimary);
   return primary && accent && surface && onPrimary
     ? { primary, accent, surface, onPrimary }
     : undefined;
@@ -243,26 +248,13 @@ export class SupabaseStoreServiceImpl implements StoreService {
   }
 
   async listStores(): Promise<Store[]> {
-    const [restaurants, products] = await Promise.all([
-      this.restaurantRows(),
-      this.productRows(),
-    ]);
-    return restaurants.map((restaurant) => {
-      const sections = [...new Set(
-        products
-          .filter((product) => product.restaurant_id === restaurant.id)
-          .map((product) => product.section),
-      )];
-      return mapStore(restaurant, sections);
-    });
+    const restaurants = await this.restaurantRows();
+    return restaurants.map((restaurant) => mapStore(restaurant, []));
   }
 
   async getStore(id: string): Promise<Store | undefined> {
-    const [restaurant, products] = await Promise.all([
-      this.restaurantRows(id).then((rows) => rows[0]),
-      this.productRows(id),
-    ]);
-    return restaurant ? mapStore(restaurant, [...new Set(products.map((row) => row.section))]) : undefined;
+    const restaurant = (await this.restaurantRows(id))[0];
+    return restaurant ? mapStore(restaurant, []) : undefined;
   }
 
   async getPublishedMenu(slug: string): Promise<PublishedMenu | undefined> {

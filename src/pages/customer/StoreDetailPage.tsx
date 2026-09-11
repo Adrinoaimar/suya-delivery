@@ -48,12 +48,12 @@ function themeStyle(theme: Store['theme']): CSSProperties | undefined {
 export default function StoreDetailPage() {
   const { id = '' } = useParams();
   const store = useCatalogStore((state) => state.stores.find((entry) => entry.id === id));
-  const storesStatus = useCatalogStore((state) => state.storesStatus);
-  const storesError = useCatalogStore((state) => state.storesError);
+  const storeStatus = useCatalogStore((state) => state.storeStatus[id] ?? 'idle');
+  const storeError = useCatalogStore((state) => state.storeError[id] ?? null);
   const productsData = useCatalogStore((state) => state.productsByStore[id]);
   const productsStatus = useCatalogStore((state) => state.productsStatus[id] ?? 'idle');
   const productsError = useCatalogStore((state) => state.productsError[id] ?? null);
-  const loadStores = useCatalogStore((state) => state.loadStores);
+  const loadStore = useCatalogStore((state) => state.loadStore);
   const loadProducts = useCatalogStore((state) => state.loadProducts);
   const [selected, setSelected] = useState<Product | null>(null);
   const [section, setSection] = useState<string | null>(null);
@@ -65,9 +65,9 @@ export default function StoreDetailPage() {
   const setOrigin = useCartStore((state) => state.setOrigin);
 
   useEffect(() => {
-    void loadStores();
+    void loadStore(id);
     void loadProducts(id);
-  }, [id, loadStores, loadProducts]);
+  }, [id, loadStore, loadProducts]);
 
   // Entrar desde el catálogo general siempre es el canal Delivery. Un contexto
   // QR de mesa explícito conserva su canal y permite checkout invitado.
@@ -83,13 +83,13 @@ export default function StoreDetailPage() {
   }, [id, setOrigin]);
 
   if (!store) {
-    if (storesError) {
+    if (storeError) {
       return (
         <div className="shell py-10">
           <ErrorState
-            description={storesError}
+            description={storeError}
             onRetry={() => {
-              void loadStores(true);
+              void loadStore(id, true);
               void loadProducts(id, true);
             }}
           />
@@ -97,7 +97,7 @@ export default function StoreDetailPage() {
       );
     }
 
-    if (storesStatus !== 'ready') {
+    if (storeStatus !== 'ready') {
       return (
         <div className="shell space-y-4 py-10" role="status" aria-busy="true">
           <span className="sr-only">Cargando el negocio…</span>
@@ -131,13 +131,13 @@ export default function StoreDetailPage() {
   const informationalOnly = isInformationalStore(store);
   const open = isStoreAcceptingOrders(store);
   const isFavorite = favorites.includes(store.id);
-  const sections = store.sections.filter((name) =>
-    products.some((product) => product.section === name),
-  );
+  const sections = [...new Set(products.map((product) => product.section))];
   const visibleSections = section ? sections.filter((name) => name === section) : sections;
   const totals = cartTotals(items, store, FREE_DELIVERY_THRESHOLD);
   const cartMatchesStore = cartStoreId === store.id && items.length > 0;
   const theme = store.theme;
+  const normalizedStoreName = store.name.trim().toLocaleLowerCase('es-PE');
+  const storeLogo = store.logo || (normalizedStoreName === 'andá paya' ? '/brand/stores/anda-paya.svg' : null);
 
   return (
     <div style={themeStyle(theme)} className="pb-24 lg:pb-8">
@@ -153,6 +153,7 @@ export default function StoreDetailPage() {
           <img
             src={assetUrl(store.image)}
             alt={`Local de ${store.name}`}
+            referrerPolicy="no-referrer"
             className="h-full w-full object-cover"
             width={1200}
             height={720}
@@ -160,7 +161,7 @@ export default function StoreDetailPage() {
         ) : theme ? (
           <div className="flex h-full items-center justify-center gap-4 bg-gradient-to-br from-[var(--store-primary)] to-[var(--store-accent)] px-6">
             <span className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-2 shadow-soft sm:h-28 sm:w-28">
-              <Thumb name={store.name} src={store.logo} variant="store" rounded="rounded-full" />
+              <Thumb name={store.name} src={storeLogo} variant="store" rounded="rounded-full" />
             </span>
             <span className="hidden text-left text-[var(--store-on-primary)] sm:block">
               <span className="block font-display text-3xl font-bold leading-none">
@@ -211,7 +212,7 @@ export default function StoreDetailPage() {
         >
           <div className="flex items-start gap-3">
             <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-suya-mist">
-              <Thumb name={store.name} src={store.logo} variant="store" rounded="rounded-xl" />
+              <Thumb name={store.name} src={storeLogo} variant="store" rounded="rounded-xl" />
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="font-display text-xl font-bold leading-tight">{store.name}</h1>
@@ -312,7 +313,7 @@ export default function StoreDetailPage() {
         {/* Categorías internas */}
         <nav
           aria-label="Categorías del negocio"
-          className="sticky top-[60px] z-20 -mx-4 border-y border-suya-mist/70 bg-suya-ivory/95 px-4 py-3 backdrop-blur lg:top-[72px] lg:mx-0 lg:px-0"
+          className="sticky top-[var(--header-h)] z-20 -mx-4 border-y border-suya-mist/70 bg-suya-ivory/95 px-4 py-3 backdrop-blur lg:top-[72px] lg:mx-0 lg:px-0"
         >
           <div className="hide-scrollbar flex gap-2 overflow-x-auto">
             <button
@@ -320,7 +321,7 @@ export default function StoreDetailPage() {
               onClick={() => setSection(null)}
               aria-pressed={section === null}
               className={cn(
-                'press h-10 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors',
+                'press h-11 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors',
                 section === null
                   ? theme
                     ? 'border-[var(--store-primary)] bg-[var(--store-primary)] text-[var(--store-on-primary)]'
@@ -337,7 +338,7 @@ export default function StoreDetailPage() {
                 onClick={() => setSection(name)}
                 aria-pressed={section === name}
                 className={cn(
-                  'press h-10 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors',
+                  'press h-11 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors',
                   section === name
                     ? theme
                       ? 'border-[var(--store-primary)] bg-[var(--store-primary)] text-[var(--store-on-primary)]'
@@ -366,7 +367,7 @@ export default function StoreDetailPage() {
                 <ProductRowSkeleton key={index} />
               ))}
             </div>
-          ) : (
+          ) : visibleSections.length > 0 ? (
             visibleSections.map((name) => (
               <section key={name} aria-labelledby={`seccion-${name}`} className="motion-enter">
               <h2 id={`seccion-${name}`} className="section-title mb-3">
@@ -391,6 +392,12 @@ export default function StoreDetailPage() {
               </div>
             </section>
             ))
+          ) : (
+            <EmptyState
+              icon={<ShoppingBag className="h-6 w-6" />}
+              title="Carta sin productos"
+              description="Este negocio todavía no publicó platos disponibles."
+            />
           )}
 
           {!open && !productsLoading && !productsError && (

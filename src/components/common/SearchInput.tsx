@@ -39,7 +39,7 @@ export function SearchInput({
         placeholder={placeholder}
         autoFocus={autoFocus}
         onChange={(event) => onChange(event.target.value)}
-        className="h-12 w-full rounded-btn border border-suya-border bg-white/90 pl-12 pr-12 text-[15px] text-suya-carbon shadow-card transition-[border-color,box-shadow,background-color] placeholder:text-suya-muted/70 focus:border-suya-green focus:bg-white focus:outline-none focus:ring-2 focus:ring-suya-green/20"
+        className="suya-lens-raised h-14 w-full rounded-[20px] pl-12 pr-12 text-[15px] font-medium text-suya-carbon transition-[border-color,box-shadow,background-color] placeholder:font-normal placeholder:text-suya-muted/65 focus:border-suya-green/60 focus:bg-white/85 focus:outline-none focus:ring-4 focus:ring-suya-green/10"
       />
       {value.length > 0 && (
         <button

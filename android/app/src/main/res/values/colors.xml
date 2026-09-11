@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Identidad Suya usada por la ventana nativa; debe coincidir con los tokens web. -->
+    <color name="suya_ivory">#F0F7F3</color>
+    <color name="suya_ivory_top">#EEF6F1</color>
+    <color name="suya_green">#0B7048</color>
+
+    <!--
+      AppCompat espera estos tres nombres. Sin definirlos, `AppTheme` heredaba el
+      índigo por defecto del framework, que fue el que apareció en la barra superior.
+    -->
+    <color name="colorPrimary">#0B7048</color>
+    <color name="colorPrimaryDark">#075738</color>
+    <color name="colorAccent">#74B85B</color>
+</resources>

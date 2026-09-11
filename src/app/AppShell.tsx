@@ -1,5 +1,6 @@
 import { useLayoutEffect, type ReactNode } from 'react';
 import { ScrollToTop } from '@/app/ScrollToTop';
+import { OfflineBanner } from '@/components/common/OfflineBanner';
 import { SuyaIntroLoader } from '@/components/common/SuyaIntroLoader';
 import { ToastViewport } from '@/components/common/Toast';
 import { useIntro } from '@/hooks/useIntro';
@@ -35,6 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
       <ScrollToTop />
       {children}
+      <OfflineBanner />
       <ToastViewport />
       {intro.visible && (
         <SuyaIntroLoader onFinish={intro.finish} minDuration={introDurationOverride()} />

@@ -146,6 +146,7 @@ function makeService(overrides: {
   categories?: TableHandler;
   restaurants?: TableHandler;
   products?: TableHandler;
+  restaurantMenuSettings?: TableHandler;
 }): { service: SupabaseStoreServiceImpl; calls: string[] } {
   const { client, calls } = createFakeSupabase({
     categories:
@@ -164,6 +165,23 @@ function makeService(overrides: {
       overrides.products ??
       ((filters) => ({
         data: applyFilters([productRow, otherRestaurantProduct], filters),
+        error: null,
+      })),
+    restaurant_menu_settings:
+      overrides.restaurantMenuSettings ??
+      ((filters) => ({
+        data: applyFilters([
+          {
+            restaurant_id: 'r1',
+            public_slug: 'suya-grill',
+            published: true,
+            logo_url: null,
+            hero_image_url: null,
+            primary_color: '#0E6B44',
+            accent_color: '#8CC63F',
+            font_family: 'Inter',
+          },
+        ], filters),
         error: null,
       })),
   });
@@ -213,8 +231,7 @@ describe('SupabaseStoreService', () => {
       },
     });
     expect(store.tags.slice(0, 2)).toEqual(['Parrillas', 'Norteño']);
-    expect(store.sections).toEqual(['Anticuchos']);
-    expect(store.tags).toContain('Anticuchos');
+    expect(store.sections).toEqual([]);
     // Galería: solo entradas con src y caption válidos.
     expect(store.gallery).toEqual([
       { src: 'https://img.example/1.jpg', caption: 'Vista del local' },
@@ -240,6 +257,16 @@ describe('SupabaseStoreService', () => {
     expect(store?.theme).toBeUndefined();
     expect(store?.gallery).toEqual([]);
     expect(store?.sections).toEqual([]);
+  });
+
+  it('resuelve un menú publicado sin descargar productos dos veces', async () => {
+    const { service, calls } = makeService({});
+
+    const menu = await service.getPublishedMenu(' SUYA-GRILL ');
+
+    expect(menu?.slug).toBe('suya-grill');
+    expect(menu?.store.id).toBe('r1');
+    expect(calls).toEqual(['restaurant_menu_settings', 'restaurants']);
   });
 
   it('mapea productos convirtiendo montos y descartando extras inválidos', async () => {
@@ -273,7 +300,7 @@ describe('SupabaseStoreService', () => {
     });
   });
 
-  it('getStore filtra por id y combina las secciones de sus productos', async () => {
+  it('getStore filtra por id sin descargar los productos', async () => {
     const seen: Filter[][] = [];
     const { service } = makeService({
       restaurants: (filters) => {
@@ -286,7 +313,8 @@ describe('SupabaseStoreService', () => {
 
     expect(seen[0]).toContainEqual(['id', 'r1']);
     expect(store?.id).toBe('r1');
-    expect(store?.sections).toEqual(['Anticuchos']);
+    expect(store?.sections).toEqual([]);
+    expect(seen).toHaveLength(1);
   });
 
   it('búsqueda normalizada ignora acentos y mayúsculas en productos y negocios', async () => {

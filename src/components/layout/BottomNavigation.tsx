@@ -17,9 +17,9 @@ export function BottomNavigation() {
   return (
     <nav
       aria-label="Navegación principal"
-      className="suya-lens-nav fixed inset-x-3 bottom-[calc(8px+env(safe-area-inset-bottom))] z-30 rounded-card lg:hidden"
+      className="suya-lens-nav fixed inset-x-4 bottom-[calc(var(--bottom-nav-gap)+env(safe-area-inset-bottom,0px))] z-30 rounded-promo p-1.5 lg:hidden"
     >
-      <ul className="mx-auto flex max-w-md">
+      <ul className="mx-auto flex max-w-md gap-0.5">
         {ITEMS.map((item) => {
           const Icon = item.icon;
           return (
@@ -29,7 +29,7 @@ export function BottomNavigation() {
                 end={item.end}
                 className={({ isActive }) =>
                   cn(
-                    'relative flex h-16 min-h-12 flex-col items-center justify-center gap-1 rounded-btn text-[11px] font-semibold transition-colors',
+                    'relative flex h-[60px] min-h-12 flex-col items-center justify-center gap-1 rounded-[19px] text-[11px] font-semibold transition-[color,background-color,transform] active:scale-[0.97]',
                     isActive ? 'text-suya-green' : 'text-suya-muted',
                   )
                 }
@@ -38,8 +38,8 @@ export function BottomNavigation() {
                   <>
                     <span
                       className={cn(
-                        'relative rounded-full px-3 py-0.5',
-                        isActive && 'bg-suya-green/10',
+                        'relative rounded-xl px-3 py-1 transition-[background-color,color,box-shadow]',
+                        isActive && 'bg-suya-green text-white shadow-[0_8px_20px_rgba(11,112,72,.24)]',
                       )}
                     >
                       <Icon
@@ -47,10 +47,13 @@ export function BottomNavigation() {
                         className={cn('h-[22px] w-[22px]', isActive && 'stroke-[2.4]')}
                       />
                       {item.to === '/orders' && hasActiveOrder && (
-                        <span
-                          aria-hidden="true"
-                          className="absolute -right-1 -top-0.5 h-2.5 w-2.5 rounded-full bg-suya-sun ring-2 ring-white"
-                        />
+                        <>
+                          <span
+                            aria-hidden="true"
+                            className="absolute -right-1 -top-0.5 h-2.5 w-2.5 rounded-full bg-suya-sun ring-2 ring-white"
+                          />
+                          <span className="sr-only">Pedido activo</span>
+                        </>
                       )}
                     </span>
                     {item.label}

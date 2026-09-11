@@ -19,7 +19,7 @@
     --suya-green-dark: #075738;
     --suya-lime: #74b85b;
     --suya-sun: #e9b52b;
-    --suya-ivory: #f0f7f3;
+    --suya-ivory: #f2f7f4;
     --suya-white: #ffffff;
     --suya-carbon: #152a20;
     --suya-mist: #dde9e2;
@@ -30,21 +30,49 @@
     --suya-elevated: rgba(255, 255, 255, 0.92);
     --suya-rider: #10251c;
 
-    --radius-btn: 14px;
-    --radius-card: 20px;
-    --radius-promo: 28px;
+    --suya-success: #43a854;
+    --suya-danger: #c83e32;
+    --suya-info: #377f9c;
 
-    --shadow-soft: 0 18px 48px rgba(12, 49, 32, 0.12);
+    /* Escala de radios de DESIGN.md: sm 8 · md 14 · lg 20 · xl 28. */
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-xl: 28px;
+    --radius-btn: var(--radius-md);
+    --radius-card: var(--radius-lg);
+    --radius-promo: var(--radius-xl);
+
+    --shadow-soft: 0 22px 56px rgba(12, 49, 32, 0.13);
 
     /* Movimiento Suya: corto, legible y sin animar filtros costosos. */
-    --motion-fast: 140ms;
-    --motion-standard: 220ms;
-    --motion-slow: 320ms;
+    --motion-fast: 120ms;
+    --motion-standard: 280ms;
+    --motion-slow: 480ms;
     --ease-standard: cubic-bezier(0.2, 0, 0, 1);
     --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
 
     --header-h: 60px;
-    --bottom-nav-h: 64px;
+
+    /*
+     * Métrica única de la navegación inferior flotante. `--bottom-nav-h` es su alto
+     * real renderizado (píldora de 60px + 6px de padding por lado + hairline) y
+     * `--bottom-nav-gap` su separación del borde. Ambas las consume tanto la propia
+     * barra como el relleno del contenido, para que no puedan desincronizarse y
+     * volver a tapar la última tarjeta.
+     */
+    --bottom-nav-h: 74px;
+    --bottom-nav-gap: 10px;
+    --bottom-nav-space: calc(
+      var(--bottom-nav-h) + var(--bottom-nav-gap) + env(safe-area-inset-bottom, 0px)
+    );
+
+    /* Navegación del repartidor: píldora de 64px con 8px de separación. */
+    --rider-nav-h: 64px;
+    --rider-nav-gap: 8px;
+    --rider-nav-space: calc(
+      var(--rider-nav-h) + var(--rider-nav-gap) + env(safe-area-inset-bottom, 0px)
+    );
   }
 
   html {
@@ -53,7 +81,13 @@
   }
 
   body {
-    @apply bg-suya-ivory font-sans text-suya-carbon antialiased;
+    @apply font-sans text-suya-carbon antialiased;
+    background:
+      radial-gradient(circle at 7% -5%, rgba(116, 184, 91, 0.14), transparent 30%),
+      radial-gradient(circle at 100% 14%, rgba(233, 181, 43, 0.06), transparent 25%),
+      radial-gradient(circle at 48% 72%, rgba(255, 255, 255, 0.88), transparent 38%),
+      linear-gradient(155deg, #eef6f1 0%, #e5f1e9 45%, #f7faf8 100%);
+    background-attachment: fixed;
     margin: 0;
     min-height: 100dvh;
     overflow-x: hidden;
@@ -68,7 +102,7 @@
       inset: 0 0 auto;
       z-index: 1000;
       height: env(safe-area-inset-top, 0px);
-      background: var(--suya-green);
+      background: #eef6f1;
       pointer-events: none;
     }
   }
@@ -83,9 +117,9 @@
   }
 
   :focus-visible {
-    outline: 3px solid var(--suya-green);
-    outline-offset: 2px;
-    border-radius: 4px;
+    outline: 2px solid var(--suya-green);
+    outline-offset: 3px;
+    border-radius: 12px;
   }
 
   button,
@@ -105,7 +139,8 @@
   }
 
   .section-title {
-    @apply font-display text-lg font-bold text-suya-carbon sm:text-xl;
+    @apply font-display text-xl font-bold text-suya-carbon sm:text-2xl;
+    letter-spacing: -0.035em;
   }
 
   .surface {
@@ -177,11 +212,40 @@
   }
 
   .suya-lens {
-    background: rgba(250, 253, 251, 0.94);
-    border: 1px solid var(--suya-border);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.78), rgba(233, 244, 237, 0.48));
+    border: 1px solid rgba(255, 255, 255, 0.88);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.86),
-      var(--shadow-soft);
+      inset 0 1px 0 rgba(255, 255, 255, 0.95),
+      inset 0 -1px 0 rgba(11, 112, 72, 0.06),
+      0 16px 42px rgba(12, 49, 32, 0.09);
+  }
+
+  .suya-lens-raised {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0) 38%),
+      linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(235, 246, 239, 0.64));
+    border: 1px solid rgba(255, 255, 255, 0.94);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 1),
+      inset 0 -1px 0 rgba(11, 112, 72, 0.07),
+      0 1px 2px rgba(12, 49, 32, 0.04),
+      0 14px 38px rgba(12, 49, 32, 0.1);
+  }
+
+  .suya-lens-quiet {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.62), rgba(228, 242, 231, 0.35));
+    border: 1px solid rgba(255, 255, 255, 0.74);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      0 10px 28px rgba(12, 49, 32, 0.07);
+  }
+
+  .suya-lens-chip {
+    background: rgba(250, 253, 251, 0.78);
+    border: 1px solid rgba(255, 255, 255, 0.82);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.92),
+      0 8px 22px rgba(12, 49, 32, 0.12);
   }
 
   .suya-lens-dark {
@@ -198,11 +262,35 @@
   }
 
   .suya-lens-nav {
-    background: rgba(250, 253, 251, 0.97);
-    border: 1px solid var(--suya-border);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 46%),
+      linear-gradient(145deg, rgba(255, 255, 255, 0.84), rgba(231, 243, 235, 0.62));
+    border: 1px solid rgba(255, 255, 255, 0.92);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      var(--shadow-soft);
+      inset 0 1px 0 rgba(255, 255, 255, 0.98),
+      inset 0 -1px 0 rgba(11, 112, 72, 0.08),
+      0 20px 54px rgba(12, 49, 32, 0.15);
+  }
+
+  /*
+   * Píldoras que viajan sobre la fotografía del negocio (calificación, tiempo).
+   * Fondo oscuro translúcido porque la foto puede ser clara u oscura: el
+   * contraste del texto no puede depender de la imagen que haya debajo.
+   */
+  .suya-pill-media {
+    background: rgba(21, 42, 32, 0.62);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.28),
+      0 4px 14px rgba(12, 49, 32, 0.28);
+    color: #ffffff;
+  }
+
+  /* Dato secundario en superficie clara: tiempo, envío y distancia. */
+  .suya-pill-meta {
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
   }
 
   .suya-elevated {
@@ -239,39 +327,74 @@
     }
   }
 
-  /* Altura reservada para la navegación inferior en móvil */
+  /*
+   * Altura reservada para la navegación inferior en móvil: la franja que ocupa la
+   * barra flotante más 16px de respiro, para que la última tarjeta nunca quede
+   * cortada bajo el vidrio.
+   */
   .pb-nav {
-    padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 12px);
+    padding-bottom: calc(var(--bottom-nav-space) + 16px);
+  }
+
+  .pb-nav-rider {
+    padding-bottom: calc(var(--rider-nav-space) + 16px);
   }
 }
 
 @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
-  .suya-lens {
-    background: rgba(250, 253, 251, 0.82);
-    -webkit-backdrop-filter: blur(12px) saturate(118%);
-    backdrop-filter: blur(12px) saturate(118%);
+  .suya-lens,
+  .suya-lens-raised,
+  .suya-lens-chip {
+    -webkit-backdrop-filter: blur(16px) saturate(125%);
+    backdrop-filter: blur(16px) saturate(125%);
+  }
+
+  .suya-pill-media {
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
+    backdrop-filter: blur(8px) saturate(120%);
   }
 
   .suya-lens-dark {
-    background: rgba(16, 37, 28, 0.84);
+    background: linear-gradient(135deg, rgba(16, 37, 28, 0.9), rgba(11, 112, 72, 0.72));
     -webkit-backdrop-filter: blur(12px) saturate(112%);
     backdrop-filter: blur(12px) saturate(112%);
   }
 
   .suya-lens-nav {
-    background: rgba(250, 253, 251, 0.93);
-    -webkit-backdrop-filter: blur(12px) saturate(118%);
-    backdrop-filter: blur(12px) saturate(118%);
+    -webkit-backdrop-filter: blur(20px) saturate(130%);
+    backdrop-filter: blur(20px) saturate(130%);
   }
 }
 
 @media (min-width: 1024px) {
   @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
     .suya-lens,
+    .suya-lens-raised,
+    .suya-lens-quiet,
+    .suya-lens-chip,
     .suya-lens-dark,
     .suya-lens-nav {
       -webkit-backdrop-filter: blur(16px) saturate(118%);
       backdrop-filter: blur(16px) saturate(118%);
+    }
+  }
+}
+
+/* Android WebView compone cada blur como textura. En móvil, conserva cristal
+ * mediante color, borde y reflejo; limita blur real al chrome persistente. */
+@media (max-width: 1023px) {
+  @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    .suya-lens,
+    .suya-lens-raised,
+    .suya-lens-quiet,
+    .suya-lens-chip {
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+
+    .suya-lens-nav {
+      -webkit-backdrop-filter: blur(10px) saturate(118%);
+      backdrop-filter: blur(10px) saturate(118%);
     }
   }
 }

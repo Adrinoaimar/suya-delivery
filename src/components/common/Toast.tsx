@@ -31,7 +31,7 @@ export function ToastViewport() {
     <div
       role="status"
       aria-live="polite"
-      className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--bottom-nav-h)+16px)] z-[60] flex flex-col items-center gap-2 px-4 sm:bottom-6"
+      className="pointer-events-none fixed inset-x-0 bottom-[calc(var(--bottom-nav-space)+var(--offline-dock,0px)+16px)] z-[60] flex flex-col items-center gap-2 px-4 lg:bottom-[calc(var(--offline-dock,0px)+24px)]"
     >
       {toasts.map((toast) => {
         const Icon = ICONS[toast.level];

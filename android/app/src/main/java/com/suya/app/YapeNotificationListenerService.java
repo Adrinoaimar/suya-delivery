@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.text.TextUtils;
+import android.util.Base64;
 
 import androidx.annotation.Nullable;
 
@@ -15,6 +16,8 @@ import org.json.JSONObject;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.KeyStore;
+import java.security.GeneralSecurityException;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -26,6 +29,13 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+import android.security.keystore.KeyGenParameterSpec;
+import android.security.keystore.KeyProperties;
+
 /**
  * Experimental, local-only wallet notification observer.
  *
@@ -36,6 +46,8 @@ import java.util.regex.Pattern;
 public final class YapeNotificationListenerService extends NotificationListenerService {
     private static final String PREFS = "suya_yape_lab";
     private static final String EVENTS_KEY = "observed_events";
+    private static final String KEY_ALIAS = "suya_yape_observed_events";
+    private static final String KEYSTORE = "AndroidKeyStore";
     private static final int MAX_EVENTS = 100;
     private static final Pattern MONEY_PATTERN = Pattern.compile("(S\\/?|S\\.|PEN|ARS|USD|US\\$|\\$)\\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CODE_PATTERN = Pattern.compile("(?:c[oó]digo(?:\\s+(?:de\\s+)?(?:seguridad|operaci[oó]n|aprobaci[oó]n))?|operaci[oó]n|referencia|reference|ref\\.?|id(?:\\s+de)?\\s+(?:transferencia|operaci[oó]n))\\b\\s*[:#-]?\\s*([a-z0-9-]{3,20})", Pattern.CASE_INSENSITIVE);
@@ -141,7 +153,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         SharedPreferences preferences = getSharedPreferences(PREFS, MODE_PRIVATE);
         JSONArray current;
         try {
-            current = new JSONArray(preferences.getString(EVENTS_KEY, "[]"));
+            current = new JSONArray(decryptEvents(preferences.getString(EVENTS_KEY, null)));
         } catch (JSONException ignored) {
             current = new JSONArray();
         }
@@ -154,7 +166,59 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         for (int index = 0; index < current.length() && next.length() < MAX_EVENTS; index++) {
             next.put(current.opt(index));
         }
-        preferences.edit().putString(EVENTS_KEY, next.toString()).apply();
+        String encrypted = encryptEvents(next.toString());
+        // Never fall back to plaintext if Android Keystore is unavailable.
+        if (encrypted != null) preferences.edit().putString(EVENTS_KEY, encrypted).apply();
+    }
+
+    private static String decryptEvents(@Nullable String stored) {
+        if (stored == null || stored.isEmpty()) return "[]";
+        try {
+            String[] parts = stored.split(":", 2);
+            if (parts.length != 2) return "[]";
+            byte[] iv = Base64.decode(parts[0], Base64.NO_WRAP);
+            byte[] ciphertext = Base64.decode(parts[1], Base64.NO_WRAP);
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, getOrCreateKey(), new GCMParameterSpec(128, iv));
+            return new String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8);
+        } catch (GeneralSecurityException | IllegalArgumentException error) {
+            // Corrupt or invalidated data is discarded logically; it is never
+            // interpreted as an unencrypted event stream.
+            return "[]";
+        }
+    }
+
+    @Nullable
+    private static String encryptEvents(String plaintext) {
+        try {
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey());
+            String iv = Base64.encodeToString(cipher.getIV(), Base64.NO_WRAP);
+            String ciphertext = Base64.encodeToString(cipher.doFinal(plaintext.getBytes(StandardCharsets.UTF_8)), Base64.NO_WRAP);
+            return iv + ":" + ciphertext;
+        } catch (GeneralSecurityException | IllegalArgumentException error) {
+            return null;
+        }
+    }
+
+    private static SecretKey getOrCreateKey() throws GeneralSecurityException {
+        KeyStore keyStore = KeyStore.getInstance(KEYSTORE);
+        try {
+            keyStore.load(null);
+        } catch (Exception error) {
+            throw new GeneralSecurityException("No se pudo abrir Android Keystore", error);
+        }
+        if (keyStore.containsAlias(KEY_ALIAS)) {
+            return ((SecretKey) keyStore.getKey(KEY_ALIAS, null));
+        }
+        KeyGenerator generator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEYSTORE);
+        generator.init(new KeyGenParameterSpec.Builder(
+                KEY_ALIAS,
+                KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .build());
+        return generator.generateKey();
     }
 
     private static String isoNow() {

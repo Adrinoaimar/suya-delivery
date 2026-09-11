@@ -39,6 +39,7 @@ export default function OrdersPage() {
       <div className="shell py-10">
         <EmptyState
           icon={<Receipt className="h-6 w-6" />}
+          size="page"
           title="Todavía no tienes pedidos"
           description="Cuando hagas tu primer pedido lo verás aquí con su seguimiento."
           action={<ButtonLink to="/stores">Explorar tiendas</ButtonLink>}

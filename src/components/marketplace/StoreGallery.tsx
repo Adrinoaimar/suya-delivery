@@ -33,6 +33,7 @@ export function StoreGallery({ gallery, storeName }: StoreGalleryProps) {
                 alt={photo.caption}
                 loading="lazy"
                 decoding="async"
+                referrerPolicy="no-referrer"
                 width={720}
                 height={480}
                 className="aspect-[3/2] w-full object-contain transition-transform duration-300 motion-safe:hover:scale-[1.015]"
@@ -53,6 +54,7 @@ export function StoreGallery({ gallery, storeName }: StoreGalleryProps) {
           <img
             src={assetUrl(selected.src)}
             alt={selected.caption}
+            referrerPolicy="no-referrer"
             width={1600}
             height={1200}
             className="mx-auto max-h-[70dvh] w-full object-contain"

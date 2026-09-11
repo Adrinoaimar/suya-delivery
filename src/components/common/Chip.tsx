@@ -15,7 +15,7 @@ export function Chip({ active = false, onClick, className, children }: ChipProps
       onClick={onClick}
       aria-pressed={active}
       className={cn(
-        'press inline-flex h-11 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors',
+        'press inline-flex min-h-12 shrink-0 items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors',
         active
           ? 'border-suya-green bg-suya-green text-white'
           : 'border-suya-mist bg-white text-suya-carbon hover:border-suya-lime',

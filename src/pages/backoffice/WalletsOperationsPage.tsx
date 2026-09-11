@@ -36,7 +36,7 @@ function dateLabel(value: string | null): string {
 
 export default function WalletsOperationsPage() {
   const identity = useAuthStore((state) => state.identity);
-  const restaurantIds = identity?.restaurantIds ?? [];
+  const restaurantIds = useMemo(() => identity?.restaurantIds ?? [], [identity?.restaurantIds]);
   const isPlatformAdmin = identity?.access.includes('platform_admin') ?? false;
   const [stores, setStores] = useState<Store[]>([]);
   const [devices, setDevices] = useState<WalletObserverDevice[]>([]);

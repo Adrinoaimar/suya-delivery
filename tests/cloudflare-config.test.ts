@@ -104,7 +104,10 @@ describe('configuración Cloudflare productiva', () => {
   });
 
   it('exige credenciales solamente al solicitar despliegue', async () => {
-    const result = await run(['--deployment']);
+    const deploymentWithoutCredentials: NodeJS.ProcessEnv = { ...validEnv };
+    delete deploymentWithoutCredentials.CLOUDFLARE_ACCOUNT_ID;
+    delete deploymentWithoutCredentials.CLOUDFLARE_API_TOKEN;
+    const result = await run(['--deployment'], deploymentWithoutCredentials);
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('CLOUDFLARE_ACCOUNT_ID');
     expect(result.stderr).toContain('CLOUDFLARE_API_TOKEN');

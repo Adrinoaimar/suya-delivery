@@ -4,6 +4,7 @@ import { assetUrl } from '@/utils/asset';
 import { initialsOf } from '@/utils/format';
 
 type ThumbVariant = 'store' | 'product' | 'avatar';
+type ThumbFit = 'cover' | 'contain';
 
 const FALLBACK: Record<ThumbVariant, string> = {
   store: assetUrl('/placeholders/store.svg')!,
@@ -31,6 +32,8 @@ interface ThumbProps {
   className?: string;
   textClassName?: string;
   rounded?: string;
+  /** Ajuste visual para logotipos: conserva el activo completo dentro de la tarjeta. */
+  fit?: ThumbFit;
 }
 
 /**
@@ -44,6 +47,7 @@ export function Thumb({
   className,
   textClassName,
   rounded = 'rounded-xl',
+  fit = 'cover',
 }: ThumbProps) {
   const [failed, setFailed] = useState(false);
   const resolved = assetUrl(src);
@@ -55,8 +59,14 @@ export function Thumb({
         alt={name}
         loading="lazy"
         decoding="async"
+        referrerPolicy="no-referrer"
         onError={() => setFailed(true)}
-        className={cn('h-full w-full object-cover', rounded, className)}
+        className={cn(
+          'h-full w-full',
+          fit === 'contain' ? 'object-contain p-5' : 'object-cover',
+          rounded,
+          className,
+        )}
       />
     );
   }
@@ -67,11 +77,14 @@ export function Thumb({
         src={FALLBACK[variant]}
         alt=""
         aria-hidden="true"
+        referrerPolicy="no-referrer"
         className={cn('h-full w-full object-cover', rounded, className)}
       />
     );
   }
 
+  // Sin activo oficial la reserva se presenta como un medallón de marca: ocupa el
+  // mismo espacio que la foto pero se lee como una decisión, no como una imagen rota.
   return (
     <div
       aria-hidden="true"
@@ -82,8 +95,10 @@ export function Thumb({
         className,
       )}
     >
-      <span className={cn('font-display text-xl font-bold tracking-tight', textClassName)}>
-        {initialsOf(name)}
+      <span className="flex min-h-[56px] min-w-[56px] items-center justify-center rounded-full bg-white/55 px-4 shadow-[inset_0_1px_0_rgba(255,255,255,.9)]">
+        <span className={cn('font-display text-xl font-bold tracking-tight', textClassName)}>
+          {initialsOf(name)}
+        </span>
       </span>
     </div>
   );

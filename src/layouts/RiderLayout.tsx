@@ -123,14 +123,14 @@ export function RiderLayout() {
 
         <LocationGuardBanner />
 
-        <main className="flex-1 pb-[calc(72px+env(safe-area-inset-bottom))] lg:pb-0">
+        <main className="pb-nav-rider flex-1 lg:pb-0">
           <Outlet />
         </main>
 
         {/* Navegación inferior móvil */}
         <nav
           aria-label="Navegación del repartidor"
-          className="suya-lens-dark fixed inset-x-3 bottom-[calc(8px+env(safe-area-inset-bottom))] z-30 rounded-card lg:hidden"
+          className="suya-lens-dark fixed inset-x-3 bottom-[calc(var(--rider-nav-gap)+env(safe-area-inset-bottom,0px))] z-30 rounded-card lg:hidden"
         >
           <ul className="mx-auto flex max-w-md">
             {PRIMARY.map((item) => (

@@ -1,11 +1,64 @@
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, relative } from 'node:path';
 
-const files = execFileSync('git', ['ls-files', '-co', '--exclude-standard'], {
-  encoding: 'utf8',
-})
-  .split(/\r?\n/u)
-  .filter(Boolean);
+const excludedDirectories = new Set([
+  '.git',
+  '.gradle',
+  '.idea',
+  '.npm-cache',
+  '.playwright-browsers',
+  '.playwright-cli',
+  '.playwright-daemon',
+  '.playwright-local',
+  '.supabase',
+  '.xdg',
+  'build',
+  'coverage',
+  'node_modules',
+  'output',
+]);
+
+function listFilesWithoutGit(root = '.') {
+  const files = [];
+
+  function visit(directory) {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+      if (entry.isSymbolicLink()) continue;
+      if (
+        entry.isDirectory() &&
+        (excludedDirectories.has(entry.name) || entry.name === 'dist' || entry.name.startsWith('dist-'))
+      ) {
+        continue;
+      }
+
+      const path = join(directory, entry.name);
+      if (entry.isDirectory()) visit(path);
+      else if (entry.isFile()) files.push(relative(root, path));
+    }
+  }
+
+  visit(root);
+  return files;
+}
+
+function listFiles() {
+  try {
+    return {
+      files: execFileSync('git', ['ls-files', '-co', '--exclude-standard'], {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      })
+        .split(/\r?\n/u)
+        .filter(Boolean),
+      source: 'Git',
+    };
+  } catch {
+    return { files: listFilesWithoutGit(), source: 'filesystem fallback' };
+  }
+}
+
+const { files, source } = listFiles();
 
 const patterns = [
   ['clave privada', /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/u],
@@ -21,7 +74,9 @@ const findings = [];
 for (const file of files) {
   let content;
   try {
-    content = readFileSync(file, 'utf8');
+    const buffer = readFileSync(file);
+    if (buffer.includes(0)) continue;
+    content = buffer.toString('utf8');
   } catch {
     continue;
   }
@@ -37,4 +92,4 @@ if (findings.length > 0) {
   process.exit(1);
 }
 
-console.log(`Escaneo local completado: ${files.length} archivos, sin patrones de secreto.`);
+console.log(`Escaneo local completado (${source}): ${files.length} archivos, sin patrones de secreto.`);

@@ -19,6 +19,37 @@ export interface CatalogSearchResults {
 
 /** Mensajes en lenguaje claro: el detalle técnico nunca llega a la interfaz. */
 export const CATALOG_ERROR_MESSAGE = 'No pudimos cargar el catálogo de negocios.';
+export const CATALOG_OFFLINE_MESSAGE = 'Sin conexión. Conéctate para ver los negocios de Sullana.';
+
+/** Espera máxima de una carga antes de ofrecer reintento, en milisegundos. */
+export const CATALOG_LOAD_TIMEOUT_MS = 12_000;
+
+/**
+ * Una petición que nunca responde dejaba la pantalla en skeleton indefinido, sin
+ * forma de salir. El límite la convierte en un estado de error con reintento.
+ * No altera ningún contrato del servicio: solo acota lo que la interfaz espera.
+ */
+function withLoadTimeout<T>(work: Promise<T>, timeoutMs = CATALOG_LOAD_TIMEOUT_MS): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('catalog-load-timeout')), timeoutMs);
+    work.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error: unknown) => {
+        clearTimeout(timer);
+        reject(error instanceof Error ? error : new Error('catalog-load-failed'));
+      },
+    );
+  });
+}
+
+/** Distingue «no hay red» de «el catálogo falló», que piden acciones distintas. */
+function loadErrorMessage(fallback: string): string {
+  const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+  return offline ? CATALOG_OFFLINE_MESSAGE : fallback;
+}
 export const PRODUCTS_ERROR_MESSAGE = 'No pudimos cargar el menú de este negocio.';
 export const SEARCH_ERROR_MESSAGE = 'No pudimos completar la búsqueda.';
 
@@ -29,6 +60,8 @@ interface CatalogState {
   stores: Store[];
   storesStatus: CatalogLoadStatus;
   storesError: string | null;
+  storeStatus: Record<string, CatalogLoadStatus>;
+  storeError: Record<string, string | null>;
   productsByStore: Record<string, Product[]>;
   productsStatus: Record<string, CatalogLoadStatus>;
   productsError: Record<string, string | null>;
@@ -38,6 +71,8 @@ interface CatalogState {
   searchResults: CatalogSearchResults;
   /** Carga la lista de negocios. Con `force` reintenta aunque ya esté lista o fallando. */
   loadStores: (force?: boolean) => Promise<void>;
+  /** Carga una sola ficha, sin bloquearla por el catálogo completo. */
+  loadStore: (id: string, force?: boolean) => Promise<void>;
   loadCategories: (force?: boolean) => Promise<void>;
   /** Carga los productos de un negocio. Con `force` reintenta aunque ya estén listos. */
   loadProducts: (storeId: string, force?: boolean) => Promise<void>;
@@ -56,6 +91,8 @@ export function createCatalogInitialState(): Pick<
   | 'categoriesError'
   | 'storesStatus'
   | 'storesError'
+  | 'storeStatus'
+  | 'storeError'
   | 'productsByStore'
   | 'productsStatus'
   | 'productsError'
@@ -71,6 +108,8 @@ export function createCatalogInitialState(): Pick<
     stores: [],
     storesStatus: 'idle',
     storesError: null,
+    storeStatus: {},
+    storeError: {},
     productsByStore: {},
     productsStatus: {},
     productsError: {},
@@ -93,10 +132,35 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
 
     set({ storesStatus: 'loading', storesError: null });
     try {
-      const stores = await storeService.listStores();
+      const stores = await withLoadTimeout(storeService.listStores());
       set({ stores, storesStatus: 'ready', storesError: null });
     } catch {
-      set({ storesStatus: 'error', storesError: CATALOG_ERROR_MESSAGE });
+      set({ storesStatus: 'error', storesError: loadErrorMessage(CATALOG_ERROR_MESSAGE) });
+    }
+  },
+
+  async loadStore(id, force = false) {
+    const status = get().storeStatus[id] ?? 'idle';
+    if (!force && (status === 'ready' || status === 'loading')) return;
+
+    set((state) => ({
+      storeStatus: { ...state.storeStatus, [id]: 'loading' },
+      storeError: { ...state.storeError, [id]: null },
+    }));
+    try {
+      const store = await withLoadTimeout(storeService.getStore(id));
+      set((state) => ({
+        stores: store
+          ? [...state.stores.filter((entry) => entry.id !== id), store]
+          : state.stores.filter((entry) => entry.id !== id),
+        storeStatus: { ...state.storeStatus, [id]: 'ready' },
+        storeError: { ...state.storeError, [id]: null },
+      }));
+    } catch {
+      set((state) => ({
+        storeStatus: { ...state.storeStatus, [id]: 'error' },
+        storeError: { ...state.storeError, [id]: loadErrorMessage(CATALOG_ERROR_MESSAGE) },
+      }));
     }
   },
 
@@ -105,10 +169,10 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
     if (!force && (status === 'ready' || status === 'loading')) return;
     set({ categoriesStatus: 'loading', categoriesError: null });
     try {
-      const categories = await storeService.listCategories();
+      const categories = await withLoadTimeout(storeService.listCategories());
       set({ categories, categoriesStatus: 'ready', categoriesError: null });
     } catch {
-      set({ categoriesStatus: 'error', categoriesError: CATALOG_ERROR_MESSAGE });
+      set({ categoriesStatus: 'error', categoriesError: loadErrorMessage(CATALOG_ERROR_MESSAGE) });
     }
   },
 
@@ -121,7 +185,7 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
       productsError: { ...state.productsError, [storeId]: null },
     }));
     try {
-      const products = await storeService.listProducts(storeId);
+      const products = await withLoadTimeout(storeService.listProducts(storeId));
       set((state) => ({
         productsByStore: { ...state.productsByStore, [storeId]: products },
         productsStatus: { ...state.productsStatus, [storeId]: 'ready' },
@@ -129,7 +193,7 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
     } catch {
       set((state) => ({
         productsStatus: { ...state.productsStatus, [storeId]: 'error' },
-        productsError: { ...state.productsError, [storeId]: PRODUCTS_ERROR_MESSAGE },
+        productsError: { ...state.productsError, [storeId]: loadErrorMessage(PRODUCTS_ERROR_MESSAGE) },
       }));
     }
   },
@@ -150,12 +214,12 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
 
     set({ searchQuery: query, searchStatus: 'loading', searchError: null });
     try {
-      const results = await storeService.search(term);
+      const results = await withLoadTimeout(storeService.search(term));
       if (token !== searchToken) return;
       set({ searchResults: results, searchStatus: 'ready', searchError: null });
     } catch {
       if (token !== searchToken) return;
-      set({ searchStatus: 'error', searchError: SEARCH_ERROR_MESSAGE });
+      set({ searchStatus: 'error', searchError: loadErrorMessage(SEARCH_ERROR_MESSAGE) });
     }
   },
 

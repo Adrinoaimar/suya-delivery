@@ -28,14 +28,14 @@ interface SuyaIntroLoaderProps {
   minDuration?: number;
 }
 
-export function SuyaIntroLoader({ onFinish, minDuration = 2600 }: SuyaIntroLoaderProps) {
+export function SuyaIntroLoader({ onFinish, minDuration = 1750 }: SuyaIntroLoaderProps) {
   const reduceMotion = usePrefersReducedMotion();
   const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
-    const duration = reduceMotion ? 700 : minDuration;
+    const duration = reduceMotion ? 500 : minDuration;
     const leaveTimer = window.setTimeout(() => setLeaving(true), duration);
-    const finishTimer = window.setTimeout(onFinish, duration + 420);
+    const finishTimer = window.setTimeout(onFinish, duration + 300);
     return () => {
       window.clearTimeout(leaveTimer);
       window.clearTimeout(finishTimer);
@@ -74,7 +74,7 @@ export function SuyaIntroLoader({ onFinish, minDuration = 2600 }: SuyaIntroLoade
                   d={d}
                   pathLength={1}
                   className="intro-draw"
-                  style={{ animationDelay: `${300 + index * 28}ms`, animationDuration: '620ms' }}
+                  style={{ animationDelay: `${180 + index * 18}ms`, animationDuration: '400ms' }}
                 />
               ))}
               <circle
@@ -83,7 +83,7 @@ export function SuyaIntroLoader({ onFinish, minDuration = 2600 }: SuyaIntroLoade
                 r="20"
                 pathLength={1}
                 className="intro-draw"
-                style={{ animationDelay: '660ms', animationDuration: '620ms' }}
+                style={{ animationDelay: '420ms', animationDuration: '400ms' }}
               />
             </g>
 
@@ -94,7 +94,7 @@ export function SuyaIntroLoader({ onFinish, minDuration = 2600 }: SuyaIntroLoade
               strokeLinecap="round"
               pathLength={1}
               className="intro-draw"
-              style={{ animationDelay: '700ms', animationDuration: '500ms' }}
+              style={{ animationDelay: '440ms', animationDuration: '320ms' }}
             />
 
             <path
@@ -106,7 +106,7 @@ export function SuyaIntroLoader({ onFinish, minDuration = 2600 }: SuyaIntroLoade
               strokeLinecap="round"
               pathLength={1}
               className="intro-draw"
-              style={{ animationDelay: '800ms', animationDuration: '1000ms' }}
+              style={{ animationDelay: '500ms', animationDuration: '620ms' }}
             />
             <path
               d={ROAD_D}
@@ -117,7 +117,7 @@ export function SuyaIntroLoader({ onFinish, minDuration = 2600 }: SuyaIntroLoade
               strokeDasharray="10 14"
               pathLength={1}
               className="intro-draw"
-              style={{ animationDelay: '900ms', animationDuration: '900ms' }}
+              style={{ animationDelay: '560ms', animationDuration: '560ms' }}
             />
 
             <g className="intro-rider">
@@ -187,8 +187,8 @@ export function SuyaIntroLoader({ onFinish, minDuration = 2600 }: SuyaIntroLoade
                 </g>
               </g>
               <animateMotion
-                begin="0.9s"
-                dur="1.3s"
+                begin="0.55s"
+                dur="0.85s"
                 fill="freeze"
                 rotate="0"
                 calcMode="spline"

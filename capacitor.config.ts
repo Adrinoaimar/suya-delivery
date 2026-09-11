@@ -7,6 +7,11 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
   },
+  android: {
+    // Fondo del WebView antes del primer pintado: evita el fotograma blanco
+    // entre el splash nativo y el HTML durante el arranque en frío.
+    backgroundColor: '#F0F7F3',
+  },
   ios: {
     contentInset: 'automatic',
   },
@@ -18,10 +23,9 @@ const config: CapacitorConfig = {
       showSpinner: false,
     },
     StatusBar: {
-      // Brand-green bar keeps light icons readable on every route, including
-      // the cream Home and StoreDetail surfaces on Samsung WebView.
+      // Runtime bar blends into the light glass header; splash keeps brand green.
       style: 'DARK',
-      backgroundColor: '#0B7048',
+      backgroundColor: '#EEF6F1',
       overlaysWebView: false,
     },
   },
