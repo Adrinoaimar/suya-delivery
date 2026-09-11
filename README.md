@@ -189,8 +189,10 @@ VITE_MAP_PROVIDER=leaflet
 ## Marcas y datos
 
 Precios, horarios, promociones, calificaciones, productos, repartidores y direcciones son
-**ficticios**. Los negocios con nombre real (KFC, Papa John's, Tottus, Inkafarma) se muestran con
-tarjeta neutra e inicial: **no se recrean logotipos ajenos**. La silueta arquitectónica de Sullana
+**ficticios**. Las fichas locales tienen activos de marca documentados: KFC, Papa John's, Tottus e
+Inkafarma usan sus activos públicos oficiales y las fichas locales restantes usan marcas
+tipográficas reemplazables. No se recrean logotipos corporativos; las fuentes están en
+`public/brand/stores/CREDITS.md`. La silueta arquitectónica de Sullana
 es un `PLACEHOLDER IGLESIA SULLANA` pensado para reemplazarse por el activo oficial con el mismo
 `viewBox`.
 

@@ -58,6 +58,9 @@ producción.
   usa el logo derivado de su carta autorizada y conserva la carta original en galería. Donde Joel
   también publica su logo en la ficha, menú, portada y tarjetas. Las rutas relativas respetan la
   base pública del despliegue. No se usa el SVG recreado anterior. Ver `docs/data/brand-assets.md`.
+- El catálogo local conserva 13 fichas demo con un asset resoluble por tarjeta y ficha. El mock de
+  desarrollo publica una carta por ficha con slug estable (`*-menu`), logo, tema y productos; la
+  publicación productiva de Supabase sigue limitada a los negocios con datos comerciales verificados.
 
 ## Reglas de continuidad
 

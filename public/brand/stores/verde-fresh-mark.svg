@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+  <title id="title">Verde Fresh</title>
+  <desc id="desc">Marca tipográfica de catálogo para Verde Fresh.</desc>
+  <rect width="640" height="360" rx="44" fill="#0C6B4A"/>
+  <circle cx="112" cy="180" r="68" fill="#C9F06B"/>
+  <text x="112" y="204" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="800" fill="#0C6B4A">VF</text>
+  <text x="208" y="174" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="800" fill="#FFFFFF">Verde Fresh</text>
+  <text x="210" y="214" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" letter-spacing="2.2" fill="#C9F06B">JUGOS · SULLANA</text>
+  <path d="M208 240h312" stroke="#C9F06B" stroke-width="4" stroke-linecap="round" opacity=".85"/>
+</svg>

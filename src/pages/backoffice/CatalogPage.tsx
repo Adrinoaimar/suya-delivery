@@ -7,10 +7,11 @@ import type { MenuSettings } from '@/lib/services';
 import { useAuthStore } from '@/store/authStore';
 import type { Product, Store } from '@/types';
 import { assetUrl } from '@/utils/asset';
+import { menuSlugFromName } from '@/utils/format';
 
 const defaults = (store: Store): MenuSettings => ({
   restaurantId: store.id,
-  slug: `${store.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}-menu`,
+  slug: menuSlugFromName(store.name),
   published: false,
   logoUrl: store.logo,
   heroImageUrl: store.image,

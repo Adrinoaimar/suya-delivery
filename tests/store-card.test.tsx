@@ -43,4 +43,17 @@ describe('StoreCard', () => {
       '/brand/stores/anda-paya-logo.webp',
     );
   });
+
+  it('usa el logo como visual principal cuando la ficha no tiene portada', () => {
+    render(
+      <MemoryRouter>
+        <StoreCard store={{ ...store, id: 'kfc', name: 'KFC', image: null, logo: '/brand/stores/kfc-logo.png' }} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('img', { name: 'KFC' })).toHaveAttribute(
+      'src',
+      '/brand/stores/kfc-logo.png',
+    );
+  });
 });

@@ -161,7 +161,13 @@ export default function StoreDetailPage() {
         ) : theme ? (
           <div className="flex h-full items-center justify-center gap-4 bg-gradient-to-br from-[var(--store-primary)] to-[var(--store-accent)] px-6">
             <span className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-2 shadow-soft sm:h-28 sm:w-28">
-              <Thumb name={store.name} src={storeLogo} variant="store" rounded="rounded-full" />
+              <Thumb
+                name={store.name}
+                src={storeLogo}
+                variant="store"
+                fit="contain"
+                rounded="rounded-full"
+              />
             </span>
             <span className="hidden text-left text-[var(--store-on-primary)] sm:block">
               <span className="block font-display text-3xl font-bold leading-none">
@@ -173,8 +179,9 @@ export default function StoreDetailPage() {
         ) : (
           <Thumb
             name={store.name}
-            src={store.image}
+            src={storeLogo}
             variant="store"
+            fit={store.logo ? 'contain' : 'cover'}
             rounded="rounded-none"
             textClassName="text-6xl"
           />
@@ -212,7 +219,13 @@ export default function StoreDetailPage() {
         >
           <div className="flex items-start gap-3">
             <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-suya-mist">
-              <Thumb name={store.name} src={storeLogo} variant="store" rounded="rounded-xl" />
+              <Thumb
+                name={store.name}
+                src={storeLogo}
+                variant="store"
+                fit={store.logo ? 'contain' : 'cover'}
+                rounded="rounded-xl"
+              />
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="font-display text-xl font-bold leading-tight">{store.name}</h1>

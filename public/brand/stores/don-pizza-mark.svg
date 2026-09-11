@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+  <title id="title">Don Pizza</title>
+  <desc id="desc">Marca tipográfica de catálogo para Don Pizza.</desc>
+  <rect width="640" height="360" rx="44" fill="#D64045"/>
+  <circle cx="112" cy="180" r="68" fill="#FFF1D6"/>
+  <text x="112" y="204" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="800" fill="#D64045">DP</text>
+  <text x="208" y="174" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="800" fill="#FFFFFF">Don Pizza</text>
+  <text x="210" y="214" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" letter-spacing="2.2" fill="#FFF1D6">PIZZERÍA · SULLANA</text>
+  <path d="M208 240h312" stroke="#FFF1D6" stroke-width="4" stroke-linecap="round" opacity=".85"/>
+</svg>

@@ -11,6 +11,20 @@ describe('activos de marca de restaurantes', () => {
     expect(existsSync(root('public/images/stores/donde-joel/logo.png'))).toBe(true);
     expect(existsSync(root('public/brand/stores/anda-paya-logo.webp'))).toBe(true);
     expect(existsSync(root('public/images/stores/anda-paya/menus/carta-2026-09-06.jpg'))).toBe(true);
+    expect(existsSync(root('public/brand/stores/CREDITS.md'))).toBe(true);
+  });
+
+  it('deja un asset resoluble para cada ficha del catálogo local', () => {
+    const stores = JSON.parse(readFileSync(root('src/data/stores.json'), 'utf8')) as Array<{
+      id: string;
+      logo?: string | null;
+    }>;
+
+    expect(stores).toHaveLength(13);
+    expect(stores.every((store) => Boolean(store.logo))).toBe(true);
+    for (const store of stores) {
+      expect(existsSync(root(`public${store.logo!}`))).toBe(true);
+    }
   });
 
   it('no vuelve a presentar el SVG recreado como identidad de Andá Paya', () => {
@@ -45,5 +59,11 @@ describe('activos de marca de restaurantes', () => {
       .toContain("'/brand/stores/anda-paya-logo.webp'");
     expect(readFileSync(root('supabase/migrations/20260906150000_publish_tio_jhony_menu.sql'), 'utf8'))
       .toContain("'/brand/stores/tio-jhony-logo.webp'");
+  });
+
+  it('usa el logo de la ficha cuando una tienda no tiene portada', () => {
+    const detail = readFileSync(root('src/pages/customer/StoreDetailPage.tsx'), 'utf8');
+    expect(detail).toContain('const storeLogo = assetUrl(store.logo || store.gallery?.[0]?.src);');
+    expect(detail).toContain('src={storeLogo}');
   });
 });

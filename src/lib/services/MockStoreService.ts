@@ -1,5 +1,5 @@
 import { categories, products, stores } from '@/data';
-import { normalize } from '@/utils/format';
+import { menuSlugFromName, normalize } from '@/utils/format';
 import type { Category, Product, Store } from '@/types';
 import type { MenuSettings, PublishedMenu, StoreService } from './types';
 
@@ -17,12 +17,38 @@ export class MockStoreServiceImpl implements StoreService {
     return stores.find((store) => store.id === id);
   }
 
-  async getPublishedMenu(_slug: string): Promise<PublishedMenu | undefined> {
-    return undefined;
+  async getPublishedMenu(slug: string): Promise<PublishedMenu | undefined> {
+    const normalizedSlug = slug.trim().toLowerCase();
+    if (!normalizedSlug) return undefined;
+    const store = stores.find((candidate) => menuSlugFromName(candidate.name) === normalizedSlug);
+    if (!store) return undefined;
+
+    return {
+      store,
+      slug: normalizedSlug,
+      brand: {
+        logoUrl: store.logo,
+        heroImageUrl: store.image,
+        primaryColor: store.theme?.primary ?? '#EF6C3B',
+        accentColor: store.theme?.accent ?? '#183B3B',
+        fontFamily: 'Montserrat',
+      },
+    };
   }
 
-  async getMenuSettings(_restaurantId: string): Promise<MenuSettings | undefined> {
-    return undefined;
+  async getMenuSettings(restaurantId: string): Promise<MenuSettings | undefined> {
+    const store = stores.find((candidate) => candidate.id === restaurantId);
+    if (!store) return undefined;
+    return {
+      restaurantId: store.id,
+      slug: menuSlugFromName(store.name),
+      published: true,
+      logoUrl: store.logo,
+      heroImageUrl: store.image,
+      primaryColor: store.theme?.primary ?? '#EF6C3B',
+      accentColor: store.theme?.accent ?? '#183B3B',
+      fontFamily: 'Montserrat',
+    };
   }
 
   async saveMenuSettings(_settings: MenuSettings): Promise<MenuSettings> {
