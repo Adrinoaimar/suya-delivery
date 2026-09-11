@@ -56,4 +56,26 @@ describe('StoreCard', () => {
       '/brand/stores/kfc-logo.png',
     );
   });
+
+  it('mantiene el distintivo cuando la portada viene de la galería', () => {
+    render(
+      <MemoryRouter>
+        <StoreCard
+          store={{
+            ...store,
+            id: 'galeria',
+            name: 'Tienda con galería',
+            image: null,
+            logo: '/brand/stores/kfc-logo.png',
+            gallery: [{ src: '/images/stores/galeria.webp', caption: 'Fachada' }],
+          }}
+        />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('img', { name: 'Logo de Tienda con galería' })).toHaveAttribute(
+      'src',
+      '/brand/stores/kfc-logo.png',
+    );
+  });
 });

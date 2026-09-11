@@ -35,7 +35,8 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
   // Cuando falta logo oficial, usa primera imagen original de galería; nunca inventa marca.
   const visualSrc = assetUrl(store.image || store.logo || store.gallery?.[0]?.src);
   const logoSrc = assetUrl(store.logo);
-  const visualFit = store.image || store.gallery?.[0]?.src ? 'cover' : 'contain';
+  const hasVisualImage = Boolean(store.image || store.gallery?.[0]?.src);
+  const visualFit = hasVisualImage ? 'cover' : 'contain';
   const compactLogo = layout === 'grid' && !store.image && Boolean(store.logo);
   const stacked = layout === 'grid' && !compactLogo;
   const hasRating = store.rating > 0 && store.reviews !== 0;
@@ -67,7 +68,7 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
           textClassName={stacked ? 'text-3xl' : 'text-2xl'}
         />
 
-        {store.image && logoSrc && (
+        {hasVisualImage && logoSrc && (
           <span className="absolute bottom-2 right-2 z-[1] flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border border-white/80 bg-white/95 p-1 shadow-card sm:h-14 sm:w-14">
             <img
               src={logoSrc}
