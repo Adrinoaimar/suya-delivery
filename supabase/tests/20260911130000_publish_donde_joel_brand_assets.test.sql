@@ -1,5 +1,5 @@
 begin;
-select plan(8);
+select plan(12);
 
 select is(
   (select logo_url from public.restaurants where slug = 'donde-joel'),
@@ -47,6 +47,42 @@ select is(
    where restaurant.slug = 'la-waka'),
   '/brand/stores/la-waka-logo.svg',
   'Suya Menús usa el logo local de La Waka'
+);
+
+select is(
+  (select settings.logo_url
+   from public.restaurant_menu_settings settings
+   join public.restaurants restaurant on restaurant.id = settings.restaurant_id
+   where restaurant.slug = 'tio-jhony'),
+  '/brand/stores/tio-jhony-logo.webp',
+  'Suya Menús usa el logo de El Tío Jhony'
+);
+
+select is(
+  (select settings.logo_url
+   from public.restaurant_menu_settings settings
+   join public.restaurants restaurant on restaurant.id = settings.restaurant_id
+   where restaurant.slug = 'anda-paya'),
+  '/brand/stores/anda-paya-logo.webp',
+  'Suya Menús usa el logo de Andá Paya'
+);
+
+select is(
+  (select published
+   from public.restaurant_menu_settings settings
+   join public.restaurants restaurant on restaurant.id = settings.restaurant_id
+   where restaurant.slug = 'tio-jhony'),
+  true,
+  'el menú público de El Tío Jhony sigue publicado'
+);
+
+select is(
+  (select published
+   from public.restaurant_menu_settings settings
+   join public.restaurants restaurant on restaurant.id = settings.restaurant_id
+   where restaurant.slug = 'anda-paya'),
+  true,
+  'el menú público de Andá Paya sigue publicado'
 );
 
 select is(
