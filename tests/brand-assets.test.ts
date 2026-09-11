@@ -32,4 +32,18 @@ describe('activos de marca de restaurantes', () => {
       logo: '/brand/stores/anda-paya-logo.webp',
     });
   });
+
+  it('deja documentados los cuatro logos publicados en la migración operativa', () => {
+    const migration = readFileSync(
+      root('supabase/migrations/20260911130000_publish_donde_joel_brand_assets.sql'),
+      'utf8',
+    );
+    expect(migration).toContain("'/images/stores/donde-joel/logo.png'");
+    expect(readFileSync(root('supabase/migrations/20260906161000_fix_la_waka_branding.sql'), 'utf8'))
+      .toContain("'/brand/stores/la-waka-logo.svg'");
+    expect(readFileSync(root('supabase/migrations/20260911120000_publish_anda_paya_brand_assets.sql'), 'utf8'))
+      .toContain("'/brand/stores/anda-paya-logo.webp'");
+    expect(readFileSync(root('supabase/migrations/20260906150000_publish_tio_jhony_menu.sql'), 'utf8'))
+      .toContain("'/brand/stores/tio-jhony-logo.webp'");
+  });
 });

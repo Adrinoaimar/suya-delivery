@@ -12,6 +12,7 @@ import { cartTotals, useCartStore } from '@/store/cartStore';
 import { FREE_DELIVERY_THRESHOLD } from '@/lib/commerce';
 import { formatPrice } from '@/utils/format';
 import { isStoreAcceptingOrders } from '@/utils/schedule';
+import { assetUrl } from '@/utils/asset';
 import menuLogo from '@/assets/suya-menus-logo.png';
 import type { Product } from '@/types';
 import type { PublishedMenu } from '@/lib/services';
@@ -69,9 +70,10 @@ export default function MenuPage() {
   const menuFont = brand.fontFamily.trim().toLowerCase() === 'montserrat'
     ? 'Montserrat, system-ui, sans-serif'
     : 'Inter, system-ui, sans-serif';
-  const heroImage = brand.heroImageUrl
+  const heroImage = assetUrl(brand.heroImageUrl
     || store.image
-    || (store.name.toLocaleLowerCase('es') === 'andá paya' ? '/images/stores/anda-paya/arroz-mariscos.webp' : null);
+    || (store.name.toLocaleLowerCase('es') === 'andá paya' ? '/images/stores/anda-paya/arroz-mariscos.webp' : null));
+  const logoImage = assetUrl(brand.logoUrl ?? store.logo);
   const theme = {
     '--menu-primary': brand.primaryColor || '#0E6B44',
     '--menu-accent': brand.accentColor || '#8CC63F',
@@ -104,7 +106,7 @@ export default function MenuPage() {
           </div>
           <div className="relative px-4 pb-6 sm:px-6 lg:px-5">
             <div className="-mt-10 h-20 w-20 overflow-hidden rounded-2xl border-4 border-[#F8F5EE] bg-white shadow-card lg:border-white">
-              {brand.logoUrl || store.logo ? <img src={brand.logoUrl ?? store.logo ?? ''} alt={`Logo de ${store.name}`} referrerPolicy="no-referrer" className="h-full w-full object-contain bg-white p-1" /> : <div className="grid h-full place-items-center text-2xl font-black text-[var(--menu-primary)]">{store.name.slice(0, 1)}</div>}
+              {logoImage ? <img src={logoImage} alt={`Logo de ${store.name}`} referrerPolicy="no-referrer" className="h-full w-full object-contain bg-white p-1" /> : <div className="grid h-full place-items-center text-2xl font-black text-[var(--menu-primary)]">{store.name.slice(0, 1)}</div>}
             </div>
             <div className="mt-4 flex items-start justify-between gap-3">
               <div className="min-w-0">

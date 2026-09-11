@@ -55,8 +55,9 @@ producción.
 - La precarga de catálogo inicia negocios y categorías durante la pantalla inicial del cliente y del
   APK móvil; la suite de regresión cubre ese arranque.
 - Activos de marca: Tío Jhony, La Waka, Donde Joel y Andá Paya tienen activos publicados; Andá Paya
-  usa el logo derivado de su carta autorizada y conserva la carta original en galería. No se usa el
-  SVG recreado anterior. Ver `docs/data/brand-assets.md`.
+  usa el logo derivado de su carta autorizada y conserva la carta original en galería. Donde Joel
+  también publica su logo en la ficha y en Suya Menús. No se usa el SVG recreado anterior. Ver
+  `docs/data/brand-assets.md`.
 
 ## Reglas de continuidad
 

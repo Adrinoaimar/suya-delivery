@@ -8,7 +8,7 @@ oficial.
 |---|---|---|---|
 | El Tío Jhony | `public/brand/stores/tio-jhony-logo.webp` y galerías | Material y web oficial: <https://www.eltiojhony.com/> | Publicado |
 | La Waka Fast Food | `public/brand/stores/la-waka-logo.svg` | Marca del negocio; referencia pública: <https://lawakachicken.com/newlogo.png> | Publicado |
-| Donde Joel | `public/images/stores/donde-joel/logo.png` y cuatro cartas | Imágenes suministradas por el negocio | Publicado como carta informativa |
+| Donde Joel | `public/images/stores/donde-joel/logo.png` y cuatro cartas | Imágenes suministradas por el negocio | Publicado como carta informativa, con logo en ficha y menú |
 | Andá Paya | `public/brand/stores/anda-paya-logo.webp` y carta original `public/images/stores/anda-paya/menus/carta-2026-09-06.jpg` | Encabezado de la carta suministrada por el negocio; autorización comercial recibida | Publicado |
 
 Andá Paya no usa el SVG de demostración anterior. La tarjeta y la ficha usan el logo derivado del
