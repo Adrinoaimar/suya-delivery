@@ -65,6 +65,7 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
           variant="store"
           fit={visualFit}
           rounded="rounded-none"
+          className={compactLogo ? '!p-2' : undefined}
           textClassName={stacked ? 'text-3xl' : 'text-2xl'}
         />
 

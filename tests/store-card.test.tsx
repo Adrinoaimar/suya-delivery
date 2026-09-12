@@ -51,10 +51,8 @@ describe('StoreCard', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('img', { name: 'KFC' })).toHaveAttribute(
-      'src',
-      '/brand/stores/kfc-logo.png',
-    );
+    expect(screen.getByRole('img', { name: 'KFC' })).toHaveAttribute('src', '/brand/stores/kfc-logo.png');
+    expect(screen.getByRole('img', { name: 'KFC' })).toHaveClass('!p-2');
   });
 
   it('mantiene el distintivo cuando la portada viene de la galería', () => {

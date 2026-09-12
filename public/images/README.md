@@ -30,7 +30,6 @@ placeholders de `public/placeholders/`.
 
 Las fichas locales ya tienen un activo resoluble para la tarjeta y el menú. KFC, Papa John's,
 Tottus e Inkafarma usan los activos públicos oficiales documentados en
-`public/brand/stores/CREDITS.md`. Las fichas locales sin un maestro recibido usan una marca
-tipográfica de catálogo claramente identificada como reemplazable; no se presenta como logo
-oficial. Las cuatro marcas incorporadas en Supabase conservan su procedencia comercial en
+`public/brand/stores/CREDITS.md`. Las fichas locales usan identidades gráficas de catálogo claramente identificadas como
+reemplazables; no se presentan como logos oficiales. Las cuatro marcas incorporadas en Supabase conservan su procedencia comercial en
 `docs/data/brand-assets.md`.

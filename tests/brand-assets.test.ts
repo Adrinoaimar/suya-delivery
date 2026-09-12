@@ -27,6 +27,22 @@ describe('activos de marca de restaurantes', () => {
     }
   });
 
+  it('mantiene compactas las identidades gráficas locales para tarjetas móviles', () => {
+    const compactMarks = [
+      'el-buen-sabor-mark.svg',
+      'don-pizza-mark.svg',
+      'dulce-tentacion-mark.svg',
+      'verde-fresh-mark.svg',
+      'market-ahorro-mark.svg',
+      'flores-del-chira-mark.svg',
+      'juguetes-sullana-mark.svg',
+    ];
+
+    for (const file of compactMarks) {
+      expect(readFileSync(root(`public/brand/stores/${file}`), 'utf8')).toContain('viewBox="0 0 512 512"');
+    }
+  });
+
   it('no vuelve a presentar el SVG recreado como identidad de Andá Paya', () => {
     const card = readFileSync(root('src/components/marketplace/StoreCard.tsx'), 'utf8');
     const detail = readFileSync(root('src/pages/customer/StoreDetailPage.tsx'), 'utf8');

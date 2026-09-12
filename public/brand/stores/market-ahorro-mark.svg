@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
   <title id="title">Market Ahorro</title>
-  <desc id="desc">Marca tipográfica de catálogo para Market Ahorro.</desc>
-  <rect width="640" height="360" rx="44" fill="#2F5D9B"/>
-  <circle cx="112" cy="180" r="68" fill="#FFD166"/>
-  <text x="112" y="204" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="800" fill="#2F5D9B">MA</text>
-  <text x="208" y="174" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="800" fill="#FFFFFF">Market Ahorro</text>
-  <text x="210" y="214" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" letter-spacing="2.2" fill="#FFD166">MINIMARKET · SULLANA</text>
-  <path d="M208 240h312" stroke="#FFD166" stroke-width="4" stroke-linecap="round" opacity=".85"/>
+  <desc id="desc">Identidad gráfica de catálogo para Market Ahorro.</desc>
+  <rect width="512" height="512" rx="96" fill="#2F5D9B"/>
+  <circle cx="256" cy="166" r="96" fill="#FFD166"/>
+  <path d="M182 158h148l-15 99H213l-31-99ZM194 158l-18-38h-29" fill="none" stroke="#2F5D9B" stroke-width="15" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M215 184v47M256 184v47M297 184v47" stroke="#FFD166" stroke-width="11" stroke-linecap="round"/>
+  <circle cx="225" cy="287" r="14" fill="#2F5D9B"/><circle cx="302" cy="287" r="14" fill="#2F5D9B"/>
+  <text x="256" y="350" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="45" font-weight="800" fill="#fff">Market Ahorro</text>
+  <text x="256" y="388" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" letter-spacing="3" fill="#FFD166">MINIMARKET · SULLANA</text>
 </svg>
