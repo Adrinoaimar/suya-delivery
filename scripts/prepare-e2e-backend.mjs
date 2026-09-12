@@ -1,15 +1,17 @@
 import { createClient } from '@supabase/supabase-js';
+import { execFileSync } from 'node:child_process';
 
 const url = process.env.VITE_SUPABASE_URL?.trim();
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
+const databaseUrl = process.env.SUPABASE_DB_URL?.trim();
 const email = process.env.E2E_CUSTOMER_EMAIL?.trim() || 'e2e.customer@suya.test';
 const password = process.env.E2E_CUSTOMER_PASSWORD?.trim() || 'SuyaE2E!2026Local';
 const adminEmail = process.env.E2E_ADMIN_EMAIL?.trim() || 'e2e.admin@suya.test';
 const riderEmail = process.env.E2E_RIDER_EMAIL?.trim() || 'e2e.rider@suya.test';
 const restaurantEmail = process.env.E2E_RESTAURANT_EMAIL?.trim() || 'e2e.restaurant@suya.test';
 
-if (!url || !serviceRoleKey) {
-  throw new Error('Fixture E2E rechazado: faltan VITE_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY.');
+if (!url || !serviceRoleKey || !databaseUrl) {
+  throw new Error('Fixture E2E rechazado: faltan VITE_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY o SUPABASE_DB_URL.');
 }
 
 const admin = createClient(url, serviceRoleKey, {
@@ -45,22 +47,41 @@ await ensureUser(adminEmail, 'Operaciones E2E Suya', { role: 'platform_admin' })
 const rider = await ensureUser(riderEmail, 'Repartidor E2E Suya');
 const restaurantOwner = await ensureUser(restaurantEmail, 'Propietario E2E Suya');
 
-const { data: restaurant, error: restaurantError } = await admin
-  .from('restaurants')
-  .select('id')
-  .eq('slug', 'anda-paya')
-  .maybeSingle();
-if (restaurantError || !restaurant?.id) {
-  throw new Error(`No se pudo localizar Andá Paya para el propietario E2E: ${restaurantError?.message ?? 'sin fila'}`);
+try {
+  const verification = execFileSync('psql', [
+    databaseUrl,
+    '-v',
+    'ON_ERROR_STOP=1',
+    '-qAt',
+    '-v',
+    `owner_id=${restaurantOwner.id}`,
+    '-c',
+    `
+      with target as (
+        select id from public.restaurants where slug = 'anda-paya'
+      )
+      insert into public.restaurant_members (restaurant_id, user_id, role, active)
+      select id, :'owner_id'::uuid, 'owner'::public.restaurant_role, true
+      from target
+      on conflict (restaurant_id, user_id)
+      do update set role = excluded.role, active = excluded.active;
+
+      update public.restaurant_account_registry
+      set owner_user_id = :'owner_id'::uuid, account_status = 'active'
+      where restaurant_id = (select id from public.restaurants where slug = 'anda-paya');
+
+      select count(*)
+      from public.restaurant_members rm
+      join public.restaurants r on r.id = rm.restaurant_id
+      where r.slug = 'anda-paya' and rm.user_id = :'owner_id'::uuid and rm.role = 'owner' and rm.active;
+    `,
+  ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  if (verification.trim().split(/\s+/u).at(-1) !== '1') {
+    throw new Error('la consulta de verificación no encontró la membresía owner');
+  }
+} catch (error) {
+  const detail = error?.stderr?.toString().trim() || error?.message || 'error desconocido';
+  throw new Error(`No se pudo preparar el propietario E2E en la base local: ${detail}`);
 }
-const { error: memberError } = await admin
-  .from('restaurant_members')
-  .upsert({ restaurant_id: restaurant.id, user_id: restaurantOwner.id, role: 'owner', active: true }, { onConflict: 'restaurant_id,user_id' });
-if (memberError) throw new Error(`No se pudo vincular el propietario E2E: ${memberError.message}`);
-const { error: registryError } = await admin
-  .from('restaurant_account_registry')
-  .update({ owner_user_id: restaurantOwner.id, account_status: 'active' })
-  .eq('restaurant_id', restaurant.id);
-if (registryError) throw new Error(`No se pudo activar el registro E2E: ${registryError.message}`);
 
 console.log(`Fixture E2E listo: cliente=${email}, admin=${adminEmail}, rider=${rider.id}, propietario=${restaurantOwner.id}`);
