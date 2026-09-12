@@ -92,7 +92,7 @@ if (process.env.SMOKE_BUSINESS === 'true') {
     console.log(`business/customer-public-menu: OK (${publicMenuProducts} productos visibles)`);
 
     await page.goto(`${customerOrigin}/stores`, { waitUntil: 'networkidle', timeout: 20_000 });
-    await page.getByRole('link', { name: 'Andá Paya' }).click();
+    await page.getByRole('link', { name: 'Andá Paya Restaurante', exact: true }).click();
     await page.getByRole('heading', { name: 'Andá Paya' }).waitFor();
     await page.getByRole('button', { name: 'Agregar Chicharrón de pescado' }).click();
     await page.getByRole('button', { name: /Agregar ·/ }).click();

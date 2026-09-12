@@ -154,7 +154,8 @@ begin
   set name = 'Andá Paya Restaurante',
       image_url = '/images/stores/anda-paya/cover-restaurante-background.png',
       gallery = jsonb_build_array(
-        jsonb_build_object('src', '/images/stores/anda-paya/cover-restaurante-background.png', 'caption', 'Andá Paya Restaurante')
+        jsonb_build_object('src', '/images/stores/anda-paya/cover-restaurante-background.png', 'caption', 'Andá Paya Restaurante'),
+        jsonb_build_object('src', '/images/stores/anda-paya/menus/carta-2026-09-06.jpg', 'caption', 'Carta recibida el 06/09/2026')
       ),
       featured = true,
       local_business = true,
