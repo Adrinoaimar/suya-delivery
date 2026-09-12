@@ -63,6 +63,8 @@ export default function StoresPage() {
   }
 
   const categoryName = categories.find((category) => category.id === activeCategory)?.name;
+  const availableStores = stores.filter((store) => !store.isComingSoon);
+  const comingSoonStores = stores.filter((store) => store.isComingSoon);
 
   return (
     <div className="shell space-y-5 py-4 lg:py-8">
@@ -128,10 +130,37 @@ export default function StoresPage() {
           action={<ButtonLink to="/stores">Ver todas las tiendas</ButtonLink>}
         />
       ) : (
-        <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {stores.map((store) => (
-            <StoreCard key={store.id} store={store} />
-          ))}
+        <div className="space-y-8">
+          {availableStores.length > 0 && (
+            <section aria-labelledby="stores-available-title">
+              <div id="stores-available-title">
+                <SectionHeader
+                  title="Disponibles ahora"
+                  subtitle="Negocios listos para recibir tu pedido"
+                />
+              </div>
+              <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {availableStores.map((store) => (
+                  <StoreCard key={store.id} store={store} />
+                ))}
+              </div>
+            </section>
+          )}
+          {comingSoonStores.length > 0 && (
+            <section aria-labelledby="stores-coming-soon-title">
+              <div id="stores-coming-soon-title">
+                <SectionHeader
+                  title="Próximamente en Suya"
+                  subtitle="Estamos preparando sus catálogos y cobertura"
+                />
+              </div>
+              <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {comingSoonStores.map((store) => (
+                  <StoreCard key={store.id} store={store} />
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       )}
     </div>

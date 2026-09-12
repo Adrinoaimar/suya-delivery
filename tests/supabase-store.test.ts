@@ -81,7 +81,7 @@ function createFakeSupabase(tables: Record<string, TableHandler>): {
 
 const restaurantRow: Row = {
   id: 'r1',
-  slug: 'tio-jhony',
+  slug: 'anda-paya',
   category_id: 'c1',
   name: 'Suya Grill',
   description: 'Parrillas y anticuchos al carbón',
@@ -158,7 +158,16 @@ function makeService(overrides: {
       overrides.categories ??
       ((filters) => ({
         data: applyFilters(
-          [{ slug: 'parrillas', name: 'Parrillas', icon: 'utensils', accent: 'sun', sort_order: 1, active: true }],
+          [
+            {
+              slug: 'parrillas',
+              name: 'Parrillas',
+              icon: 'utensils',
+              accent: 'sun',
+              sort_order: 1,
+              active: true,
+            },
+          ],
           filters,
         ),
         error: null,
@@ -175,18 +184,21 @@ function makeService(overrides: {
     restaurant_menu_settings:
       overrides.restaurantMenuSettings ??
       ((filters) => ({
-        data: applyFilters([
-          {
-            restaurant_id: 'r1',
-            public_slug: 'suya-grill',
-            published: true,
-            logo_url: null,
-            hero_image_url: null,
-            primary_color: '#0E6B44',
-            accent_color: '#8CC63F',
-            font_family: 'Inter',
-          },
-        ], filters),
+        data: applyFilters(
+          [
+            {
+              restaurant_id: 'r1',
+              public_slug: 'suya-grill',
+              published: true,
+              logo_url: null,
+              hero_image_url: null,
+              primary_color: '#0E6B44',
+              accent_color: '#8CC63F',
+              font_family: 'Inter',
+            },
+          ],
+          filters,
+        ),
         error: null,
       })),
   });
@@ -267,21 +279,28 @@ describe('SupabaseStoreService', () => {
   it('marca como próximamente un restaurante Supabase fuera de la allowlist publicada', async () => {
     const { service } = makeService({
       restaurants: (filters) => ({
-        data: applyFilters([{ ...restaurantRow, slug: 'nuevo-restaurante', accepting_orders: true }], filters),
+        data: applyFilters(
+          [{ ...restaurantRow, slug: 'nuevo-restaurante', accepting_orders: true }],
+          filters,
+        ),
         error: null,
       }),
     });
 
-    await expect(service.listStores()).resolves.toMatchObject([{
-      isComingSoon: true,
-      acceptingOrders: false,
-    }]);
+    await expect(service.listStores()).resolves.toMatchObject([
+      {
+        isComingSoon: true,
+        acceptingOrders: false,
+      },
+    ]);
   });
 
   it('sincroniza el logo del negocio para que ficha y carta compartan branding', async () => {
     const { service, calls } = makeService({});
 
-    await expect(service.saveStoreLogo('r1', '/brand/stores/suya-grill.svg')).resolves.toBeUndefined();
+    await expect(
+      service.saveStoreLogo('r1', '/brand/stores/suya-grill.svg'),
+    ).resolves.toBeUndefined();
     expect(calls).toContain('restaurants');
   });
 

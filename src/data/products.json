@@ -1148,5 +1148,132 @@
     "image": null,
     "popular": false,
     "extras": []
+  },
+  {
+    "id": "apc-1",
+    "storeId": "anda-paya-cevicheria",
+    "section": "Ceviches",
+    "name": "Ceviche norteño de la casa",
+    "description": "Pescado del día con limón sullanero, cebolla morada, camote y choclo. Carta referencial.",
+    "price": 28,
+    "image": null,
+    "popular": true,
+    "extras": [
+      {
+        "id": "ap-x1",
+        "label": "Extra de chifles",
+        "price": 5
+      }
+    ]
+  },
+  {
+    "id": "apc-2",
+    "storeId": "anda-paya-cevicheria",
+    "section": "Ceviches",
+    "name": "Arroz con mariscos",
+    "description": "Arroz meloso con mariscos surtidos y culantro. Carta referencial.",
+    "price": 32,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "apc-3",
+    "storeId": "anda-paya-cevicheria",
+    "section": "Criollos",
+    "name": "Seco de chabelo",
+    "description": "Plato tradicional piurano de plátano majado con carne seca. Carta referencial.",
+    "price": 26,
+    "image": null,
+    "popular": true,
+    "extras": []
+  },
+  {
+    "id": "apc-4",
+    "storeId": "anda-paya-cevicheria",
+    "section": "Criollos",
+    "name": "Majado de yuca con chicharrón",
+    "description": "Yuca majada, chicharrón de cerdo y salsa criolla. Carta referencial.",
+    "price": 24,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "apc-5",
+    "storeId": "anda-paya-cevicheria",
+    "section": "Entradas",
+    "name": "Chifles con salsa de la casa",
+    "description": "Chifles recién hechos de plátano verde. Carta referencial.",
+    "price": 9,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "apc-6",
+    "storeId": "anda-paya-cevicheria",
+    "section": "Bebidas",
+    "name": "Chicha morada 1 L",
+    "description": "Preparada en casa, servida bien fría. Carta referencial.",
+    "price": 10,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "dj-1",
+    "storeId": "donde-joel",
+    "section": "Marinos",
+    "name": "Arroz con mariscos",
+    "description": "",
+    "price": 25,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "dj-2",
+    "storeId": "donde-joel",
+    "section": "Marinos",
+    "name": "Tiradito clásico",
+    "description": "",
+    "price": 30,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "dj-3",
+    "storeId": "donde-joel",
+    "section": "Marinos",
+    "name": "Leche de tigre",
+    "description": "",
+    "price": 12,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "dj-4",
+    "storeId": "donde-joel",
+    "section": "Marinos",
+    "name": "Chicharrón de pescado",
+    "description": "",
+    "price": 25,
+    "image": null,
+    "popular": false,
+    "extras": []
+  },
+  {
+    "id": "dj-5",
+    "storeId": "donde-joel",
+    "section": "Marinos",
+    "name": "Chicharrón de caballa",
+    "description": "",
+    "price": 25,
+    "image": null,
+    "popular": false,
+    "extras": []
   }
 ]

@@ -10,7 +10,11 @@ describe('activos de marca de restaurantes', () => {
     expect(existsSync(root('public/brand/stores/la-waka-logo.webp'))).toBe(true);
     expect(existsSync(root('public/images/stores/donde-joel/logo.png'))).toBe(true);
     expect(existsSync(root('public/brand/stores/anda-paya-logo.webp'))).toBe(true);
-    expect(existsSync(root('public/images/stores/anda-paya/menus/carta-2026-09-06.jpg'))).toBe(true);
+    expect(existsSync(root('public/images/stores/anda-paya/cover-restaurante-background.png'))).toBe(true);
+    expect(existsSync(root('public/images/stores/anda-paya/cover-cevicheria-background.png'))).toBe(true);
+    expect(existsSync(root('public/images/stores/anda-paya/menus/carta-2026-09-06.jpg'))).toBe(
+      true,
+    );
     expect(existsSync(root('public/brand/stores/CREDITS.md'))).toBe(true);
   });
 
@@ -20,7 +24,7 @@ describe('activos de marca de restaurantes', () => {
       logo?: string | null;
     }>;
 
-    expect(stores).toHaveLength(13);
+    expect(stores).toHaveLength(15);
     expect(stores.every((store) => Boolean(store.logo))).toBe(true);
     for (const store of stores) {
       expect(existsSync(root(`public${store.logo!}`))).toBe(true);
@@ -39,7 +43,9 @@ describe('activos de marca de restaurantes', () => {
     ];
 
     for (const file of compactMarks) {
-      expect(readFileSync(root(`public/brand/stores/${file}`), 'utf8')).toContain('viewBox="0 0 512 512"');
+      expect(readFileSync(root(`public/brand/stores/${file}`), 'utf8')).toContain(
+        'viewBox="0 0 512 512"',
+      );
     }
   });
 
@@ -59,6 +65,7 @@ describe('activos de marca de restaurantes', () => {
     const andaPaya = stores.find((store) => store.id === 'anda-paya');
     expect(andaPaya).toMatchObject({
       isRealBrand: true,
+      name: 'Andá Paya Restaurante',
       logo: '/brand/stores/anda-paya-logo.webp',
     });
   });
@@ -69,12 +76,21 @@ describe('activos de marca de restaurantes', () => {
       'utf8',
     );
     expect(migration).toContain("'/images/stores/donde-joel/logo.png'");
-    expect(readFileSync(root('supabase/migrations/20260912100000_refresh_la_waka_brand_assets.sql'), 'utf8'))
-      .toContain("'/brand/stores/la-waka-logo.webp'");
-    expect(readFileSync(root('supabase/migrations/20260911120000_publish_anda_paya_brand_assets.sql'), 'utf8'))
-      .toContain("'/brand/stores/anda-paya-logo.webp'");
-    expect(readFileSync(root('supabase/migrations/20260906150000_publish_tio_jhony_menu.sql'), 'utf8'))
-      .toContain("'/brand/stores/tio-jhony-logo.webp'");
+    expect(
+      readFileSync(
+        root('supabase/migrations/20260912100000_refresh_la_waka_brand_assets.sql'),
+        'utf8',
+      ),
+    ).toContain("'/brand/stores/la-waka-logo.webp'");
+    expect(
+      readFileSync(
+        root('supabase/migrations/20260911120000_publish_anda_paya_brand_assets.sql'),
+        'utf8',
+      ),
+    ).toContain("'/brand/stores/anda-paya-logo.webp'");
+    expect(
+      readFileSync(root('supabase/migrations/20260906150000_publish_tio_jhony_menu.sql'), 'utf8'),
+    ).toContain("'/brand/stores/tio-jhony-logo.webp'");
   });
 
   it('usa el logo de la ficha cuando una tienda no tiene portada', () => {
