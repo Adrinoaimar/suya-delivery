@@ -10,4 +10,9 @@ describe('rutas de activos publicados', () => {
     expect(assetUrl('https://cdn.example.test/logo.webp')).toBe('https://cdn.example.test/logo.webp');
     expect(assetUrl('data:image/png;base64,AA==')).toBe('data:image/png;base64,AA==');
   });
+
+  it('rechaza esquemas ejecutables y SVG inline', () => {
+    expect(assetUrl('javascript:alert(1)')).toBeUndefined();
+    expect(assetUrl('data:image/svg+xml,<svg onload=alert(1)>')).toBeUndefined();
+  });
 });
