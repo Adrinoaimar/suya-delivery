@@ -81,6 +81,7 @@ function createFakeSupabase(tables: Record<string, TableHandler>): {
 
 const restaurantRow: Row = {
   id: 'r1',
+  slug: 'tio-jhony',
   category_id: 'c1',
   name: 'Suya Grill',
   description: 'Parrillas y anticuchos al carbón',
@@ -261,6 +262,20 @@ describe('SupabaseStoreService', () => {
     expect(store?.theme).toBeUndefined();
     expect(store?.gallery).toEqual([]);
     expect(store?.sections).toEqual([]);
+  });
+
+  it('marca como próximamente un restaurante Supabase fuera de la allowlist publicada', async () => {
+    const { service } = makeService({
+      restaurants: (filters) => ({
+        data: applyFilters([{ ...restaurantRow, slug: 'nuevo-restaurante', accepting_orders: true }], filters),
+        error: null,
+      }),
+    });
+
+    await expect(service.listStores()).resolves.toMatchObject([{
+      isComingSoon: true,
+      acceptingOrders: false,
+    }]);
   });
 
   it('sincroniza el logo del negocio para que ficha y carta compartan branding', async () => {

@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { isLiveRestaurantId } from '@/data';
 import { supabase } from '@/lib/supabase/client';
 import { normalizeAssetInput } from '@/utils/asset';
 import { normalize } from '@/utils/format';
@@ -9,6 +10,7 @@ type JsonObject = Record<string, unknown>;
 
 interface RestaurantRow {
   id: string;
+  slug?: string | null;
   category_id: string;
   name: string;
   description: string;
@@ -169,6 +171,7 @@ function categoryOf(row: RestaurantRow): { slug: string; name: string } {
 
 function mapStore(row: RestaurantRow, sections: string[]): Store {
   const category = categoryOf(row);
+  const isComingSoon = typeof row.slug === 'string' && row.slug.length > 0 && !isLiveRestaurantId(row.slug);
   const verifiedTags = Array.isArray(row.tags) ? row.tags.filter((tag) => text(tag)) : [];
   return {
     id: row.id,
@@ -185,7 +188,8 @@ function mapStore(row: RestaurantRow, sections: string[]): Store {
     distanceKm: 0,
     isLocal: row.local_business,
     isFeatured: row.featured,
-    acceptingOrders: row.accepting_orders,
+    acceptingOrders: isComingSoon ? false : row.accepting_orders,
+    isComingSoon,
     isRealBrand: true,
     dataNote: row.data_note ?? undefined,
     promoLabel: row.promo_label,
@@ -234,7 +238,7 @@ export class SupabaseStoreServiceImpl implements StoreService {
     let query = this.client
       .from('restaurants')
       .select(
-        'id, category_id, name, description, phone, address, latitude, longitude, delivery_fee, minimum_order, eta_min_minutes, eta_max_minutes, schedule, theme, image_url, logo_url, gallery, tags, rating, review_count, featured, local_business, accepting_orders, data_note, promo_label, categories!inner(slug, name)',
+        'id, slug, category_id, name, description, phone, address, latitude, longitude, delivery_fee, minimum_order, eta_min_minutes, eta_max_minutes, schedule, theme, image_url, logo_url, gallery, tags, rating, review_count, featured, local_business, accepting_orders, data_note, promo_label, categories!inner(slug, name)',
       )
       .eq('active', true);
     if (id) query = query.eq('id', id);
