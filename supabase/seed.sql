@@ -150,6 +150,23 @@ begin
     raise exception 'El seed requiere la ficha anda-paya';
   end if;
 
+  update public.restaurants
+  set name = 'Andá Paya Restaurante',
+      image_url = '/images/stores/anda-paya/cover-restaurante-background.png',
+      gallery = jsonb_build_array(
+        jsonb_build_object('src', '/images/stores/anda-paya/cover-restaurante-background.png', 'caption', 'Andá Paya Restaurante')
+      ),
+      featured = true,
+      local_business = true,
+      accepting_orders = true
+  where id = source_id;
+
+  update public.restaurant_menu_settings
+  set hero_image_url = '/images/stores/anda-paya/cover-restaurante-background.png',
+      logo_url = '/brand/stores/anda-paya-logo.webp',
+      published = true
+  where restaurant_id = source_id;
+
   insert into public.restaurants (
     id, slug, category_id, name, description, phone, address, latitude, longitude,
     delivery_fee, minimum_order, eta_min_minutes, eta_max_minutes, schedule, theme,
@@ -219,6 +236,7 @@ end $$;
 update public.restaurants
 set active = true,
     accepting_orders = slug in ('anda-paya', 'anda-paya-cevicheria', 'donde-joel'),
-    featured = slug in ('anda-paya', 'anda-paya-cevicheria', 'donde-joel')
+    featured = slug in ('anda-paya', 'anda-paya-cevicheria', 'donde-joel'),
+    data_note = case when slug = 'donde-joel' then null else data_note end
 where slug in ('anda-paya', 'anda-paya-cevicheria', 'donde-joel', 'la-waka', 'tio-jhony',
                'kfc', 'inkafarma', 'papa-johns', 'tottus');

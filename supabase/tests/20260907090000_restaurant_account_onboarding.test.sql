@@ -18,7 +18,7 @@ select is(
   (select count(*)::integer
    from public.restaurant_account_registry
    where account_status = 'pending_contact'),
-  8,
+  9,
   'casilleros quedan pendientes sin inventar contactos, incluidos los teasers'
 );
 

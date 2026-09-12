@@ -22,15 +22,15 @@ select is(
 
 select is(
   (select accepting_orders from public.restaurants where id = '23000000-0000-4000-8000-000000000001'),
-  false,
-  'pedidos bloqueados mientras faltan datos operativos'
+  true,
+  'Donde Joel queda habilitado como uno de los tres negocios activos'
 );
 
 select ok(
-  (select data_note ilike '%pedidos permanecen desactivados%'
+  (select data_note is null or data_note not ilike '%pedidos permanecen desactivados%'
    from public.restaurants
    where id = '23000000-0000-4000-8000-000000000001'),
-  'pedidos siguen bloqueados hasta completar configuración operativa'
+  'la ficha activa no conserva una advertencia de pedidos desactivados'
 );
 
 select is(
@@ -130,8 +130,8 @@ select throws_ok(
     )
   $$,
   'P0001',
-  'restaurant is not accepting orders',
-  'RPC rechaza pedidos del catálogo informativo'
+  'product is unavailable',
+  'RPC rechaza productos inexistentes aunque el negocio esté activo'
 );
 
 select lives_ok(

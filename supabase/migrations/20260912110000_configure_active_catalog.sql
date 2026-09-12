@@ -130,6 +130,7 @@ begin
   set active = true,
       accepting_orders = slug in ('anda-paya', 'anda-paya-cevicheria', 'donde-joel'),
       featured = slug in ('anda-paya', 'anda-paya-cevicheria', 'donde-joel'),
+      data_note = case when slug = 'donde-joel' then null else data_note end,
       updated_at = now()
   where slug in ('anda-paya', 'anda-paya-cevicheria', 'donde-joel', 'la-waka', 'tio-jhony',
                  'kfc', 'inkafarma', 'papa-johns', 'tottus');
