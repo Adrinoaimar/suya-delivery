@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 180" role="img" aria-labelledby="title desc">
-  <title id="title">La Waka</title>
-  <desc id="desc">Logotipo tipográfico de La Waka</desc>
-  <rect width="520" height="180" rx="36" fill="#111111"/>
-  <circle cx="92" cy="90" r="54" fill="#F2C94C"/>
-  <path d="M67 117V63h16l17 27 17-27h16v54h-17V89l-16 24h-1L83 89v28H67Z" fill="#111111"/>
-  <text x="170" y="111" fill="#F2C94C" font-family="Arial, Helvetica, sans-serif" font-size="70" font-weight="800" letter-spacing="5">LA WAKA</text>
-</svg>

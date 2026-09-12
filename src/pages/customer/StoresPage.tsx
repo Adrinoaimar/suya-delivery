@@ -90,8 +90,12 @@ export default function StoresPage() {
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#6B7076]">
+      {/*
+        En móvil los filtros viajan en un único carril: en `flex-wrap` ocupaban tres
+        filas y empujaban las tarjetas fuera de la primera pantalla.
+      */}
+      <div className="hide-scrollbar -mx-4 flex items-center gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
+        <span className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-suya-muted">
           <SlidersHorizontal aria-hidden="true" className="h-4 w-4" />
           Ordenar
         </span>
@@ -100,6 +104,7 @@ export default function StoresPage() {
             {option.label}
           </Chip>
         ))}
+        <span aria-hidden="true" className="h-6 w-px shrink-0 bg-suya-border" />
         <Chip active={onlyOpen} onClick={() => setOnlyOpen((value) => !value)}>
           Abierto ahora
         </Chip>

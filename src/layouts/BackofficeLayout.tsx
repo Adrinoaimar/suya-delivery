@@ -23,7 +23,6 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
   const identity = useAuthStore((state) => state.identity);
   const signOut = useAuthStore((state) => state.signOut);
   const prefix = basePath.replace(/\/$/, '');
-  const isPlatformAdmin = identity?.access.includes('platform_admin') ?? false;
   const navigation = [
     { to: `${prefix}/`, label: 'Resumen', icon: LayoutDashboard, end: true },
     { to: `${prefix}/orders`, label: 'Pedidos', icon: ClipboardList },
@@ -32,9 +31,9 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
     { to: `${prefix}/offers`, label: 'Ofertas', icon: Tag },
     { to: `${prefix}/wallets`, label: 'Billeteras', icon: Wallet },
     { to: `${prefix}/riders`, label: 'Repartidores', icon: Users },
-    { to: `${prefix}/restaurants`, label: 'Restaurantes', icon: Building2, platformOnly: true },
+    { to: `${prefix}/restaurants`, label: 'Restaurantes', icon: Building2 },
     { to: `${prefix}/settings`, label: 'Configuración', icon: Settings },
-  ].filter((item) => !item.platformOnly || isPlatformAdmin);
+  ];
   return (
     <div className="min-h-dvh bg-transparent text-suya-carbon lg:grid lg:grid-cols-[250px_1fr]">
       <aside className="suya-lens-dark border-b border-white/10 p-4 text-white lg:sticky lg:top-0 lg:flex lg:h-dvh lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:border-b-0 lg:border-r">

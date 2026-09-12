@@ -9,6 +9,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Input, Textarea } from '@/components/common/Input';
 import { Skeleton } from '@/components/common/Skeleton';
+import { track } from '@/lib/analytics';
 import { FREE_DELIVERY_THRESHOLD } from '@/lib/commerce';
 import { locationService, notificationService, offerService, paymentService } from '@/lib/services';
 import { useCatalogStore } from '@/store/catalogStore';
@@ -75,6 +76,10 @@ export default function CheckoutPage() {
     void offerService.listActive().then(setOffers).catch(() => setOffers([]));
   }, []);
   useEffect(() => { setOfferInput(offerCode ?? ''); }, [offerCode]);
+
+  useEffect(() => {
+    if (store && items.length > 0) track('checkout_start', { store_id: store.id, item_count: items.length });
+  }, [items.length, store]);
 
   const base = cartTotals(items, store, FREE_DELIVERY_THRESHOLD);
   const selectedOffer = offers.find((offer) => offer.code === offerCode && (!offer.restaurantId || offer.restaurantId === storeId));
@@ -239,6 +244,14 @@ export default function CheckoutPage() {
         tableSessionId,
         origin: tableContext?.tableId ? 'table_qr' : orderOrigin,
         offerCode: selectedOffer?.code,
+      });
+
+      track('order_created', {
+        store_id: store.id,
+        order_origin: tableContext?.tableId ? 'table_qr' : orderOrigin,
+        payment_method: method,
+        value: order.total,
+        item_count: items.length,
       });
 
       const publicOrderPath = isGuestMenuOrder

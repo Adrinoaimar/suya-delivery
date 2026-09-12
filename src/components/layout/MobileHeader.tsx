@@ -16,8 +16,8 @@ export function MobileHeader() {
 
   return (
     <>
-      <header className="suya-lens-nav sticky top-0 z-30 text-suya-carbon lg:hidden">
-        <div className="flex items-center gap-1.5 px-3 pb-2 pt-[calc(8px+env(safe-area-inset-top))]">
+      <header className="suya-lens-nav sticky top-0 z-30 border-x-0 border-t-0 text-suya-carbon lg:hidden">
+        <div className="flex items-center gap-1.5 px-3 pb-2.5 pt-[calc(8px+env(safe-area-inset-top))]">
           <Link
             to="/"
             aria-label="Suya Delivery — Inicio"
@@ -29,7 +29,7 @@ export function MobileHeader() {
           <button
             type="button"
             onClick={() => setLocationOpen(true)}
-            className="press flex min-h-12 min-w-0 flex-1 flex-col items-start justify-center rounded-btn px-2 text-left hover:bg-white/60"
+            className="press min-h-12 min-w-0 flex-1 rounded-[18px] px-3 text-left transition-colors hover:bg-white/60"
           >
             <span className="text-[11px] font-semibold uppercase tracking-wider text-suya-carbon/75">
               Entregar en
@@ -45,7 +45,7 @@ export function MobileHeader() {
             type="button"
             onClick={() => setNotificationsOpen(true)}
             aria-label="Notificaciones"
-            className="press flex h-12 w-12 shrink-0 items-center justify-center rounded-full hover:bg-white/70"
+            className="press suya-lens-quiet flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl hover:bg-white/80"
           >
             <Bell className="h-5 w-5" />
           </button>
@@ -53,7 +53,7 @@ export function MobileHeader() {
           <Link
             to="/cart"
             aria-label={`Carrito, ${count} ${count === 1 ? 'producto' : 'productos'}`}
-            className="press relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full hover:bg-white/70"
+            className="press suya-lens-quiet relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl hover:bg-white/80"
           >
             <ShoppingBag className="h-5 w-5" />
             <CounterBadge count={count} pulse />

@@ -7,11 +7,14 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { ProductRowSkeleton } from '@/components/common/Skeleton';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { ProductSheet } from '@/components/marketplace/ProductSheet';
-import { storeService } from '@/lib/services';
+import { track } from '@/lib/analytics';
+import { CATALOG_INVALIDATED_EVENT } from '@/lib/catalogSync';
+import { loadPublicMenu } from '@/lib/loadPublicMenu';
 import { cartTotals, useCartStore } from '@/store/cartStore';
 import { FREE_DELIVERY_THRESHOLD } from '@/lib/commerce';
 import { formatPrice } from '@/utils/format';
 import { isStoreAcceptingOrders } from '@/utils/schedule';
+import { assetUrl } from '@/utils/asset';
 import menuLogo from '@/assets/suya-menus-logo.png';
 import type { Product } from '@/types';
 import type { PublishedMenu } from '@/lib/services';
@@ -25,6 +28,7 @@ export default function MenuPage() {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const items = useCartStore((state) => state.items);
   const cartStoreId = useCartStore((state) => state.storeId);
   const setOrigin = useCartStore((state) => state.setOrigin);
@@ -33,17 +37,29 @@ export default function MenuPage() {
     let active = true;
     setLoading(true);
     setError(null);
-    void storeService.getPublishedMenu(slug)
-      .then(async (published) => {
+    setProducts([]);
+    void loadPublicMenu(slug)
+      .then(({ menu: published, products: rows }) => {
         if (!active) return;
         if (!published) { setMenu(null); return; }
-        const rows = await storeService.listProducts(published.store.id);
-        if (active) { setMenu(published); setProducts(rows); setOrigin('suya_menu', slug); }
+        setMenu(published);
+        setProducts(rows);
+        setOrigin('suya_menu', slug);
       })
-      .catch((reason: unknown) => active && setError(reason instanceof Error ? reason.message : 'No pudimos cargar este menú.'))
+      .catch(() => active && setError('Revisa tu conexión y vuelve a intentarlo.'))
       .finally(() => active && setLoading(false));
     return () => { active = false; };
-  }, [setOrigin, slug]);
+  }, [reloadKey, setOrigin, slug]);
+
+  useEffect(() => {
+    if (menu) track('menu_view', { store_id: menu.store.id, menu_slug: slug });
+  }, [menu, slug]);
+
+  useEffect(() => {
+    const refresh = () => setReloadKey((value) => value + 1);
+    window.addEventListener(CATALOG_INVALIDATED_EVENT, refresh);
+    return () => window.removeEventListener(CATALOG_INVALIDATED_EVENT, refresh);
+  }, []);
 
   const sections = useMemo(() => ['Todos', ...new Set(products.map((product) => product.section))], [products]);
   const visible = useMemo(() => products.filter((product) => {
@@ -53,7 +69,7 @@ export default function MenuPage() {
   }), [products, query, section]);
 
   if (loading) return <div className="shell space-y-3 py-10" role="status" aria-busy="true"><span className="sr-only">Cargando menú…</span>{Array.from({ length: 5 }).map((_, index) => <ProductRowSkeleton key={index} />)}</div>;
-  if (error) return <div className="shell py-10"><ErrorState title="No pudimos abrir el menú" description={error} /></div>;
+  if (error) return <div className="shell py-10"><ErrorState title="No pudimos abrir el menú" description={error} onRetry={() => setReloadKey((value) => value + 1)} /></div>;
   if (!menu) return <div className="shell py-10"><EmptyState icon={<Utensils className="h-6 w-6" />} title="Menú no disponible" description="El enlace no existe o el restaurante todavía no publicó su carta." /></div>;
 
   const { store, brand } = menu;
@@ -66,9 +82,10 @@ export default function MenuPage() {
   const menuFont = brand.fontFamily.trim().toLowerCase() === 'montserrat'
     ? 'Montserrat, system-ui, sans-serif'
     : 'Inter, system-ui, sans-serif';
-  const heroImage = brand.heroImageUrl
+  const logoImage = assetUrl(brand.logoUrl ?? store.logo);
+  const heroImage = assetUrl(brand.heroImageUrl
     || store.image
-    || (store.name.toLocaleLowerCase('es') === 'andá paya' ? '/images/stores/anda-paya/arroz-mariscos.webp' : null);
+    || (store.name.toLocaleLowerCase('es') === 'andá paya' ? '/images/stores/anda-paya/arroz-mariscos.webp' : null));
   const theme = {
     '--menu-primary': brand.primaryColor || '#0E6B44',
     '--menu-accent': brand.accentColor || '#8CC63F',
@@ -80,28 +97,28 @@ export default function MenuPage() {
       <header className="sticky top-0 z-20 border-b border-suya-carbon/5 bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-[68px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link to="/" aria-label="Volver a Suya Delivery" className="rounded-xl transition-opacity hover:opacity-80">
-            <img src={menuLogo} alt="Suya Menús" className="h-10 w-auto object-contain sm:h-11" />
+            <img src={menuLogo} alt="Suya Menús" referrerPolicy="no-referrer" className="h-10 w-auto object-contain sm:h-11" />
           </Link>
           <div className="flex items-center gap-3">
             <span className="hidden text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7D847E] sm:inline">Carta digital</span>
             <span role="status" className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold ${open ? 'bg-[#0E6B44]/10 text-[#0E6B44]' : 'bg-suya-carbon/10 text-suya-carbon'}`}>
               <span className={`h-2 w-2 rounded-full ${open ? 'bg-[#55A66C]' : 'bg-suya-carbon/40'}`} aria-hidden="true" />
-              {open ? 'Recibiendo pedidos' : 'Cerrado ahora'}
+              {open ? 'Recibiendo pedidos' : store.isComingSoon ? 'Próximamente' : 'Cerrado ahora'}
             </span>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl lg:grid lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:py-8">
+      <main id="contenido" className="mx-auto max-w-7xl lg:grid lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:py-8">
         <aside className="overflow-hidden border-b border-suya-carbon/5 bg-white lg:sticky lg:top-[92px] lg:self-start lg:rounded-3xl lg:border lg:shadow-card">
           <div className="relative h-48 bg-[var(--menu-primary)] sm:h-56 lg:h-60">
-            {heroImage ? <img src={heroImage} alt={`Portada de ${store.name}`} className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center bg-[var(--menu-primary)] text-6xl font-black text-white/30">S</div>}
+            {heroImage ? <img src={heroImage} alt={`Portada de ${store.name}`} referrerPolicy="no-referrer" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center bg-[var(--menu-primary)] px-6">{logoImage ? <img src={logoImage} alt={`Marca de ${store.name}`} referrerPolicy="no-referrer" className="max-h-32 w-auto max-w-[78%] rounded-2xl bg-white/95 p-4 object-contain shadow-soft" /> : <span className="text-6xl font-black text-white/30">{store.name.slice(0, 1)}</span>}</div>}
             <div className="pointer-events-none absolute inset-0 bg-black/10" aria-hidden="true" />
-            <span className="absolute bottom-4 left-4 rounded-full bg-white/90 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-suya-carbon">Menú público</span>
+            <span className="absolute bottom-4 right-4 rounded-full bg-white/90 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-suya-carbon">Menú público</span>
           </div>
           <div className="relative px-4 pb-6 sm:px-6 lg:px-5">
             <div className="-mt-10 h-20 w-20 overflow-hidden rounded-2xl border-4 border-[#F8F5EE] bg-white shadow-card lg:border-white">
-              {brand.logoUrl || store.logo ? <img src={brand.logoUrl ?? store.logo ?? ''} alt={`Logo de ${store.name}`} className="h-full w-full object-contain bg-white p-1" /> : <div className="grid h-full place-items-center text-2xl font-black text-[var(--menu-primary)]">{store.name.slice(0, 1)}</div>}
+              {logoImage ? <img src={logoImage} alt={`Logo de ${store.name}`} referrerPolicy="no-referrer" className="h-full w-full object-contain bg-white p-1" /> : <div className="grid h-full place-items-center text-2xl font-black text-[var(--menu-primary)]">{store.name.slice(0, 1)}</div>}
             </div>
             <div className="mt-4 flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -138,11 +155,11 @@ export default function MenuPage() {
             <h3 className="font-display text-xl font-bold text-suya-carbon">{section === 'Todos' ? 'Todos los platos' : section}</h3>
             <span className="text-xs font-medium text-[#7D847E]">{visible.length} {visible.length === 1 ? 'plato' : 'platos'}</span>
           </div>
-          {visible.length ? <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">{visible.map((product) => <ProductCard key={product.id} product={product} disabled={!open} onSelect={setSelected} accentClassName="bg-[var(--menu-primary)] hover:brightness-90" className="border-suya-carbon/10 p-3.5 shadow-none transition-all hover:-translate-y-0.5 hover:border-[var(--menu-primary)]/30 hover:shadow-soft" />)}</div> : <EmptyState icon={<Utensils className="h-6 w-6" />} title="No hay resultados" description="Prueba otra búsqueda o categoría." />}
+          {visible.length ? <div className="grid gap-4 md:grid-cols-2 2xl:grid-cols-3">{visible.map((product) => <ProductCard key={product.id} product={product} disabled={!open} onSelect={setSelected} accentClassName="bg-[var(--menu-primary)] hover:brightness-90" className="border-suya-carbon/10 p-3.5 shadow-none transition-all hover:-translate-y-0.5 hover:border-[var(--menu-primary)]/30 hover:shadow-soft" />)}</div> : <EmptyState icon={<Utensils className="h-6 w-6" />} title={products.length ? 'No hay resultados' : 'Carta sin productos'} description={products.length ? 'Prueba otra búsqueda o categoría.' : 'Este restaurante todavía no publicó platos disponibles.'} />}
         </section>
       </main>
 
-      {ownCart && <div className="fixed inset-x-0 bottom-4 z-30 px-4 lg:inset-x-auto lg:right-8 lg:w-[420px] lg:max-w-[calc(100vw-4rem)]"><Link to="/cart" className="mx-auto flex min-h-14 max-w-xl items-center justify-between rounded-2xl bg-suya-carbon px-5 py-4 font-semibold text-white shadow-soft transition-transform hover:-translate-y-0.5"><span className="flex items-center gap-2"><ShoppingBag className="h-5 w-5" />Ver pedido ({totals.count})</span><span>{formatPrice(totals.total)}</span></Link></div>}
+      {ownCart && <div className="fixed inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom,0px))] z-30 px-4 lg:inset-x-auto lg:right-8 lg:w-[420px] lg:max-w-[calc(100vw-4rem)]"><Link to="/cart" className="mx-auto flex min-h-14 max-w-xl items-center justify-between rounded-2xl bg-suya-carbon px-5 py-4 font-semibold text-white shadow-soft transition-transform hover:-translate-y-0.5"><span className="flex items-center gap-2"><ShoppingBag className="h-5 w-5" />Ver pedido ({totals.count})</span><span>{formatPrice(totals.total)}</span></Link></div>}
       <ProductSheet product={selected} onClose={() => setSelected(null)} />
     </div>
   );

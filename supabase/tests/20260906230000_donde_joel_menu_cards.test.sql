@@ -27,10 +27,10 @@ select is(
 );
 
 select ok(
-  (select data_note ilike '%por confirmar%pedidos desactivados%'
+  (select data_note ilike '%pedidos permanecen desactivados%'
    from public.restaurants
    where id = '23000000-0000-4000-8000-000000000001'),
-  'estado operativo desconocido queda explícito'
+  'pedidos siguen bloqueados hasta completar configuración operativa'
 );
 
 select is(

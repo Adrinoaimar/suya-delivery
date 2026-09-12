@@ -14,6 +14,8 @@ export const STORAGE_KEYS = {
   favorites: 'suya_favorites',
   safety: 'suya_safety',
   introSeen: 'suya_intro_seen',
+  analyticsConsent: 'suya_analytics_consent',
+  analyticsCampaign: 'suya_analytics_campaign',
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];

@@ -91,3 +91,11 @@ export function normalize(value: string): string {
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '');
 }
+
+/** Genera el enlace público estable usado por el catálogo local. */
+export function menuSlugFromName(name: string): string {
+  const slug = normalize(name)
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+  return `${slug}-menu`;
+}

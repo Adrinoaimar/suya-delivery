@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Flores del Chira</title>
+  <desc id="desc">Identidad gráfica de catálogo para Florería Flores del Chira.</desc>
+  <rect width="512" height="512" rx="96" fill="#733B88"/>
+  <circle cx="256" cy="166" r="96" fill="#FFD4F1"/>
+  <circle cx="256" cy="166" r="28" fill="#733B88"/>
+  <g fill="#733B88"><ellipse cx="256" cy="101" rx="28" ry="45"/><ellipse cx="256" cy="231" rx="28" ry="45"/><ellipse cx="191" cy="166" rx="45" ry="28"/><ellipse cx="321" cy="166" rx="45" ry="28"/><ellipse transform="rotate(45 210 120)" cx="210" cy="120" rx="28" ry="45"/><ellipse transform="rotate(45 302 212)" cx="302" cy="212" rx="28" ry="45"/><ellipse transform="rotate(-45 302 120)" cx="302" cy="120" rx="28" ry="45"/><ellipse transform="rotate(-45 210 212)" cx="210" cy="212" rx="28" ry="45"/></g>
+  <text x="256" y="350" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="39" font-weight="800" fill="#fff">Flores del Chira</text>
+  <text x="256" y="388" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" letter-spacing="3" fill="#FFD4F1">FLORERÍA · SULLANA</text>
+</svg>

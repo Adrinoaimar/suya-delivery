@@ -1,5 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { isLiveRestaurantId } from '@/data';
 import { supabase } from '@/lib/supabase/client';
+import { normalizeAssetInput } from '@/utils/asset';
 import { normalize } from '@/utils/format';
 import type { Accent, Category, Product, ProductExtra, Schedule, Store } from '@/types';
 import type { MenuSettings, PublishedMenu, StoreService } from './types';
@@ -8,6 +10,7 @@ type JsonObject = Record<string, unknown>;
 
 interface RestaurantRow {
   id: string;
+  slug?: string | null;
   category_id: string;
   name: string;
   description: string;
@@ -46,16 +49,24 @@ interface MenuSettingsRow {
   published: boolean;
 }
 
+function safeAsset(value: string | null): string | null {
+  try {
+    return normalizeAssetInput(value);
+  } catch {
+    return null;
+  }
+}
+
 function mapMenuSettings(row: MenuSettingsRow): MenuSettings {
   return {
     restaurantId: row.restaurant_id,
     slug: row.public_slug,
     published: row.published,
-    logoUrl: row.logo_url,
-    heroImageUrl: row.hero_image_url,
-    primaryColor: row.primary_color,
-    accentColor: row.accent_color,
-    fontFamily: row.font_family,
+    logoUrl: safeAsset(row.logo_url),
+    heroImageUrl: safeAsset(row.hero_image_url),
+    primaryColor: hexColor(row.primary_color) ?? '#EF6C3B',
+    accentColor: hexColor(row.accent_color) ?? '#8CC63F',
+    fontFamily: ['Montserrat', 'Inter'].includes(row.font_family) ? row.font_family : 'Inter',
   };
 }
 
@@ -83,6 +94,11 @@ function text(value: unknown): string | null {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : null;
 }
 
+function hexColor(value: unknown): string | null {
+  const candidate = text(value);
+  return candidate && /^#[0-9a-f]{6}$/iu.test(candidate) ? candidate : null;
+}
+
 function number(value: number | string): number {
   const parsed = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(parsed)) throw new Error('Supabase devolvió un monto inválido.');
@@ -100,10 +116,10 @@ function mapSchedule(value: unknown): Schedule {
 
 function mapTheme(value: unknown): Store['theme'] {
   const row = object(value);
-  const primary = text(row?.primary);
-  const accent = text(row?.accent);
-  const surface = text(row?.surface);
-  const onPrimary = text(row?.onPrimary);
+  const primary = hexColor(row?.primary);
+  const accent = hexColor(row?.accent);
+  const surface = hexColor(row?.surface);
+  const onPrimary = hexColor(row?.onPrimary);
   return primary && accent && surface && onPrimary
     ? { primary, accent, surface, onPrimary }
     : undefined;
@@ -155,6 +171,7 @@ function categoryOf(row: RestaurantRow): { slug: string; name: string } {
 
 function mapStore(row: RestaurantRow, sections: string[]): Store {
   const category = categoryOf(row);
+  const isComingSoon = typeof row.slug === 'string' && row.slug.length > 0 && !isLiveRestaurantId(row.slug);
   const verifiedTags = Array.isArray(row.tags) ? row.tags.filter((tag) => text(tag)) : [];
   return {
     id: row.id,
@@ -171,7 +188,8 @@ function mapStore(row: RestaurantRow, sections: string[]): Store {
     distanceKm: 0,
     isLocal: row.local_business,
     isFeatured: row.featured,
-    acceptingOrders: row.accepting_orders,
+    acceptingOrders: isComingSoon ? false : row.accepting_orders,
+    isComingSoon,
     isRealBrand: true,
     dataNote: row.data_note ?? undefined,
     promoLabel: row.promo_label,
@@ -220,7 +238,7 @@ export class SupabaseStoreServiceImpl implements StoreService {
     let query = this.client
       .from('restaurants')
       .select(
-        'id, category_id, name, description, phone, address, latitude, longitude, delivery_fee, minimum_order, eta_min_minutes, eta_max_minutes, schedule, theme, image_url, logo_url, gallery, tags, rating, review_count, featured, local_business, accepting_orders, data_note, promo_label, categories!inner(slug, name)',
+        'id, slug, category_id, name, description, phone, address, latitude, longitude, delivery_fee, minimum_order, eta_min_minutes, eta_max_minutes, schedule, theme, image_url, logo_url, gallery, tags, rating, review_count, featured, local_business, accepting_orders, data_note, promo_label, categories!inner(slug, name)',
       )
       .eq('active', true);
     if (id) query = query.eq('id', id);
@@ -243,26 +261,13 @@ export class SupabaseStoreServiceImpl implements StoreService {
   }
 
   async listStores(): Promise<Store[]> {
-    const [restaurants, products] = await Promise.all([
-      this.restaurantRows(),
-      this.productRows(),
-    ]);
-    return restaurants.map((restaurant) => {
-      const sections = [...new Set(
-        products
-          .filter((product) => product.restaurant_id === restaurant.id)
-          .map((product) => product.section),
-      )];
-      return mapStore(restaurant, sections);
-    });
+    const restaurants = await this.restaurantRows();
+    return restaurants.map((restaurant) => mapStore(restaurant, []));
   }
 
   async getStore(id: string): Promise<Store | undefined> {
-    const [restaurant, products] = await Promise.all([
-      this.restaurantRows(id).then((rows) => rows[0]),
-      this.productRows(id),
-    ]);
-    return restaurant ? mapStore(restaurant, [...new Set(products.map((row) => row.section))]) : undefined;
+    const restaurant = (await this.restaurantRows(id))[0];
+    return restaurant ? mapStore(restaurant, []) : undefined;
   }
 
   async getPublishedMenu(slug: string): Promise<PublishedMenu | undefined> {
@@ -280,19 +285,19 @@ export class SupabaseStoreServiceImpl implements StoreService {
     if (error) throw error;
     if (!data) return undefined;
 
-    const settings = data as MenuSettingsRow;
-    const store = await this.getStore(settings.restaurant_id);
+    const settings = mapMenuSettings(data as MenuSettingsRow);
+    const store = await this.getStore(settings.restaurantId);
     if (!store) return undefined;
 
     return {
-      slug: settings.public_slug,
+      slug: settings.slug,
       store,
       brand: {
-        logoUrl: settings.logo_url,
-        heroImageUrl: settings.hero_image_url,
-        primaryColor: settings.primary_color,
-        accentColor: settings.accent_color,
-        fontFamily: settings.font_family,
+        logoUrl: settings.logoUrl ?? safeAsset(store.logo),
+        heroImageUrl: settings.heroImageUrl ?? safeAsset(store.image),
+        primaryColor: settings.primaryColor,
+        accentColor: settings.accentColor,
+        fontFamily: settings.fontFamily,
       },
     };
   }
@@ -307,6 +312,14 @@ export class SupabaseStoreServiceImpl implements StoreService {
     return data ? mapMenuSettings(data as MenuSettingsRow) : undefined;
   }
 
+  async saveStoreLogo(restaurantId: string, logoUrl: string | null): Promise<void> {
+    const { error } = await this.client
+      .from('restaurants')
+      .update({ logo_url: normalizeAssetInput(logoUrl) })
+      .eq('id', restaurantId);
+    if (error) throw error;
+  }
+
   async saveMenuSettings(settings: MenuSettings): Promise<MenuSettings> {
     const { data, error } = await this.client
       .from('restaurant_menu_settings')
@@ -314,8 +327,8 @@ export class SupabaseStoreServiceImpl implements StoreService {
         restaurant_id: settings.restaurantId,
         public_slug: settings.slug.trim().toLowerCase(),
         published: settings.published,
-        logo_url: settings.logoUrl,
-        hero_image_url: settings.heroImageUrl,
+        logo_url: normalizeAssetInput(settings.logoUrl),
+        hero_image_url: normalizeAssetInput(settings.heroImageUrl),
         primary_color: settings.primaryColor,
         accent_color: settings.accentColor,
         font_family: settings.fontFamily,

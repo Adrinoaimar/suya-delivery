@@ -28,6 +28,8 @@ placeholders de `public/placeholders/`.
 
 ## Marcas reales
 
-No se incluyen logotipos oficiales de empresas reales. Los negocios de demostración que usan un
-nombre real (KFC, Papa John's, Tottus, Inkafarma) se muestran con tarjeta neutra e inicial hasta
-que se disponga del activo oficial autorizado. No generar versiones aproximadas de esos logos.
+Las fichas locales ya tienen un activo resoluble para la tarjeta y el menú. KFC, Papa John's,
+Tottus e Inkafarma usan los activos públicos oficiales documentados en
+`public/brand/stores/CREDITS.md`. Las fichas locales usan identidades gráficas de catálogo claramente identificadas como
+reemplazables; no se presentan como logos oficiales. Las cuatro marcas incorporadas en Supabase conservan su procedencia comercial en
+`docs/data/brand-assets.md`.

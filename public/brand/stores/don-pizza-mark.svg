@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Don Pizza</title>
+  <desc id="desc">Identidad gráfica de catálogo para Pizzería Don Pizza.</desc>
+  <rect width="512" height="512" rx="96" fill="#D64045"/>
+  <circle cx="256" cy="166" r="96" fill="#FFF1D6"/>
+  <path d="M190 102 338 286c-54 8-106 0-150-24l2-160Z" fill="#D64045" stroke="#8C1220" stroke-width="8" stroke-linejoin="round"/>
+  <circle cx="238" cy="158" r="13" fill="#FFF1D6"/><circle cx="286" cy="216" r="13" fill="#FFF1D6"/><circle cx="220" cy="232" r="13" fill="#FFF1D6"/>
+  <text x="256" y="350" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="48" font-weight="800" fill="#fff">Don Pizza</text>
+  <text x="256" y="388" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" letter-spacing="3" fill="#FFF1D6">PIZZERÍA · SULLANA</text>
+</svg>

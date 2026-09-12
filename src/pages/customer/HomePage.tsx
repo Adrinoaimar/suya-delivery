@@ -27,6 +27,7 @@ export default function HomePage() {
 
   const stores = useCatalogStore((state) => state.stores);
   const categories = useCatalogStore((state) => state.categories);
+  const categoriesStatus = useCatalogStore((state) => state.categoriesStatus);
   const storesStatus = useCatalogStore((state) => state.storesStatus);
   const storesError = useCatalogStore((state) => state.storesError);
   const loadStores = useCatalogStore((state) => state.loadStores);
@@ -46,6 +47,7 @@ export default function HomePage() {
   }, []);
 
   const storesLoading = storesStatus === 'idle' || storesStatus === 'loading';
+  const categoriesLoading = categoriesStatus === 'idle' || categoriesStatus === 'loading';
   const storesReady = storesStatus === 'ready';
   const featured = stores.filter((store) => store.isFeatured);
   const locals = stores.filter((store) => store.isLocal);
@@ -159,17 +161,28 @@ export default function HomePage() {
         </div>
       </section>
 
-      <div className="shell space-y-10 pt-4 lg:pt-10">
+      <div className="shell space-y-8 pt-5 lg:space-y-10 lg:pt-10">
         {/* Buscador móvil */}
         <section className="lg:hidden">
-          <h1 className="sr-only">Suya Delivery — Sullana</h1>
+          <div className="mb-4 px-1">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-suya-green">
+              Descubre Sullana
+            </p>
+            <h1 className="mt-1 font-display text-[30px] font-bold leading-tight tracking-[-0.045em]">
+              Tu ciudad, a un toque.
+            </h1>
+            <p className="mt-1 text-sm text-suya-muted">Comida y negocios locales cerca de ti.</p>
+          </div>
           <SearchInput value={query} onChange={setQuery} onSubmit={submitSearch} />
         </section>
 
-        <section>
-          <SectionHeader title="¿Qué necesitas hoy?" />
-          <CategoryRail categories={categories} />
-        </section>
+        {/* Sin categorías cargadas el carril quedaría reducido al acceso «Más». */}
+        {(categoriesLoading || categories.length > 0) && (
+          <section>
+            <SectionHeader title="Explora por categoría" />
+            <CategoryRail categories={categories} loading={categoriesLoading} />
+          </section>
+        )}
 
         {Capacitor.isNativePlatform() && offers.length > 0 && (
           <section aria-label="Ofertas exclusivas de la app">

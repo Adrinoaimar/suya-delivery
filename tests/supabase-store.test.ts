@@ -36,6 +36,10 @@ class FakeQueryBuilder implements PromiseLike<FakeResponse> {
     return this;
   }
 
+  update(_values: Row): this {
+    return this;
+  }
+
   eq(field: string, value: unknown): this {
     this.filters.push([field, value] as const);
     return this;
@@ -77,6 +81,7 @@ function createFakeSupabase(tables: Record<string, TableHandler>): {
 
 const restaurantRow: Row = {
   id: 'r1',
+  slug: 'tio-jhony',
   category_id: 'c1',
   name: 'Suya Grill',
   description: 'Parrillas y anticuchos al carbón',
@@ -146,6 +151,7 @@ function makeService(overrides: {
   categories?: TableHandler;
   restaurants?: TableHandler;
   products?: TableHandler;
+  restaurantMenuSettings?: TableHandler;
 }): { service: SupabaseStoreServiceImpl; calls: string[] } {
   const { client, calls } = createFakeSupabase({
     categories:
@@ -164,6 +170,23 @@ function makeService(overrides: {
       overrides.products ??
       ((filters) => ({
         data: applyFilters([productRow, otherRestaurantProduct], filters),
+        error: null,
+      })),
+    restaurant_menu_settings:
+      overrides.restaurantMenuSettings ??
+      ((filters) => ({
+        data: applyFilters([
+          {
+            restaurant_id: 'r1',
+            public_slug: 'suya-grill',
+            published: true,
+            logo_url: null,
+            hero_image_url: null,
+            primary_color: '#0E6B44',
+            accent_color: '#8CC63F',
+            font_family: 'Inter',
+          },
+        ], filters),
         error: null,
       })),
   });
@@ -213,8 +236,7 @@ describe('SupabaseStoreService', () => {
       },
     });
     expect(store.tags.slice(0, 2)).toEqual(['Parrillas', 'Norteño']);
-    expect(store.sections).toEqual(['Anticuchos']);
-    expect(store.tags).toContain('Anticuchos');
+    expect(store.sections).toEqual([]);
     // Galería: solo entradas con src y caption válidos.
     expect(store.gallery).toEqual([
       { src: 'https://img.example/1.jpg', caption: 'Vista del local' },
@@ -240,6 +262,65 @@ describe('SupabaseStoreService', () => {
     expect(store?.theme).toBeUndefined();
     expect(store?.gallery).toEqual([]);
     expect(store?.sections).toEqual([]);
+  });
+
+  it('marca como próximamente un restaurante Supabase fuera de la allowlist publicada', async () => {
+    const { service } = makeService({
+      restaurants: (filters) => ({
+        data: applyFilters([{ ...restaurantRow, slug: 'nuevo-restaurante', accepting_orders: true }], filters),
+        error: null,
+      }),
+    });
+
+    await expect(service.listStores()).resolves.toMatchObject([{
+      isComingSoon: true,
+      acceptingOrders: false,
+    }]);
+  });
+
+  it('sincroniza el logo del negocio para que ficha y carta compartan branding', async () => {
+    const { service, calls } = makeService({});
+
+    await expect(service.saveStoreLogo('r1', '/brand/stores/suya-grill.svg')).resolves.toBeUndefined();
+    expect(calls).toContain('restaurants');
+  });
+
+  it('sanitiza el branding publicado antes de exponerlo como CSS o imagen', async () => {
+    const { service } = makeService({
+      restaurantMenuSettings: () => ({
+        data: {
+          restaurant_id: 'r1',
+          public_slug: 'suya-grill',
+          published: true,
+          logo_url: 'javascript:alert(1)',
+          hero_image_url: 'data:image/svg+xml,<svg onload=alert(1)>',
+          primary_color: 'url(javascript:alert(1))',
+          accent_color: '#8CC63F',
+          font_family: ');color:red/*',
+        },
+        error: null,
+      }),
+    });
+
+    await expect(service.getPublishedMenu('suya-grill')).resolves.toMatchObject({
+      brand: {
+        logoUrl: null,
+        heroImageUrl: 'https://img.example/local.jpg',
+        primaryColor: '#EF6C3B',
+        accentColor: '#8CC63F',
+        fontFamily: 'Inter',
+      },
+    });
+  });
+
+  it('resuelve un menú publicado sin descargar productos dos veces', async () => {
+    const { service, calls } = makeService({});
+
+    const menu = await service.getPublishedMenu(' SUYA-GRILL ');
+
+    expect(menu?.slug).toBe('suya-grill');
+    expect(menu?.store.id).toBe('r1');
+    expect(calls).toEqual(['restaurant_menu_settings', 'restaurants']);
   });
 
   it('mapea productos convirtiendo montos y descartando extras inválidos', async () => {
@@ -273,7 +354,7 @@ describe('SupabaseStoreService', () => {
     });
   });
 
-  it('getStore filtra por id y combina las secciones de sus productos', async () => {
+  it('getStore filtra por id sin descargar los productos', async () => {
     const seen: Filter[][] = [];
     const { service } = makeService({
       restaurants: (filters) => {
@@ -286,7 +367,8 @@ describe('SupabaseStoreService', () => {
 
     expect(seen[0]).toContainEqual(['id', 'r1']);
     expect(store?.id).toBe('r1');
-    expect(store?.sections).toEqual(['Anticuchos']);
+    expect(store?.sections).toEqual([]);
+    expect(seen).toHaveLength(1);
   });
 
   it('búsqueda normalizada ignora acentos y mayúsculas en productos y negocios', async () => {

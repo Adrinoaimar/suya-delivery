@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Dulce Tentación</title>
+  <desc id="desc">Identidad gráfica de catálogo para Dulce Tentación.</desc>
+  <rect width="512" height="512" rx="96" fill="#8B2C5B"/>
+  <circle cx="256" cy="162" r="96" fill="#FFD3E5"/>
+  <path d="M178 166h156l-17 83c-3 15-16 26-31 26h-60c-15 0-28-11-31-26l-17-83Z" fill="#8B2C5B"/>
+  <path d="M176 166c5-31 30-49 50-28 17-37 62-32 70 3 25-16 45 7 40 25H176Z" fill="#fff"/>
+  <circle cx="230" cy="146" r="8" fill="#FFD3E5"/><circle cx="278" cy="139" r="8" fill="#FFD3E5"/><circle cx="305" cy="157" r="8" fill="#FFD3E5"/>
+  <text x="256" y="350" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="39" font-weight="800" fill="#fff">Dulce Tentación</text>
+  <text x="256" y="388" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" letter-spacing="3" fill="#FFD3E5">PASTELERÍA · SULLANA</text>
+</svg>

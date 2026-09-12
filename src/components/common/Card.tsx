@@ -32,12 +32,12 @@ interface SectionHeaderProps {
 
 export function SectionHeader({ title, subtitle, action, className }: SectionHeaderProps) {
   return (
-    <div className={cn('mb-3 flex items-end justify-between gap-3', className)}>
-      <div>
+    <div className={cn('mb-3', className)}>
+      <div className="flex items-center justify-between gap-3">
         <h2 className="section-title">{title}</h2>
-        {subtitle && <p className="mt-0.5 max-w-[70ch] text-sm text-suya-muted">{subtitle}</p>}
+        {action}
       </div>
-      {action}
+      {subtitle && <p className="mt-0.5 max-w-[70ch] text-sm text-suya-muted">{subtitle}</p>}
     </div>
   );
 }

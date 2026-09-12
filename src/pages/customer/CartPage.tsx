@@ -42,6 +42,7 @@ export default function CartPage() {
       <div className="shell py-10">
         <EmptyState
           icon={<ShoppingBag className="h-6 w-6" />}
+          size="page"
           title="Tu carrito está vacío"
           description="Explora los negocios de Sullana y arma tu pedido."
           action={<ButtonLink to="/stores">Explorar tiendas</ButtonLink>}

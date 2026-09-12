@@ -1,6 +1,6 @@
 # Estado de ejecución
 
-Actualizado: 9 de septiembre de 2026 (`America/Lima`)
+Actualizado: 12 de septiembre de 2026 (`America/Lima`)
 
 ## Objetivo
 
@@ -9,8 +9,8 @@ producción.
 
 ## Estado actual
 
-- Rama de trabajo: `main` (`70a7be3`), con integración móvil, workflow Android reproducible y firma release opt-in.
-- F13 acceso y catálogo: clientes tienen registro renovado y Google OAuth PKCE preparado para web,
+- Rama de trabajo: `codex/2026-09-11-suya-perfect-app`, checkpoint móvil integrado y listo para revisión.
+- F13 acceso y catálogo: clientes tienen registro renovado y Google OAuth PKCE publicado para web,
   Android e iOS. Donde Joel suma 133 productos verificables y cuatro cartas como catálogo
   informativo sin pedidos; la carta nueva de Andá Paya se muestra con aviso de revisión por
   conflictos de precio.
@@ -42,8 +42,8 @@ producción.
   cubre Chrome real, móvil/escritorio, rutas protegidas, accesibilidad básica y reduced motion.
 - F9 cerró el último escape conocido: `build:apps` rechaza configuración incompleta y los bundles
   productivos rechazan chunks `Mock*`; GitHub Pages ya no publica artefactos heredados.
-- F10 añadió runner Playwright y workflow CI para Supabase local; smoke Chrome local cubre nueve
-  combinaciones de viewport/ruta. Backend E2E queda pendiente hasta evidencia CI verde.
+- F10 añadió runner Playwright y workflow CI para Supabase local; smoke Chrome cubre nueve
+  combinaciones de viewport/ruta y el job `test` de pgTAP/E2E queda verde en PR #28.
 - Cliente, repartidor y backoffice tienen entradas/bundles web independientes y también viven dentro
   del APK unificado; las ofertas no se inventan ni se siembran sin datos comerciales autorizados.
 - Auth Supabase y guards por capacidad están implementados; la conexión rechaza un project ref
@@ -52,19 +52,24 @@ producción.
   `accepting_orders` habilitado por autorización comercial; bebidas sin precio no se importaron.
 - Producción no incluye servicios mock, mapa falso, GPS simulado, promociones ficticias ni ganancias
   inventadas. Enlace público de tracking sigue deshabilitado por seguridad.
-- El workflow Android de `main` compila y publica APK debug y release unsigned como artefactos CI; el
-  último run verde es `34413494247`. Frontend, base de datos, E2E e iOS de simulador también quedaron
-  verdes después del merge.
-- La auditoría de la app independiente Wallet Observer confirma sincronización opcional en segundo
-  plano mediante `ingest_wallet_observation` con URL, publishable key y token de dispositivo. Las
-  observaciones siguen `unverified`; no autorizan pedidos ni sustituyen una pasarela oficial.
-- Backoffice incluye `/restaurants` para `platform_admin`: carga `restaurant_account_registry`, guarda
-  representante/correo/notas, prepara `ready_to_invite`, envía invitación segura y activa propietario
-  tras confirmar correo. Edge Function usa `service_role` solo en runtime; workflow de despliegue manual.
-- Android release tiene pipeline unsigned verificable y firma opt-in por variables privadas; ningún
-  keystore ni contraseña entra al repositorio.
-- Auditoría F16 clasifica publicación completa `not-ready`: código/CI/artefactos listos; Cloudflare,
-  Google OAuth, Edge Function, propietarios y keystore siguen gates externos documentados.
+- La precarga de catálogo inicia negocios y categorías durante la pantalla inicial del cliente y del
+  APK móvil; la suite de regresión cubre ese arranque.
+- Activos de marca: Tío Jhony, La Waka, Donde Joel y Andá Paya tienen activos publicados; Andá Paya
+  usa el logo derivado de su carta autorizada y conserva la carta original en galería. Donde Joel
+  también publica su logo en la ficha, menú, portada y tarjetas. Las rutas relativas respetan la
+  base pública del despliegue. No se usa el SVG recreado anterior. Ver `docs/data/brand-assets.md`.
+- La Waka ahora usa el activo oficial de `lawakachicken.com` convertido a WebP transparente; Andá
+  Paya usa una extracción nítida del encabezado de su carta autorizada, con el fondo exterior limpio.
+  KFC, Inkafarma, Papa John's y Tottus tienen fichas Supabase visibles como «Próximamente», sin
+  productos ni pedidos habilitados.
+- F18 añade analítica GA4 opt-in con consentimiento, UTM acotadas y eventos de embudo (`page_view`,
+  `menu_view`, `store_view`, `add_to_cart`, `checkout_start`, `order_created`). Publicidad, CRM de
+  leads y dashboards siguen desactivados hasta recibir IDs, cuentas y política de privacidad.
+- El catálogo local conserva 13 fichas demo con un asset resoluble por tarjeta y ficha. El mock de
+  desarrollo publica una carta por ficha con slug estable (`*-menu`), logo, tema y productos; la
+  publicación productiva de Supabase sigue limitada a los negocios con datos comerciales verificados.
+  El editor mock conserva ajustes e imágenes locales en el navegador para probar el flujo completo
+  sin tocar datos productivos.
 
 ## Reglas de continuidad
 
@@ -77,10 +82,8 @@ producción.
 
 ## Siguiente acción
 
-Habilitar Google en Google Cloud/Supabase, validar OAuth en un dispositivo físico y ejecutar pgTAP en
-CI para la migración de Donde Joel. Después de confirmar sede y logística, desplegar la migración y
-habilitar pedidos. Para distribución, crear firma Android de release y configurar Apple Developer
-Team, certificado y provisioning profile.
+Validar inicio de sesión real en un dispositivo físico y resolver la firma Android release. Después
+de confirmar sede y logística, habilitar pedidos.
 
 ## Gate productivo pendiente
 
@@ -88,11 +91,13 @@ El sitio GitHub Pages actual es legado. Producción canónica usa `suya-customer
 `suya-rider.pages.dev` y `suya-backoffice.pages.dev`; smoke remoto y verificador de bundles están verdes.
 
 La máquina actual no tiene Docker ni Podman. Las pruebas pgTAP y `db lint` se ejecutan en GitHub CI;
-localmente se habilitarán cuando exista uno de esos runtimes.
+el PR #28 tiene verdes `test`, `browser`, `browser-e2e`, `build`, `simulator` y `debug`.
 
-El código Google OAuth está completo, pero el proveedor sigue desactivado en Supabase (`external.google=false`)
-hasta cargar Client ID/Secret y Redirect URLs externos. Los secretos OAuth no están en GitHub. Donde
-Joel queda verificado en el backend actual, con pedidos desactivados por decisión comercial.
+Google OAuth está activo en Supabase y Google Auth Platform; falta validar una cuenta real en Android.
+Donde Joel tiene perfil, cuatro cartas y activos públicos reproducibles; pedidos siguen desactivados.
+
+La auditoría F18 queda documentada en `docs/execution/F18.md`. La activación de GA4 requiere
+`VITE_ANALYTICS_PROVIDER=ga4` y `VITE_GA4_MEASUREMENT_ID` solo en el proveedor de despliegue.
 
 La máquina Windows no puede producir un `.ipa`. El proyecto Xcode y el build de simulador son
 verificables en CI; un artefacto instalable exige firma Apple externa.

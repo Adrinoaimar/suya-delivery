@@ -8,14 +8,15 @@ export function Skeleton({ className }: SkeletonProps) {
   return <div aria-hidden="true" className={cn('skeleton rounded-md', className)} />;
 }
 
+/** Copia la superficie y las métricas de `StoreCard`: la lista no salta al resolverse. */
 export function StoreCardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-card border border-suya-mist bg-white">
-      <Skeleton className="h-32 w-full rounded-none" />
-      <div className="space-y-2 p-3.5">
-        <Skeleton className="h-4 w-3/5" />
-        <Skeleton className="h-3 w-2/5" />
-        <Skeleton className="h-3 w-4/5" />
+    <div aria-hidden="true" className="suya-lens-raised overflow-hidden rounded-promo p-2">
+      <Skeleton className="h-32 w-full rounded-card sm:h-40" />
+      <div className="flex min-h-[132px] flex-col gap-2 px-1 pb-2 pt-3.5">
+        <Skeleton className="h-4 w-3/5 rounded-full" />
+        <Skeleton className="h-3 w-2/5 rounded-full" />
+        <Skeleton className="mt-auto h-3 w-4/5 rounded-full" />
       </div>
     </div>
   );

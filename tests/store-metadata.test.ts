@@ -23,4 +23,11 @@ describe('metadatos verificables del negocio', () => {
       isInformationalStore({ ...store, schedule: { opens: '00:00', closes: '00:00' } }),
     ).toBe(true);
   });
+
+  it('bloquea pedidos y muestra como próximamente un local fuera del catálogo publicado', () => {
+    const store = { ...stores[0]!, isComingSoon: true, acceptingOrders: true };
+
+    expect(isStoreAcceptingOrders(store)).toBe(false);
+    expect(isInformationalStore(store)).toBe(true);
+  });
 });

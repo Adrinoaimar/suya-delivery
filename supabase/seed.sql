@@ -20,11 +20,11 @@ values (
   'Cocina marina, ceviches, arroces, platos criollos, parrillas, alitas y hamburguesas.',
   null, 'Sullana, Piura', 0, 0, 25, 45, '{}'::jsonb,
   '{"primary":"#090909","accent":"#F20E18","surface":"#FFF1F1","onPrimary":"#FFFFFF"}'::jsonb,
-  null, null,
+  null, '/brand/stores/anda-paya-logo.webp',
   '[{"src":"/images/stores/anda-paya/menus/carta-2026-09-06.jpg","caption":"Carta recibida el 06/09/2026 · precios pendientes de conciliación"}]'::jsonb,
   true, now(),
   array['Comida norteña', 'Marinos', 'Criollo'], null, null, true, true, true,
-  'Catálogo activo basado en la carta previamente verificada. La carta recibida el 06/09/2026 se muestra como referencia; sus precios están pendientes de conciliación comercial.',
+  'Carta y logotipo entregados por el negocio y autorizados para publicación. Precios y datos operativos quedan sujetos a conciliación comercial.',
   null
 )
 on conflict (id) do update set
@@ -36,6 +36,30 @@ on conflict (id) do update set
   featured = excluded.featured, local_business = excluded.local_business,
   accepting_orders = excluded.accepting_orders, data_note = excluded.data_note,
   promo_label = excluded.promo_label;
+
+insert into public.restaurant_menu_settings (
+  restaurant_id, public_slug, published, logo_url, hero_image_url,
+  primary_color, accent_color, font_family
+)
+select
+  restaurant.id,
+  'anda-paya-menu',
+  true,
+  '/brand/stores/anda-paya-logo.webp',
+  '/images/stores/anda-paya/menus/carta-2026-09-06.jpg',
+  '#090909',
+  '#F20E18',
+  'DM Sans'
+from public.restaurants restaurant
+where restaurant.slug = 'anda-paya'
+on conflict (restaurant_id) do update set
+  public_slug = excluded.public_slug,
+  published = excluded.published,
+  logo_url = excluded.logo_url,
+  hero_image_url = excluded.hero_image_url,
+  primary_color = excluded.primary_color,
+  accent_color = excluded.accent_color,
+  font_family = excluded.font_family;
 
 insert into public.products (
   id, restaurant_id, section, name, description, price, image_url, image_is_stock, popular, extras, active, sort_order

@@ -18,7 +18,7 @@
 - Restaurante determinista: `23000000-0000-4000-8000-000000000001`, slug `donde-joel`.
 - 133 conceptos con precio fijo: carta 1, 13; carta 2, 44; carta 3, 47; carta 4, 29.
 - IDs de producto: UUID determinista calculado desde la clave de origen estable de cada línea.
-- Catálogo visible: `active=true`, menú público publicado, cuatro imágenes en `gallery`.
+- Catálogo visible: `active=true`, menú público publicado con logo suministrado, cuatro imágenes en `gallery`.
 - Pedidos bloqueados: `accepting_orders=false`.
 
 ## Exclusiones y bloqueos
@@ -31,7 +31,8 @@
   por elección abierta de cualquier parrilla.
 - Carta 4: agua “sin/con gas” por variante sin precio separado; cuatro cervezas y seis tragos por
   tratarse de alcohol.
-- No se crearon descripciones cuando la fuente solo mostraba nombre y precio. No se recreó el logo.
+- No se crearon descripciones cuando la fuente solo mostraba nombre y precio. El logo publicado es el
+  archivo suministrado por el negocio; no se recreó identidad visual.
 - El esquema exige números no nulos para envío, mínimo y ETA. Los valores almacenados son marcadores
   técnicos, identificados en `data_note`; no significan envío gratis ni tiempos confirmados.
 

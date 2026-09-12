@@ -25,6 +25,7 @@ export interface StoreService {
   getStore(id: string): Promise<Store | undefined>;
   getPublishedMenu(slug: string): Promise<PublishedMenu | undefined>;
   getMenuSettings(restaurantId: string): Promise<MenuSettings | undefined>;
+  saveStoreLogo(restaurantId: string, logoUrl: string | null): Promise<void>;
   saveMenuSettings(settings: MenuSettings): Promise<MenuSettings>;
   uploadMenuImage(restaurantId: string, kind: 'logo' | 'hero', file: File): Promise<string>;
   listProducts(storeId: string): Promise<Product[]>;
@@ -52,7 +53,12 @@ export interface OfferService {
   setActive(id: string, active: boolean): Promise<boolean>;
 }
 
-export type RestaurantAccountStatus = 'pending_contact' | 'ready_to_invite' | 'invited' | 'active' | 'suspended';
+export type RestaurantAccountStatus =
+  | 'pending_contact'
+  | 'ready_to_invite'
+  | 'invited'
+  | 'active'
+  | 'suspended';
 
 export interface RestaurantAccount {
   restaurantId: string;

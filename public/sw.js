@@ -5,7 +5,7 @@
  * Todas las rutas se resuelven contra el scope, para que funcione tanto en la raíz
  * de un dominio como bajo /<repo>/ en GitHub Pages.
  */
-const CACHE = 'suya-shell-v2';
+const CACHE = 'suya-shell-v3';
 const ROOT = new URL('./', self.location);
 const INDEX = new URL('index.html', ROOT).pathname;
 const SHELL = [
@@ -41,6 +41,23 @@ self.addEventListener('fetch', (event) => {
   // Navegación: red primero y, sin conexión, el index cacheado (rutas SPA).
   if (request.mode === 'navigate') {
     event.respondWith(fetch(request).catch(() => caches.match(INDEX)));
+    return;
+  }
+
+  const url = new URL(request.url);
+  const mutableAsset = url.pathname.includes('/brand/') || url.pathname.includes('/images/');
+  if (mutableAsset) {
+    event.respondWith(
+      fetch(request, { cache: 'no-cache' })
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            void caches.open(CACHE).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request)),
+    );
     return;
   }
 

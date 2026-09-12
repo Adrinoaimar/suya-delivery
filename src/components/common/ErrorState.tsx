@@ -1,10 +1,12 @@
 import { CloudOff } from 'lucide-react';
+import { cn } from '@/lib/cn';
 import { Button } from './Button';
 
 interface ErrorStateProps {
   title?: string;
   description?: string;
   onRetry?: () => void;
+  className?: string;
 }
 
 /** Mensajes en lenguaje claro: nunca se muestra el error técnico al usuario. */
@@ -12,21 +14,23 @@ export function ErrorState({
   title = 'No pudimos cargar esta sección',
   description = 'Revisa tu conexión y vuelve a intentarlo en unos segundos.',
   onRetry,
+  className,
 }: ErrorStateProps) {
   return (
     <div
       role="alert"
-      className="flex flex-col items-center gap-3 rounded-card border border-suya-mist bg-white px-6 py-10 text-center"
+      className={cn(
+        'suya-lens-quiet flex flex-col items-center rounded-card px-6 py-12 text-center',
+        className,
+      )}
     >
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-suya-mist text-[#6B7076]">
-        <CloudOff className="h-6 w-6" />
+      <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-suya-danger-soft text-suya-danger">
+        <CloudOff aria-hidden="true" className="h-7 w-7" />
       </div>
-      <div>
-        <h3 className="font-display text-lg font-bold">{title}</h3>
-        <p className="mt-1 text-sm text-[#6B7076]">{description}</p>
-      </div>
+      <h3 className="font-display text-lg font-bold tracking-[-0.02em] text-suya-carbon">{title}</h3>
+      <p className="mt-2 max-w-[38ch] text-sm leading-relaxed text-suya-muted">{description}</p>
       {onRetry && (
-        <Button variant="secondary" onClick={onRetry}>
+        <Button variant="secondary" onClick={onRetry} className="mt-6">
           Intentar nuevamente
         </Button>
       )}

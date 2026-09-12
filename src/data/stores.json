@@ -14,13 +14,13 @@
     "distanceKm": 1.4,
     "isLocal": true,
     "isFeatured": true,
-    "isRealBrand": false,
+    "isRealBrand": true,
     "promoLabel": "2x1 en gaseosa",
     "schedule": { "opens": "11:00", "closes": "23:30" },
     "address": "Av. José de Lama 480, Sullana",
     "phone": "+51 969 000 101",
     "image": null,
-    "logo": null,
+    "logo": "/brand/stores/el-buen-sabor-mark.svg",
     "sections": ["Pollos", "Parrillas", "Guarniciones", "Bebidas"]
   },
   {
@@ -38,7 +38,7 @@
     "distanceKm": 1.9,
     "isLocal": true,
     "isFeatured": true,
-    "isRealBrand": false,
+    "isRealBrand": true,
     "dataNote": "Carta y precios tomados del menú físico y la web oficial de El Tío Jhony (eltiojhony.com); el propio restaurante indica que los precios están sujetos a cambios. Calificación, reseñas, tiempo de entrega y costo de envío son datos de demostración de Suya.",
     "promoLabel": "1 pollo entero + gaseosa 1.5 L: S/ 76",
     "schedule": { "opens": "12:00", "closes": "23:30" },
@@ -100,15 +100,15 @@
     "distanceKm": 1.6,
     "isLocal": true,
     "isFeatured": true,
-    "isRealBrand": false,
+    "isRealBrand": true,
     "isBeta": true,
-    "dataNote": "Negocio en incorporación (beta). Carta referencial de cocina norteña: aún no está confirmada con el negocio, igual que precios y horarios.",
+    "dataNote": "Carta y logotipo entregados por el negocio y autorizados para publicación. Precios y datos operativos quedan sujetos a conciliación comercial.",
     "promoLabel": "Nuevo en Suya",
     "schedule": { "opens": "10:00", "closes": "21:00" },
     "address": "Sullana, Piura",
     "phone": "+51 969 000 113",
-    "image": null,
-    "logo": "/brand/stores/anda-paya.svg",
+    "image": "/images/stores/anda-paya/menus/carta-2026-09-06.jpg",
+    "logo": "/brand/stores/anda-paya-logo.webp",
     "sections": ["Entradas", "Ceviches", "Criollos", "Bebidas"]
   },
   {
@@ -132,7 +132,7 @@
     "address": "Calle Bolívar 322, Sullana",
     "phone": "+51 969 000 102",
     "image": null,
-    "logo": null,
+    "logo": "/brand/stores/don-pizza-mark.svg",
     "sections": ["Pizzas", "Pastas", "Entradas", "Bebidas"]
   },
   {
@@ -156,7 +156,7 @@
     "address": "Urb. Popular Villa Perú Canadá Mz. F, Sullana",
     "phone": "+51 969 000 103",
     "image": null,
-    "logo": null,
+    "logo": "/brand/stores/dulce-tentacion-mark.svg",
     "sections": ["Del día", "Tortas", "Postres", "Café"]
   },
   {
@@ -180,7 +180,7 @@
     "address": "Av. Champagnat 150, Sullana",
     "phone": "+51 969 000 104",
     "image": null,
-    "logo": null,
+    "logo": "/brand/stores/verde-fresh-mark.svg",
     "sections": ["Jugos", "Batidos", "Bowls", "Snacks"]
   },
   {
@@ -204,7 +204,7 @@
     "address": "Av. San Martín 1204, Sullana",
     "phone": "+51 969 000 105",
     "image": null,
-    "logo": null,
+    "logo": "/brand/stores/market-ahorro-mark.svg",
     "sections": ["Abarrotes", "Bebidas", "Limpieza", "Snacks"]
   },
   {
@@ -228,7 +228,7 @@
     "address": "Calle Tarapacá 615, Sullana",
     "phone": "+51 969 000 106",
     "image": null,
-    "logo": null,
+    "logo": "/brand/stores/flores-del-chira-mark.svg",
     "sections": ["Ramos", "Arreglos", "Plantas", "Detalles"]
   },
   {
@@ -252,7 +252,7 @@
     "address": "Av. Circunvalación, Sullana",
     "phone": "+51 969 000 107",
     "image": null,
-    "logo": null,
+    "logo": "/brand/stores/kfc-logo.png",
     "sections": ["Combos", "Piezas", "Snacks", "Bebidas"]
   },
   {
@@ -276,7 +276,7 @@
     "address": "Av. José de Lama 900, Sullana",
     "phone": "+51 969 000 108",
     "image": null,
-    "logo": null,
+    "logo": "/brand/stores/papa-johns-logo.svg",
     "sections": ["Pizzas", "Complementos", "Bebidas"]
   },
   {
@@ -300,7 +300,7 @@
     "address": "Av. Panamericana Norte, Sullana",
     "phone": "+51 969 000 109",
     "image": null,
-    "logo": null,
+    "logo": "/brand/stores/tottus-logo.svg",
     "sections": ["Frescos", "Abarrotes", "Bebidas", "Limpieza"]
   },
   {
@@ -324,7 +324,7 @@
     "address": "Av. José de Lama 231, Sullana",
     "phone": "+51 969 000 110",
     "image": null,
-    "logo": null,
+    "logo": "/brand/stores/inkafarma-logo.png",
     "sections": ["Sin receta", "Cuidado personal", "Bebé", "Botiquín"]
   },
   {
@@ -348,7 +348,7 @@
     "address": "Calle Grau 410, Sullana",
     "phone": "+51 969 000 111",
     "image": null,
-    "logo": null,
+    "logo": "/brand/stores/juguetes-sullana-mark.svg",
     "sections": ["Juguetes", "Juegos de mesa", "Regalos"]
   }
 ]
