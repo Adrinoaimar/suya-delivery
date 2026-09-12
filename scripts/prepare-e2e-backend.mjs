@@ -46,6 +46,10 @@ await ensureUser(email, 'Cliente E2E Suya');
 await ensureUser(adminEmail, 'Operaciones E2E Suya', { role: 'platform_admin' });
 const rider = await ensureUser(riderEmail, 'Repartidor E2E Suya');
 const restaurantOwner = await ensureUser(restaurantEmail, 'Propietario E2E Suya');
+if (!/^[0-9a-f-]{36}$/iu.test(restaurantOwner.id)) {
+  throw new Error('Fixture E2E rechazado: Auth devolvió un UUID de propietario inválido.');
+}
+const ownerId = restaurantOwner.id;
 
 try {
   const verification = execFileSync('psql', [
@@ -53,27 +57,25 @@ try {
     '-v',
     'ON_ERROR_STOP=1',
     '-qAt',
-    '-v',
-    `owner_id=${restaurantOwner.id}`,
     '-c',
     `
       with target as (
         select id from public.restaurants where slug = 'anda-paya'
       )
       insert into public.restaurant_members (restaurant_id, user_id, role, active)
-      select id, :'owner_id'::uuid, 'owner'::public.restaurant_role, true
+      select id, '${ownerId}'::uuid, 'owner'::public.restaurant_role, true
       from target
       on conflict (restaurant_id, user_id)
       do update set role = excluded.role, active = excluded.active;
 
       update public.restaurant_account_registry
-      set owner_user_id = :'owner_id'::uuid, account_status = 'active'
+      set owner_user_id = '${ownerId}'::uuid, account_status = 'active'
       where restaurant_id = (select id from public.restaurants where slug = 'anda-paya');
 
       select count(*)
       from public.restaurant_members rm
       join public.restaurants r on r.id = rm.restaurant_id
-      where r.slug = 'anda-paya' and rm.user_id = :'owner_id'::uuid and rm.role = 'owner' and rm.active;
+      where r.slug = 'anda-paya' and rm.user_id = '${ownerId}'::uuid and rm.role = 'owner' and rm.active;
     `,
   ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   if (verification.trim().split(/\s+/u).at(-1) !== '1') {
