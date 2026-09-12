@@ -199,7 +199,7 @@ export default function StoreDetailPage() {
           className="absolute inset-0 bg-gradient-to-t from-suya-carbon/70 via-suya-carbon/10 to-transparent"
         />
         {store.image && storeLogo && (
-          <span className="absolute bottom-4 left-4 z-[1] flex h-16 w-24 items-center justify-center overflow-hidden rounded-2xl border border-white/80 bg-white/95 p-2 shadow-soft sm:bottom-5 sm:left-6 sm:h-20 sm:w-32">
+          <span className="absolute bottom-4 left-4 z-[1] flex h-16 w-24 items-center justify-center overflow-hidden rounded-2xl bg-transparent p-0 drop-shadow-[0_2px_8px_rgba(0,0,0,.45)] sm:bottom-5 sm:left-6 sm:h-20 sm:w-32">
             <img
               src={storeLogo}
               alt={`Logo de ${store.name}`}
@@ -236,13 +236,14 @@ export default function StoreDetailPage() {
           )}
         >
           <div className="flex items-start gap-3">
-            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-suya-mist sm:h-20 sm:w-20">
+            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-suya-mist bg-white sm:h-24 sm:w-24">
               <Thumb
                 name={store.name}
                 src={storeLogo}
                 variant="store"
                 fit={store.logo ? 'contain' : 'cover'}
                 rounded="rounded-xl"
+                className={store.logo ? '!p-1' : undefined}
               />
             </div>
             <div className="min-w-0 flex-1">
