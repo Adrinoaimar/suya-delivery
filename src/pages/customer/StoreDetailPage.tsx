@@ -21,6 +21,7 @@ import { Thumb } from '@/components/common/Thumb';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { ProductSheet } from '@/components/marketplace/ProductSheet';
 import { StoreGallery } from '@/components/marketplace/StoreGallery';
+import { track } from '@/lib/analytics';
 import { cn } from '@/lib/cn';
 import { FREE_DELIVERY_THRESHOLD } from '@/lib/commerce';
 import { useCatalogStore } from '@/store/catalogStore';
@@ -68,6 +69,10 @@ export default function StoreDetailPage() {
     void loadStore(id);
     void loadProducts(id);
   }, [id, loadStore, loadProducts]);
+
+  useEffect(() => {
+    if (store) track('store_view', { store_id: store.id, store_name: store.name });
+  }, [store]);
 
   // Entrar desde el catálogo general siempre es el canal Delivery. Un contexto
   // QR de mesa explícito conserva su canal y permite checkout invitado.

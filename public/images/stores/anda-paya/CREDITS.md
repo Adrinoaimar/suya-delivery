@@ -8,8 +8,9 @@ marcadas como "ilustrativas" (`products.image_is_stock = true`). Ver
 fotos).
 
 El logo `public/brand/stores/anda-paya-logo.webp` se extrajo del encabezado de la
-carta suministrada por el negocio y autorizada para publicación. No es un dibujo
-recreado ni un logotipo de terceros.
+carta suministrada por el negocio y autorizada para publicación. Se recortó el área del
+encabezado, se limpió el fondo exterior y se exportó en WebP sin pérdida con transparencia.
+No es un dibujo recreado ni un logotipo de terceros.
 
 | Archivo | Página en Commons | Autor | Licencia |
 |---|---|---|---|

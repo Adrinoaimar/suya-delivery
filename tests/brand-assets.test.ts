@@ -7,7 +7,7 @@ const root = (path: string) => resolve(process.cwd(), path);
 describe('activos de marca de restaurantes', () => {
   it('conserva activos publicados y la carta original de Andá Paya', () => {
     expect(existsSync(root('public/brand/stores/tio-jhony-logo.webp'))).toBe(true);
-    expect(existsSync(root('public/brand/stores/la-waka-logo.svg'))).toBe(true);
+    expect(existsSync(root('public/brand/stores/la-waka-logo.webp'))).toBe(true);
     expect(existsSync(root('public/images/stores/donde-joel/logo.png'))).toBe(true);
     expect(existsSync(root('public/brand/stores/anda-paya-logo.webp'))).toBe(true);
     expect(existsSync(root('public/images/stores/anda-paya/menus/carta-2026-09-06.jpg'))).toBe(true);
@@ -69,8 +69,8 @@ describe('activos de marca de restaurantes', () => {
       'utf8',
     );
     expect(migration).toContain("'/images/stores/donde-joel/logo.png'");
-    expect(readFileSync(root('supabase/migrations/20260906161000_fix_la_waka_branding.sql'), 'utf8'))
-      .toContain("'/brand/stores/la-waka-logo.svg'");
+    expect(readFileSync(root('supabase/migrations/20260912100000_refresh_la_waka_brand_assets.sql'), 'utf8'))
+      .toContain("'/brand/stores/la-waka-logo.webp'");
     expect(readFileSync(root('supabase/migrations/20260911120000_publish_anda_paya_brand_assets.sql'), 'utf8'))
       .toContain("'/brand/stores/anda-paya-logo.webp'");
     expect(readFileSync(root('supabase/migrations/20260906150000_publish_tio_jhony_menu.sql'), 'utf8'))
@@ -81,5 +81,12 @@ describe('activos de marca de restaurantes', () => {
     const detail = readFileSync(root('src/pages/customer/StoreDetailPage.tsx'), 'utf8');
     expect(detail).toContain('const storeLogo = assetUrl(store.logo || store.gallery?.[0]?.src);');
     expect(detail).toContain('src={storeLogo}');
+  });
+
+  it('documenta la procedencia y el tratamiento de los logos refinados', () => {
+    const credits = readFileSync(root('public/brand/stores/CREDITS.md'), 'utf8');
+    expect(credits).toContain('lawakachicken.com/newlogo.png');
+    expect(credits).toContain('carta-2026-09-06.jpg');
+    expect(credits).toContain('fondo transparente');
   });
 });

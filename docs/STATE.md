@@ -1,6 +1,6 @@
 # Estado de ejecución
 
-Actualizado: 11 de septiembre de 2026 (`America/Lima`)
+Actualizado: 12 de septiembre de 2026 (`America/Lima`)
 
 ## Objetivo
 
@@ -58,6 +58,13 @@ producción.
   usa el logo derivado de su carta autorizada y conserva la carta original en galería. Donde Joel
   también publica su logo en la ficha, menú, portada y tarjetas. Las rutas relativas respetan la
   base pública del despliegue. No se usa el SVG recreado anterior. Ver `docs/data/brand-assets.md`.
+- La Waka ahora usa el activo oficial de `lawakachicken.com` convertido a WebP transparente; Andá
+  Paya usa una extracción nítida del encabezado de su carta autorizada, con el fondo exterior limpio.
+  KFC, Inkafarma, Papa John's y Tottus tienen fichas Supabase visibles como «Próximamente», sin
+  productos ni pedidos habilitados.
+- F18 añade analítica GA4 opt-in con consentimiento, UTM acotadas y eventos de embudo (`page_view`,
+  `menu_view`, `store_view`, `add_to_cart`, `checkout_start`, `order_created`). Publicidad, CRM de
+  leads y dashboards siguen desactivados hasta recibir IDs, cuentas y política de privacidad.
 - El catálogo local conserva 13 fichas demo con un asset resoluble por tarjeta y ficha. El mock de
   desarrollo publica una carta por ficha con slug estable (`*-menu`), logo, tema y productos; la
   publicación productiva de Supabase sigue limitada a los negocios con datos comerciales verificados.
@@ -88,6 +95,9 @@ el PR #28 tiene verdes `test`, `browser`, `browser-e2e`, `build`, `simulator` y 
 
 Google OAuth está activo en Supabase y Google Auth Platform; falta validar una cuenta real en Android.
 Donde Joel tiene perfil, cuatro cartas y activos públicos reproducibles; pedidos siguen desactivados.
+
+La auditoría F18 queda documentada en `docs/execution/F18.md`. La activación de GA4 requiere
+`VITE_ANALYTICS_PROVIDER=ga4` y `VITE_GA4_MEASUREMENT_ID` solo en el proveedor de despliegue.
 
 La máquina Windows no puede producir un `.ipa`. El proyecto Xcode y el build de simulador son
 verificables en CI; un artefacto instalable exige firma Apple externa.

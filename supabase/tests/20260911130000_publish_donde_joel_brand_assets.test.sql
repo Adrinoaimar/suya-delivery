@@ -36,7 +36,7 @@ select is(
 
 select is(
   (select logo_url from public.restaurants where slug = 'la-waka'),
-  '/brand/stores/la-waka-logo.svg',
+  '/brand/stores/la-waka-logo.webp',
   'La Waka usa el logo local publicado'
 );
 
@@ -45,7 +45,7 @@ select is(
    from public.restaurant_menu_settings settings
    join public.restaurants restaurant on restaurant.id = settings.restaurant_id
    where restaurant.slug = 'la-waka'),
-  '/brand/stores/la-waka-logo.svg',
+  '/brand/stores/la-waka-logo.webp',
   'Suya Menús usa el logo local de La Waka'
 );
 

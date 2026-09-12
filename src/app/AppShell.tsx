@@ -1,4 +1,5 @@
 import { useLayoutEffect, type ReactNode } from 'react';
+import { AnalyticsBootstrap } from '@/app/AnalyticsBootstrap';
 import { ScrollToTop } from '@/app/ScrollToTop';
 import { OfflineBanner } from '@/components/common/OfflineBanner';
 import { SuyaIntroLoader } from '@/components/common/SuyaIntroLoader';
@@ -35,6 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         Saltar al contenido
       </a>
       <ScrollToTop />
+      <AnalyticsBootstrap />
       {children}
       <OfflineBanner />
       <ToastViewport />

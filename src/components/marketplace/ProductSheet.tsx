@@ -6,6 +6,7 @@ import { Price } from '@/components/common/Price';
 import { QuantitySelector } from '@/components/common/QuantitySelector';
 import { Textarea } from '@/components/common/Input';
 import { Thumb } from '@/components/common/Thumb';
+import { track } from '@/lib/analytics';
 import { notificationService } from '@/lib/services';
 import { useCartStore } from '@/store/cartStore';
 import { formatPrice } from '@/utils/format';
@@ -52,6 +53,12 @@ export function ProductSheet({ product, onClose }: ProductSheetProps) {
       return;
     }
     notificationService.notify('Agregado al carrito', 'success');
+    track('add_to_cart', {
+      item_id: product.id,
+      store_id: product.storeId,
+      quantity,
+      value: total,
+    });
     onClose();
   }
 

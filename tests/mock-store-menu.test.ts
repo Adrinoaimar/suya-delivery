@@ -31,6 +31,8 @@ describe('menús públicos del catálogo local', () => {
     const listed = await service.listStores();
     expect(listed.filter((store) => !store.isComingSoon).map((store) => store.id)).toEqual(['tio-jhony', 'anda-paya']);
     expect(listed.filter((store) => store.isComingSoon)).toHaveLength(11);
+    expect(listed.find((store) => store.id === 'kfc')).toMatchObject({ isComingSoon: true, acceptingOrders: false });
+    expect(listed.find((store) => store.id === 'inkafarma')).toMatchObject({ isComingSoon: true, acceptingOrders: false });
   });
 
   it('devuelve ajustes publicados para el catálogo de backoffice', async () => {
