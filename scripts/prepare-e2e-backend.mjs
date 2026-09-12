@@ -50,6 +50,11 @@ if (!/^[0-9a-f-]{36}$/iu.test(restaurantOwner.id)) {
   throw new Error('Fixture E2E rechazado: Auth devolvió un UUID de propietario inválido.');
 }
 const ownerId = restaurantOwner.id;
+const normalizedOwnerEmail = restaurantEmail.toLowerCase();
+if (!/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/u.test(normalizedOwnerEmail)) {
+  throw new Error('Fixture E2E rechazado: correo de propietario inválido.');
+}
+const ownerEmail = normalizedOwnerEmail.replaceAll("'", "''");
 
 try {
   const verification = execFileSync('psql', [
@@ -69,7 +74,12 @@ try {
       do update set role = excluded.role, active = excluded.active;
 
       update public.restaurant_account_registry
-      set owner_user_id = '${ownerId}'::uuid, account_status = 'active'
+      set contact_name = 'Propietario E2E Suya',
+          contact_email = '${ownerEmail}',
+          owner_user_id = '${ownerId}'::uuid,
+          account_status = 'active',
+          invited_at = coalesce(invited_at, now()),
+          activated_at = coalesce(activated_at, now())
       where restaurant_id = (select id from public.restaurants where slug = 'anda-paya');
 
       select count(*)
