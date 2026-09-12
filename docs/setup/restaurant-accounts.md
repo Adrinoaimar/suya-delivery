@@ -27,3 +27,10 @@ tokens ni usuarios `auth.users`.
    desactiva el miembro anterior.
 
 No se crean cuentas live hasta recibir esos cuatro correos y validar identidad comercial.
+
+## Subcuentas de prueba aisladas
+
+El workflow E2E crea automáticamente cuatro usuarios efímeros en Supabase local: cliente,
+operaciones (`platform_admin`), repartidor verificado y propietario de Andá Paya (`owner`).
+El propietario se vincula solo a la base local para probar `Catálogo y publicación`; no se
+envían correos ni se crean cuentas en el proyecto productivo.

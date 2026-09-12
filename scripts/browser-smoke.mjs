@@ -116,6 +116,7 @@ if (process.env.SMOKE_BUSINESS === 'true') {
     await context.grantPermissions(['geolocation'], { origin: riderOrigin });
     const adminEmail = process.env.E2E_ADMIN_EMAIL ?? 'e2e.admin@suya.test';
     const riderEmail = process.env.E2E_RIDER_EMAIL ?? 'e2e.rider@suya.test';
+    const restaurantEmail = process.env.E2E_RESTAURANT_EMAIL ?? 'e2e.restaurant@suya.test';
     const opsPage = await context.newPage();
     await opsPage.goto(`${backofficeOrigin}/login`, { waitUntil: 'domcontentloaded', timeout: 20_000 });
     await opsPage.getByLabel('Correo').fill(adminEmail);
@@ -130,6 +131,21 @@ if (process.env.SMOKE_BUSINESS === 'true') {
     await opsPage.getByRole('button', { name: 'Iniciar preparación' }).first().click();
     await opsPage.getByText('En preparación', { exact: true }).waitFor({ timeout: 20_000 });
     console.log('business/backoffice-assign-and-prepare: OK');
+
+    const ownerContext = await browser.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+    const ownerPage = await ownerContext.newPage();
+    await ownerPage.goto(`${backofficeOrigin}/login`, { waitUntil: 'domcontentloaded', timeout: 20_000 });
+    await ownerPage.getByLabel('Correo').fill(restaurantEmail);
+    await ownerPage.getByLabel('Contraseña').fill(password);
+    await ownerPage.getByRole('button', { name: 'Ingresar' }).click();
+    await ownerPage.waitForURL(/\/$|\/orders$/, { timeout: 20_000 });
+    await ownerPage.goto(`${backofficeOrigin}/catalog`, { waitUntil: 'networkidle', timeout: 20_000 });
+    await ownerPage.getByRole('heading', { name: 'Catálogo y publicación' }).waitFor();
+    await ownerPage.getByLabel('URL del logo autorizado').first().waitFor();
+    await ownerPage.getByRole('button', { name: 'Guardar y actualizar QR' }).first().waitFor();
+    console.log('business/restaurant-owner-catalog: OK');
+    await ownerPage.close();
+    await ownerContext.close();
 
     const riderPage = await context.newPage();
     await riderPage.goto(`${riderOrigin}/login`, { waitUntil: 'domcontentloaded', timeout: 20_000 });

@@ -6,6 +6,7 @@ const email = process.env.E2E_CUSTOMER_EMAIL?.trim() || 'e2e.customer@suya.test'
 const password = process.env.E2E_CUSTOMER_PASSWORD?.trim() || 'SuyaE2E!2026Local';
 const adminEmail = process.env.E2E_ADMIN_EMAIL?.trim() || 'e2e.admin@suya.test';
 const riderEmail = process.env.E2E_RIDER_EMAIL?.trim() || 'e2e.rider@suya.test';
+const restaurantEmail = process.env.E2E_RESTAURANT_EMAIL?.trim() || 'e2e.restaurant@suya.test';
 
 if (!url || !serviceRoleKey) {
   throw new Error('Fixture E2E rechazado: faltan VITE_SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY.');
@@ -42,5 +43,19 @@ async function ensureUser(targetEmail, displayName, appMetadata = {}) {
 await ensureUser(email, 'Cliente E2E Suya');
 await ensureUser(adminEmail, 'Operaciones E2E Suya', { role: 'platform_admin' });
 const rider = await ensureUser(riderEmail, 'Repartidor E2E Suya');
+const restaurantOwner = await ensureUser(restaurantEmail, 'Propietario E2E Suya');
 
-console.log(`Fixture E2E listo: ${email}, ${adminEmail}, ${rider.id}`);
+const { data: restaurant, error: restaurantError } = await admin
+  .from('restaurants')
+  .select('id')
+  .eq('slug', 'anda-paya')
+  .maybeSingle();
+if (restaurantError || !restaurant?.id) {
+  throw new Error(`No se pudo localizar Andá Paya para el propietario E2E: ${restaurantError?.message ?? 'sin fila'}`);
+}
+const { error: memberError } = await admin
+  .from('restaurant_members')
+  .upsert({ restaurant_id: restaurant.id, user_id: restaurantOwner.id, role: 'owner', active: true }, { onConflict: 'restaurant_id,user_id' });
+if (memberError) throw new Error(`No se pudo vincular el propietario E2E: ${memberError.message}`);
+
+console.log(`Fixture E2E listo: cliente=${email}, admin=${adminEmail}, rider=${rider.id}, propietario=${restaurantOwner.id}`);
