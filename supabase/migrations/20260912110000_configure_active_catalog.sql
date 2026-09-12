@@ -3,9 +3,19 @@
 -- marina separada para no mezclar pedidos entre fichas.
 do $$
 declare
-  source_id uuid := '20000000-0000-4000-8000-000000000001';
+  source_id uuid;
   cevicheria_id uuid := '20000000-0000-4000-8000-000000000002';
 begin
+  -- Las semillas locales y la base productiva pueden usar UUID distintos; el slug es la identidad estable.
+  select id into source_id
+  from public.restaurants
+  where slug = 'anda-paya'
+  limit 1;
+
+  if source_id is null then
+    raise exception 'No existe la ficha fuente anda-paya';
+  end if;
+
   update public.restaurants
   set name = 'Andá Paya Restaurante',
       description = 'Cocina marina, platos criollos, parrillas y comida norteña del valle del Chira.',
