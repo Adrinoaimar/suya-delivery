@@ -57,5 +57,10 @@ const { error: memberError } = await admin
   .from('restaurant_members')
   .upsert({ restaurant_id: restaurant.id, user_id: restaurantOwner.id, role: 'owner', active: true }, { onConflict: 'restaurant_id,user_id' });
 if (memberError) throw new Error(`No se pudo vincular el propietario E2E: ${memberError.message}`);
+const { error: registryError } = await admin
+  .from('restaurant_account_registry')
+  .update({ owner_user_id: restaurantOwner.id, account_status: 'active' })
+  .eq('restaurant_id', restaurant.id);
+if (registryError) throw new Error(`No se pudo activar el registro E2E: ${registryError.message}`);
 
 console.log(`Fixture E2E listo: cliente=${email}, admin=${adminEmail}, rider=${rider.id}, propietario=${restaurantOwner.id}`);
