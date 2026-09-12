@@ -270,6 +270,34 @@ describe('SupabaseStoreService', () => {
     expect(calls).toContain('restaurants');
   });
 
+  it('sanitiza el branding publicado antes de exponerlo como CSS o imagen', async () => {
+    const { service } = makeService({
+      restaurantMenuSettings: () => ({
+        data: {
+          restaurant_id: 'r1',
+          public_slug: 'suya-grill',
+          published: true,
+          logo_url: 'javascript:alert(1)',
+          hero_image_url: 'data:image/svg+xml,<svg onload=alert(1)>',
+          primary_color: 'url(javascript:alert(1))',
+          accent_color: '#8CC63F',
+          font_family: ');color:red/*',
+        },
+        error: null,
+      }),
+    });
+
+    await expect(service.getPublishedMenu('suya-grill')).resolves.toMatchObject({
+      brand: {
+        logoUrl: null,
+        heroImageUrl: 'https://img.example/local.jpg',
+        primaryColor: '#EF6C3B',
+        accentColor: '#8CC63F',
+        fontFamily: 'Inter',
+      },
+    });
+  });
+
   it('resuelve un menú publicado sin descargar productos dos veces', async () => {
     const { service, calls } = makeService({});
 

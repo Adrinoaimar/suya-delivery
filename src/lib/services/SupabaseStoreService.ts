@@ -47,13 +47,21 @@ interface MenuSettingsRow {
   published: boolean;
 }
 
+function safeAsset(value: string | null): string | null {
+  try {
+    return normalizeAssetInput(value);
+  } catch {
+    return null;
+  }
+}
+
 function mapMenuSettings(row: MenuSettingsRow): MenuSettings {
   return {
     restaurantId: row.restaurant_id,
     slug: row.public_slug,
     published: row.published,
-    logoUrl: row.logo_url,
-    heroImageUrl: row.hero_image_url,
+    logoUrl: safeAsset(row.logo_url),
+    heroImageUrl: safeAsset(row.hero_image_url),
     primaryColor: hexColor(row.primary_color) ?? '#EF6C3B',
     accentColor: hexColor(row.accent_color) ?? '#8CC63F',
     fontFamily: ['Montserrat', 'Inter'].includes(row.font_family) ? row.font_family : 'Inter',
@@ -273,19 +281,19 @@ export class SupabaseStoreServiceImpl implements StoreService {
     if (error) throw error;
     if (!data) return undefined;
 
-    const settings = data as MenuSettingsRow;
-    const store = await this.getStore(settings.restaurant_id);
+    const settings = mapMenuSettings(data as MenuSettingsRow);
+    const store = await this.getStore(settings.restaurantId);
     if (!store) return undefined;
 
     return {
-      slug: settings.public_slug,
+      slug: settings.slug,
       store,
       brand: {
-        logoUrl: settings.logo_url,
-        heroImageUrl: settings.hero_image_url,
-        primaryColor: settings.primary_color,
-        accentColor: settings.accent_color,
-        fontFamily: settings.font_family,
+        logoUrl: settings.logoUrl ?? safeAsset(store.logo),
+        heroImageUrl: settings.heroImageUrl ?? safeAsset(store.image),
+        primaryColor: settings.primaryColor,
+        accentColor: settings.accentColor,
+        fontFamily: settings.fontFamily,
       },
     };
   }
