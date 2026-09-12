@@ -4,7 +4,7 @@ import { products } from '@/data';
 import type { CartItem } from '@/types';
 
 function buildItems(): CartItem[] {
-  const product = products[0]!;
+  const product = products.find((candidate) => candidate.storeId === 'tio-jhony')!;
   return [
     {
       lineId: 'line-1',
@@ -29,7 +29,7 @@ const customer = {
 
 async function createOrder(service: MockOrderServiceImpl) {
   return service.create({
-    storeId: 'el-buen-sabor',
+    storeId: 'tio-jhony',
     items: buildItems(),
     subtotal: 30,
     deliveryFee: 4,
@@ -44,7 +44,7 @@ describe('contrato de pedidos async', () => {
   it('crea un pedido sin asignar repartidor aleatorio', async () => {
     const service = new MockOrderServiceImpl();
     const order = await service.create({
-      storeId: 'el-buen-sabor',
+      storeId: 'tio-jhony',
       items: buildItems(),
       subtotal: 119.8,
       deliveryFee: 4,
@@ -59,6 +59,21 @@ describe('contrato de pedidos async', () => {
     expect(order.total).toBeCloseTo(123.8, 2);
     expect(order.riderId).toBeNull();
     expect((await service.get(order.id))?.id).toBe(order.id);
+  });
+
+  it('rechaza pedidos directos de locales marcados como próximamente', async () => {
+    const service = new MockOrderServiceImpl();
+
+    await expect(service.create({
+      storeId: 'el-buen-sabor',
+      items: buildItems(),
+      subtotal: 30,
+      deliveryFee: 4,
+      discount: 0,
+      customer,
+      deliveryPosition: null,
+      paymentMethod: 'cash',
+    })).rejects.toThrow('próximamente');
   });
 
   it('actualiza el estado y conserva historial', async () => {

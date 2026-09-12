@@ -28,3 +28,6 @@ backoffice permite cargar JPG, PNG o WebP y reemplazar el activo desde `Catálog
 - Las imágenes de galería pueden servir como identidad visual temporal; nunca se etiquetan como
   logo oficial.
 - Precios, horarios, delivery y pedidos siguen sus gates comerciales propios.
+- En el catálogo local, solo `anda-paya`, `donde-joel`, `la-waka` y `tio-jhony` están en la
+  allowlist publicada; las demás fichas conservan su identidad de catálogo y muestran
+  «Próximamente» hasta completar alta, carta y condiciones operativas.

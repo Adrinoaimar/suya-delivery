@@ -1,4 +1,4 @@
-import { products, seedOrders, stores } from '@/data';
+import { isLiveRestaurantId, products, seedOrders, stores } from '@/data';
 import { STORAGE_KEYS, readLocal, writeLocal } from '@/lib/storage';
 import { createId, createOrderCode, createPinCode } from '@/utils/id';
 import { ORDER_FLOW } from '@/types';
@@ -34,13 +34,15 @@ export class MockOrderServiceImpl implements OrderService {
 
   async create(input: CreateOrderInput): Promise<Order> {
     const store = stores.find((item) => item.id === input.storeId);
+    if (!store) throw new Error('El restaurante no existe en el catálogo local.');
+    if (!isLiveRestaurantId(input.storeId)) throw new Error('Este restaurante estará disponible próximamente.');
     const now = new Date();
     const deliveryCode = createPinCode();
     const order: Order = {
       id: createId('ord'),
       code: createOrderCode(),
       storeId: input.storeId,
-      storeName: store?.name ?? 'Negocio',
+      storeName: store.name,
       items: input.items,
       subtotal: round2(input.subtotal),
       deliveryFee: round2(input.deliveryFee),
@@ -54,7 +56,7 @@ export class MockOrderServiceImpl implements OrderService {
       storePosition: null,
       paymentMethod: input.paymentMethod,
       riderId: null,
-      etaMinutes: store?.etaMax ?? 30,
+      etaMinutes: store.etaMax,
       deliveryCode,
       cancelCode: createPinCode(deliveryCode),
       cancellationReason: null,

@@ -27,6 +27,12 @@ describe('menús públicos del catálogo local', () => {
     await expect(service.getPublishedMenu('restaurante-inexistente-menu')).resolves.toBeUndefined();
   });
 
+  it('marca como próximamente las fichas que no están en los cuatro restaurantes publicados', async () => {
+    const listed = await service.listStores();
+    expect(listed.filter((store) => !store.isComingSoon).map((store) => store.id)).toEqual(['tio-jhony', 'anda-paya']);
+    expect(listed.filter((store) => store.isComingSoon)).toHaveLength(11);
+  });
+
   it('devuelve ajustes publicados para el catálogo de backoffice', async () => {
     const store = stores[0]!;
     await expect(service.getMenuSettings(store.id)).resolves.toMatchObject({

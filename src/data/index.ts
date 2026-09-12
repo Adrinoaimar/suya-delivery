@@ -36,3 +36,4 @@ export const seedOrders = seedOrdersJson as unknown as SeedOrder[];
 
 export const CITY = 'Sullana, Perú';
 export const FREE_DELIVERY_THRESHOLD = 20;
+export { isLiveRestaurantId, LIVE_RESTAURANT_IDS } from './store-availability';

@@ -129,6 +129,7 @@ export default function StoreDetailPage() {
   const productsLoading = productsStatus !== 'ready' && productsError === null;
 
   const informationalOnly = isInformationalStore(store);
+  const comingSoon = store.isComingSoon === true;
   const open = isStoreAcceptingOrders(store);
   const isFavorite = favorites.includes(store.id);
   const sections = [...new Set(products.map((product) => product.section))];
@@ -233,7 +234,7 @@ export default function StoreDetailPage() {
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1">
               <Badge tone={open ? 'lime' : 'neutral'}>
-                {open ? 'Abierto' : informationalOnly ? 'Carta informativa' : 'Cerrado'}
+                {open ? 'Abierto' : comingSoon ? 'Próximamente' : informationalOnly ? 'Carta informativa' : 'Cerrado'}
               </Badge>
               {store.isBeta && <Badge tone="green">Beta</Badge>}
             </div>
@@ -415,7 +416,9 @@ export default function StoreDetailPage() {
 
           {!open && !productsLoading && !productsError && (
             <p className="rounded-card border border-suya-mist bg-white p-4 text-sm text-[#6B7076]">
-              {informationalOnly
+              {comingSoon
+                ? 'Esta ficha estará disponible próximamente. El restaurante está terminando de configurar su carta y condiciones de entrega.'
+                : informationalOnly
                 ? 'Esta carta sirve para consulta. Los pedidos se habilitarán cuando el negocio confirme sede, horario, cobertura y condiciones de entrega.'
                 : `Este negocio está cerrado ahora. Su horario es ${scheduleLabel(store.schedule)}; podrás pedir cuando vuelva a abrir.`}
             </p>

@@ -31,6 +31,8 @@ export interface Store {
   isFeatured: boolean;
   /** Control operativo del backend; si falta se conserva el cálculo por horario legado. */
   acceptingOrders?: boolean;
+  /** Ficha visible en catálogo, pero aún fuera de los cuatro restaurantes publicados. */
+  isComingSoon?: boolean;
   /** Marca real: se muestra con tarjeta neutra, nunca con un logo recreado. */
   isRealBrand: boolean;
   /** Negocio incorporado en fase beta: carta y datos aún por confirmar con el comercio. */

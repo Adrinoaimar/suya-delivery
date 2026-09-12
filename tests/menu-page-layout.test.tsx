@@ -9,7 +9,7 @@ vi.mock('@/lib/loadPublicMenu', () => ({ loadPublicMenu: vi.fn() }));
 
 describe('MenuPage', () => {
   beforeEach(() => {
-    const store = stores.find((candidate) => candidate.id === 'don-pizza')!;
+    const store = { ...stores.find((candidate) => candidate.id === 'don-pizza')!, isComingSoon: true };
     vi.mocked(loadPublicMenu).mockResolvedValue({
       menu: {
         store,
@@ -39,5 +39,6 @@ describe('MenuPage', () => {
     expect(label).toHaveClass('right-4');
     expect(label).not.toHaveClass('left-4');
     expect(screen.getByRole('img', { name: 'Marca de Pizzería Don Pizza' })).toBeInTheDocument();
+    expect(screen.getByText('Próximamente')).toBeInTheDocument();
   });
 });

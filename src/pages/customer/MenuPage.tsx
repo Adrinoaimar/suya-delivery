@@ -91,7 +91,7 @@ export default function MenuPage() {
             <span className="hidden text-[11px] font-semibold uppercase tracking-[0.18em] text-[#7D847E] sm:inline">Carta digital</span>
             <span role="status" className={`inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-bold ${open ? 'bg-[#0E6B44]/10 text-[#0E6B44]' : 'bg-suya-carbon/10 text-suya-carbon'}`}>
               <span className={`h-2 w-2 rounded-full ${open ? 'bg-[#55A66C]' : 'bg-suya-carbon/40'}`} aria-hidden="true" />
-              {open ? 'Recibiendo pedidos' : 'Cerrado ahora'}
+              {open ? 'Recibiendo pedidos' : store.isComingSoon ? 'Próximamente' : 'Cerrado ahora'}
             </span>
           </div>
         </div>

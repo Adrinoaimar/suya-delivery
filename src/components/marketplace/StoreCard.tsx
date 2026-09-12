@@ -31,6 +31,7 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
   const toggleFavorite = useUserStore((state) => state.toggleFavorite);
   const isFavorite = favorites.includes(store.id);
   const informationalOnly = isInformationalStore(store);
+  const comingSoon = store.isComingSoon === true;
   const open = isStoreAcceptingOrders(store);
   // Cuando falta logo oficial, usa primera imagen original de galería; nunca inventa marca.
   const visualSrc = assetUrl(store.image || store.logo || store.gallery?.[0]?.src);
@@ -83,7 +84,7 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
         {!open && (
           <div className="absolute inset-0 flex items-center justify-center bg-suya-carbon/55">
             <span className="suya-lens-chip rounded-full px-3 py-1.5 text-xs font-semibold text-suya-carbon">
-              {informationalOnly ? 'Carta informativa' : 'Cerrado ahora'}
+              {comingSoon ? 'Próximamente' : informationalOnly ? 'Carta informativa' : 'Cerrado ahora'}
             </span>
           </div>
         )}

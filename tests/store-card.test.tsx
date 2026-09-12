@@ -76,4 +76,14 @@ describe('StoreCard', () => {
       '/brand/stores/kfc-logo.png',
     );
   });
+
+  it('muestra Próximamente y mantiene bloqueada la ficha no publicada', () => {
+    render(
+      <MemoryRouter>
+        <StoreCard store={{ ...store, isComingSoon: true }} />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText('Próximamente')).toBeInTheDocument();
+  });
 });

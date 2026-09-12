@@ -1,4 +1,4 @@
-import { categories, products, stores } from '@/data';
+import { categories, isLiveRestaurantId, products, stores } from '@/data';
 import { menuSlugFromName, normalize } from '@/utils/format';
 import { normalizeAssetInput } from '@/utils/asset';
 import type { Category, Product, Store } from '@/types';
@@ -53,7 +53,13 @@ function persistStoreLogos(logos: Record<string, string>): void {
 
 function storeWithSavedLogo(store: Store): Store {
   const logo = storedStoreLogos()[store.id];
-  return logo === undefined ? store : { ...store, logo };
+  const isComingSoon = !isLiveRestaurantId(store.id);
+  return {
+    ...store,
+    isComingSoon,
+    acceptingOrders: isComingSoon ? false : store.acceptingOrders,
+    ...(logo === undefined ? {} : { logo }),
+  };
 }
 
 /** Implementación local asíncrona sobre los JSON de `src/data`. */
