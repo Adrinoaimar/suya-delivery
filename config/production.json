@@ -3,17 +3,17 @@
   "apps": {
     "customer": {
       "cloudflareProject": "suya-customer",
-      "origin": "https://suya-customer.pages.dev",
+      "origin": "https://suyadelivery.com",
       "smokePath": "/help"
     },
     "rider": {
       "cloudflareProject": "suya-rider",
-      "origin": "https://suya-rider.pages.dev",
+      "origin": "https://rider.suyadelivery.com",
       "smokePath": "/rider/login"
     },
     "backoffice": {
       "cloudflareProject": "suya-backoffice",
-      "origin": "https://suya-backoffice.pages.dev",
+      "origin": "https://panel.suyadelivery.com",
       "smokePath": "/login"
     }
   }
