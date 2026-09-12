@@ -21,15 +21,24 @@ export function notifyCatalogInvalidated(source: CatalogInvalidationSource = 'mu
  */
 export function subscribeToCatalogChanges(listener: CatalogListener): () => void {
   const client = supabase;
-  if (!isSupabaseConfigured || !client) return () => undefined;
+  // Vitest runs in a Node environment where Supabase Realtime's undici WebSocket
+  // can emit a cross-realm Event error after the test has completed. Realtime is
+  // exercised by the browser smoke flow; unit tests keep the polling fallback.
+  if (!isSupabaseConfigured || !client || import.meta.env.MODE === 'test') return () => undefined;
 
   const channel = client
     .channel(`catalog-${crypto.randomUUID()}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurants' }, listener)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_menu_settings' }, listener)
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'restaurant_menu_settings' },
+      listener,
+    )
     .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, listener)
     .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, listener)
     .subscribe();
 
-  return () => { void client.removeChannel(channel); };
+  return () => {
+    void client.removeChannel(channel);
+  };
 }
