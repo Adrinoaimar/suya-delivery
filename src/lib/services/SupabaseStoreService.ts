@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
+import { normalizeAssetInput } from '@/utils/asset';
 import { normalize } from '@/utils/format';
 import type { Accent, Category, Product, ProductExtra, Schedule, Store } from '@/types';
 import type { MenuSettings, PublishedMenu, StoreService } from './types';
@@ -302,7 +303,7 @@ export class SupabaseStoreServiceImpl implements StoreService {
   async saveStoreLogo(restaurantId: string, logoUrl: string | null): Promise<void> {
     const { error } = await this.client
       .from('restaurants')
-      .update({ logo_url: logoUrl?.trim() || null })
+      .update({ logo_url: normalizeAssetInput(logoUrl) })
       .eq('id', restaurantId);
     if (error) throw error;
   }
@@ -314,8 +315,8 @@ export class SupabaseStoreServiceImpl implements StoreService {
         restaurant_id: settings.restaurantId,
         public_slug: settings.slug.trim().toLowerCase(),
         published: settings.published,
-        logo_url: settings.logoUrl,
-        hero_image_url: settings.heroImageUrl,
+        logo_url: normalizeAssetInput(settings.logoUrl),
+        hero_image_url: normalizeAssetInput(settings.heroImageUrl),
         primary_color: settings.primaryColor,
         accent_color: settings.accentColor,
         font_family: settings.fontFamily,

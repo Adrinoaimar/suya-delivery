@@ -83,6 +83,20 @@ describe('menús públicos del catálogo local', () => {
     });
   });
 
+  it('rechaza activos con esquemas no renderizables', async () => {
+    const store = stores.find((candidate) => candidate.id === 'kfc')!;
+    await expect(service.saveMenuSettings({
+      restaurantId: store.id,
+      slug: 'kfc-seguro-menu',
+      published: true,
+      logoUrl: 'javascript:alert(1)',
+      heroImageUrl: store.image,
+      primaryColor: '#EF6C3B',
+      accentColor: '#183B3B',
+      fontFamily: 'Montserrat',
+    })).rejects.toThrow('La imagen debe usar');
+  });
+
   it('aplica la misma regla de slug que Supabase', async () => {
     const store = stores.find((candidate) => candidate.id === 'kfc')!;
     await expect(service.saveMenuSettings({

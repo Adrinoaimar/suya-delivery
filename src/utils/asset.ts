@@ -15,3 +15,14 @@ export function assetUrl(path: string | null | undefined): string | undefined {
   if (/^[a-z][a-z\d+.-]*:/i.test(value)) return undefined;
   return value.startsWith('/') ? `${BASE}${value.slice(1)}` : value;
 }
+
+/** Conserva una referencia editable de activo y rechaza esquemas no renderizables. */
+export function normalizeAssetInput(path: string | null | undefined): string | null {
+  if (path === null || path === undefined) return null;
+  const value = path.trim();
+  if (!value) return null;
+  if (!assetUrl(value)) {
+    throw new Error('La imagen debe usar una ruta local, una URL HTTP(S) o una imagen raster inline.');
+  }
+  return value;
+}

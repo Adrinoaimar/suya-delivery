@@ -1,5 +1,6 @@
 import { categories, products, stores } from '@/data';
 import { menuSlugFromName, normalize } from '@/utils/format';
+import { normalizeAssetInput } from '@/utils/asset';
 import type { Category, Product, Store } from '@/types';
 import type { MenuSettings, PublishedMenu, StoreService } from './types';
 
@@ -129,8 +130,8 @@ export class MockStoreServiceImpl implements StoreService {
       restaurantId: store.id,
       slug,
       published: settings.published,
-      logoUrl: settings.logoUrl,
-      heroImageUrl: settings.heroImageUrl,
+      logoUrl: normalizeAssetInput(settings.logoUrl),
+      heroImageUrl: normalizeAssetInput(settings.heroImageUrl),
       primaryColor: hexColor(settings.primaryColor, DEFAULT_PRIMARY),
       accentColor: hexColor(settings.accentColor, DEFAULT_ACCENT),
       fontFamily: fontFamily(settings.fontFamily),
@@ -146,7 +147,7 @@ export class MockStoreServiceImpl implements StoreService {
       throw new Error('El restaurante no existe en el catálogo local.');
     }
     const logos = storedStoreLogos();
-    const value = logoUrl?.trim() || null;
+    const value = normalizeAssetInput(logoUrl);
     if (value) logos[restaurantId] = value;
     else delete logos[restaurantId];
     persistStoreLogos(logos);
