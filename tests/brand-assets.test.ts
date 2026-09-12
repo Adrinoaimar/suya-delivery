@@ -99,6 +99,12 @@ describe('activos de marca de restaurantes', () => {
     expect(detail).toContain('src={storeLogo}');
   });
 
+  it('prioriza el logo sobre la placa blanca y lo hace legible en la ficha', () => {
+    const detail = readFileSync(root('src/pages/customer/StoreDetailPage.tsx'), 'utf8');
+    expect(detail).toContain('bg-transparent p-0 drop-shadow-');
+    expect(detail).toContain("className={store.logo ? '!p-1' : undefined}");
+  });
+
   it('documenta la procedencia y el tratamiento de los logos refinados', () => {
     const credits = readFileSync(root('public/brand/stores/CREDITS.md'), 'utf8');
     expect(credits).toContain('lawakachicken.com/newlogo.png');
