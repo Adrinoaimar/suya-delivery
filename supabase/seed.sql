@@ -213,3 +213,12 @@ begin
     and p.section in ('Marino', 'Ceviche', 'Arroces')
     and not exists (select 1 from public.products existing where existing.restaurant_id = cevicheria_id);
 end $$;
+
+-- La configuración de catálogo se omite durante la fase de migraciones de un reset local,
+-- por eso el seed deja los mismos flags operativos que producción.
+update public.restaurants
+set active = true,
+    accepting_orders = slug in ('anda-paya', 'anda-paya-cevicheria', 'donde-joel'),
+    featured = slug in ('anda-paya', 'anda-paya-cevicheria', 'donde-joel')
+where slug in ('anda-paya', 'anda-paya-cevicheria', 'donde-joel', 'la-waka', 'tio-jhony',
+               'kfc', 'inkafarma', 'papa-johns', 'tottus');
