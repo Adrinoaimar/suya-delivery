@@ -76,6 +76,8 @@ interface CatalogState {
   loadCategories: (force?: boolean) => Promise<void>;
   /** Carga los productos de un negocio. Con `force` reintenta aunque ya estén listos. */
   loadProducts: (storeId: string, force?: boolean) => Promise<void>;
+  /** Revalida el catálogo visible y los menús que ya están abiertos en memoria. */
+  refreshCatalog: () => Promise<void>;
   /** Busca negocios y productos. Una búsqueda nueva descarta la respuesta anterior. */
   search: (query: string) => Promise<void>;
   /** Negocio ya cargado en caché; `undefined` si aún no llega o no existe. */
@@ -196,6 +198,15 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
         productsError: { ...state.productsError, [storeId]: loadErrorMessage(PRODUCTS_ERROR_MESSAGE) },
       }));
     }
+  },
+
+  async refreshCatalog() {
+    const loadedStoreIds = Object.keys(get().productsByStore);
+    await Promise.all([
+      get().loadStores(true),
+      get().loadCategories(true),
+      ...loadedStoreIds.map((storeId) => get().loadProducts(storeId, true)),
+    ]);
   },
 
   async search(query) {

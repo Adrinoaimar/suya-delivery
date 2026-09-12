@@ -66,6 +66,21 @@ describe('catálogo asíncrono', () => {
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
+  it('revalida negocios, categorías y productos ya abiertos', async () => {
+    const stores = await storeService.listStores();
+    const storeId = stores[0]!.id;
+    await useCatalogStore.getState().loadProducts(storeId);
+    const storesSpy = vi.spyOn(storeService, 'listStores');
+    const categoriesSpy = vi.spyOn(storeService, 'listCategories');
+    const productsSpy = vi.spyOn(storeService, 'listProducts');
+
+    await useCatalogStore.getState().refreshCatalog();
+
+    expect(storesSpy).toHaveBeenCalledTimes(1);
+    expect(categoriesSpy).toHaveBeenCalledTimes(1);
+    expect(productsSpy).toHaveBeenCalledWith(storeId);
+  });
+
   it('carga una ficha sin depender del catálogo completo', async () => {
     const expected = (await storeService.listStores())[0]!;
     const detail = vi.spyOn(storeService, 'getStore').mockResolvedValue(expected);

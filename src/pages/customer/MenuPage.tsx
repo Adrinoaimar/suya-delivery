@@ -8,6 +8,7 @@ import { ProductRowSkeleton } from '@/components/common/Skeleton';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { ProductSheet } from '@/components/marketplace/ProductSheet';
 import { track } from '@/lib/analytics';
+import { CATALOG_INVALIDATED_EVENT } from '@/lib/catalogSync';
 import { loadPublicMenu } from '@/lib/loadPublicMenu';
 import { cartTotals, useCartStore } from '@/store/cartStore';
 import { FREE_DELIVERY_THRESHOLD } from '@/lib/commerce';
@@ -53,6 +54,12 @@ export default function MenuPage() {
   useEffect(() => {
     if (menu) track('menu_view', { store_id: menu.store.id, menu_slug: slug });
   }, [menu, slug]);
+
+  useEffect(() => {
+    const refresh = () => setReloadKey((value) => value + 1);
+    window.addEventListener(CATALOG_INVALIDATED_EVENT, refresh);
+    return () => window.removeEventListener(CATALOG_INVALIDATED_EVENT, refresh);
+  }, []);
 
   const sections = useMemo(() => ['Todos', ...new Set(products.map((product) => product.section))], [products]);
   const visible = useMemo(() => products.filter((product) => {

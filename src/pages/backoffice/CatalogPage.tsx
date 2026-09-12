@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ExternalLink, ImagePlus, RefreshCw, Save, Utensils } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card } from '@/components/common/Card';
+import { notifyCatalogInvalidated } from '@/lib/catalogSync';
 import { notificationService, storeService } from '@/lib/services';
 import type { MenuSettings } from '@/lib/services';
 import { useAuthStore } from '@/store/authStore';
@@ -65,6 +66,7 @@ export default function CatalogPage() {
       }
       const saved = await storeService.saveMenuSettings(next);
       update(storeId, saved);
+      notifyCatalogInvalidated();
       notificationService.notify(saved.published ? 'Menú publicado y logo actualizado.' : 'Configuración guardada y logo sincronizado.', 'success');
     }
     catch (cause) { notificationService.notify(cause instanceof Error ? cause.message : 'No se pudo guardar el menú.', 'danger'); }
