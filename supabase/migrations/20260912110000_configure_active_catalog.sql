@@ -13,7 +13,9 @@ begin
   limit 1;
 
   if source_id is null then
-    raise exception 'No existe la ficha fuente anda-paya';
+    -- En un reset local las migraciones corren antes de `seed.sql`; el seed completa el catálogo.
+    raise notice 'Se omite la configuración del catálogo hasta cargar el seed';
+    return;
   end if;
 
   update public.restaurants
