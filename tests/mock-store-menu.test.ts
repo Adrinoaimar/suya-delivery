@@ -27,12 +27,22 @@ describe('menús públicos del catálogo local', () => {
     await expect(service.getPublishedMenu('restaurante-inexistente-menu')).resolves.toBeUndefined();
   });
 
-  it('marca como próximamente las fichas que no están en los cuatro restaurantes publicados', async () => {
+  it('marca como próximamente las fichas que no están en los tres negocios publicados', async () => {
     const listed = await service.listStores();
-    expect(listed.filter((store) => !store.isComingSoon).map((store) => store.id)).toEqual(['tio-jhony', 'anda-paya']);
-    expect(listed.filter((store) => store.isComingSoon)).toHaveLength(11);
-    expect(listed.find((store) => store.id === 'kfc')).toMatchObject({ isComingSoon: true, acceptingOrders: false });
-    expect(listed.find((store) => store.id === 'inkafarma')).toMatchObject({ isComingSoon: true, acceptingOrders: false });
+    expect(listed.filter((store) => !store.isComingSoon).map((store) => store.id)).toEqual([
+      'donde-joel',
+      'anda-paya',
+      'anda-paya-cevicheria',
+    ]);
+    expect(listed.filter((store) => store.isComingSoon)).toHaveLength(12);
+    expect(listed.find((store) => store.id === 'kfc')).toMatchObject({
+      isComingSoon: true,
+      acceptingOrders: false,
+    });
+    expect(listed.find((store) => store.id === 'inkafarma')).toMatchObject({
+      isComingSoon: true,
+      acceptingOrders: false,
+    });
   });
 
   it('devuelve ajustes publicados para el catálogo de backoffice', async () => {
@@ -75,13 +85,17 @@ describe('menús públicos del catálogo local', () => {
 
   it('lee una imagen local para el editor de branding', async () => {
     const file = new File(['logo'], 'logo.png', { type: 'image/png' });
-    await expect(service.uploadMenuImage('kfc', 'logo', file)).resolves.toMatch(/^data:image\/png;base64,/);
+    await expect(service.uploadMenuImage('kfc', 'logo', file)).resolves.toMatch(
+      /^data:image\/png;base64,/,
+    );
   });
 
   it('propaga el logo guardado a la ficha, búsqueda y carta pública', async () => {
     await service.saveStoreLogo('kfc', '/brand/stores/kfc-logo.png');
 
-    await expect(service.getStore('kfc')).resolves.toMatchObject({ logo: '/brand/stores/kfc-logo.png' });
+    await expect(service.getStore('kfc')).resolves.toMatchObject({
+      logo: '/brand/stores/kfc-logo.png',
+    });
     await expect(service.search('kfc')).resolves.toMatchObject({
       stores: [{ id: 'kfc', logo: '/brand/stores/kfc-logo.png' }],
     });
@@ -93,29 +107,33 @@ describe('menús públicos del catálogo local', () => {
 
   it('rechaza activos con esquemas no renderizables', async () => {
     const store = stores.find((candidate) => candidate.id === 'kfc')!;
-    await expect(service.saveMenuSettings({
-      restaurantId: store.id,
-      slug: 'kfc-seguro-menu',
-      published: true,
-      logoUrl: 'javascript:alert(1)',
-      heroImageUrl: store.image,
-      primaryColor: '#EF6C3B',
-      accentColor: '#183B3B',
-      fontFamily: 'Montserrat',
-    })).rejects.toThrow('La imagen debe usar');
+    await expect(
+      service.saveMenuSettings({
+        restaurantId: store.id,
+        slug: 'kfc-seguro-menu',
+        published: true,
+        logoUrl: 'javascript:alert(1)',
+        heroImageUrl: store.image,
+        primaryColor: '#EF6C3B',
+        accentColor: '#183B3B',
+        fontFamily: 'Montserrat',
+      }),
+    ).rejects.toThrow('La imagen debe usar');
   });
 
   it('aplica la misma regla de slug que Supabase', async () => {
     const store = stores.find((candidate) => candidate.id === 'kfc')!;
-    await expect(service.saveMenuSettings({
-      restaurantId: store.id,
-      slug: 'KFC menú',
-      published: true,
-      logoUrl: store.logo,
-      heroImageUrl: store.image,
-      primaryColor: '#EF6C3B',
-      accentColor: '#183B3B',
-      fontFamily: 'Montserrat',
-    })).rejects.toThrow('El enlace solo admite');
+    await expect(
+      service.saveMenuSettings({
+        restaurantId: store.id,
+        slug: 'KFC menú',
+        published: true,
+        logoUrl: store.logo,
+        heroImageUrl: store.image,
+        primaryColor: '#EF6C3B',
+        accentColor: '#183B3B',
+        fontFamily: 'Montserrat',
+      }),
+    ).rejects.toThrow('El enlace solo admite');
   });
 });

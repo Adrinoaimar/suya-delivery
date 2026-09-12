@@ -31,7 +31,7 @@ export interface Store {
   isFeatured: boolean;
   /** Control operativo del backend; si falta se conserva el cálculo por horario legado. */
   acceptingOrders?: boolean;
-  /** Ficha visible en catálogo, pero aún fuera de los cuatro restaurantes publicados. */
+  /** Ficha visible en catálogo, pero aún fuera de los negocios publicados. */
   isComingSoon?: boolean;
   /** Marca real: se muestra con tarjeta neutra, nunca con un logo recreado. */
   isRealBrand: boolean;
@@ -141,12 +141,7 @@ export interface CartItem {
 }
 
 export type OrderStatus =
-  | 'confirmed'
-  | 'preparing'
-  | 'picked_up'
-  | 'on_the_way'
-  | 'delivered'
-  | 'cancelled';
+  'confirmed' | 'preparing' | 'picked_up' | 'on_the_way' | 'delivered' | 'cancelled';
 
 export const ORDER_FLOW: OrderStatus[] = [
   'confirmed',
@@ -226,12 +221,7 @@ export interface TrustedContact {
 }
 
 export type IncidentCategory =
-  | 'accidente'
-  | 'mecanico'
-  | 'cliente'
-  | 'zona-insegura'
-  | 'robo'
-  | 'otro';
+  'accidente' | 'mecanico' | 'cliente' | 'zona-insegura' | 'robo' | 'otro';
 
 export interface Incident {
   id: string;

@@ -39,6 +39,6 @@ describe('negocio funcional El Tío Jhony', () => {
 describe('negocios con paleta propia no afectan a los demás', () => {
   it('solo los negocios con `theme` definido lo declaran', () => {
     const withTheme = stores.filter((store) => store.theme);
-    expect(withTheme.map((store) => store.id)).toEqual(['tio-jhony']);
+    expect(withTheme.map((store) => store.id)).toEqual(['tio-jhony', 'donde-joel']);
   });
 });

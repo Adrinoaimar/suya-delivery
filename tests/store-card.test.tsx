@@ -47,12 +47,23 @@ describe('StoreCard', () => {
   it('usa el logo como visual principal cuando la ficha no tiene portada', () => {
     render(
       <MemoryRouter>
-        <StoreCard store={{ ...store, id: 'kfc', name: 'KFC', image: null, logo: '/brand/stores/kfc-logo.png' }} />
+        <StoreCard
+          store={{
+            ...store,
+            id: 'kfc',
+            name: 'KFC',
+            image: null,
+            logo: '/brand/stores/kfc-logo.png',
+          }}
+        />
       </MemoryRouter>,
     );
 
-    expect(screen.getByRole('img', { name: 'KFC' })).toHaveAttribute('src', '/brand/stores/kfc-logo.png');
-    expect(screen.getByRole('img', { name: 'KFC' })).toHaveClass('!p-2');
+    expect(screen.getByRole('img', { name: 'KFC' })).toHaveAttribute(
+      'src',
+      '/brand/stores/kfc-logo.png',
+    );
+    expect(screen.getByRole('img', { name: 'KFC' })).toHaveClass('!p-8', 'sm:!p-10');
   });
 
   it('mantiene el distintivo cuando la portada viene de la galería', () => {

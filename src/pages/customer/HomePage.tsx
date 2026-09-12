@@ -51,6 +51,7 @@ export default function HomePage() {
   const storesReady = storesStatus === 'ready';
   const featured = stores.filter((store) => store.isFeatured);
   const locals = stores.filter((store) => store.isLocal);
+  const comingSoon = stores.filter((store) => store.isComingSoon);
   const recommended = [...stores].sort((a, b) => b.rating - a.rating).slice(0, 4);
   const favoriteStores = stores.filter((store) => favorites.includes(store.id));
 
@@ -289,6 +290,28 @@ export default function HomePage() {
             <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {locals.map((store) => (
                 <StoreCard key={store.id} store={store} layout="row" />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {storesReady && comingSoon.length > 0 && (
+          <section>
+            <SectionHeader
+              title="Próximamente en Suya"
+              subtitle="Marcas que estamos preparando para Sullana"
+              action={
+                <Link
+                  to="/stores"
+                  className="-mr-2 inline-flex min-h-12 items-center gap-1 px-2 text-sm font-semibold text-suya-green"
+                >
+                  Ver todo <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              }
+            />
+            <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {comingSoon.slice(0, 8).map((store) => (
+                <StoreCard key={store.id} store={store} />
               ))}
             </div>
           </section>

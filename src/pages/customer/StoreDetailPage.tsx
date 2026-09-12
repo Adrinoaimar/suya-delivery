@@ -79,7 +79,9 @@ export default function StoreDetailPage() {
   useEffect(() => {
     let tableOrder = false;
     try {
-      const value = JSON.parse(sessionStorage.getItem('suya.tableContext') ?? 'null') as { tableId?: unknown } | null;
+      const value = JSON.parse(sessionStorage.getItem('suya.tableContext') ?? 'null') as {
+        tableId?: unknown;
+      } | null;
       tableOrder = typeof value?.tableId === 'string' && value.tableId.length > 0;
     } catch {
       tableOrder = false;
@@ -196,6 +198,16 @@ export default function StoreDetailPage() {
           aria-hidden="true"
           className="absolute inset-0 bg-gradient-to-t from-suya-carbon/70 via-suya-carbon/10 to-transparent"
         />
+        {store.image && storeLogo && (
+          <span className="absolute bottom-4 left-4 z-[1] flex h-16 w-24 items-center justify-center overflow-hidden rounded-2xl border border-white/80 bg-white/95 p-2 shadow-soft sm:bottom-5 sm:left-6 sm:h-20 sm:w-32">
+            <img
+              src={storeLogo}
+              alt={`Logo de ${store.name}`}
+              referrerPolicy="no-referrer"
+              className="h-full w-full object-contain"
+            />
+          </span>
+        )}
         <Link
           to="/stores"
           aria-label="Volver a tiendas"
@@ -224,7 +236,7 @@ export default function StoreDetailPage() {
           )}
         >
           <div className="flex items-start gap-3">
-            <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-suya-mist">
+            <div className="h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-suya-mist sm:h-20 sm:w-20">
               <Thumb
                 name={store.name}
                 src={storeLogo}
@@ -239,7 +251,13 @@ export default function StoreDetailPage() {
             </div>
             <div className="flex shrink-0 flex-col items-end gap-1">
               <Badge tone={open ? 'lime' : 'neutral'}>
-                {open ? 'Abierto' : comingSoon ? 'Próximamente' : informationalOnly ? 'Carta informativa' : 'Cerrado'}
+                {open
+                  ? 'Abierto'
+                  : comingSoon
+                    ? 'Próximamente'
+                    : informationalOnly
+                      ? 'Carta informativa'
+                      : 'Cerrado'}
               </Badge>
               {store.isBeta && <Badge tone="green">Beta</Badge>}
             </div>
@@ -264,7 +282,10 @@ export default function StoreDetailPage() {
               >
                 <Clock
                   aria-hidden="true"
-                  className={cn('h-4 w-4', theme ? 'text-[var(--store-primary)]' : 'text-suya-green')}
+                  className={cn(
+                    'h-4 w-4',
+                    theme ? 'text-[var(--store-primary)]' : 'text-suya-green',
+                  )}
                 />
                 {informationalOnly ? 'Por confirmar' : formatEta(store.etaMin, store.etaMax)}
               </dd>
@@ -279,7 +300,10 @@ export default function StoreDetailPage() {
               >
                 <Bike
                   aria-hidden="true"
-                  className={cn('h-4 w-4', theme ? 'text-[var(--store-primary)]' : 'text-suya-green')}
+                  className={cn(
+                    'h-4 w-4',
+                    theme ? 'text-[var(--store-primary)]' : 'text-suya-green',
+                  )}
                 />
                 {informationalOnly ? 'Por confirmar' : formatPrice(store.deliveryFee)}
               </dd>
@@ -306,7 +330,10 @@ export default function StoreDetailPage() {
             >
               <Info
                 aria-hidden="true"
-                className={cn('h-4 w-4 shrink-0', theme ? 'text-[var(--store-primary)]' : 'text-[#8A6100]')}
+                className={cn(
+                  'h-4 w-4 shrink-0',
+                  theme ? 'text-[var(--store-primary)]' : 'text-[#8A6100]',
+                )}
               />
               <p className="text-sm font-medium text-suya-carbon">{store.promoLabel}</p>
             </div>
@@ -324,10 +351,13 @@ export default function StoreDetailPage() {
               <p className="text-sm text-[#4A4F55]">{store.dataNote}</p>
             </div>
           )}
-
         </section>
 
-        {store.gallery && <div className="motion-enter"><StoreGallery gallery={store.gallery} storeName={store.name} /></div>}
+        {store.gallery && (
+          <div className="motion-enter">
+            <StoreGallery gallery={store.gallery} storeName={store.name} />
+          </div>
+        )}
 
         {/* Categorías internas */}
         <nav
@@ -389,27 +419,27 @@ export default function StoreDetailPage() {
           ) : visibleSections.length > 0 ? (
             visibleSections.map((name) => (
               <section key={name} aria-labelledby={`seccion-${name}`} className="motion-enter">
-              <h2 id={`seccion-${name}`} className="section-title mb-3">
-                {name}
-              </h2>
-              <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
-                {products
-                  .filter((product) => product.section === name)
-                  .map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      disabled={!open}
-                      onSelect={setSelected}
-                      accentClassName={
-                        theme
-                          ? 'bg-[var(--store-primary)] hover:bg-[var(--store-accent)]'
-                          : undefined
-                      }
-                    />
-                  ))}
-              </div>
-            </section>
+                <h2 id={`seccion-${name}`} className="section-title mb-3">
+                  {name}
+                </h2>
+                <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+                  {products
+                    .filter((product) => product.section === name)
+                    .map((product) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        disabled={!open}
+                        onSelect={setSelected}
+                        accentClassName={
+                          theme
+                            ? 'bg-[var(--store-primary)] hover:bg-[var(--store-accent)]'
+                            : undefined
+                        }
+                      />
+                    ))}
+                </div>
+              </section>
             ))
           ) : (
             <EmptyState
@@ -424,8 +454,8 @@ export default function StoreDetailPage() {
               {comingSoon
                 ? 'Esta ficha estará disponible próximamente. El restaurante está terminando de configurar su carta y condiciones de entrega.'
                 : informationalOnly
-                ? 'Esta carta sirve para consulta. Los pedidos se habilitarán cuando el negocio confirme sede, horario, cobertura y condiciones de entrega.'
-                : `Este negocio está cerrado ahora. Su horario es ${scheduleLabel(store.schedule)}; podrás pedir cuando vuelva a abrir.`}
+                  ? 'Esta carta sirve para consulta. Los pedidos se habilitarán cuando el negocio confirme sede, horario, cobertura y condiciones de entrega.'
+                  : `Este negocio está cerrado ahora. Su horario es ${scheduleLabel(store.schedule)}; podrás pedir cuando vuelva a abrir.`}
             </p>
           )}
         </div>

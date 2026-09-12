@@ -38,14 +38,13 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
   const logoSrc = assetUrl(store.logo);
   const hasVisualImage = Boolean(store.image || store.gallery?.[0]?.src);
   const visualFit = hasVisualImage ? 'cover' : 'contain';
-  const compactLogo = layout === 'grid' && !store.image && Boolean(store.logo);
-  const stacked = layout === 'grid' && !compactLogo;
+  const stacked = layout === 'grid';
   const hasRating = store.rating > 0 && store.reviews !== 0;
 
   return (
     <article
       className={cn(
-        'suya-lens-raised motion-press group relative overflow-hidden rounded-promo p-2 transition-[transform,box-shadow] duration-300 ease-out motion-safe:active:scale-[0.985] motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-soft',
+        'suya-lens-raised motion-press group relative overflow-hidden rounded-promo p-2 transition-[transform,box-shadow] duration-300 ease-out motion-safe:hover:-translate-y-0.5 motion-safe:hover:shadow-soft motion-safe:active:scale-[0.985]',
         !stacked && 'flex',
         className,
       )}
@@ -53,11 +52,7 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
       <div
         className={cn(
           'relative shrink-0 overflow-hidden rounded-card bg-suya-ivory',
-          compactLogo
-            ? 'min-h-[148px] w-[116px] sm:min-h-40 sm:w-36'
-            : stacked
-              ? 'h-36 w-full sm:h-44'
-              : 'min-h-32 w-32',
+          stacked ? 'h-36 w-full sm:h-44' : 'min-h-32 w-32',
         )}
       >
         <Thumb
@@ -66,7 +61,7 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
           variant="store"
           fit={visualFit}
           rounded="rounded-none"
-          className={compactLogo ? '!p-2' : undefined}
+          className={!hasVisualImage ? '!p-8 sm:!p-10' : undefined}
           textClassName={stacked ? 'text-3xl' : 'text-2xl'}
         />
 
@@ -84,7 +79,11 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
         {!open && (
           <div className="absolute inset-0 flex items-center justify-center bg-suya-carbon/55">
             <span className="suya-lens-chip rounded-full px-3 py-1.5 text-xs font-semibold text-suya-carbon">
-              {comingSoon ? 'Próximamente' : informationalOnly ? 'Carta informativa' : 'Cerrado ahora'}
+              {comingSoon
+                ? 'Próximamente'
+                : informationalOnly
+                  ? 'Carta informativa'
+                  : 'Cerrado ahora'}
             </span>
           </div>
         )}
@@ -116,7 +115,9 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
             type="button"
             onClick={() => toggleFavorite(store.id)}
             aria-label={
-              isFavorite ? `Quitar ${store.name} de favoritos` : `Guardar ${store.name} en favoritos`
+              isFavorite
+                ? `Quitar ${store.name} de favoritos`
+                : `Guardar ${store.name} en favoritos`
             }
             aria-pressed={isFavorite}
             className="suya-pill-media absolute right-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full transition-transform active:scale-95"
@@ -161,7 +162,10 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
               className="suya-lens-chip relative z-10 -mr-1 -mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-suya-muted transition-[color,background-color,transform] hover:bg-white active:scale-95"
             >
               <Heart
-                className={cn('h-[18px] w-[18px]', isFavorite && 'fill-suya-danger text-suya-danger')}
+                className={cn(
+                  'h-[18px] w-[18px]',
+                  isFavorite && 'fill-suya-danger text-suya-danger',
+                )}
               />
             </button>
           )}

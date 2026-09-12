@@ -12,6 +12,11 @@ públicas de cada marca, con autorización comercial del usuario para incorporar
 | `la-waka-logo.webp` | [La Waka Chicken](https://lawakachicken.com/) · [`newlogo.png`](https://lawakachicken.com/newlogo.png) | fuente oficial convertida a WebP sin pérdida, fondo transparente |
 | `anda-paya-logo.webp` | carta autorizada de Andá Paya · [`carta-2026-09-06.jpg`](../../images/stores/anda-paya/menus/carta-2026-09-06.jpg) | recorte del encabezado, nitidez conservada, fondo exterior eliminado y transparencia añadida |
 
+Las portadas `cover-restaurante-background.png` y `cover-cevicheria-background.png` son fondos
+generados para espacios panorámicos con referencias visuales del río Chira, Puente Viejo e
+Iglesia Matriz de Sullana. No contienen logos ni texto generado: la interfaz coloca el logo
+oficial intacto como distintivo.
+
 Las marcas `*-mark.svg` son identidades gráficas compactas de catálogo para fichas locales. No se
 presentan como logotipos oficiales y pueden reemplazarse por el maestro autorizado desde
 `Catálogo y publicación` sin cambiar las rutas del catálogo.
