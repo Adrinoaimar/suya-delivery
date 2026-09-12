@@ -299,6 +299,14 @@ export class SupabaseStoreServiceImpl implements StoreService {
     return data ? mapMenuSettings(data as MenuSettingsRow) : undefined;
   }
 
+  async saveStoreLogo(restaurantId: string, logoUrl: string | null): Promise<void> {
+    const { error } = await this.client
+      .from('restaurants')
+      .update({ logo_url: logoUrl?.trim() || null })
+      .eq('id', restaurantId);
+    if (error) throw error;
+  }
+
   async saveMenuSettings(settings: MenuSettings): Promise<MenuSettings> {
     const { data, error } = await this.client
       .from('restaurant_menu_settings')

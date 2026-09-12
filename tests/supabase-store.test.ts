@@ -36,6 +36,10 @@ class FakeQueryBuilder implements PromiseLike<FakeResponse> {
     return this;
   }
 
+  update(_values: Row): this {
+    return this;
+  }
+
   eq(field: string, value: unknown): this {
     this.filters.push([field, value] as const);
     return this;
@@ -257,6 +261,13 @@ describe('SupabaseStoreService', () => {
     expect(store?.theme).toBeUndefined();
     expect(store?.gallery).toEqual([]);
     expect(store?.sections).toEqual([]);
+  });
+
+  it('sincroniza el logo del negocio para que ficha y carta compartan branding', async () => {
+    const { service, calls } = makeService({});
+
+    await expect(service.saveStoreLogo('r1', '/brand/stores/suya-grill.svg')).resolves.toBeUndefined();
+    expect(calls).toContain('restaurants');
   });
 
   it('resuelve un menú publicado sin descargar productos dos veces', async () => {

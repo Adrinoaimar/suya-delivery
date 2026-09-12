@@ -25,6 +25,7 @@ export interface StoreService {
   getStore(id: string): Promise<Store | undefined>;
   getPublishedMenu(slug: string): Promise<PublishedMenu | undefined>;
   getMenuSettings(restaurantId: string): Promise<MenuSettings | undefined>;
+  saveStoreLogo(restaurantId: string, logoUrl: string | null): Promise<void>;
   saveMenuSettings(settings: MenuSettings): Promise<MenuSettings>;
   uploadMenuImage(restaurantId: string, kind: 'logo' | 'hero', file: File): Promise<string>;
   listProducts(storeId: string): Promise<Product[]>;

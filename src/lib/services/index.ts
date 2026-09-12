@@ -146,6 +146,9 @@ export const storeService: StoreService = {
   async getMenuSettings(restaurantId) {
     return (await resolveStoreService()).getMenuSettings(restaurantId);
   },
+  async saveStoreLogo(restaurantId, logoUrl) {
+    return (await resolveStoreService()).saveStoreLogo(restaurantId, logoUrl);
+  },
   async saveMenuSettings(settings) {
     return (await resolveStoreService()).saveMenuSettings(settings);
   },

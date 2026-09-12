@@ -70,6 +70,19 @@ describe('menús públicos del catálogo local', () => {
     await expect(service.uploadMenuImage('kfc', 'logo', file)).resolves.toMatch(/^data:image\/png;base64,/);
   });
 
+  it('propaga el logo guardado a la ficha, búsqueda y carta pública', async () => {
+    await service.saveStoreLogo('kfc', '/brand/stores/kfc-logo.png');
+
+    await expect(service.getStore('kfc')).resolves.toMatchObject({ logo: '/brand/stores/kfc-logo.png' });
+    await expect(service.search('kfc')).resolves.toMatchObject({
+      stores: [{ id: 'kfc', logo: '/brand/stores/kfc-logo.png' }],
+    });
+    await expect(service.getPublishedMenu('kfc-menu')).resolves.toMatchObject({
+      store: { logo: '/brand/stores/kfc-logo.png' },
+      brand: { logoUrl: '/brand/stores/kfc-logo.png' },
+    });
+  });
+
   it('aplica la misma regla de slug que Supabase', async () => {
     const store = stores.find((candidate) => candidate.id === 'kfc')!;
     await expect(service.saveMenuSettings({

@@ -57,7 +57,16 @@ export default function CatalogPage() {
     const next = settings[storeId];
     if (!next || !/^[a-z0-9-]{3,80}$/.test(next.slug)) { notificationService.notify('El enlace solo admite letras minúsculas, números y guiones.', 'warning'); return; }
     setSaving(storeId);
-    try { const saved = await storeService.saveMenuSettings(next); update(storeId, saved); notificationService.notify(saved.published ? 'Menú publicado y QR actualizado.' : 'Configuración guardada.', 'success'); }
+    try {
+      const currentStore = stores.find((store) => store.id === storeId);
+      if (currentStore?.logo !== next.logoUrl) {
+        await storeService.saveStoreLogo(storeId, next.logoUrl);
+        setStores((current) => current.map((store) => store.id === storeId ? { ...store, logo: next.logoUrl } : store));
+      }
+      const saved = await storeService.saveMenuSettings(next);
+      update(storeId, saved);
+      notificationService.notify(saved.published ? 'Menú publicado y logo actualizado.' : 'Configuración guardada y logo sincronizado.', 'success');
+    }
     catch (cause) { notificationService.notify(cause instanceof Error ? cause.message : 'No se pudo guardar el menú.', 'danger'); }
     finally { setSaving(null); }
   };

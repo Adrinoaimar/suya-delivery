@@ -4,6 +4,7 @@ import type { Category, Product, Store } from '@/types';
 import type { MenuSettings, PublishedMenu, StoreService } from './types';
 
 const MOCK_MENU_SETTINGS_KEY = 'suya.mock.menu-settings';
+const MOCK_STORE_LOGOS_KEY = 'suya.mock.store-logos';
 const DEFAULT_PRIMARY = '#EF6C3B';
 const DEFAULT_ACCENT = '#183B3B';
 
@@ -32,6 +33,28 @@ function persistSettings(settings: Record<string, MenuSettings>): void {
   localStorage.setItem(MOCK_MENU_SETTINGS_KEY, JSON.stringify(settings));
 }
 
+function storedStoreLogos(): Record<string, string> {
+  if (typeof localStorage === 'undefined') return {};
+  try {
+    const value: unknown = JSON.parse(localStorage.getItem(MOCK_STORE_LOGOS_KEY) ?? '{}');
+    return value !== null && typeof value === 'object' && !Array.isArray(value)
+      ? value as Record<string, string>
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function persistStoreLogos(logos: Record<string, string>): void {
+  if (typeof localStorage === 'undefined') return;
+  localStorage.setItem(MOCK_STORE_LOGOS_KEY, JSON.stringify(logos));
+}
+
+function storeWithSavedLogo(store: Store): Store {
+  const logo = storedStoreLogos()[store.id];
+  return logo === undefined ? store : { ...store, logo };
+}
+
 /** Implementación local asíncrona sobre los JSON de `src/data`. */
 export class MockStoreServiceImpl implements StoreService {
   async listCategories(): Promise<Category[]> {
@@ -39,17 +62,19 @@ export class MockStoreServiceImpl implements StoreService {
   }
 
   async listStores(): Promise<Store[]> {
-    return stores;
+    return stores.map(storeWithSavedLogo);
   }
 
   async getStore(id: string): Promise<Store | undefined> {
-    return stores.find((store) => store.id === id);
+    const store = stores.find((candidate) => candidate.id === id);
+    return store ? storeWithSavedLogo(store) : undefined;
   }
 
   async getPublishedMenu(slug: string): Promise<PublishedMenu | undefined> {
     const normalizedSlug = slug.trim().toLowerCase();
     if (!normalizedSlug) return undefined;
-    const match = await Promise.all(stores.map(async (store) => ({ store, settings: await this.getMenuSettings(store.id) })))
+    const catalog = await this.listStores();
+    const match = await Promise.all(catalog.map(async (store) => ({ store, settings: await this.getMenuSettings(store.id) })))
       .then((entries) => entries.find(({ settings }) => settings?.published && settings.slug === normalizedSlug));
     if (!match?.settings) return undefined;
 
@@ -67,7 +92,7 @@ export class MockStoreServiceImpl implements StoreService {
   }
 
   async getMenuSettings(restaurantId: string): Promise<MenuSettings | undefined> {
-    const store = stores.find((candidate) => candidate.id === restaurantId);
+    const store = await this.getStore(restaurantId);
     if (!store) return undefined;
     const defaults: MenuSettings = {
       restaurantId: store.id,
@@ -116,6 +141,17 @@ export class MockStoreServiceImpl implements StoreService {
     return saved;
   }
 
+  async saveStoreLogo(restaurantId: string, logoUrl: string | null): Promise<void> {
+    if (!stores.some((store) => store.id === restaurantId)) {
+      throw new Error('El restaurante no existe en el catálogo local.');
+    }
+    const logos = storedStoreLogos();
+    const value = logoUrl?.trim() || null;
+    if (value) logos[restaurantId] = value;
+    else delete logos[restaurantId];
+    persistStoreLogos(logos);
+  }
+
   async uploadMenuImage(restaurantId: string, _kind: 'logo' | 'hero', file: File): Promise<string> {
     if (!stores.some((store) => store.id === restaurantId)) throw new Error('El restaurante no existe en el catálogo local.');
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
@@ -145,7 +181,8 @@ export class MockStoreServiceImpl implements StoreService {
     const term = normalize(query).trim();
     if (term.length === 0) return { stores: [], products: [] };
 
-    const matchedStores = stores.filter((store) => {
+    const catalog = await this.listStores();
+    const matchedStores = catalog.filter((store) => {
       const haystack = normalize(
         [store.name, store.description, store.categoryId, ...store.tags].join(' '),
       );
