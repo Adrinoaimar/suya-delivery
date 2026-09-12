@@ -38,5 +38,6 @@ describe('MenuPage', () => {
     const label = await screen.findByText('Menú público');
     expect(label).toHaveClass('right-4');
     expect(label).not.toHaveClass('left-4');
+    expect(screen.getByRole('img', { name: 'Marca de Pizzería Don Pizza' })).toBeInTheDocument();
   });
 });

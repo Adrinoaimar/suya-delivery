@@ -70,10 +70,10 @@ export default function MenuPage() {
   const menuFont = brand.fontFamily.trim().toLowerCase() === 'montserrat'
     ? 'Montserrat, system-ui, sans-serif'
     : 'Inter, system-ui, sans-serif';
+  const logoImage = assetUrl(brand.logoUrl ?? store.logo);
   const heroImage = assetUrl(brand.heroImageUrl
     || store.image
     || (store.name.toLocaleLowerCase('es') === 'andá paya' ? '/images/stores/anda-paya/arroz-mariscos.webp' : null));
-  const logoImage = assetUrl(brand.logoUrl ?? store.logo);
   const theme = {
     '--menu-primary': brand.primaryColor || '#0E6B44',
     '--menu-accent': brand.accentColor || '#8CC63F',
@@ -100,7 +100,7 @@ export default function MenuPage() {
       <main id="contenido" className="mx-auto max-w-7xl lg:grid lg:grid-cols-[340px_minmax(0,1fr)] lg:gap-8 lg:px-8 lg:py-8">
         <aside className="overflow-hidden border-b border-suya-carbon/5 bg-white lg:sticky lg:top-[92px] lg:self-start lg:rounded-3xl lg:border lg:shadow-card">
           <div className="relative h-48 bg-[var(--menu-primary)] sm:h-56 lg:h-60">
-            {heroImage ? <img src={heroImage} alt={`Portada de ${store.name}`} referrerPolicy="no-referrer" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center bg-[var(--menu-primary)] text-6xl font-black text-white/30">S</div>}
+            {heroImage ? <img src={heroImage} alt={`Portada de ${store.name}`} referrerPolicy="no-referrer" className="h-full w-full object-cover" /> : <div className="flex h-full items-center justify-center bg-[var(--menu-primary)] px-6">{logoImage ? <img src={logoImage} alt={`Marca de ${store.name}`} referrerPolicy="no-referrer" className="max-h-32 w-auto max-w-[78%] rounded-2xl bg-white/95 p-4 object-contain shadow-soft" /> : <span className="text-6xl font-black text-white/30">{store.name.slice(0, 1)}</span>}</div>}
             <div className="pointer-events-none absolute inset-0 bg-black/10" aria-hidden="true" />
             <span className="absolute bottom-4 right-4 rounded-full bg-white/90 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-suya-carbon">Menú público</span>
           </div>
