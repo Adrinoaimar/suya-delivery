@@ -1,5 +1,15 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
+const liveUpdatePublicKey = `-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAi43fM/96xVYVtFVIrCxS
+orvocd4rJvXRsT16bVWWmDsjjngitoRQC16BNDqAJeFvafiKy8JvBxBwyA3AkMMz
+bD59lp5z5+SCt2lWSEeDl4DiV/zKXBxIeeBZWp/7mgqQQXxFkYhSf+bfHe72ske2
+ht91VI/E0LhVfIp4tPjKVQVT4DgoAUuUcK7xwtJGXThnhITy4ZuyMo0yyDjbb0Li
+KdkoTsAbIaamsbT5D8QHi6WtOeOdQN9gP77xzA4R6PeD2CDny0v3LxRWjDXQZnEQ
+n1z2nBPm56x96spZ8c+UCcxxeiVvm+5VjWgIpydl2//WP4VWuSJYs+eb0Br45HFQ
+9wIDAQAB
+-----END PUBLIC KEY-----`;
+
 const config: CapacitorConfig = {
   appId: 'com.suya.app',
   appName: 'Suya',
@@ -27,6 +37,13 @@ const config: CapacitorConfig = {
       style: 'DARK',
       backgroundColor: '#EEF6F1',
       overlaysWebView: false,
+    },
+    LiveUpdate: {
+      autoUpdateStrategy: 'none',
+      autoBlockRolledBackBundles: true,
+      autoDeleteBundles: true,
+      publicKey: liveUpdatePublicKey,
+      readyTimeout: 10000,
     },
   },
 };

@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AppShell } from '@/app/AppShell';
 import { AuthBootstrap } from '@/app/AuthBootstrap';
 import { CatalogBootstrap } from '@/app/CatalogBootstrap';
+import { syncMobileLiveUpdate } from '@/lib/liveUpdate';
 import '@/styles/index.css';
 
 interface MountOptions {
@@ -31,6 +32,8 @@ export function mountApp(Routes: ComponentType, options: MountOptions = {}): voi
       </BrowserRouter>
     </StrictMode>,
   );
+
+  void syncMobileLiveUpdate();
 
   if (options.registerServiceWorker && import.meta.env.PROD && 'serviceWorker' in navigator) {
     window.addEventListener('load', () => {

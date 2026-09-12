@@ -5,3 +5,7 @@
   X-Frame-Options: DENY
   Permissions-Policy: camera=(), microphone=(), payment=(), geolocation=(self)
   Strict-Transport-Security: max-age=31536000
+
+/mobile-updates/*
+  Access-Control-Allow-Origin: *
+  Cache-Control: no-store
