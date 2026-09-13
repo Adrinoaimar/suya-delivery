@@ -65,6 +65,10 @@ producción.
 - F18 añade analítica GA4 opt-in con consentimiento, UTM acotadas y eventos de embudo (`page_view`,
   `menu_view`, `store_view`, `add_to_cart`, `checkout_start`, `order_created`). Publicidad, CRM de
   leads y dashboards siguen desactivados hasta recibir IDs, cuentas y política de privacidad.
+- F20 añade APKs Android debug separados para los roles operativos: `com.suya.rider` reutiliza el
+  flujo protegido de Rider y `com.suya.backoffice` reutiliza el flujo protegido de operaciones. Ambos
+  se generan con `npm run build:mobile:roles`, conservan Supabase/GPS y pueden instalarse juntos.
+  PR #35 publicó los artefactos de prueba; la firma release sigue pendiente.
 - El catálogo local conserva 13 fichas demo con un asset resoluble por tarjeta y ficha. El mock de
   desarrollo publica una carta por ficha con slug estable (`*-menu`), logo, tema y productos; la
   publicación productiva de Supabase sigue limitada a los negocios con datos comerciales verificados.
