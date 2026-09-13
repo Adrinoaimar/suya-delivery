@@ -1,6 +1,6 @@
 # Estado de ejecución
 
-Actualizado: 12 de septiembre de 2026 (`America/Lima`)
+Actualizado: 13 de septiembre de 2026 (`America/Lima`)
 
 ## Objetivo
 
@@ -65,11 +65,39 @@ producción.
 - F18 añade analítica GA4 opt-in con consentimiento, UTM acotadas y eventos de embudo (`page_view`,
   `menu_view`, `store_view`, `add_to_cart`, `checkout_start`, `order_created`). Publicidad, CRM de
   leads y dashboards siguen desactivados hasta recibir IDs, cuentas y política de privacidad.
+- F20 añade APKs Android debug separados para los roles operativos: `com.suya.rider` reutiliza el
+  flujo protegido de Rider y `com.suya.backoffice` reutiliza el flujo protegido de operaciones. Ambos
+  se generan con `npm run build:mobile:roles`, conservan Supabase/GPS y pueden instalarse juntos.
+  PR #35 publicó los artefactos de prueba; la firma release sigue pendiente.
+- F21 fija el alcance del backoffice a la cuenta de restaurante en Mesas y QR, Catálogo y
+  Dispositivos de pagos; el selector queda reservado para `platform_admin`. El nuevo módulo de
+  Repartidores invita o vincula riders y limita la disponibilidad/asignación con `restaurant_riders`
+  validado en Postgres. La migración y pgTAP quedan pendientes de CI porque esta máquina no tiene
+  Docker/Podman.
 - El catálogo local conserva 13 fichas demo con un asset resoluble por tarjeta y ficha. El mock de
   desarrollo publica una carta por ficha con slug estable (`*-menu`), logo, tema y productos; la
   publicación productiva de Supabase sigue limitada a los negocios con datos comerciales verificados.
   El editor mock conserva ajustes e imágenes locales en el navegador para probar el flujo completo
   sin tocar datos productivos.
+
+## Checkpoint F25: estabilización de mapas y APKs por rol
+
+- La rama `feat/backoffice-restaurant-ops` terminó en `9cda312`; PR #36 está abierto y mergeable.
+- Leaflet ya no se reconstruye por cada lectura GPS ni redibuja la ruta del Cliente innecesariamente.
+  Marcadores, rastro, ruta vial OSRM/OpenStreetMap, alternativas y guía de maniobras conservan estado.
+- El OTA nativo ahora aplica solo cuando `VITE_MOBILE_ROLE` es explícitamente `customer`; builds
+  Rider, Back Office y APK unificada (`unified`) rechazan el bundle de Cliente por defecto.
+- Cliente y Rider tienen mapa móvil amplio y control `Ver mapa completo`, con salida por Escape,
+  scroll bloqueado y safe area. MapProvider reacciona a cambios de conexión.
+- Evidencia local: 46 suites/204 tests, lint, typecheck, build aislado, escaneo de secretos, diff
+  limpio y smoke responsive en móvil/tablet/escritorio. CI final `34741542040`: browser,
+  browser-e2e, build, debug, simulator y test verdes. Android publicó APK Rider y Back Office.
+- Producción responde HTTP 200 en los tres dominios y Back Office muestra `Suya Operaciones`; esto
+  no prueba que el commit final esté desplegado mientras PR #36 permanezca abierto.
+- Pendiente externo: revisión/fusión autorizada de PR #36, publicación Cloudflare, migración de riders
+  en Supabase real y prueba en dispositivos físicos. APKs son debug; firma release sigue pendiente.
+- APK Rider final: `output/apks/Suya-Rider-debug-9cda312.apk`, SHA-256 `599b88105d3a3a40d3336a6a62e85e81b69ab69cced08cc1a83f9ea38690bfed`.
+- APK Back Office final: `output/apks/Suya-Backoffice-debug-9cda312.apk`, SHA-256 `b0bbc3e6bd04c48d3654b2ab4e6adb7dd9bdb491d330331fb92d568e61c1b271`.
 
 ## Reglas de continuidad
 

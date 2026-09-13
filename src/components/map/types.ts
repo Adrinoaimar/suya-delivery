@@ -12,4 +12,6 @@ export interface MapViewProps {
   label?: string;
   /** Permite arrastrar y hacer zoom (solo aplica a proveedores reales). */
   interactive?: boolean;
+  /** Activa la guía vial del repartidor con siguiente maniobra y recalculo. */
+  navigation?: boolean;
 }

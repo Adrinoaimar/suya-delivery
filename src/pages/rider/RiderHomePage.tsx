@@ -1,12 +1,14 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Bike, Navigation, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Toggle } from '@/components/common/Toggle';
+import { MapProvider } from '@/components/map/MapProvider';
 import { cn } from '@/lib/cn';
 import { notificationService, riderOperationsService } from '@/lib/services';
 import { useAuthStore } from '@/store/authStore';
 import { selectActiveOrder, useOrderStore } from '@/store/orderStore';
 import { useRiderStore } from '@/store/riderStore';
+import { useTrackingStore } from '@/store/trackingStore';
 import { orderStatusLabel } from '@/utils/format';
 
 export default function RiderHomePage() {
@@ -15,6 +17,26 @@ export default function RiderHomePage() {
   const orders = useOrderStore((state) => state.orders);
   const active = selectActiveOrder(orders);
   const riderName = useAuthStore((state) => state.identity?.displayName ?? 'Repartidor');
+  const reading = useTrackingStore((state) => state.reading);
+  const mapPoints = useMemo(
+    () =>
+      [active?.storePosition, active?.deliveryPosition].filter(
+        (point): point is NonNullable<typeof point> => point != null,
+      ),
+    [active?.storePosition, active?.deliveryPosition],
+  );
+  const mapOrigin = useMemo(
+    () => (active?.storePosition ? { ...active.storePosition, label: active.storeName } : undefined),
+    [active?.storePosition, active?.storeName],
+  );
+  const mapDestination = useMemo(
+    () =>
+      active?.deliveryPosition
+        ? { ...active.deliveryPosition, label: 'Punto de entrega' }
+        : undefined,
+    [active?.deliveryPosition],
+  );
+  const guidingToDelivery = Boolean(active && ['picked_up', 'on_the_way'].includes(active.status));
 
   useEffect(() => {
     void riderOperationsService
@@ -29,6 +51,30 @@ export default function RiderHomePage() {
         <p className="text-sm text-white/70">Hola,</p>
         <h1 className="font-display text-2xl font-bold">{riderName}</h1>
       </header>
+
+      {/* Mapa principal: el repartidor puede orientarse desde Inicio, incluso sin viaje activo. */}
+      <section className="relative h-[min(58dvh,520px)] min-h-[340px] overflow-hidden rounded-card border border-white/10 bg-suya-carbon shadow-card">
+        <MapProvider
+          points={mapPoints}
+          origin={mapOrigin}
+          destination={mapDestination}
+          rider={reading?.position ?? null}
+          label="Mapa de tu ubicación y zona de reparto"
+          navigation={guidingToDelivery}
+        />
+        <div className="pointer-events-none absolute inset-x-3 bottom-3 z-[500] flex items-center justify-between gap-3 rounded-2xl bg-suya-carbon/85 px-3.5 py-3 text-white shadow-card backdrop-blur-sm">
+          <span className="flex min-w-0 items-center gap-2 text-sm font-semibold">
+            <span
+              aria-hidden="true"
+              className={cn('h-2.5 w-2.5 shrink-0 rounded-full', reading ? 'bg-suya-lime' : 'bg-white/50')}
+            />
+            <span className="truncate">
+              {guidingToDelivery ? 'Siguiendo tu ruta de entrega' : reading ? 'Ubicación activa' : 'Activa el GPS para ubicarte'}
+            </span>
+          </span>
+          <span className="shrink-0 text-xs text-white/65">Sullana</span>
+        </div>
+      </section>
 
       {/* Disponibilidad */}
       <section

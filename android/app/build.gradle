@@ -1,14 +1,20 @@
 apply plugin: 'com.android.application'
 
+def suyaAndroidAppId = System.getenv('SUYA_ANDROID_APP_ID') ?: 'com.suya.app'
+def suyaAndroidAppName = System.getenv('SUYA_ANDROID_APP_NAME') ?: 'Suya'
+
 android {
     namespace = "com.suya.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.suya.app"
+        applicationId suyaAndroidAppId
+        manifestPlaceholders = [suyaAppName: suyaAndroidAppName]
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // Fuerza el retorno al bundle nativo al actualizar una instalación que
+        // pudiera tener pendiente el OTA incorrecto de Suya Cliente.
+        versionCode 2
+        versionName "1.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

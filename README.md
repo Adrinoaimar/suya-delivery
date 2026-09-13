@@ -69,11 +69,11 @@ tipos, estilo y pruebas, construye y despliega.
 
 ## Qué incluye
 
-| Área | Rutas |
-| --- | --- |
-| Cliente | `/`, `/stores`, `/store/:id`, `/search`, `/cart`, `/checkout`, `/orders`, `/orders/:id`, `/orders/:id/track`, `/promotions`, `/profile`, `/help`, `/rider/:id` |
-| Repartidor | `/rider`, `/rider/current`, `/rider/safety`, `/rider/history`, `/rider/earnings`, `/rider/settings` |
-| Contacto de confianza | `/share/:token` |
+| Área                  | Rutas                                                                                                                                                          |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Cliente               | `/`, `/stores`, `/store/:id`, `/search`, `/cart`, `/checkout`, `/orders`, `/orders/:id`, `/orders/:id/track`, `/promotions`, `/profile`, `/help`, `/rider/:id` |
+| Repartidor            | `/rider`, `/rider/current`, `/rider/safety`, `/rider/history`, `/rider/earnings`, `/rider/settings`                                                            |
+| Contacto de confianza | `/share/:token`                                                                                                                                                |
 
 - Marketplace con 13 negocios, 6 categorías, 94 productos y 5 promociones.
 - **El Tío Jhony** integrado como negocio funcional (no beta): logotipo oficial y 33 platos con
@@ -107,20 +107,20 @@ tipos, estilo y pruebas, construye y despliega.
 
 ## Modo demostración: qué se está simulando
 
-| Función | Cómo funciona hoy |
-| --- | --- |
-| Datos de negocios y productos | JSON locales en `src/data/` (**DEMO DATA**) |
-| Pedidos y carrito | `localStorage` (`suya_cart`, `suya_orders`) |
-| Estados del pedido | Simulación local: 0 s confirmado → 8 s preparando → 18 s recogido → 28 s en camino. **La entrega no se cierra sola**: la confirma el repartidor con el código del cliente |
-| Códigos del pedido | Cada pedido genera dos PIN de 4 dígitos: `deliveryCode` (el cliente se lo da al repartidor para cerrar la entrega) y `cancelCode` (hay que escribirlo para cancelar) |
-| Ubicación del repartidor | Obligatoria mientras está disponible: el panel mantiene el rastreo durante todo el turno y retira la disponibilidad si se pierde el permiso |
-| Movimiento del repartidor | Interpolación sobre una polilínea de Sullana (`src/data/route.json`) |
-| Mapa | Mapa real con calles (Leaflet + OpenStreetMap) por defecto, con ruta trazada y el repartidor moviéndose sobre ella. Sin conexión cae al `MockMap` en SVG; el adaptador de Google Maps queda listo para una API key |
-| Pagos | `MockPaymentService`: no existe pasarela ni cobro real |
-| Notificaciones | Toasts locales, no push |
-| Compartir ubicación | `BroadcastChannel` + `localStorage`: sincroniza **entre pestañas del mismo navegador**, no entre dispositivos |
-| SOS | Registra hora y estado en el dispositivo y avisa visualmente en `/share/:token`. **No contacta a la policía ni a emergencias** |
-| Cuentas | Sin credenciales: se elige perfil cliente o repartidor desde `/profile` |
+| Función                       | Cómo funciona hoy                                                                                                                                                                                                  |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Datos de negocios y productos | JSON locales en `src/data/` (**DEMO DATA**)                                                                                                                                                                        |
+| Pedidos y carrito             | `localStorage` (`suya_cart`, `suya_orders`)                                                                                                                                                                        |
+| Estados del pedido            | Simulación local: 0 s confirmado → 8 s preparando → 18 s recogido → 28 s en camino. **La entrega no se cierra sola**: la confirma el repartidor con el código del cliente                                          |
+| Códigos del pedido            | Cada pedido genera dos PIN de 4 dígitos: `deliveryCode` (el cliente se lo da al repartidor para cerrar la entrega) y `cancelCode` (hay que escribirlo para cancelar)                                               |
+| Ubicación del repartidor      | Obligatoria mientras está disponible: el panel mantiene el rastreo durante todo el turno y retira la disponibilidad si se pierde el permiso                                                                        |
+| Movimiento del repartidor     | Interpolación sobre una polilínea de Sullana (`src/data/route.json`)                                                                                                                                               |
+| Mapa                          | Mapa real con calles (Leaflet + OpenStreetMap) por defecto, con ruta trazada y el repartidor moviéndose sobre ella. Sin conexión cae al `MockMap` en SVG; el adaptador de Google Maps queda listo para una API key |
+| Pagos                         | `MockPaymentService`: no existe pasarela ni cobro real                                                                                                                                                             |
+| Notificaciones                | Toasts locales, no push                                                                                                                                                                                            |
+| Compartir ubicación           | `BroadcastChannel` + `localStorage`: sincroniza **entre pestañas del mismo navegador**, no entre dispositivos                                                                                                      |
+| SOS                           | Registra hora y estado en el dispositivo y avisa visualmente en `/share/:token`. **No contacta a la policía ni a emergencias**                                                                                     |
+| Cuentas                       | Sin credenciales: se elige perfil cliente o repartidor desde `/profile`                                                                                                                                            |
 
 ### Probar el módulo de seguridad
 
@@ -151,37 +151,36 @@ Los puntos de conexión están marcados en el código con `// FUTURE:` y concent
 
 ## Archivos clave
 
-| Quiero cambiar… | Edito |
-| --- | --- |
-| Logo y símbolo en la app | `src/components/common/Logo.tsx` |
-| Archivos de marca (SVG) | `public/brand/` (`suya-logo.svg`, `suya-logo-horizontal.svg`, `suya-icon.svg`, `iglesia-sullana.svg`, `rider.svg`) |
-| Colores y tokens | `tailwind.config.js` y las variables CSS de `src/styles/index.css` |
-| Tipografías | `src/styles/index.css` (paquetes `@fontsource/montserrat` e `@fontsource/inter`) |
-| Negocios | `src/data/stores.json` |
-| Productos | `src/data/products.json` |
-| Categorías | `src/data/categories.json` |
-| Promociones | `src/data/promotions.json` |
-| Repartidores | `src/data/riders.json` |
-| Historial demo de pedidos | `src/data/orders.json` |
-| Ruta del seguimiento | `src/data/route.json` |
-| Pantalla de carga | `src/components/common/SuyaIntroLoader.tsx`, `src/styles/intro-loader.css`, `src/assets/loader/sullana-scene.svg` |
-| Mapas y proveedores | `src/components/map/` (`MapProvider.tsx`, `MockMap.tsx`, `LeafletMap.tsx`, `GoogleMapAdapter.tsx`) |
-| Tiempos de la simulación | `src/lib/services/MockOrderService.ts` (`SIMULATION_STEPS`) |
-| Claves de almacenamiento | `src/lib/storage.ts` |
-| Imágenes reales | `public/images/README.md` explica dónde ponerlas |
-| Fotos y galería de un negocio | `src/data/stores.json` (`image`, `logo`, `gallery`) y el campo `image` de cada plato en `src/data/products.json` |
-| Paleta propia de un negocio | `src/data/stores.json` → campo `theme` del negocio |
+| Quiero cambiar…               | Edito                                                                                                              |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Logo y símbolo en la app      | `src/components/common/Logo.tsx`                                                                                   |
+| Archivos de marca (SVG)       | `public/brand/` (`suya-logo.svg`, `suya-logo-horizontal.svg`, `suya-icon.svg`, `iglesia-sullana.svg`, `rider.svg`) |
+| Colores y tokens              | `tailwind.config.js` y las variables CSS de `src/styles/index.css`                                                 |
+| Tipografías                   | `src/styles/index.css` (paquetes `@fontsource/montserrat` e `@fontsource/inter`)                                   |
+| Negocios                      | `src/data/stores.json`                                                                                             |
+| Productos                     | `src/data/products.json`                                                                                           |
+| Categorías                    | `src/data/categories.json`                                                                                         |
+| Promociones                   | `src/data/promotions.json`                                                                                         |
+| Repartidores                  | `src/data/riders.json`                                                                                             |
+| Historial demo de pedidos     | `src/data/orders.json`                                                                                             |
+| Ruta del seguimiento          | `src/data/route.json`                                                                                              |
+| Pantalla de carga             | `src/components/common/SuyaIntroLoader.tsx`, `src/styles/intro-loader.css`, `src/assets/loader/sullana-scene.svg`  |
+| Mapas y proveedores           | `src/components/map/` (`MapProvider.tsx`, `MockMap.tsx`, `LeafletMap.tsx`, `GoogleMapAdapter.tsx`)                 |
+| Tiempos de la simulación      | `src/lib/services/MockOrderService.ts` (`SIMULATION_STEPS`)                                                        |
+| Claves de almacenamiento      | `src/lib/storage.ts`                                                                                               |
+| Imágenes reales               | `public/images/README.md` explica dónde ponerlas                                                                   |
+| Fotos y galería de un negocio | `src/data/stores.json` (`image`, `logo`, `gallery`) y el campo `image` de cada plato en `src/data/products.json`   |
+| Paleta propia de un negocio   | `src/data/stores.json` → campo `theme` del negocio                                                                 |
 
 ### Cambiar el proveedor de mapa
 
 Crea un archivo `.env.local` (ver `.env.example`):
 
 ```bash
-VITE_MAP_PROVIDER=leaflet
+VITE_MAP_PROVIDER=osm
 ```
 
-- `mock` (predeterminado): SVG local, sin conexión ni API key.
-- `leaflet`: OpenStreetMap, necesita internet.
+- `osm`: OpenStreetMap mediante Leaflet, necesita internet.
 - `google`: requiere además `VITE_GOOGLE_MAPS_KEY`; hoy el adaptador delega en el mapa local.
 
 ---

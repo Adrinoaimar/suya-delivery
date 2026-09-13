@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/mobile-android.yml'
       - 'android/**'
+      - 'apps/**'
       - 'capacitor.config.ts'
       - 'package.json'
       - 'package-lock.json'
@@ -16,6 +17,7 @@ on:
     paths:
       - '.github/workflows/mobile-android.yml'
       - 'android/**'
+      - 'apps/**'
       - 'capacitor.config.ts'
       - 'package.json'
       - 'package-lock.json'
@@ -64,29 +66,23 @@ jobs:
 
       - run: npm ci
 
-      - name: Verificar código y preparar bundle móvil
+      - name: Verificar secretos y compilar APKs por rol
         run: |
           npm run security:secrets
-          npm run build:mobile
+          npm run build:mobile:roles
 
-      - name: Compilar APK debug
-        run: bash android/gradlew -p android assembleDebug --no-daemon
-
-      - name: Publicar APK debug
+      - name: Publicar APK de repartidor
         uses: actions/upload-artifact@v4
         with:
-          name: Suya-Android-debug-${{ github.sha }}
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: Suya-Rider-debug-${{ github.sha }}
+          path: output/android/Suya-Rider-debug.apk
           if-no-files-found: error
           retention-days: 14
 
-      - name: Compilar release sin firma
-        run: bash android/gradlew -p android assembleRelease --no-daemon
-
-      - name: Publicar APK release sin firma
+      - name: Publicar APK de backoffice
         uses: actions/upload-artifact@v4
         with:
-          name: Suya-Android-release-unsigned-${{ github.sha }}
-          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+          name: Suya-Backoffice-debug-${{ github.sha }}
+          path: output/android/Suya-Backoffice-debug.apk
           if-no-files-found: error
           retention-days: 14

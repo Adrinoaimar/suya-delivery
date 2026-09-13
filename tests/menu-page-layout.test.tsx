@@ -4,12 +4,22 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MenuPage from '@/pages/customer/MenuPage';
 import { loadPublicMenu } from '@/lib/loadPublicMenu';
 import { products, stores } from '@/data';
+import { useCartStore } from '@/store/cartStore';
 
 vi.mock('@/lib/loadPublicMenu', () => ({ loadPublicMenu: vi.fn() }));
 
 describe('MenuPage', () => {
+  const store = { ...stores.find((candidate) => candidate.id === 'don-pizza')!, isComingSoon: true };
+  const product = products.find((candidate) => candidate.storeId === store.id)!;
+
   beforeEach(() => {
-    const store = { ...stores.find((candidate) => candidate.id === 'don-pizza')!, isComingSoon: true };
+    useCartStore.setState({
+      items: [],
+      storeId: null,
+      origin: 'delivery',
+      menuSlug: null,
+      offerCode: null,
+    });
     vi.mocked(loadPublicMenu).mockResolvedValue({
       menu: {
         store,
@@ -22,7 +32,7 @@ describe('MenuPage', () => {
           fontFamily: 'Montserrat',
         },
       },
-      products: products.filter((product) => product.storeId === store.id).slice(0, 1),
+      products: products.filter((entry) => entry.storeId === store.id).slice(0, 1),
     });
   });
 
@@ -40,5 +50,39 @@ describe('MenuPage', () => {
     expect(label).not.toHaveClass('left-4');
     expect(screen.getByRole('img', { name: 'Marca de Pizzería Don Pizza' })).toBeInTheDocument();
     expect(screen.getByText('Próximamente')).toBeInTheDocument();
+  });
+
+  it('conserva un carrito delivery al abrir el menú público', async () => {
+    useCartStore.setState({
+      items: [
+        {
+          lineId: 'delivery-line',
+          productId: product.id,
+          storeId: store.id,
+          name: product.name,
+          unitPrice: product.price,
+          quantity: 1,
+          extras: [],
+          note: '',
+          image: product.image,
+        },
+      ],
+      storeId: store.id,
+      origin: 'delivery',
+      menuSlug: null,
+      offerCode: null,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/menu/pizzeria-don-pizza-menu']}>
+        <Routes>
+          <Route path="/menu/:slug" element={<MenuPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await screen.findByText('Menú público');
+    expect(useCartStore.getState().origin).toBe('delivery');
+    expect(useCartStore.getState().menuSlug).toBeNull();
   });
 });

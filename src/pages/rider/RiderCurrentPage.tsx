@@ -42,7 +42,7 @@ export default function RiderCurrentPage() {
 
   // Mostrar mapa con cualquier punto verificado; restaurante puede no tener coordenadas aún.
   const mapReady = active?.storePosition != null || active?.deliveryPosition != null;
-  // Referencias estables: LeafletMap remonta el mapa entero si origin/destination cambian de identidad.
+  // Referencias estables: evitan trabajo extra al actualizar posición y ruta.
   const mapPoints = useMemo(
     () =>
       mapReady
@@ -108,7 +108,7 @@ export default function RiderCurrentPage() {
         </p>
       </header>
 
-      <div className="h-56 overflow-hidden rounded-card border border-white/10 sm:h-72">
+      <div className="relative h-[min(66dvh,600px)] min-h-[390px] overflow-hidden rounded-card border border-white/10 shadow-card sm:h-[min(70dvh,680px)] sm:min-h-[460px]">
         {mapReady ? (
           <MapProvider
             points={mapPoints}
@@ -116,6 +116,7 @@ export default function RiderCurrentPage() {
             destination={mapDestination}
             rider={reading?.position ?? null}
             label="Ubicaciones de entrega"
+            navigation
           />
         ) : (
           <MapUnavailable

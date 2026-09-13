@@ -1,6 +1,7 @@
 # Suya móvil
 
-Suya móvil empaqueta en un único APK las experiencias de cliente, repartidor y backoffice. El WebView
+Suya móvil puede empaquetar en un único APK las experiencias de cliente, repartidor y backoffice, o
+generar APKs operativos separados para las pruebas de cada rol. El WebView
 comparte React, React Router, Zustand y los servicios Supabase de la web; no duplica catálogo, pedidos
 ni reglas RLS.
 
@@ -11,6 +12,28 @@ ni reglas RLS.
 - Web assets del APK unificado: `dist/mobile`.
 - Rutas nativas: cliente en `/`, repartidor en `/rider` y backoffice protegido en `/backoffice`.
 - Los builds web separados (`customer`, `rider`, `backoffice`) se mantienen para Cloudflare Pages.
+
+## APKs operativos por rol
+
+El build por rol reutiliza los mismos bundles web protegidos y permite instalar ambas apps en el mismo
+Android:
+
+- Rider: `com.suya.rider`, pantalla inicial de acceso de repartidor.
+- Backoffice: `com.suya.backoffice`, pantalla inicial de acceso de operaciones.
+
+```bash
+npm run build:mobile:roles
+```
+
+Salidas:
+
+- `output/android/Suya-Rider-debug.apk`
+- `output/android/Suya-Backoffice-debug.apk`
+
+Son APKs debug para validación interna, no releases firmados para distribución. Google OAuth requiere
+autorizar también los callbacks `com.suya.rider://auth/callback` y
+`com.suya.backoffice://auth/callback` en la configuración de Supabase; el acceso demo por correo y
+contraseña no depende de ese ajuste.
 
 ## Build local
 
@@ -38,6 +61,7 @@ de aprovisionamiento; esas credenciales no se guardan en el repositorio.
 
 Capacitor integra splash, status bar, navegador OAuth, geolocalización, preferencias, compartir,
 portapapeles, haptics y push notifications. Google Auth usa PKCE, navegador del sistema y callback
-`com.suya.app://auth/callback`; su activación externa se documenta en `docs/setup/google-auth.md`.
+`com.suya.app://auth/callback` en el APK unificado y un callback por rol en los APKs separados; su
+activación externa se documenta en `docs/setup/google-auth.md`.
 El adaptador nativo de ubicación se usa solo en Android/iOS; navegador mantiene
 `navigator.geolocation`. Push necesita configurar FCM/APNs antes de producción.

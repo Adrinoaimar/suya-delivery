@@ -54,11 +54,7 @@ export interface OfferService {
 }
 
 export type RestaurantAccountStatus =
-  | 'pending_contact'
-  | 'ready_to_invite'
-  | 'invited'
-  | 'active'
-  | 'suspended';
+  'pending_contact' | 'ready_to_invite' | 'invited' | 'active' | 'suspended';
 
 export interface RestaurantAccount {
   restaurantId: string;
@@ -176,6 +172,40 @@ export interface WalletObserverService {
   listDevices(restaurantIds: string[]): Promise<WalletObserverDevice[]>;
   createDevice(restaurantId: string, label: string): Promise<CreatedWalletObserverDevice>;
   listObservations(restaurantIds: string[]): Promise<WalletObservation[]>;
+}
+
+export type ManagedRiderStatus = 'offline' | 'available' | 'busy' | 'suspended';
+
+export interface RestaurantRider {
+  id: string;
+  email: string;
+  name: string;
+  phone: string;
+  status: ManagedRiderStatus;
+  verifiedAt: string | null;
+  vehicleType: string;
+  vehicleColor: string;
+  vehiclePlate: string;
+  rating: number;
+  deliveries: number;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface InviteRestaurantRiderInput {
+  restaurantId: string;
+  email: string;
+  displayName: string;
+  phone: string;
+  vehicleType: string;
+  vehicleColor: string;
+  vehiclePlate: string;
+}
+
+export interface RestaurantRiderService {
+  list(restaurantId: string): Promise<RestaurantRider[]>;
+  invite(input: InviteRestaurantRiderInput): Promise<RestaurantRider>;
+  setActive(restaurantId: string, riderId: string, active: boolean): Promise<boolean>;
 }
 
 export interface TableSummary {
