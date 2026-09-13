@@ -45,15 +45,15 @@ select is(
   (select count(*)::integer
    from public.products
    where restaurant_id = '23000000-0000-4000-8000-000000000001'),
-  133,
-  '133 conceptos inequívocos importados'
+  134,
+  '133 conceptos de carta y una promoción publicados'
 );
 
 select is(
   (select count(distinct id)::integer
    from public.products
    where restaurant_id = '23000000-0000-4000-8000-000000000001'),
-  133,
+  134,
   'todos los productos tienen identidad única'
 );
 
@@ -165,7 +165,7 @@ select is(
   (select count(*)::integer
    from public.products
    where restaurant_id = '23000000-0000-4000-8000-000000000001'),
-  133,
+  134,
   'reaplicar la clave no duplica productos'
 );
 
