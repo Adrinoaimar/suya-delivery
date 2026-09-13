@@ -19,19 +19,7 @@ import { orderRouteProgress, useOrderStatusNotifier } from '@/hooks/useOrders';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { formatPrice, orderStatusLabel } from '@/utils/format';
 import type { LatLng } from '@/types';
-import { distanceKm } from '@/utils/geo';
-
-const MAX_TRACK_POINTS = 240;
-
-function appendTrail(trail: LatLng[], position: LatLng): LatLng[] {
-  const last = trail.at(-1);
-  if (last && distanceKm(last, position) < 0.004) return trail;
-  return [...trail, position].slice(-MAX_TRACK_POINTS);
-}
-
-function mergeTrails(history: LatLng[], liveTrail: LatLng[]): LatLng[] {
-  return [...history, ...liveTrail].reduce<LatLng[]>(appendTrail, []);
-}
+import { appendTrail, mergeTrails } from '@/utils/locationTrail';
 
 export default function OrderTrackPage() {
   const { id = '' } = useParams();

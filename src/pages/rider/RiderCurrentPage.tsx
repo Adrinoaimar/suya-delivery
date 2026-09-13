@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
   Check,
@@ -15,11 +15,12 @@ import { MapUnavailable } from '@/components/map/MapUnavailable';
 import { CodeDialog } from '@/components/order/CodeDialog';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
 import { RiderCancelDialog } from '@/components/order/RiderCancelDialog';
-import { notificationService } from '@/lib/services';
+import { notificationService, safetyOperationsService } from '@/lib/services';
 import { selectActiveOrder, useOrderStore } from '@/store/orderStore';
 import { useTrackingStore } from '@/store/trackingStore';
 import { formatPrice, orderStatusLabel } from '@/utils/format';
-import type { OrderStatus } from '@/types';
+import { mergeTrails } from '@/utils/locationTrail';
+import type { LatLng, OrderStatus } from '@/types';
 
 /**
  * El último paso no avanza solo: exige el código de 4 dígitos del cliente.
@@ -36,9 +37,30 @@ export default function RiderCurrentPage() {
   const cancelByRider = useOrderStore((state) => state.cancelByRider);
   const active = selectActiveOrder(orders);
   const reading = useTrackingStore((state) => state.reading);
+  const activeId = active?.id;
+  const tripTracking = Boolean(active && ['picked_up', 'on_the_way'].includes(active.status));
   const [codeOpen, setCodeOpen] = useState(false);
   const [advancing, setAdvancing] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
+  const [riderTrail, setRiderTrail] = useState<LatLng[]>([]);
+
+  useEffect(() => {
+    if (!activeId || !tripTracking) {
+      setRiderTrail([]);
+      return undefined;
+    }
+    let mounted = true;
+    setRiderTrail([]);
+    void safetyOperationsService
+      .locationHistory(activeId)
+      .then((history) => {
+        if (mounted) setRiderTrail(mergeTrails(history, []));
+      })
+      .catch(() => undefined);
+    return () => {
+      mounted = false;
+    };
+  }, [activeId, tripTracking]);
 
   // Mostrar mapa con cualquier punto verificado; restaurante puede no tener coordenadas aún.
   const mapReady = active?.storePosition != null || active?.deliveryPosition != null;
@@ -116,6 +138,7 @@ export default function RiderCurrentPage() {
             origin={mapOrigin}
             destination={mapDestination}
             rider={reading?.position ?? null}
+            riderTrail={riderTrail}
             label="Ubicaciones de entrega"
             navigation
           />
