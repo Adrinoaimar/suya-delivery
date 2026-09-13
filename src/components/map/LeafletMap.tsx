@@ -25,7 +25,11 @@ import {
   type RoutePlan,
 } from '@/lib/routePlanner';
 import { distanceKm } from '@/utils/geo';
+import { MAX_TRACK_POINTS } from '@/utils/locationTrail';
+import type { LatLng } from '@/types';
 import type { MapViewProps } from './types';
+
+const EMPTY_TRAIL: LatLng[] = [];
 
 /**
  * Proveedor de mapa real sobre OpenStreetMap (Leaflet), con la misma lectura que un
@@ -37,7 +41,7 @@ export default function LeafletMap({
   origin,
   destination,
   rider,
-  riderTrail: historicalTrail = [],
+  riderTrail: historicalTrail = EMPTY_TRAIL,
   className,
   label,
   interactive = true,
@@ -136,11 +140,21 @@ export default function LeafletMap({
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const nextTrail = historicalTrail.slice(-240);
-    riderTrailRef.current = nextTrail.map((position) => [position.lat, position.lng]);
-    riderTrailLineRef.current?.remove();
-    riderTrailLineRef.current = null;
-    if (riderTrailRef.current.length > 0) {
+    const nextTrail = historicalTrail.slice(-MAX_TRACK_POINTS);
+    const nextPoints = nextTrail.map((position) => [position.lat, position.lng] as [number, number]);
+    const unchanged =
+      nextPoints.length === riderTrailRef.current.length &&
+      nextPoints.every(
+        (point, index) => point[0] === riderTrailRef.current[index]?.[0] && point[1] === riderTrailRef.current[index]?.[1],
+      );
+    if (unchanged) return;
+    riderTrailRef.current = nextPoints;
+    if (riderTrailRef.current.length === 0) {
+      riderTrailLineRef.current?.remove();
+      riderTrailLineRef.current = null;
+      return;
+    }
+    if (!riderTrailLineRef.current) {
       riderTrailLineRef.current = L.polyline(riderTrailRef.current, {
         color: '#8CC63F',
         weight: 5,
@@ -150,6 +164,8 @@ export default function LeafletMap({
         lineJoin: 'round',
         interactive: false,
       }).addTo(map);
+    } else {
+      riderTrailLineRef.current.setLatLngs(riderTrailRef.current);
     }
   }, [historicalTrail]);
 
@@ -371,7 +387,7 @@ export default function LeafletMap({
       !lastPosition ||
       distanceKm({ lat: lastPosition[0], lng: lastPosition[1] }, rider) >= 0.004
     ) {
-      riderTrailRef.current = [...riderTrailRef.current, position];
+      riderTrailRef.current = [...riderTrailRef.current, position].slice(-MAX_TRACK_POINTS);
       if (!riderTrailLineRef.current) {
         riderTrailLineRef.current = L.polyline(riderTrailRef.current, {
           color: '#8CC63F',
