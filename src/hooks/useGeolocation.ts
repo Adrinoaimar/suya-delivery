@@ -36,7 +36,7 @@ export function useGeolocation(enabled: boolean) {
     if (!enabled) {
       stopRef.current?.();
       stopRef.current = null;
-      setState((prev) => ({ ...prev, active: false }));
+      setState((prev) => ({ ...prev, reading: null, error: null, active: false }));
       return undefined;
     }
 
@@ -45,7 +45,7 @@ export function useGeolocation(enabled: boolean) {
 
     const stop = service.watch(
       (reading) => setState((prev) => ({ ...prev, reading, error: null, active: true })),
-      (message) => setState((prev) => ({ ...prev, error: message, active: false })),
+      (message) => setState((prev) => ({ ...prev, reading: null, error: message, active: false })),
     );
     stopRef.current = stop;
 

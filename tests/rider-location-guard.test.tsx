@@ -1,6 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useRiderTrackingRunner } from '@/hooks/useRiderLocationGuard';
+import { useGeolocation } from '@/hooks/useGeolocation';
 import { useRiderStore } from '@/store/riderStore';
 
 const mocks = vi.hoisted(() => ({
@@ -44,5 +45,30 @@ describe('useRiderTrackingRunner', () => {
     await waitFor(() => expect(mocks.setAvailability).toHaveBeenCalledWith(false));
     expect(useRiderStore.getState().available).toBe(false);
     unmount();
+  });
+
+  it('descarta la última coordenada al apagar el rastreo', async () => {
+    mocks.watch.mockImplementation((onReading) => {
+      onReading({
+        position: { lat: -4.89, lng: -80.69 },
+        accuracy: 8,
+        timestamp: 1,
+        simulated: false,
+      });
+      return vi.fn();
+    });
+
+    const { result, rerender } = renderHook(
+      ({ enabled }: { enabled: boolean }) => useGeolocation(enabled),
+      { initialProps: { enabled: true } },
+    );
+    await waitFor(() => expect(result.current.reading).not.toBeNull());
+
+    rerender({ enabled: false });
+
+    await waitFor(() => {
+      expect(result.current.reading).toBeNull();
+      expect(result.current.active).toBe(false);
+    });
   });
 });
