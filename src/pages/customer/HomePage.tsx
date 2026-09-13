@@ -40,10 +40,18 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
+    let active = true;
     void offerService
       .listActive()
-      .then(setOffers)
-      .catch(() => setOffers([]));
+      .then((rows) => {
+        if (active) setOffers(rows);
+      })
+      .catch(() => {
+        if (active) setOffers([]);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const storesLoading = storesStatus === 'idle' || storesStatus === 'loading';

@@ -73,7 +73,18 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
-    void offerService.listActive().then(setOffers).catch(() => setOffers([]));
+    let active = true;
+    void offerService
+      .listActive()
+      .then((rows) => {
+        if (active) setOffers(rows);
+      })
+      .catch(() => {
+        if (active) setOffers([]);
+      });
+    return () => {
+      active = false;
+    };
   }, []);
   useEffect(() => { setOfferInput(offerCode ?? ''); }, [offerCode]);
 
