@@ -16,6 +16,16 @@ function locationClientWith(data: unknown, error: { message: string } | null = n
   return { client: { from } as unknown as SupabaseClient, from, select, eq, order, limit };
 }
 
+function latestLocationClientWith(data: unknown, error: { message: string } | null = null) {
+  const maybeSingle = vi.fn(async () => ({ data, error }));
+  const limit = vi.fn(() => ({ maybeSingle }));
+  const order = vi.fn(() => ({ limit }));
+  const eq = vi.fn(() => ({ order }));
+  const select = vi.fn(() => ({ eq }));
+  const from = vi.fn(() => ({ select }));
+  return { client: { from } as unknown as SupabaseClient, maybeSingle };
+}
+
 describe('SupabaseSafetyServiceImpl', () => {
   it('no publica lecturas simuladas', async () => {
     const { client, rpc } = clientWith();
@@ -35,6 +45,14 @@ describe('SupabaseSafetyServiceImpl', () => {
     expect(rpc).toHaveBeenCalledWith('publish_rider_location', {
       target_order: 'order-1', latitude: -4.89, longitude: -80.69, accuracy_meters: 10,
     });
+  });
+
+  it('descarta coordenadas fuera de rango antes de publicarlas', async () => {
+    const { client, rpc } = clientWith();
+    await expect(new SupabaseSafetyServiceImpl(client).publishLocation('order-1', {
+      position: { lat: 91, lng: -80.69 }, accuracy: 10, timestamp: 123, simulated: false,
+    })).resolves.toBe(false);
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it('traduce categoría UI y conserva idempotencia del incidente', async () => {
@@ -73,5 +91,10 @@ describe('SupabaseSafetyServiceImpl', () => {
     expect(query.eq).toHaveBeenCalledWith('order_id', 'order-1');
     expect(query.order).toHaveBeenCalledWith('captured_at', { ascending: false });
     expect(query.limit).toHaveBeenCalledWith(180);
+  });
+
+  it('no entrega al mapa una última posición fuera de rango', async () => {
+    const query = latestLocationClientWith({ latitude: 91, longitude: -80.692 });
+    await expect(new SupabaseSafetyServiceImpl(query.client).latestLocation('order-1')).resolves.toBeNull();
   });
 });
