@@ -82,7 +82,7 @@ producción.
 
 ## Checkpoint F25: estabilización de mapas y APKs por rol
 
-- La rama `feat/backoffice-restaurant-ops` terminó en `9b3f3df`; PR #36 está abierto y mergeable.
+- La rama `feat/backoffice-restaurant-ops` termina en `e462834`; el último cambio funcional es `9b3f3df` y PR #36 está abierto y mergeable.
 - Leaflet ya no se reconstruye por cada lectura GPS ni redibuja la ruta del Cliente innecesariamente.
   Marcadores, rastro, ruta vial OSRM/OpenStreetMap, alternativas y guía de maniobras conservan estado.
 - El OTA nativo ahora aplica solo cuando `VITE_MOBILE_ROLE` es explícitamente `customer`; builds
@@ -125,9 +125,9 @@ producción.
   cambiar de destino, iniciar otra ruta o desmontar el mapa.
 - Inicio y Checkout del Cliente ignoran respuestas y errores de ofertas que llegan después de desmontarse.
 - Evidencia local: 54 suites/225 tests, lint, typecheck, escaneo de secretos y diff limpio; smoke
-  responsive y comprobación Playwright del viewport completo. CI final Android `34754929451` y workflows
-  asociados: browser `34754929453`, browser-e2e/build `34754929481`, test `34754929476` y simulator
-  `34754929553`, todos verdes. Android publicó APK Rider y Back Office.
+  responsive y comprobación Playwright del viewport completo. CI final Android `34755235402` y workflows
+  asociados: browser `34755235408`, browser-e2e/build `34755235403`, test `34755235405` y simulator
+  `34755235399`, todos verdes. Android publicó APK Rider y Back Office.
 - Producción responde HTTP 200 en los tres dominios y Back Office muestra `Suya Operaciones`; esto
   no prueba que el commit final esté desplegado mientras PR #36 permanezca abierto.
 - Pendiente externo: revisión/fusión autorizada de PR #36, publicación Cloudflare, migración de riders
@@ -138,8 +138,8 @@ producción.
   checks de PR #36 siguen verdes.
 - Evidencia funcional de roles: el portal operativo publicado muestra `Suya Operaciones`; las APKs
   contienen títulos `Suya Repartidor` y `Suya Operaciones`.
-- APK Rider final: `output/apks/Suya-Rider-debug-9b3f3df.apk`, SHA-256 `cf108673d230b200646ad5fee612dccd813e3698aa2b193d909da24e0d35f057`.
-- APK Back Office final: `output/apks/Suya-Backoffice-debug-9b3f3df.apk`, SHA-256 `aed7dafe0aa44cc12e49470c1e9d52ebab272cc066064cb72d4453ca40ba16c2`.
+- APK Rider final: `output/apks/Suya-Rider-debug-e462834.apk`, SHA-256 `51e32850de9b959f5112fa9afd8880915ac1a85b97330014b64a4777ec701ea8`.
+- APK Back Office final: `output/apks/Suya-Backoffice-debug-e462834.apk`, SHA-256 `36b10d7d7389a158210056ad5f4147aca18ad1b3563badaf1c92817beac251c1`.
 
 ## Reglas de continuidad
 
