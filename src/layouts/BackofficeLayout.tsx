@@ -38,11 +38,18 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
     { to: `${prefix}/settings`, label: 'Configuración', icon: Settings },
   ];
 
-  // En móvil la navegación es horizontal; deja siempre la sección activa completa y visible
-  // después de cambiar de pantalla, evitando que el texto quede cortado entre dos pestañas.
+  // En escritorio la navegación es vertical y puede necesitar desplazarse al cambiar de sección.
+  // En móvil todas las secciones caben en una cuadrícula: así ningún texto queda cortado por un
+  // scroll horizontal automático.
   useEffect(() => {
+    const isDesktop =
+      typeof window.matchMedia !== 'function' || window.matchMedia('(min-width: 1024px)').matches;
+    if (!isDesktop) return undefined;
     const activeLink = navigationRef.current?.querySelector<HTMLElement>('[aria-current="page"]');
-    activeLink?.scrollIntoView?.({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
+    const frame = window.requestAnimationFrame(() => {
+      activeLink?.scrollIntoView?.({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [location.pathname]);
 
   return (
@@ -57,7 +64,7 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
         </div>
         <nav
           ref={navigationRef}
-          className="hide-scrollbar -mx-1 mt-4 flex gap-1 overflow-x-auto px-1 lg:mx-0 lg:mt-5 lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:px-0"
+          className="-mx-1 mt-4 grid grid-cols-3 gap-1 px-1 lg:mx-0 lg:mt-5 lg:min-h-0 lg:flex lg:flex-col lg:gap-1 lg:overflow-y-auto lg:px-0"
           aria-label="Operaciones"
         >
           {navigation.map((item) => (
@@ -67,7 +74,7 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
               end={item.end}
               className={({ isActive }) =>
                 cn(
-                  'flex min-h-12 shrink-0 items-center gap-2 rounded-btn px-3 text-sm font-medium',
+                  'flex min-h-14 flex-col items-center justify-center gap-1 rounded-btn px-1 py-2 text-center text-[11px] font-medium leading-tight lg:min-h-12 lg:flex-row lg:justify-start lg:gap-2 lg:px-3 lg:py-0 lg:text-left lg:text-sm',
                   isActive ? 'bg-suya-lime text-suya-carbon' : 'text-white/75 hover:bg-white/10',
                 )
               }
