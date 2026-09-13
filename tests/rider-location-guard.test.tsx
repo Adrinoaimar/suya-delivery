@@ -48,7 +48,9 @@ describe('useRiderTrackingRunner', () => {
   });
 
   it('descarta la última coordenada al apagar el rastreo', async () => {
+    let delayedReading: ((reading: { position: { lat: number; lng: number }; accuracy: number; timestamp: number; simulated: boolean }) => void) | undefined;
     mocks.watch.mockImplementation((onReading) => {
+      delayedReading = onReading;
       onReading({
         position: { lat: -4.89, lng: -80.69 },
         accuracy: 8,
@@ -70,5 +72,13 @@ describe('useRiderTrackingRunner', () => {
       expect(result.current.reading).toBeNull();
       expect(result.current.active).toBe(false);
     });
+
+    delayedReading?.({
+      position: { lat: -4.88, lng: -80.68 },
+      accuracy: 8,
+      timestamp: 2,
+      simulated: false,
+    });
+    expect(result.current.reading).toBeNull();
   });
 });
