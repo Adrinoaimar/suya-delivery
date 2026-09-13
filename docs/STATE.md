@@ -116,9 +116,9 @@ producción.
   recarga duplicada del catálogo. Leaflet usa botones de zoom redondos y accesibles, dejando libre la
   tarjeta de guía.
 - Evidencia local: 53 suites/221 tests, lint, typecheck, escaneo de secretos y diff limpio; smoke
-  responsive y comprobación Playwright del viewport completo. CI final Android `34752142964` y workflows
-  asociados: browser `34752142937`, browser-e2e/build `34752142941`, test `34752142958` y simulator
-  `34752142928`, todos verdes. Android publicó APK Rider y Back Office.
+  responsive y comprobación Playwright del viewport completo. CI final Android `34752420744` y workflows
+  asociados: browser `34752420569`, browser-e2e/build `34752420594`, test `34752420635` y simulator
+  `34752420725`, todos verdes. Android publicó APK Rider y Back Office.
 - Producción responde HTTP 200 en los tres dominios y Back Office muestra `Suya Operaciones`; esto
   no prueba que el commit final esté desplegado mientras PR #36 permanezca abierto.
 - Pendiente externo: revisión/fusión autorizada de PR #36, publicación Cloudflare, migración de riders
@@ -129,8 +129,8 @@ producción.
   checks de PR #36 siguen verdes.
 - Evidencia funcional de roles: el portal operativo publicado muestra `Suya Operaciones`; las APKs
   contienen títulos `Suya Repartidor` y `Suya Operaciones`.
-- APK Rider final: `output/apks/Suya-Rider-debug-14ae039.apk`, SHA-256 `d24baddd9fb0d289514b5d3a3f97581da51f73dbd09c7498f813e8df5c855981`.
-- APK Back Office final: `output/apks/Suya-Backoffice-debug-14ae039.apk`, SHA-256 `4536e6d9331afbe2a1750ed3de9d466b27a0394038ef13d0329b4d89c34a0aa7`.
+- APK Rider final: `output/apks/Suya-Rider-debug-6d21409.apk`, SHA-256 `77222698a4dad4c3ecae1082d121639dbd6016a119381706a9686fb36da1b579`.
+- APK Back Office final: `output/apks/Suya-Backoffice-debug-6d21409.apk`, SHA-256 `bf47c169e39d42dbf77ac243204f384040fb8a271a9d3bca8d7f9bbfe2d427fe`.
 
 ## Reglas de continuidad
 
