@@ -59,6 +59,8 @@ export default function LeafletMap({
   const riderTrailLineRef = useRef<L.Polyline | null>(null);
   const routeLayerRef = useRef<L.LayerGroup | null>(null);
   const routeBoundsRef = useRef<L.LatLngBounds | null>(null);
+  const routeControllerRef = useRef<AbortController | null>(null);
+  const routeRequestIdRef = useRef(0);
   const hasAppliedInitialViewRef = useRef(false);
   const lastRouteRequestRef = useRef<{
     start: { lat: number; lng: number };
@@ -122,6 +124,9 @@ export default function LeafletMap({
     }
 
     return () => {
+      routeControllerRef.current?.abort();
+      routeControllerRef.current = null;
+      routeRequestIdRef.current += 1;
       observer?.disconnect();
       if (!observer) window.removeEventListener('resize', handleResize);
       map.remove();
@@ -253,6 +258,8 @@ export default function LeafletMap({
     );
     if (canReuseRoute) return undefined;
 
+    routeControllerRef.current?.abort();
+    const requestId = ++routeRequestIdRef.current;
     layer.clearLayers();
     setRoutePlan(null);
     setNextInstruction(null);
@@ -274,6 +281,7 @@ export default function LeafletMap({
     lastRouteRequestRef.current = { start: routingStart, end: routingEnd };
     setRouteStatus('loading');
     const controller = new AbortController();
+    routeControllerRef.current = controller;
     let timedOut = false;
     const timeoutId = window.setTimeout(() => {
       timedOut = true;
@@ -281,21 +289,29 @@ export default function LeafletMap({
     }, 8_000);
     void fetchDrivingRoute(routingStart, routingEnd, controller.signal)
       .then((plan) => {
-        if (controller.signal.aborted) return;
+        if (controller.signal.aborted || requestId !== routeRequestIdRef.current) return;
         setRoutePlan(plan);
         setNextInstruction(plan.instructions[0] ?? null);
         setRouteStatus('ready');
       })
       .catch((cause: unknown) => {
+        if (requestId !== routeRequestIdRef.current) return;
         if (controller.signal.aborted && !timedOut) return;
         setRouteStatus('error');
         // The direct reference remains on screen; it is intentionally not styled as a road.
         if (cause instanceof Error && cause.name !== 'AbortError')
           console.warn('No se pudo calcular la ruta vial:', cause.message);
       })
-      .finally(() => window.clearTimeout(timeoutId));
+      .finally(() => {
+        if (requestId !== routeRequestIdRef.current) return;
+        window.clearTimeout(timeoutId);
+        routeControllerRef.current = null;
+      });
 
-    return () => controller.abort();
+    // No cancelar aquí: una lectura GPS menor al umbral vuelve a ejecutar este efecto,
+    // pero la misma ruta pendiente debe poder terminar. El controlador solo se cancela
+    // cuando comienza otra ruta o al desmontar el mapa.
+    return undefined;
   }, [destinationLat, destinationLng, navigation, points, routingRiderLat, routingRiderLng]);
 
   // Redibuja solo las capas de ruta, no el mapa completo ni sus marcadores.

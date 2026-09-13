@@ -30,6 +30,11 @@ describe('seguimiento visual del mapa', () => {
     expect(map).toContain('hasAppliedInitialViewRef');
     expect(map).toContain('const routingRiderLat = navigation ? riderLat : undefined;');
     expect(map).toContain('routingRiderLng');
+    expect(map).toContain('routeControllerRef');
+    expect(map).toContain('routeRequestIdRef');
+    expect(map).toContain('requestId !== routeRequestIdRef.current');
+    expect(map).toContain('No cancelar aquí: una lectura GPS menor al umbral');
+    expect(map).not.toContain('return () => controller.abort()');
     expect(map).toContain('Ver mapa completo');
     expect(map).toContain('Salir del mapa completo');
     expect(map).toContain("!mapExpanded && 'relative'");
