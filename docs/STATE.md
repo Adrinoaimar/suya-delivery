@@ -69,6 +69,11 @@ producción.
   flujo protegido de Rider y `com.suya.backoffice` reutiliza el flujo protegido de operaciones. Ambos
   se generan con `npm run build:mobile:roles`, conservan Supabase/GPS y pueden instalarse juntos.
   PR #35 publicó los artefactos de prueba; la firma release sigue pendiente.
+- F21 fija el alcance del backoffice a la cuenta de restaurante en Mesas y QR, Catálogo y
+  Dispositivos de pagos; el selector queda reservado para `platform_admin`. El nuevo módulo de
+  Repartidores invita o vincula riders y limita la disponibilidad/asignación con `restaurant_riders`
+  validado en Postgres. La migración y pgTAP quedan pendientes de CI porque esta máquina no tiene
+  Docker/Podman.
 - El catálogo local conserva 13 fichas demo con un asset resoluble por tarjeta y ficha. El mock de
   desarrollo publica una carta por ficha con slug estable (`*-menu`), logo, tema y productos; la
   publicación productiva de Supabase sigue limitada a los negocios con datos comerciales verificados.

@@ -29,7 +29,7 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
     { to: `${prefix}/tables`, label: 'Mesas y QR', icon: Table2 },
     { to: `${prefix}/catalog`, label: 'Catálogo', icon: Store },
     { to: `${prefix}/offers`, label: 'Ofertas', icon: Tag },
-    { to: `${prefix}/wallets`, label: 'Billeteras', icon: Wallet },
+    { to: `${prefix}/wallets`, label: 'Dispositivos de pagos', icon: Wallet },
     { to: `${prefix}/riders`, label: 'Repartidores', icon: Users },
     { to: `${prefix}/restaurants`, label: 'Restaurantes', icon: Building2 },
     { to: `${prefix}/settings`, label: 'Configuración', icon: Settings },

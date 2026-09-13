@@ -2,7 +2,7 @@ begin;
 
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
-select plan(38);
+select plan(39);
 
 select has_function('public', 'set_rider_availability', array['boolean'], 'RPC disponibilidad existe');
 select has_function('public', 'list_available_riders', array['uuid'], 'RPC lista riders existe');
@@ -89,7 +89,12 @@ insert into public.rider_profiles (
 ) values
   ('91000000-0000-0000-0000-000000000003', 'offline', now(), '900000003', 'moto', 'R1A'),
   ('91000000-0000-0000-0000-000000000004', 'available', now(), '900000004', 'moto', 'R2A'),
-  ('91000000-0000-0000-0000-000000000005', 'available', now(), '900000005', 'bici', 'R3A');
+  ('91000000-0000-0000-0000-000000000005', 'available', now(), '900000005', 'bici', 'R3A'),
+  ('91000000-0000-0000-0000-000000000006', 'available', now(), '900000006', 'bici', 'R4A');
+insert into public.restaurant_riders (restaurant_id, rider_id, created_by) values
+  ('93000000-0000-0000-0000-000000000001', '91000000-0000-0000-0000-000000000003', '91000000-0000-0000-0000-000000000001'),
+  ('93000000-0000-0000-0000-000000000001', '91000000-0000-0000-0000-000000000004', '91000000-0000-0000-0000-000000000001'),
+  ('93000000-0000-0000-0000-000000000001', '91000000-0000-0000-0000-000000000005', '91000000-0000-0000-0000-000000000001');
 insert into public.orders (
   id, code, customer_id, restaurant_id, status, subtotal, delivery_fee, customer_name,
   customer_phone, delivery_address, delivery_latitude, delivery_longitude,
@@ -139,6 +144,12 @@ select is(
   (select count(*) from public.list_available_riders('93000000-0000-0000-0000-000000000001')),
   3::bigint,
   'owner lista riders disponibles'
+);
+select throws_ok(
+  $$ select public.assign_order_rider(
+    '94000000-0000-0000-0000-000000000002', '91000000-0000-0000-0000-000000000006'
+  ) $$,
+  'P0001', 'rider is not assigned to restaurant', 'owner no asigna rider fuera de su cuenta'
 );
 select lives_ok(
   $$ select public.assign_order_rider(

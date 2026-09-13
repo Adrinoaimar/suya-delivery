@@ -10,11 +10,21 @@ import TablesOperationsPage from '@/pages/backoffice/TablesOperationsPage';
 import CatalogPage from '@/pages/backoffice/CatalogPage';
 import OffersPage from '@/pages/backoffice/OffersPage';
 import WalletsOperationsPage from '@/pages/backoffice/WalletsOperationsPage';
+import RidersOperationsPage from '@/pages/backoffice/RidersOperationsPage';
 
 export function BackofficeRoutes() {
   return (
     <Routes>
-      <Route path="login" element={<LoginPage title="Acceso de operaciones" allowed={['platform_admin', 'restaurant_staff']} defaultPath="/" />} />
+      <Route
+        path="login"
+        element={
+          <LoginPage
+            title="Acceso de operaciones"
+            allowed={['platform_admin', 'restaurant_staff']}
+            defaultPath="/"
+          />
+        }
+      />
       <Route path="unauthorized" element={<UnauthorizedPage />} />
       <Route element={<RequireAccess anyOf={['platform_admin', 'restaurant_staff']} />}>
         <Route element={<BackofficeLayout />}>
@@ -24,9 +34,25 @@ export function BackofficeRoutes() {
           <Route path="catalog" element={<CatalogPage />} />
           <Route path="offers" element={<OffersPage />} />
           <Route path="wallets" element={<WalletsOperationsPage />} />
-          <Route path="riders" element={<BackofficePage title="Repartidores" description="Disponibilidad, asignaciones e incidencias." />} />
-          <Route path="restaurants" element={<BackofficePage title="Restaurantes" description="Altas, membresías y verificación comercial." />} />
-          <Route path="settings" element={<BackofficePage title="Configuración" description="Parámetros de operación y seguridad." />} />
+          <Route path="riders" element={<RidersOperationsPage />} />
+          <Route
+            path="restaurants"
+            element={
+              <BackofficePage
+                title="Restaurantes"
+                description="Altas, membresías y verificación comercial."
+              />
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <BackofficePage
+                title="Configuración"
+                description="Parámetros de operación y seguridad."
+              />
+            }
+          />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
