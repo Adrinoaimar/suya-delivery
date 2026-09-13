@@ -1275,5 +1275,17 @@
     "image": null,
     "popular": false,
     "extras": []
+  },
+  {
+    "id": "dj-promo-2-cuartos-broaster",
+    "storeId": "donde-joel",
+    "section": "Promociones",
+    "name": "Promo: 2 cuartos de pollo broaster",
+    "description": "Incluye dos cuartos de pollo broaster. Primer cuarto S/ 20 y segundo S/ 1.",
+    "price": 21,
+    "image": "/images/generated/donde-joel/promo-2-cuartos-broaster.webp",
+    "imageIsStock": true,
+    "popular": true,
+    "extras": []
   }
 ]
