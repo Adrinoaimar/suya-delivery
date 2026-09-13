@@ -100,7 +100,7 @@ producción.
 - La auditoría visual en navegador detectó y corrigió que el historial GPS desaparecía al faltar la
   última lectura en vivo, y que `Ver mapa completo` cambiaba estado pero seguía limitado al contenedor.
   El historial ahora se conserva y el modo completo ocupa el viewport real.
-- La nueva pasada corrigió dieciséis regresiones: enlace de ayuda del Rider que salía de su ámbito, rastro
+- La nueva pasada corrigió diecisiete regresiones: enlace de ayuda del Rider que salía de su ámbito, rastro
   que podía reiniciarse o crecer sin límite, marcador GPS obsoleto tras desactivar/error y QR/copiado
   frágiles cuando el portapapeles no está disponible; además, enlaces del catálogo con doble `/`,
   coordenadas GPS fuera de rango aceptadas por última lectura/Realtime, navegación móvil del Back
@@ -109,8 +109,13 @@ producción.
   Cliente heredado en builds operativos, guía de navegación que podía retroceder a un giro cruzado,
   historial GPS borrado sin lectura viva, expansión de mapa que no llegaba a pantalla completa,
   disponibilidad del Rider que no se persistía en servidor, historial vivo que una respuesta remota
-  tardía podía reemplazar y cargas de pedidos que una respuesta vieja podía sobrescribir.
-- Evidencia local: 53 suites/220 tests, lint, typecheck, build aislado, escaneo de secretos, diff
+  tardía podía reemplazar, cargas de pedidos que una respuesta vieja podía sobrescribir y controles
+  nativos de zoom que se superponían a la guía móvil.
+- La reauditoría también blindó contra respuestas atrasadas las cargas repetibles de Catálogo, Mesas y QR,
+  Ofertas, Dispositivos de pagos y Cuentas de restaurantes; el staff con cuenta fija ya no dispara una
+  recarga duplicada del catálogo. Leaflet usa botones de zoom redondos y accesibles, dejando libre la
+  tarjeta de guía.
+- Evidencia local: 53 suites/221 tests, lint, typecheck, build aislado, escaneo de secretos, diff
   limpio, smoke responsive y comprobación Playwright del viewport completo. CI final Android `34750371671`
   y workflows asociados: browser `34750371591`, test `34750371653`, simulator `34750371656` y build
   `34750371677`, todos verdes. Android publicó APK Rider y Back Office.

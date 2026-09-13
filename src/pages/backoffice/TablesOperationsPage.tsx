@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Copy,
   ExternalLink,
@@ -33,6 +33,7 @@ export default function TablesOperationsPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const loadRequestRef = useRef(0);
   const activeRestaurantId = isPlatformAdmin
     ? restaurantId
     : restaurantIds.length === 1
@@ -47,6 +48,7 @@ export default function TablesOperationsPage() {
   );
 
   const load = useCallback(async () => {
+    const requestId = ++loadRequestRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -56,6 +58,7 @@ export default function TablesOperationsPage() {
       );
       const scopedIds = isPlatformAdmin ? visibleStores.map((store) => store.id) : restaurantIds;
       const rows = await tableService.list(scopedIds);
+      if (requestId !== loadRequestRef.current) return;
       setStores(visibleStores);
       setTables(rows);
       if (isPlatformAdmin)
@@ -66,9 +69,10 @@ export default function TablesOperationsPage() {
         );
       else setRestaurantId(restaurantIds.length === 1 ? restaurantIds[0] : '');
     } catch (cause) {
+      if (requestId !== loadRequestRef.current) return;
       setError(cause instanceof Error ? cause.message : 'No pudimos cargar las mesas.');
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestRef.current) setLoading(false);
     }
   }, [isPlatformAdmin, restaurantIds]);
   useEffect(() => {

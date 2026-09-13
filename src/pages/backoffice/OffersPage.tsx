@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CalendarClock, Plus, RefreshCw, Tag, ToggleLeft } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
@@ -52,8 +52,10 @@ export default function OffersPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loadRequestRef = useRef(0);
 
   const load = useCallback(async () => {
+    const requestId = ++loadRequestRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -61,6 +63,7 @@ export default function OffersPage() {
         offerService.listManageable(),
         storeService.listStores(),
       ]);
+      if (requestId !== loadRequestRef.current) return;
       setOffers(rows);
       setStores(allStores.filter((store) => isPlatformAdmin || restaurantIds.includes(store.id)));
       setForm((current) => ({
@@ -68,9 +71,10 @@ export default function OffersPage() {
         restaurantId: current.restaurantId || restaurantIds[0] || '',
       }));
     } catch (cause) {
+      if (requestId !== loadRequestRef.current) return;
       setError(cause instanceof Error ? cause.message : 'No se pudieron cargar las ofertas.');
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestRef.current) setLoading(false);
     }
   }, [isPlatformAdmin, restaurantIds]);
 

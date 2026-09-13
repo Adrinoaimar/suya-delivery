@@ -149,6 +149,42 @@ describe('operaciones con alcance de cuenta de restaurante', () => {
     );
   });
 
+  it('descarta una respuesta de catálogo que pertenece a una cuenta anterior', async () => {
+    let releaseFirstLoad: (value: Store[]) => void = () => undefined;
+    const firstLoad = new Promise<Store[]>((resolve) => {
+      releaseFirstLoad = resolve;
+    });
+    const nextRestaurant = { ...restaurant, id: 'restaurant-2', name: 'Andá Paya' };
+    const nextProduct = { ...product, id: 'product-2', storeId: nextRestaurant.id, name: 'Ceviche' };
+    const nextIdentity = { ...identity, restaurantIds: [nextRestaurant.id] };
+
+    mocks.listStores.mockReset();
+    mocks.listStores.mockImplementationOnce(() => firstLoad).mockResolvedValue([nextRestaurant]);
+    mocks.listProducts.mockImplementation((storeId: string) =>
+      Promise.resolve([storeId === restaurant.id ? product : nextProduct]),
+    );
+    mocks.getMenuSettings.mockImplementation((storeId: string) =>
+      Promise.resolve({
+        restaurantId: storeId,
+        slug: storeId === restaurant.id ? 'donde-joel-menu' : 'anda-paya-menu',
+        published: true,
+        logoUrl: null,
+        heroImageUrl: null,
+        primaryColor: '#0647A9',
+        accentColor: '#FF7A00',
+        fontFamily: 'Inter' as const,
+      }),
+    );
+
+    render(<CatalogPage />);
+    useAuthStore.setState({ identity: nextIdentity });
+
+    expect(await screen.findByText('Ceviche')).toBeInTheDocument();
+    releaseFirstLoad([restaurant]);
+    await waitFor(() => expect(screen.queryByText('Arroz con mariscos')).not.toBeInTheDocument());
+    expect(screen.getByText('Andá Paya')).toBeInTheDocument();
+  });
+
   it('invita un repartidor dentro del restaurante fijado', async () => {
     const rider: RestaurantRider = {
       id: 'rider-1',

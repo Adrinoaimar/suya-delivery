@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ExternalLink, ImagePlus, RefreshCw, Save, Utensils } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card } from '@/components/common/Card';
@@ -38,6 +38,7 @@ export default function CatalogPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const loadRequestRef = useRef(0);
   const activeRestaurantId = isPlatformAdmin
     ? selectedRestaurantId
     : restaurantIds.length === 1
@@ -52,6 +53,7 @@ export default function CatalogPage() {
     setSettings((current) => ({ ...current, [id]: { ...current[id], ...patch } }));
 
   const load = useCallback(async () => {
+    const requestId = ++loadRequestRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -81,14 +83,16 @@ export default function CatalogPage() {
           }),
         ),
       ]);
+      if (requestId !== loadRequestRef.current) return;
       setStores(visible);
       setProducts(rows.flat());
       setSettings(Object.fromEntries(menuRows));
-      setSelectedRestaurantId(nextRestaurantId);
+      if (isPlatformAdmin) setSelectedRestaurantId(nextRestaurantId);
     } catch (cause) {
+      if (requestId !== loadRequestRef.current) return;
       setError(cause instanceof Error ? cause.message : 'No se pudo cargar el catálogo.');
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestRef.current) setLoading(false);
     }
   }, [isPlatformAdmin, restaurantIds, selectedRestaurantId]);
 

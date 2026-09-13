@@ -19,6 +19,10 @@ describe('seguimiento visual del mapa', () => {
     expect(map).toContain('if (historicalTrail.length === 0)');
     expect(map).toContain("color: '#8CC63F'");
     expect(map).toContain('LocateFixed');
+    expect(map).toContain('zoomControl: false');
+    expect(map).toContain('Acercar mapa');
+    expect(map).toContain('Alejar mapa');
+    expect(map).toContain('right-[7.25rem]');
     expect(map).toContain('Recorrido real');
     expect(map).toContain('fetchDrivingRoute');
     expect(map).toContain('Ruta alternativa');

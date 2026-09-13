@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Check, Copy, Eye, KeyRound, RefreshCw, Smartphone, WalletCards } from 'lucide-react';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
@@ -55,6 +55,7 @@ export default function WalletsOperationsPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loadRequestRef = useRef(0);
   const activeRestaurantId = isPlatformAdmin
     ? restaurantId
     : restaurantIds.length === 1
@@ -62,6 +63,7 @@ export default function WalletsOperationsPage() {
       : '';
 
   const load = useCallback(async () => {
+    const requestId = ++loadRequestRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -74,6 +76,7 @@ export default function WalletsOperationsPage() {
         walletObserverService.listDevices(scopedRestaurantIds),
         walletObserverService.listObservations(scopedRestaurantIds),
       ]);
+      if (requestId !== loadRequestRef.current) return;
       setStores(visibleStores);
       setDevices(nextDevices);
       setObservations(nextObservations);
@@ -87,9 +90,10 @@ export default function WalletsOperationsPage() {
         setRestaurantId(restaurantIds.length === 1 ? restaurantIds[0] : '');
       }
     } catch (cause) {
+      if (requestId !== loadRequestRef.current) return;
       setError(cause instanceof Error ? cause.message : 'No pudimos cargar las billeteras.');
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestRef.current) setLoading(false);
     }
   }, [isPlatformAdmin, restaurantIds]);
 

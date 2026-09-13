@@ -10,8 +10,10 @@ import {
   CornerUpRight,
   LocateFixed,
   Maximize2,
+  Minus,
   Minimize2,
   MapPin,
+  Plus,
   RotateCcw,
   Store,
 } from 'lucide-react';
@@ -85,7 +87,9 @@ export default function LeafletMap({
     if (!containerRef.current || mapRef.current) return undefined;
 
     const map = L.map(containerRef.current, {
-      zoomControl: interactive,
+      // Los controles nativos cuadrados chocan con la tarjeta de guía en móvil.
+      // La interfaz renderiza botones redondeados accesibles más abajo.
+      zoomControl: false,
       dragging: interactive,
       scrollWheelZoom: false,
       attributionControl: true,
@@ -463,39 +467,61 @@ export default function LeafletMap({
         className="h-full w-full"
       />
       {interactive && (
-        <div className="absolute right-3 top-[calc(0.75rem+env(safe-area-inset-top))] z-[500] flex gap-2">
-          {points.length > 1 && (
+        <div className="absolute right-3 top-[calc(0.75rem+env(safe-area-inset-top))] z-[500] flex flex-col items-end gap-2">
+          <div className="flex gap-2">
+            {points.length > 1 && (
+              <button
+                type="button"
+                onClick={recenterRoute}
+                className="press flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-[#0E6B44] shadow-card ring-1 ring-black/10 transition hover:bg-suya-ivory focus:outline-none focus:ring-2 focus:ring-[#0E6B44]"
+                aria-label="Centrar mapa en la ruta"
+                title="Centrar mapa en la ruta"
+              >
+                <LocateFixed className="h-5 w-5" aria-hidden="true" />
+              </button>
+            )}
             <button
               type="button"
-              onClick={recenterRoute}
+              onClick={() => setMapExpanded((value) => !value)}
               className="press flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-[#0E6B44] shadow-card ring-1 ring-black/10 transition hover:bg-suya-ivory focus:outline-none focus:ring-2 focus:ring-[#0E6B44]"
-              aria-label="Centrar mapa en la ruta"
-              title="Centrar mapa en la ruta"
+              aria-label={mapExpanded ? 'Salir del mapa completo' : 'Ver mapa completo'}
+              aria-pressed={mapExpanded}
+              title={mapExpanded ? 'Salir del mapa completo' : 'Ver mapa completo'}
             >
-              <LocateFixed className="h-5 w-5" aria-hidden="true" />
+              {mapExpanded ? (
+                <Minimize2 className="h-5 w-5" aria-hidden="true" />
+              ) : (
+                <Maximize2 className="h-5 w-5" aria-hidden="true" />
+              )}
             </button>
-          )}
-          <button
-            type="button"
-            onClick={() => setMapExpanded((value) => !value)}
-            className="press flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-[#0E6B44] shadow-card ring-1 ring-black/10 transition hover:bg-suya-ivory focus:outline-none focus:ring-2 focus:ring-[#0E6B44]"
-            aria-label={mapExpanded ? 'Salir del mapa completo' : 'Ver mapa completo'}
-            aria-pressed={mapExpanded}
-            title={mapExpanded ? 'Salir del mapa completo' : 'Ver mapa completo'}
-          >
-            {mapExpanded ? (
-              <Minimize2 className="h-5 w-5" aria-hidden="true" />
-            ) : (
-              <Maximize2 className="h-5 w-5" aria-hidden="true" />
-            )}
-          </button>
+          </div>
+          <div className="flex flex-col gap-1 rounded-full bg-white/95 p-1 shadow-card ring-1 ring-black/10">
+            <button
+              type="button"
+              onClick={() => mapRef.current?.zoomIn()}
+              className="press flex h-9 w-9 items-center justify-center rounded-full text-[#0E6B44] transition hover:bg-suya-ivory focus:outline-none focus:ring-2 focus:ring-[#0E6B44]"
+              aria-label="Acercar mapa"
+              title="Acercar mapa"
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              onClick={() => mapRef.current?.zoomOut()}
+              className="press flex h-9 w-9 items-center justify-center rounded-full text-[#0E6B44] transition hover:bg-suya-ivory focus:outline-none focus:ring-2 focus:ring-[#0E6B44]"
+              aria-label="Alejar mapa"
+              title="Alejar mapa"
+            >
+              <Minus className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
         </div>
       )}
       {navigation && (
         <div
           role="status"
           aria-live="polite"
-          className="absolute left-3 top-[calc(0.75rem+env(safe-area-inset-top))] z-[500] max-w-[min(82%,21rem)] rounded-2xl bg-white/95 px-3.5 py-3 shadow-card ring-1 ring-black/10 backdrop-blur-sm"
+          className="absolute left-3 right-[7.25rem] top-[calc(0.75rem+env(safe-area-inset-top))] z-[500] max-w-[21rem] rounded-2xl bg-white/95 px-3.5 py-3 shadow-card ring-1 ring-black/10 backdrop-blur-sm"
         >
           {rider && nextInstruction && routeStatus !== 'error' ? (
             <div className="flex items-center gap-3">
