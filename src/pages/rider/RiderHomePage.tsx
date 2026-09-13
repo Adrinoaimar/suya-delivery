@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Bike, Navigation, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Toggle } from '@/components/common/Toggle';
@@ -18,6 +18,9 @@ export default function RiderHomePage() {
   const active = selectActiveOrder(orders);
   const riderName = useAuthStore((state) => state.identity?.displayName ?? 'Repartidor');
   const reading = useTrackingStore((state) => state.reading);
+  const [availabilityBusy, setAvailabilityBusy] = useState(false);
+  const availabilityRequestRef = useRef(0);
+  const availabilityBusyRef = useRef(false);
   const mapPoints = useMemo(
     () =>
       [active?.storePosition, active?.deliveryPosition].filter(
@@ -40,11 +43,50 @@ export default function RiderHomePage() {
   const guidingToDelivery = Boolean(active && ['picked_up', 'on_the_way'].includes(active.status));
 
   useEffect(() => {
+    const requestId = ++availabilityRequestRef.current;
+    let active = true;
     void riderOperationsService
       .getAvailability()
-      .then((status) => setAvailable(status === 'available'))
+      .then((status) => {
+        if (active && requestId === availabilityRequestRef.current) {
+          setAvailable(status === 'available');
+        }
+      })
       .catch(() => undefined);
+    return () => {
+      active = false;
+    };
   }, [setAvailable]);
+
+  function changeAvailability(value: boolean): void {
+    if (availabilityBusyRef.current) return;
+    availabilityBusyRef.current = true;
+    const requestId = ++availabilityRequestRef.current;
+    setAvailabilityBusy(true);
+    void riderOperationsService
+      .setAvailability(value)
+      .then((nextStatus) => {
+        if (requestId !== availabilityRequestRef.current) return;
+        const nextAvailable = nextStatus === 'available';
+        setAvailable(nextAvailable);
+        notificationService.notify(
+          nextAvailable ? 'Ahora estás disponible' : 'Ya no recibirás pedidos',
+          nextAvailable ? 'success' : 'info',
+        );
+      })
+      .catch((error: unknown) => {
+        if (requestId !== availabilityRequestRef.current) return;
+        notificationService.notify(
+          error instanceof Error ? error.message : 'No pudimos cambiar tu disponibilidad.',
+          'danger',
+        );
+      })
+      .finally(() => {
+        if (requestId !== availabilityRequestRef.current) return;
+        availabilityBusyRef.current = false;
+        setAvailabilityBusy(false);
+      });
+  }
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-5 lg:px-8 lg:py-8">
@@ -94,31 +136,17 @@ export default function RiderHomePage() {
         <Toggle
           label={available ? 'Disponible' : 'No disponible'}
           description={
-            available
+            availabilityBusy
+              ? 'Actualizando tu disponibilidad…'
+              : available
               ? 'Estás recibiendo pedidos en Sullana. Tu ubicación permanece activa mientras dure el turno.'
               : 'Actívalo para recibir pedidos cercanos. Suya necesita tu ubicación durante toda la conexión.'
           }
           checked={available}
+          disabled={availabilityBusy}
           tone="sun"
           className="[&_span]:text-white"
-          onChange={(value) => {
-            void riderOperationsService
-              .setAvailability(value)
-              .then((nextStatus) => {
-                const nextAvailable = nextStatus === 'available';
-                setAvailable(nextAvailable);
-                notificationService.notify(
-                  nextAvailable ? 'Ahora estás disponible' : 'Ya no recibirás pedidos',
-                  nextAvailable ? 'success' : 'info',
-                );
-              })
-              .catch((error: unknown) => {
-                notificationService.notify(
-                  error instanceof Error ? error.message : 'No pudimos cambiar tu disponibilidad.',
-                  'danger',
-                );
-              });
-          }}
+          onChange={changeAvailability}
         />
       </section>
 

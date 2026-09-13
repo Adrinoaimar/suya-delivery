@@ -1,5 +1,5 @@
 import { MemoryRouter } from 'react-router-dom';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MapViewProps } from '@/components/map/types';
 import RiderHomePage from '@/pages/rider/RiderHomePage';
@@ -7,6 +7,7 @@ import RiderHomePage from '@/pages/rider/RiderHomePage';
 const mocks = vi.hoisted(() => ({
   getAvailability: vi.fn(),
   setAvailability: vi.fn(),
+  setAvailable: vi.fn(),
   notify: vi.fn(),
 }));
 
@@ -40,7 +41,7 @@ vi.mock('@/store/orderStore', () => ({
 
 vi.mock('@/store/riderStore', () => ({
   useRiderStore: (selector: (state: unknown) => unknown) =>
-    selector({ available: true, setAvailable: vi.fn() }),
+    selector({ available: true, setAvailable: mocks.setAvailable }),
 }));
 
 vi.mock('@/store/trackingStore', () => ({
@@ -67,5 +68,33 @@ describe('inicio del rider', () => {
     expect(screen.getByText('Activa el GPS para ubicarte')).toBeInTheDocument();
     expect(screen.getByText(/No tienes un viaje asignado\./)).toBeInTheDocument();
     expect(mocks.getAvailability).toHaveBeenCalled();
+  });
+
+  it('bloquea toques duplicados y no deja que una carga inicial atrasada revierta el cambio', async () => {
+    let releaseInitial: (status: string) => void = () => undefined;
+    let releaseChange: (status: string) => void = () => undefined;
+    mocks.getAvailability.mockImplementation(
+      () => new Promise<string>((resolve) => { releaseInitial = resolve; }),
+    );
+    mocks.setAvailability.mockImplementation(
+      () => new Promise<string>((resolve) => { releaseChange = resolve; }),
+    );
+
+    render(
+      <MemoryRouter>
+        <RiderHomePage />
+      </MemoryRouter>,
+    );
+
+    const toggle = screen.getByRole('switch', { name: 'Disponible' });
+    fireEvent.click(toggle);
+    expect(toggle).toBeDisabled();
+    fireEvent.click(toggle);
+    expect(mocks.setAvailability).toHaveBeenCalledTimes(1);
+
+    releaseInitial('offline');
+    releaseChange('available');
+    await waitFor(() => expect(toggle).not.toBeDisabled());
+    expect(mocks.setAvailable).toHaveBeenLastCalledWith(true);
   });
 });
