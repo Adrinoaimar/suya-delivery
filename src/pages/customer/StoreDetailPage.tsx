@@ -199,7 +199,7 @@ export default function StoreDetailPage() {
           className="absolute inset-0 bg-gradient-to-t from-suya-carbon/70 via-suya-carbon/10 to-transparent"
         />
         {store.image && storeLogo && (
-          <span className="absolute bottom-4 left-4 z-[1] flex h-16 w-24 items-center justify-center overflow-hidden rounded-2xl bg-transparent p-0 drop-shadow-[0_2px_8px_rgba(0,0,0,.45)] sm:bottom-5 sm:left-6 sm:h-20 sm:w-32">
+          <span className="absolute bottom-4 left-4 z-[1] flex h-20 w-36 items-center justify-center overflow-hidden bg-transparent p-0 drop-shadow-[0_2px_8px_rgba(0,0,0,.45)] sm:bottom-5 sm:left-6 sm:h-24 sm:w-44">
             <img
               src={storeLogo}
               alt={`Logo de ${store.name}`}
@@ -236,31 +236,31 @@ export default function StoreDetailPage() {
           )}
         >
           <div className="flex items-start gap-3">
-            <div className="h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-suya-mist bg-white sm:h-24 sm:w-24">
+            <div className="h-20 w-[6.5rem] shrink-0 overflow-hidden bg-transparent sm:h-24 sm:w-36">
               <Thumb
                 name={store.name}
                 src={storeLogo}
                 variant="store"
                 fit={store.logo ? 'contain' : 'cover'}
-                rounded="rounded-xl"
-                className={store.logo ? '!p-1' : undefined}
+                rounded="rounded-none"
+                className={store.logo ? '!p-0' : undefined}
               />
             </div>
             <div className="min-w-0 flex-1">
               <h1 className="font-display text-xl font-bold leading-tight">{store.name}</h1>
               <p className="mt-0.5 text-sm text-[#6B7076]">{store.tags.join(' · ')}</p>
-            </div>
-            <div className="flex shrink-0 flex-col items-end gap-1">
-              <Badge tone={open ? 'lime' : 'neutral'}>
-                {open
-                  ? 'Abierto'
-                  : comingSoon
-                    ? 'Próximamente'
-                    : informationalOnly
-                      ? 'Carta informativa'
-                      : 'Cerrado'}
-              </Badge>
-              {store.isBeta && <Badge tone="green">Beta</Badge>}
+              <div className="mt-2 flex flex-wrap gap-1">
+                <Badge tone={open ? 'lime' : 'neutral'}>
+                  {open
+                    ? 'Abierto'
+                    : comingSoon
+                      ? 'Próximamente'
+                      : informationalOnly
+                        ? 'Carta informativa'
+                        : 'Cerrado'}
+                </Badge>
+                {store.isBeta && <Badge tone="green">Beta</Badge>}
+              </div>
             </div>
           </div>
 

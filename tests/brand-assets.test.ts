@@ -102,7 +102,8 @@ describe('activos de marca de restaurantes', () => {
   it('prioriza el logo sobre la placa blanca y lo hace legible en la ficha', () => {
     const detail = readFileSync(root('src/pages/customer/StoreDetailPage.tsx'), 'utf8');
     expect(detail).toContain('bg-transparent p-0 drop-shadow-');
-    expect(detail).toContain("className={store.logo ? '!p-1' : undefined}");
+    expect(detail).toContain('h-20 w-[6.5rem] shrink-0 overflow-hidden bg-transparent');
+    expect(detail).toContain("className={store.logo ? '!p-0' : undefined}");
   });
 
   it('documenta la procedencia y el tratamiento de los logos refinados', () => {
