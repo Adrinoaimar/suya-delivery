@@ -135,7 +135,7 @@
     "isRealBrand": true,
     "acceptingOrders": true,
     "dataNote": "Carta y precios confirmados por el negocio. Delivery en Sullana; tarifa configurable desde backoffice. Ficha activa por autorización del negocio.",
-    "promoLabel": null,
+    "promoLabel": "Primer cuarto S/ 20 + segundo a S/ 1",
     "schedule": {
       "opens": "00:00",
       "closes": "23:59"
@@ -177,7 +177,7 @@
     "reviews": 86,
     "etaMin": 25,
     "etaMax": 40,
-    "deliveryFee": 4.5,
+    "deliveryFee": 0,
     "minOrder": 15,
     "distanceKm": 1.6,
     "isLocal": true,
@@ -185,7 +185,7 @@
     "isRealBrand": true,
     "isBeta": true,
     "dataNote": "Carta y logotipo entregados por el negocio y autorizados para publicación. Precios y datos operativos quedan sujetos a conciliación comercial.",
-    "promoLabel": "Nuevo en Suya",
+    "promoLabel": "Delivery gratis por lanzamiento",
     "schedule": {
       "opens": "10:00",
       "closes": "21:00"
@@ -216,7 +216,7 @@
     "reviews": 86,
     "etaMin": 25,
     "etaMax": 40,
-    "deliveryFee": 4.5,
+    "deliveryFee": 0,
     "minOrder": 15,
     "distanceKm": 1.6,
     "isLocal": true,
@@ -224,7 +224,7 @@
     "isRealBrand": true,
     "isBeta": true,
     "dataNote": "Ficha separada de Andá Paya Cevichería. Carta marina heredada de la marca; precios y datos operativos quedan sujetos a conciliación comercial.",
-    "promoLabel": null,
+    "promoLabel": "Delivery gratis por lanzamiento",
     "schedule": {
       "opens": "10:00",
       "closes": "21:00"

@@ -65,24 +65,24 @@ insert into public.products (
   id, restaurant_id, section, name, description, price, image_url, image_is_stock, popular, extras, active, sort_order
 )
 values
-  ('30000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','Marino','Chicharrón de pescado','',20,'/images/stores/anda-paya/chicharron-pescado.webp',true,false,'[{"id":"grande","label":"Porción grande","price":15}]',true,10),
-  ('30000000-0000-4000-8000-000000000002','20000000-0000-4000-8000-000000000001','Marino','Sudado de cabrilla','',30,'/images/stores/anda-paya/sudado-pescado.webp',true,false,'[]',true,20),
-  ('30000000-0000-4000-8000-000000000003','20000000-0000-4000-8000-000000000001','Marino','Parihuela','',40,'/images/stores/anda-paya/parihuela.webp',true,false,'[]',true,30),
-  ('30000000-0000-4000-8000-000000000004','20000000-0000-4000-8000-000000000001','Marino','Chupe de cangrejo','',35,'/images/stores/anda-paya/chupe-cangrejo.webp',true,false,'[]',true,40),
+  ('30000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','Marino','Chicharrón de pescado','',20,'/images/generated/anda-paya/ap-001-chicharron-de-pescado.webp',true,false,'[{"id":"grande","label":"Porción grande","price":15}]',true,10),
+  ('30000000-0000-4000-8000-000000000002','20000000-0000-4000-8000-000000000001','Marino','Sudado de cabrilla','',30,'/images/generated/anda-paya/ap-002-sudado-de-cabrilla.webp',true,false,'[]',true,20),
+  ('30000000-0000-4000-8000-000000000003','20000000-0000-4000-8000-000000000001','Marino','Parihuela','',40,'/images/generated/anda-paya/ap-003-parihuela.webp',true,false,'[]',true,30),
+  ('30000000-0000-4000-8000-000000000004','20000000-0000-4000-8000-000000000001','Marino','Chupe de cangrejo','',35,'/images/generated/anda-paya/ap-004-chupe-de-cangrejo.webp',true,false,'[]',true,40),
   ('30000000-0000-4000-8000-000000000005','20000000-0000-4000-8000-000000000001','Marino','Chicharrón mixto','',35,'/images/stores/anda-paya/chicharron-mixto.webp',true,false,'[]',true,50),
   ('30000000-0000-4000-8000-000000000006','20000000-0000-4000-8000-000000000001','Marino','Jalea de cabrilla','',30,'/images/stores/anda-paya/jalea-mixta.webp',true,false,'[]',true,60),
   ('30000000-0000-4000-8000-000000000007','20000000-0000-4000-8000-000000000001','Marino','Cabrilla a lo macho','',40,'/images/stores/anda-paya/pescado-a-lo-macho.webp',true,false,'[]',true,70),
-  ('30000000-0000-4000-8000-000000000008','20000000-0000-4000-8000-000000000001','Marino','Cabrilla al ajo','',30,null,false,false,'[]',true,80),
+  ('30000000-0000-4000-8000-000000000008','20000000-0000-4000-8000-000000000001','Marino','Cabrilla al ajo','',30,'/images/generated/anda-paya/ap-008-cabrilla-al-ajo.webp',true,false,'[]',true,80),
   ('30000000-0000-4000-8000-000000000009','20000000-0000-4000-8000-000000000001','Ceviche','Ceviche de filete del día','',20,'/images/stores/anda-paya/ceviche-peruano.webp',true,true,'[{"id":"grande","label":"Porción grande","price":15}]',true,90),
   ('30000000-0000-4000-8000-000000000010','20000000-0000-4000-8000-000000000001','Ceviche','Ceviche de caballa','',20,'/images/stores/anda-paya/ceviche-peruano.webp',true,false,'[{"id":"grande","label":"Porción grande","price":15}]',true,100),
   ('30000000-0000-4000-8000-000000000011','20000000-0000-4000-8000-000000000001','Ceviche','Ceviche de filete con caballa','',25,'/images/stores/anda-paya/ceviche-peruano.webp',true,false,'[{"id":"grande","label":"Porción grande","price":10}]',true,110),
   ('30000000-0000-4000-8000-000000000012','20000000-0000-4000-8000-000000000001','Ceviche','Ceviche de filete con mariscos','',25,'/images/stores/anda-paya/ceviche-mixto.webp',true,false,'[{"id":"grande","label":"Porción grande","price":10}]',true,120),
   ('30000000-0000-4000-8000-000000000013','20000000-0000-4000-8000-000000000001','Ceviche','Causa acevichada','',18,'/images/stores/anda-paya/causa-limena.webp',true,false,'[]',true,130),
-  ('30000000-0000-4000-8000-000000000014','20000000-0000-4000-8000-000000000001','Ceviche','Canastas acevichadas','',20,null,false,false,'[]',true,140),
+  ('30000000-0000-4000-8000-000000000014','20000000-0000-4000-8000-000000000001','Ceviche','Canastas acevichadas','',20,'/images/generated/anda-paya/ap-014-canastas-acevichadas.webp',true,false,'[]',true,140),
   ('30000000-0000-4000-8000-000000000015','20000000-0000-4000-8000-000000000001','Arroces','Arroz con mariscos','',20,'/images/stores/anda-paya/arroz-mariscos.webp',true,true,'[{"id":"grande","label":"Porción grande","price":15}]',true,150),
   ('30000000-0000-4000-8000-000000000016','20000000-0000-4000-8000-000000000001','Arroces','Chaufa de pollo','',10,'/images/stores/anda-paya/arroz-chaufa.webp',true,false,'[]',true,160),
   ('30000000-0000-4000-8000-000000000017','20000000-0000-4000-8000-000000000001','Arroces','Chaufa de chancho','',12,'/images/stores/anda-paya/arroz-chaufa.webp',true,false,'[]',true,170),
-  ('30000000-0000-4000-8000-000000000018','20000000-0000-4000-8000-000000000001','Arroces','Chaufa de mariscos','',15,null,false,false,'[]',true,180),
+  ('30000000-0000-4000-8000-000000000018','20000000-0000-4000-8000-000000000001','Arroces','Chaufa de mariscos','',15,'/images/generated/anda-paya/ap-018-chaufa-de-mariscos.webp',true,false,'[]',true,180),
   ('30000000-0000-4000-8000-000000000019','20000000-0000-4000-8000-000000000001','Criollo','Seco de chavelo','',20,'/images/stores/anda-paya/seco-de-chabelo.webp',true,true,'[{"id":"grande","label":"Porción grande","price":15}]',true,190),
   ('30000000-0000-4000-8000-000000000020','20000000-0000-4000-8000-000000000001','Criollo','Majado de yuca','',20,'/images/stores/anda-paya/majado-yuca.webp',true,false,'[{"id":"grande","label":"Porción grande","price":15}]',true,200),
   ('30000000-0000-4000-8000-000000000021','20000000-0000-4000-8000-000000000001','Criollo','Carne aliñada','',20,'/images/stores/anda-paya/carne-parrilla.webp',true,false,'[{"id":"grande","label":"Porción grande","price":15}]',true,210),
@@ -241,3 +241,37 @@ set active = true,
     data_note = case when slug = 'donde-joel' then null else data_note end
 where slug in ('anda-paya', 'anda-paya-cevicheria', 'donde-joel', 'la-waka', 'tio-jhony',
                'kfc', 'inkafarma', 'papa-johns', 'tottus');
+
+-- El seed corre después de las migraciones: reafirma las promociones vigentes.
+update public.restaurants
+set delivery_fee = 0,
+    promo_label = 'Delivery gratis por lanzamiento'
+where slug in ('anda-paya', 'anda-paya-cevicheria');
+
+update public.restaurants
+set promo_label = 'Primer cuarto S/ 20 + segundo a S/ 1'
+where slug = 'donde-joel';
+
+insert into public.products (
+  id, restaurant_id, section, name, description, price, image_url,
+  image_is_stock, popular, extras, active, sort_order
+) values (
+  '24000000-0000-4000-8000-000000000001',
+  '23000000-0000-4000-8000-000000000001',
+  'Promociones',
+  'Promo: 2 cuartos de pollo broaster',
+  'Incluye dos cuartos de pollo broaster. Primer cuarto S/ 20 y segundo S/ 1.',
+  21,
+  '/images/generated/donde-joel/promo-2-cuartos-broaster.webp',
+  true,
+  true,
+  '[]'::jsonb,
+  true,
+  1
+)
+on conflict (id) do update set
+  restaurant_id = excluded.restaurant_id, section = excluded.section,
+  name = excluded.name, description = excluded.description, price = excluded.price,
+  image_url = excluded.image_url, image_is_stock = excluded.image_is_stock,
+  popular = excluded.popular, extras = excluded.extras, active = excluded.active,
+  sort_order = excluded.sort_order;
