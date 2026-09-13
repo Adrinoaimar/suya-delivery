@@ -67,6 +67,8 @@ export default function LeafletMap({
   const destinationLat = destination?.lat;
   const destinationLng = destination?.lng;
   const destinationLabel = destination?.label;
+  const routingRiderLat = navigation ? riderLat : undefined;
+  const routingRiderLng = navigation ? riderLng : undefined;
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return undefined;
@@ -166,7 +168,9 @@ export default function LeafletMap({
     if (!map || !layer) return undefined;
 
     const currentRider =
-      riderLat !== undefined && riderLng !== undefined ? { lat: riderLat, lng: riderLng } : null;
+      routingRiderLat !== undefined && routingRiderLng !== undefined
+        ? { lat: routingRiderLat, lng: routingRiderLng }
+        : null;
     const currentDestination =
       destinationLat !== undefined && destinationLng !== undefined
         ? { lat: destinationLat, lng: destinationLng }
@@ -227,7 +231,7 @@ export default function LeafletMap({
       .finally(() => window.clearTimeout(timeoutId));
 
     return () => controller.abort();
-  }, [destinationLat, destinationLng, navigation, points, riderLat, riderLng]);
+  }, [destinationLat, destinationLng, navigation, points, routingRiderLat, routingRiderLng]);
 
   // Redibuja solo las capas de ruta, no el mapa completo ni sus marcadores.
   useEffect(() => {
@@ -236,7 +240,9 @@ export default function LeafletMap({
     if (!map || !layer) return;
     layer.clearLayers();
     const currentRider =
-      riderLat !== undefined && riderLng !== undefined ? { lat: riderLat, lng: riderLng } : null;
+      routingRiderLat !== undefined && routingRiderLng !== undefined
+        ? { lat: routingRiderLat, lng: routingRiderLng }
+        : null;
     const currentDestination =
       destinationLat !== undefined && destinationLng !== undefined
         ? { lat: destinationLat, lng: destinationLng }
@@ -282,7 +288,7 @@ export default function LeafletMap({
       map.fitBounds(routeBoundsRef.current.pad(0.2), { animate: false });
       hasFittedRouteRef.current = true;
     }
-  }, [destinationLat, destinationLng, navigation, points, riderLat, riderLng, routePlan]);
+  }, [destinationLat, destinationLng, navigation, points, routingRiderLat, routingRiderLng, routePlan]);
 
   useEffect(() => {
     if (
