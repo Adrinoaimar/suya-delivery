@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { Bike, LocateFixed, MapPin, Store } from 'lucide-react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import { distanceKm } from '@/utils/geo';
 import type { MapViewProps } from './types';
 
 /**
@@ -21,6 +25,8 @@ export default function LeafletMap({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const riderMarkerRef = useRef<L.Marker | null>(null);
+  const riderTrailRef = useRef<[number, number][]>([]);
+  const riderTrailLineRef = useRef<L.Polyline | null>(null);
   const routeBoundsRef = useRef<L.LatLngBounds | null>(null);
   const [tileError, setTileError] = useState(false);
 
@@ -78,15 +84,44 @@ export default function LeafletMap({
       map.remove();
       mapRef.current = null;
       riderMarkerRef.current = null;
+      riderTrailRef.current = [];
+      riderTrailLineRef.current = null;
     };
   }, [points, origin, destination, interactive]);
 
-  // El marcador del repartidor se mueve y el mapa lo sigue, sin recentrar de golpe.
+  // El marcador del repartidor se mueve y deja un rastro visible, sin recentrar de golpe.
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !rider) return;
+    if (!map) return;
+
+    if (!rider) {
+      riderMarkerRef.current?.remove();
+      riderMarkerRef.current = null;
+      riderTrailLineRef.current?.remove();
+      riderTrailLineRef.current = null;
+      riderTrailRef.current = [];
+      return;
+    }
 
     const position: [number, number] = [rider.lat, rider.lng];
+    const lastPosition = riderTrailRef.current.at(-1);
+    if (!lastPosition || distanceKm({ lat: lastPosition[0], lng: lastPosition[1] }, rider) >= 0.004) {
+      riderTrailRef.current = [...riderTrailRef.current, position];
+      if (!riderTrailLineRef.current) {
+        riderTrailLineRef.current = L.polyline(riderTrailRef.current, {
+          color: '#8CC63F',
+          weight: 5,
+          opacity: 0.96,
+          dashArray: '1 10',
+          lineCap: 'round',
+          lineJoin: 'round',
+          interactive: false,
+        }).addTo(map);
+      } else {
+        riderTrailLineRef.current.setLatLngs(riderTrailRef.current);
+      }
+    }
+
     if (!riderMarkerRef.current) {
       riderMarkerRef.current = L.marker(position, { icon: riderIcon(), zIndexOffset: 1000 })
         .addTo(map)
@@ -118,11 +153,18 @@ export default function LeafletMap({
         <button
           type="button"
           onClick={recenterRoute}
-          className="absolute right-3 top-3 z-[500] rounded-full bg-white px-3 py-2 text-xs font-semibold text-[#0E6B44] shadow-md ring-1 ring-black/10 transition hover:bg-suya-ivory focus:outline-none focus:ring-2 focus:ring-[#0E6B44]"
+          className="press absolute right-3 top-3 z-[500] flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-[#0E6B44] shadow-card ring-1 ring-black/10 transition hover:bg-suya-ivory focus:outline-none focus:ring-2 focus:ring-[#0E6B44]"
           aria-label="Centrar mapa en la ruta"
+          title="Centrar mapa en la ruta"
         >
-          Centrar ruta
+          <LocateFixed className="h-5 w-5" aria-hidden="true" />
         </button>
+      )}
+      {rider && (
+        <div className="absolute bottom-3 left-3 z-[500] flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-[11px] font-semibold text-[#0E6B44] shadow-card ring-1 ring-black/10">
+          <span className="h-2 w-5 rounded-full bg-suya-lime" aria-hidden="true" />
+          Recorrido real
+        </div>
       )}
       {tileError && (
         <div role="status" className="absolute inset-x-3 bottom-3 z-[500] rounded-xl bg-white/95 px-3 py-2 text-xs text-[#6B7076] shadow-md ring-1 ring-black/10">
@@ -147,39 +189,23 @@ function divIcon(html: string, size: number): L.DivIcon {
 }
 
 function originIcon(): L.DivIcon {
-  return divIcon(
-    `<svg viewBox="0 0 32 32" width="32" height="32" aria-hidden="true">
-      <circle cx="16" cy="16" r="13" fill="#FFFFFF" stroke="#0E6B44" stroke-width="4"/>
-      <circle cx="16" cy="16" r="5" fill="#0E6B44"/>
-    </svg>`,
-    32,
-  );
+  return markerIcon(Store, 'suya-map-pin--origin', 38, 'Restaurante');
 }
 
 function destinationIcon(): L.DivIcon {
-  return divIcon(
-    `<svg viewBox="0 0 34 44" width="34" height="44" aria-hidden="true">
-      <path d="M17 2c-7.7 0-14 6.3-14 14 0 10 14 26 14 26s14-16 14-26c0-7.7-6.3-14-14-14z"
-        fill="#0E6B44"/>
-      <circle cx="17" cy="16" r="6" fill="#FFC107"/>
-    </svg>`,
-    44,
-  );
+  return markerIcon(MapPin, 'suya-map-pin--destination', 42, 'Punto de entrega');
 }
 
 function riderIcon(): L.DivIcon {
+  return markerIcon(Bike, 'suya-map-pin--rider', 46, 'Repartidor');
+}
+
+function markerIcon(Icon: LucideIcon, variant: string, size: number, label: string): L.DivIcon {
+  const iconMarkup = renderToStaticMarkup(
+    <Icon size={18} strokeWidth={2.4} aria-hidden="true" focusable="false" />,
+  );
   return divIcon(
-    `<svg viewBox="0 0 44 44" width="44" height="44" aria-hidden="true">
-      <circle cx="22" cy="22" r="20" fill="#8CC63F" opacity="0.32"/>
-      <circle cx="22" cy="22" r="13" fill="#FFFFFF" stroke="#0E6B44" stroke-width="3"/>
-      <g transform="translate(11 13) scale(0.16)" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M34 100 L68 80 L102 80 L126 100" stroke="#0E6B44" stroke-width="26"/>
-        <circle cx="34" cy="100" r="18" stroke="#1F2023" stroke-width="20"/>
-        <circle cx="126" cy="100" r="18" stroke="#1F2023" stroke-width="20"/>
-        <path d="M78 74 L94 48" stroke="#0E6B44" stroke-width="30"/>
-        <circle cx="103" cy="38" r="14" fill="#0A5335" stroke="none"/>
-      </g>
-    </svg>`,
-    44,
+    `<span class="suya-map-pin ${variant}" role="img" aria-label="${escapeHtml(label)}">${iconMarkup}</span>`,
+    size,
   );
 }

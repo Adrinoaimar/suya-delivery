@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, MapPin, XCircle } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
@@ -34,6 +34,28 @@ export default function OrderTrackPage() {
 
   const progress = orderRouteProgress(order);
   useOrderStatusNotifier(order);
+
+  // Las referencias estables evitan que Leaflet reconstruya el mapa cada vez que
+  // llega una nueva posición del repartidor.
+  const mapReady = order?.storePosition != null || order?.deliveryPosition != null;
+  const mapPoints = useMemo(
+    () =>
+      [order?.storePosition, order?.deliveryPosition].filter(
+        (point): point is LatLng => point != null,
+      ),
+    [order?.storePosition, order?.deliveryPosition],
+  );
+  const mapOrigin = useMemo(
+    () => (order?.storePosition ? { ...order.storePosition, label: order.storeName } : undefined),
+    [order?.storePosition, order?.storeName],
+  );
+  const mapDestination = useMemo(
+    () =>
+      order?.deliveryPosition
+        ? { ...order.deliveryPosition, label: 'Punto de entrega' }
+        : undefined,
+    [order?.deliveryPosition],
+  );
 
   useEffect(() => {
     if (!order?.riderId || !['picked_up', 'on_the_way'].includes(order.status)) {
@@ -94,10 +116,6 @@ export default function OrderTrackPage() {
     );
   }
 
-  const mapReady = order.storePosition !== null || order.deliveryPosition !== null;
-  const mapPoints = [order.storePosition, order.deliveryPosition].filter(
-    (point): point is NonNullable<typeof point> => point !== null,
-  );
   const delivered = order.status === 'delivered';
   const cancelled = order.status === 'cancelled';
   const etaMinutes = Math.max(1, Math.round(order.etaMinutes * (1 - progress)));
@@ -176,16 +194,8 @@ export default function OrderTrackPage() {
             {mapReady ? (
               <MapProvider
                 points={mapPoints}
-                origin={
-                  order.storePosition
-                    ? { ...order.storePosition, label: order.storeName }
-                    : undefined
-                }
-                destination={
-                  order.deliveryPosition
-                    ? { ...order.deliveryPosition, label: 'Punto de entrega' }
-                    : undefined
-                }
+                origin={mapOrigin}
+                destination={mapDestination}
                 rider={cancelled ? null : riderPosition}
                 label={`Ubicaciones del pedido ${order.code}`}
               />
@@ -242,16 +252,8 @@ export default function OrderTrackPage() {
               {mapReady ? (
                 <MapProvider
                   points={mapPoints}
-                  origin={
-                    order.storePosition
-                      ? { ...order.storePosition, label: order.storeName }
-                      : undefined
-                  }
-                  destination={
-                    order.deliveryPosition
-                      ? { ...order.deliveryPosition, label: 'Punto de entrega' }
-                      : undefined
-                  }
+                  origin={mapOrigin}
+                  destination={mapDestination}
                   rider={cancelled ? null : riderPosition}
                   label={`Ubicaciones del pedido ${order.code}`}
                 />

@@ -51,6 +51,7 @@ for (const name of requested) {
     SUYA_MOBILE_APP_ID: target.appId,
     SUYA_MOBILE_APP_NAME: target.appName,
     SUYA_MOBILE_WEB_DIR: `dist/${target.build}`,
+    VITE_MOBILE_ROLE: target.build,
     VITE_NATIVE_OAUTH_SCHEME: target.oauthScheme,
   };
 
