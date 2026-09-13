@@ -113,7 +113,10 @@ function reset() {
 }
 
 beforeEach(reset);
-afterEach(() => useAuthStore.setState({ status: 'idle', identity: null, error: null }));
+afterEach(() => {
+  vi.unstubAllEnvs();
+  useAuthStore.setState({ status: 'idle', identity: null, error: null });
+});
 
 describe('operaciones con alcance de cuenta de restaurante', () => {
   it('fija el restaurante de la cuenta y deja solo el número de mesa', async () => {
@@ -134,6 +137,16 @@ describe('operaciones con alcance de cuenta de restaurante', () => {
     expect(screen.getByText(/1 platos disponibles · Publicado/)).toBeInTheDocument();
     expect(mocks.listProducts).toHaveBeenCalledWith(restaurant.id);
     expect(mocks.getMenuSettings).toHaveBeenCalledWith(restaurant.id);
+  });
+
+  it('normaliza el origen del enlace público del menú', async () => {
+    vi.stubEnv('VITE_CUSTOMER_APP_URL', 'https://suyadelivery.com/');
+    render(<CatalogPage />);
+
+    expect(await screen.findByRole('link', { name: 'Abrir vista pública' })).toHaveAttribute(
+      'href',
+      'https://suyadelivery.com/menu/donde-joel-menu',
+    );
   });
 
   it('invita un repartidor dentro del restaurante fijado', async () => {

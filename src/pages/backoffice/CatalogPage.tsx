@@ -24,6 +24,9 @@ const defaults = (store: Store): MenuSettings => ({
 const normalizeFontFamily = (fontFamily: string): MenuSettings['fontFamily'] =>
   fontFamily.trim().toLowerCase() === 'montserrat' ? 'Montserrat' : 'Inter';
 
+const customerOrigin = () =>
+  (import.meta.env.VITE_CUSTOMER_APP_URL || window.location.origin).replace(/\/+$/, '');
+
 export default function CatalogPage() {
   const identity = useAuthStore((state) => state.identity);
   const restaurantIds = useMemo(() => identity?.restaurantIds ?? [], [identity?.restaurantIds]);
@@ -44,8 +47,7 @@ export default function CatalogPage() {
     () => stores.filter((store) => store.id === activeRestaurantId),
     [activeRestaurantId, stores],
   );
-  const menuUrl = (slug: string) =>
-    `${import.meta.env.VITE_CUSTOMER_APP_URL || window.location.origin}/menu/${slug}`;
+  const menuUrl = (slug: string) => `${customerOrigin()}/menu/${encodeURIComponent(slug)}`;
   const update = (id: string, patch: Partial<MenuSettings>) =>
     setSettings((current) => ({ ...current, [id]: { ...current[id], ...patch } }));
 
