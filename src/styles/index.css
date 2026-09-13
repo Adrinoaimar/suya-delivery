@@ -299,6 +299,14 @@
     box-shadow: 0 8px 24px rgba(12, 49, 32, 0.07);
   }
 
+  /* Los drawers deben ser superficies sólidas: los mapas y su z-index interno
+   * no pueden filtrarse ni competir visualmente con el menú móvil. */
+  .suya-drawer-panel {
+    background: var(--suya-white);
+    border: 1px solid var(--suya-border);
+    box-shadow: 0 8px 24px rgba(12, 49, 32, 0.07);
+  }
+
   .hide-scrollbar {
     scrollbar-width: none;
     -ms-overflow-style: none;

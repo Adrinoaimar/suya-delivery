@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CatalogPage from '@/pages/backoffice/CatalogPage';
+import OffersPage from '@/pages/backoffice/OffersPage';
 import RidersOperationsPage from '@/pages/backoffice/RidersOperationsPage';
 import TablesOperationsPage from '@/pages/backoffice/TablesOperationsPage';
 import { useAuthStore } from '@/store/authStore';
@@ -19,6 +20,9 @@ const mocks = vi.hoisted(() => ({
   listRiders: vi.fn(),
   inviteRider: vi.fn(),
   setRiderActive: vi.fn(),
+  listOffers: vi.fn(),
+  createOffer: vi.fn(),
+  setOfferActive: vi.fn(),
   notify: vi.fn(),
 }));
 
@@ -39,6 +43,11 @@ vi.mock('@/lib/services', async (importOriginal) => ({
     list: mocks.listRiders,
     invite: mocks.inviteRider,
     setActive: mocks.setRiderActive,
+  },
+  offerService: {
+    listManageable: mocks.listOffers,
+    create: mocks.createOffer,
+    setActive: mocks.setOfferActive,
   },
   notificationService: { notify: mocks.notify },
 }));
@@ -110,6 +119,7 @@ function reset() {
   });
   mocks.listTables.mockResolvedValue([]);
   mocks.listRiders.mockResolvedValue([]);
+  mocks.listOffers.mockResolvedValue([]);
 }
 
 beforeEach(reset);
@@ -137,6 +147,18 @@ describe('operaciones con alcance de cuenta de restaurante', () => {
     expect(screen.getByText(/1 platos disponibles · Publicado/)).toBeInTheDocument();
     expect(mocks.listProducts).toHaveBeenCalledWith(restaurant.id);
     expect(mocks.getMenuSettings).toHaveBeenCalledWith(restaurant.id);
+  });
+
+  it('preselecciona el primer restaurante visible para administración', async () => {
+    useAuthStore.setState({
+      status: 'authenticated',
+      identity: { ...identity, access: ['platform_admin'], restaurantIds: [] },
+      error: null,
+    });
+
+    render(<OffersPage />);
+
+    await waitFor(() => expect(screen.getByLabelText('Restaurante')).toHaveValue(restaurant.id));
   });
 
   it('normaliza el origen del enlace público del menú', async () => {

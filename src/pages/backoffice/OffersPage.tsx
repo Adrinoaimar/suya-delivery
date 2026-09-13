@@ -64,11 +64,16 @@ export default function OffersPage() {
         storeService.listStores(),
       ]);
       if (requestId !== loadRequestRef.current) return;
+      const visibleStores = allStores.filter(
+        (store) => isPlatformAdmin || restaurantIds.includes(store.id),
+      );
       setOffers(rows);
-      setStores(allStores.filter((store) => isPlatformAdmin || restaurantIds.includes(store.id)));
+      setStores(visibleStores);
       setForm((current) => ({
         ...current,
-        restaurantId: current.restaurantId || restaurantIds[0] || '',
+        restaurantId: visibleStores.some((store) => store.id === current.restaurantId)
+          ? current.restaurantId
+          : visibleStores[0]?.id ?? '',
       }));
     } catch (cause) {
       if (requestId !== loadRequestRef.current) return;

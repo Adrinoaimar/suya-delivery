@@ -470,7 +470,7 @@ export default function LeafletMap({
   return (
     <div
       className={cn(
-        'h-full w-full',
+        'isolate h-full w-full',
         !mapExpanded && 'relative',
         mapExpanded && 'fixed inset-0 z-[60] bg-suya-carbon',
         className,
