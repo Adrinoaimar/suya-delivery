@@ -157,6 +157,9 @@ if (process.env.SMOKE_BUSINESS === 'true') {
     // Al asignarse un pedido el backend puede marcar al rider como ocupado;
     // ambas etiquetas confirman que la pantalla de disponibilidad cargó.
     await riderPage.getByRole('main').getByText(/^(Disponible|No disponible)$/, { exact: true }).waitFor({ timeout: 20_000 });
+    await riderPage
+      .getByRole('img', { name: 'Mapa de tu ubicación y zona de reparto' })
+      .waitFor({ timeout: 20_000 });
     await riderPage.goto(`${riderOrigin}/rider/current`, { waitUntil: 'networkidle', timeout: 20_000 });
     await riderPage.getByRole('heading', { name: 'Viaje actual' }).waitFor();
     await riderPage.getByRole('button', { name: 'Recogí el pedido' }).click();
