@@ -19,7 +19,8 @@ import { formatPrice } from '@/utils/format';
 import type { Store } from '@/types';
 import type { TableSummary } from '@/lib/services';
 
-const customerOrigin = () => import.meta.env.VITE_CUSTOMER_APP_URL || window.location.origin;
+const customerOrigin = () =>
+  (import.meta.env.VITE_CUSTOMER_APP_URL || window.location.origin).replace(/\/+$/, '');
 
 export default function TablesOperationsPage() {
   const identity = useAuthStore((state) => state.identity);
@@ -134,11 +135,15 @@ export default function TablesOperationsPage() {
     }
   };
 
-  const qrUrl = (table: TableSummary) =>
-    `${customerOrigin()}/table/${table.qrToken}?table=${encodeURIComponent(table.tableNumber)}&restaurant=${encodeURIComponent(table.restaurantId)}`;
+  const qrUrl = (table: TableSummary) => `${customerOrigin()}/table/${encodeURIComponent(table.qrToken)}`;
   const copy = async (table: TableSummary) => {
-    await navigator.clipboard.writeText(qrUrl(table));
-    notificationService.notify('Enlace copiado.', 'success');
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('clipboard unavailable');
+      await navigator.clipboard.writeText(qrUrl(table));
+      notificationService.notify('Enlace copiado.', 'success');
+    } catch {
+      notificationService.notify('No pudimos copiar el enlace; cópialo manualmente.', 'warning');
+    }
   };
 
   if (error) return <ErrorState description={error} onRetry={() => void load()} />;
