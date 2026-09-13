@@ -9,11 +9,15 @@ describe('actualizaciones nativas por rol', () => {
     const liveUpdate = readFileSync(root('src/lib/liveUpdate.ts'), 'utf8');
     const apkBuilder = readFileSync(root('scripts/build-mobile-apks.mjs'), 'utf8');
     const appBuilder = readFileSync(root('scripts/build-apps.mjs'), 'utf8');
+    const androidBuild = readFileSync(root('android/app/build.gradle'), 'utf8');
+    const iosProject = readFileSync(root('ios/App/App.xcodeproj/project.pbxproj'), 'utf8');
 
     expect(liveUpdate).toContain('VITE_MOBILE_ROLE');
     expect(liveUpdate).toContain("mobileRole !== 'customer'");
     expect(apkBuilder).toContain('VITE_MOBILE_ROLE: target.build');
     expect(appBuilder).toContain("const mobileRole = app === 'rider' || app === 'backoffice' ? app : 'customer';");
     expect(appBuilder).toContain("'import.meta.env.VITE_MOBILE_ROLE'");
+    expect(androidBuild).toContain('versionCode 2');
+    expect(iosProject).toContain('CURRENT_PROJECT_VERSION = 2;');
   });
 });

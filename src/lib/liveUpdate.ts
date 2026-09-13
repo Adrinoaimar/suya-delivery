@@ -34,15 +34,15 @@ function isManifest(value: unknown): value is MobileUpdateManifest {
 export async function syncMobileLiveUpdate(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
 
-  // El manifiesto publicado hoy contiene únicamente el bundle de Suya Cliente.
-  // Los roles nativos no deben instalarlo como siguiente bundle: al reiniciar
-  // Rider o Back Office eso los convertiría en la app del cliente.
-  const mobileRole = import.meta.env.VITE_MOBILE_ROLE?.trim() || 'customer';
-  if (mobileRole !== 'customer') return;
-
   try {
     const { LiveUpdate } = await import('@capawesome/capacitor-live-update');
     await LiveUpdate.ready();
+
+    // El manifiesto publicado hoy contiene únicamente el bundle de Suya Cliente.
+    // Los roles nativos no deben instalarlo como siguiente bundle: al reiniciar
+    // Rider o Back Office eso los convertiría en la app del cliente.
+    const mobileRole = import.meta.env.VITE_MOBILE_ROLE?.trim() || 'customer';
+    if (mobileRole !== 'customer') return;
 
     const response = await fetch(`${UPDATE_MANIFEST_URL}?t=${Date.now()}`, {
       cache: 'no-store',

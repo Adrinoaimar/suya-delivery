@@ -11,8 +11,10 @@ android {
         manifestPlaceholders = [suyaAppName: suyaAndroidAppName]
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        // Fuerza el retorno al bundle nativo al actualizar una instalación que
+        // pudiera tener pendiente el OTA incorrecto de Suya Cliente.
+        versionCode 2
+        versionName "1.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
