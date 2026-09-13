@@ -82,22 +82,50 @@ producción.
 
 ## Checkpoint F25: estabilización de mapas y APKs por rol
 
-- La rama `feat/backoffice-restaurant-ops` terminó en `9cda312`; PR #36 está abierto y mergeable.
+- La rama `feat/backoffice-restaurant-ops` terminó en `c7db260`; PR #36 está abierto y mergeable.
 - Leaflet ya no se reconstruye por cada lectura GPS ni redibuja la ruta del Cliente innecesariamente.
   Marcadores, rastro, ruta vial OSRM/OpenStreetMap, alternativas y guía de maniobras conservan estado.
 - El OTA nativo ahora aplica solo cuando `VITE_MOBILE_ROLE` es explícitamente `customer`; builds
   Rider, Back Office y APK unificada (`unified`) rechazan el bundle de Cliente por defecto.
 - Cliente y Rider tienen mapa móvil amplio y control `Ver mapa completo`, con salida por Escape,
   scroll bloqueado y safe area. MapProvider reacciona a cambios de conexión.
-- Evidencia local: 46 suites/204 tests, lint, typecheck, build aislado, escaneo de secretos, diff
-  limpio y smoke responsive en móvil/tablet/escritorio. CI final `34741542040`: browser,
-  browser-e2e, build, debug, simulator y test verdes. Android publicó APK Rider y Back Office.
+- El Inicio de Rider también muestra el mapa de zona, ubicación activa y estado de guía, incluso sin
+  viaje asignado; el viaje activo conserva ruta, rastro y maniobras.
+- El mapa se remonta por identificador de pedido al cambiar de viaje, evitando conservar el centro o
+  la ruta del pedido anterior; las lecturas GPS del mismo viaje no lo reinician.
+- El rastro del mapa usa un arreglo vacío estable, actualiza la polilínea sin recrearla en cada lectura
+  y limita el historial visual a 240 puntos; Seguridad del Rider conserva su ayuda dentro de `/rider`.
+- La guía de navegación avanza de forma monotónica al cruzar una maniobra; ya no puede volver a mostrar
+  un giro anterior cuando la distancia en línea recta vuelve a aumentar.
+- La auditoría visual en navegador detectó y corrigió que el historial GPS desaparecía al faltar la
+  última lectura en vivo, y que `Ver mapa completo` cambiaba estado pero seguía limitado al contenedor.
+  El historial ahora se conserva y el modo completo ocupa el viewport real.
+- La nueva pasada corrigió dieciséis regresiones: enlace de ayuda del Rider que salía de su ámbito, rastro
+  que podía reiniciarse o crecer sin límite, marcador GPS obsoleto tras desactivar/error y QR/copiado
+  frágiles cuando el portapapeles no está disponible; además, enlaces del catálogo con doble `/`,
+  coordenadas GPS fuera de rango aceptadas por última lectura/Realtime, navegación móvil del Back
+  Office con pestañas recortadas, acceso de “Restaurantes” expuesto a cuentas de restaurante,
+  compatibilidad del mapa cuando el WebView no tiene `ResizeObserver`, Service Worker/cache del
+  Cliente heredado en builds operativos, guía de navegación que podía retroceder a un giro cruzado,
+  historial GPS borrado sin lectura viva, expansión de mapa que no llegaba a pantalla completa,
+  disponibilidad del Rider que no se persistía en servidor, historial vivo que una respuesta remota
+  tardía podía reemplazar y cargas de pedidos que una respuesta vieja podía sobrescribir.
+- Evidencia local: 53 suites/220 tests, lint, typecheck, build aislado, escaneo de secretos, diff
+  limpio, smoke responsive y comprobación Playwright del viewport completo. CI final Android `34750371671`
+  y workflows asociados: browser `34750371591`, test `34750371653`, simulator `34750371656` y build
+  `34750371677`, todos verdes. Android publicó APK Rider y Back Office.
 - Producción responde HTTP 200 en los tres dominios y Back Office muestra `Suya Operaciones`; esto
   no prueba que el commit final esté desplegado mientras PR #36 permanezca abierto.
 - Pendiente externo: revisión/fusión autorizada de PR #36, publicación Cloudflare, migración de riders
   en Supabase real y prueba en dispositivos físicos. APKs son debug; firma release sigue pendiente.
-- APK Rider final: `output/apks/Suya-Rider-debug-9cda312.apk`, SHA-256 `599b88105d3a3a40d3336a6a62e85e81b69ab69cced08cc1a83f9ea38690bfed`.
-- APK Back Office final: `output/apks/Suya-Backoffice-debug-9cda312.apk`, SHA-256 `b0bbc3e6bd04c48d3654b2ab4e6adb7dd9bdb491d330331fb92d568e61c1b271`.
+- Las correcciones finales `bde9274`, `c7937a9`, `7d19b3f`, `9b924b5`, `7893880`, `9aaf6ff` y `c7db260` ocultan “Restaurantes” a staff de
+  restaurante, protegen la ruta para `platform_admin`, agregan fallback para WebView sin
+  `ResizeObserver` y limpian el Service Worker/cache del Cliente en builds operativos; los seis
+  checks de PR #36 siguen verdes.
+- Evidencia funcional de roles: el portal operativo publicado muestra `Suya Operaciones`; las APKs
+  contienen títulos `Suya Repartidor` y `Suya Operaciones`.
+- APK Rider final: `output/apks/Suya-Rider-debug-c7db260.apk`, SHA-256 `0a3a9aaf077287a1a3c2b94353c5c3688d18fae6bd885e0dacc1ae3038ed7be3`.
+- APK Back Office final: `output/apks/Suya-Backoffice-debug-c7db260.apk`, SHA-256 `7a6cac3b3543a9b8dd884f954c379562dbc26ad1e2b7cb75e2b70f083b38200f`.
 
 ## Reglas de continuidad
 
