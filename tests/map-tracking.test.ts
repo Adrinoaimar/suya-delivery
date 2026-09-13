@@ -28,6 +28,7 @@ describe('seguimiento visual del mapa', () => {
     expect(map).toContain('routingRiderLng');
     expect(map).toContain('Ver mapa completo');
     expect(map).toContain('Salir del mapa completo');
+    expect(map).toContain("!mapExpanded && 'relative'");
     expect(map).toContain('requestAnimationFrame');
     expect(map).toContain("typeof ResizeObserver === 'function'");
     expect(map).toContain("window.addEventListener('resize', handleResize)");
