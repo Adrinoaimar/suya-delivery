@@ -6,6 +6,7 @@ import { AppShell } from '@/app/AppShell';
 import { AuthBootstrap } from '@/app/AuthBootstrap';
 import { CatalogBootstrap } from '@/app/CatalogBootstrap';
 import { syncMobileLiveUpdate } from '@/lib/liveUpdate';
+import { removeStaleCustomerServiceWorker } from '@/lib/serviceWorker';
 import '@/styles/index.css';
 
 interface MountOptions {
@@ -34,6 +35,15 @@ export function mountApp(Routes: ComponentType, options: MountOptions = {}): voi
   );
 
   void syncMobileLiveUpdate();
+
+  const mobileRole = import.meta.env.VITE_MOBILE_ROLE?.trim();
+  if (
+    import.meta.env.PROD &&
+    !options.registerServiceWorker &&
+    (mobileRole === 'rider' || mobileRole === 'backoffice')
+  ) {
+    removeStaleCustomerServiceWorker();
+  }
 
   if (options.registerServiceWorker && import.meta.env.PROD && 'serviceWorker' in navigator) {
     window.addEventListener('load', () => {
