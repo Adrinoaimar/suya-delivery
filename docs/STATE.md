@@ -82,7 +82,7 @@ producción.
 
 ## Checkpoint F25: estabilización de mapas y APKs por rol
 
-- La rama `feat/backoffice-restaurant-ops` terminó en `14ae039`; PR #36 está abierto y mergeable.
+- La rama `feat/backoffice-restaurant-ops` terminó en `06432fc`; PR #36 está abierto y mergeable.
 - Leaflet ya no se reconstruye por cada lectura GPS ni redibuja la ruta del Cliente innecesariamente.
   Marcadores, rastro, ruta vial OSRM/OpenStreetMap, alternativas y guía de maniobras conservan estado.
 - El OTA nativo ahora aplica solo cuando `VITE_MOBILE_ROLE` es explícitamente `customer`; builds
@@ -100,7 +100,7 @@ producción.
 - La auditoría visual en navegador detectó y corrigió que el historial GPS desaparecía al faltar la
   última lectura en vivo, y que `Ver mapa completo` cambiaba estado pero seguía limitado al contenedor.
   El historial ahora se conserva y el modo completo ocupa el viewport real.
-- La nueva pasada corrigió diecisiete regresiones: enlace de ayuda del Rider que salía de su ámbito, rastro
+- La nueva pasada corrigió diecinueve regresiones: enlace de ayuda del Rider que salía de su ámbito, rastro
   que podía reiniciarse o crecer sin límite, marcador GPS obsoleto tras desactivar/error y QR/copiado
   frágiles cuando el portapapeles no está disponible; además, enlaces del catálogo con doble `/`,
   coordenadas GPS fuera de rango aceptadas por última lectura/Realtime, navegación móvil del Back
@@ -109,13 +109,16 @@ producción.
   Cliente heredado en builds operativos, guía de navegación que podía retroceder a un giro cruzado,
   historial GPS borrado sin lectura viva, expansión de mapa que no llegaba a pantalla completa,
   disponibilidad del Rider que no se persistía en servidor, historial vivo que una respuesta remota
-  tardía podía reemplazar, cargas de pedidos que una respuesta vieja podía sobrescribir y controles
-  nativos de zoom que se superponían a la guía móvil.
+  tardía podía reemplazar, cargas de pedidos que una respuesta vieja podía sobrescribir, controles
+  nativos de zoom que se superponían a la guía móvil, disponibilidad que podía revertirse por una
+  carga inicial tardía y callbacks GPS que reaparecían después de apagar el rastreo.
 - La reauditoría también blindó contra respuestas atrasadas las cargas repetibles de Catálogo, Mesas y QR,
   Ofertas, Dispositivos de pagos y Cuentas de restaurantes; el staff con cuenta fija ya no dispara una
   recarga duplicada del catálogo. Leaflet usa botones de zoom redondos y accesibles, dejando libre la
   tarjeta de guía.
-- Evidencia local: 53 suites/221 tests, lint, typecheck, escaneo de secretos y diff limpio; smoke
+- El store global del catálogo descarta respuestas de recargas forzadas atrasadas; el hook común de
+  geolocalización ignora lecturas y errores posteriores al apagado.
+- Evidencia local: 53 suites/223 tests, lint, typecheck, escaneo de secretos y diff limpio; smoke
   responsive y comprobación Playwright del viewport completo. CI final Android `34752420744` y workflows
   asociados: browser `34752420569`, browser-e2e/build `34752420594`, test `34752420635` y simulator
   `34752420725`, todos verdes. Android publicó APK Rider y Back Office.
@@ -129,8 +132,8 @@ producción.
   checks de PR #36 siguen verdes.
 - Evidencia funcional de roles: el portal operativo publicado muestra `Suya Operaciones`; las APKs
   contienen títulos `Suya Repartidor` y `Suya Operaciones`.
-- APK Rider final: `output/apks/Suya-Rider-debug-6d21409.apk`, SHA-256 `77222698a4dad4c3ecae1082d121639dbd6016a119381706a9686fb36da1b579`.
-- APK Back Office final: `output/apks/Suya-Backoffice-debug-6d21409.apk`, SHA-256 `bf47c169e39d42dbf77ac243204f384040fb8a271a9d3bca8d7f9bbfe2d427fe`.
+- APK Rider final: `output/apks/Suya-Rider-debug-06432fc.apk`, SHA-256 `45d1f2aa14ee3d0e8da7add7561d3b963b315e360ed4bf4f363963c42ad717a4`.
+- APK Back Office final: `output/apks/Suya-Backoffice-debug-06432fc.apk`, SHA-256 `4de3370096678cf0e5de33a43bb32e237a69054d2431c661dd90c6e00a65e0bf`.
 
 ## Reglas de continuidad
 
