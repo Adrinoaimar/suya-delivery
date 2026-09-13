@@ -19,6 +19,9 @@ describe('seguimiento visual del mapa', () => {
     expect(map).toContain('hasAppliedInitialViewRef');
     expect(map).toContain('const routingRiderLat = navigation ? riderLat : undefined;');
     expect(map).toContain('routingRiderLng');
+    expect(map).toContain('Ver mapa completo');
+    expect(map).toContain('Salir del mapa completo');
+    expect(map).toContain('requestAnimationFrame');
     expect(map).toContain('}, [interactive]);');
     expect(readFileSync(root('src/pages/rider/RiderCurrentPage.tsx'), 'utf8')).toContain(
       'navigation',

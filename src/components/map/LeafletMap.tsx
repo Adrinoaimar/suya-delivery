@@ -9,6 +9,8 @@ import {
   CornerUpLeft,
   CornerUpRight,
   LocateFixed,
+  Maximize2,
+  Minimize2,
   MapPin,
   RotateCcw,
   Store,
@@ -59,6 +61,7 @@ export default function LeafletMap({
   const [routePlan, setRoutePlan] = useState<RoutePlan | null>(null);
   const [routeStatus, setRouteStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [nextInstruction, setNextInstruction] = useState<RouteInstruction | null>(null);
+  const [mapExpanded, setMapExpanded] = useState(false);
   const riderLat = rider?.lat;
   const riderLng = rider?.lng;
   const originLat = origin?.lat;
@@ -374,6 +377,23 @@ export default function LeafletMap({
     }
   }, [rider]);
 
+  useEffect(() => {
+    if (!mapExpanded) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const frame = window.requestAnimationFrame(() => mapRef.current?.invalidateSize());
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMapExpanded(false);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mapExpanded]);
+
   function recenterRoute() {
     const map = mapRef.current;
     const bounds = routeBoundsRef.current;
@@ -381,29 +401,53 @@ export default function LeafletMap({
   }
 
   return (
-    <div className={cn('relative h-full w-full', className)}>
+    <div
+      className={cn(
+        'relative h-full w-full',
+        mapExpanded && 'fixed inset-0 z-[60] bg-suya-carbon',
+        className,
+      )}
+    >
       <div
         ref={containerRef}
         role="img"
         aria-label={label ?? 'Mapa de la ruta en Sullana'}
         className="h-full w-full"
       />
-      {interactive && points.length > 1 && (
-        <button
-          type="button"
-          onClick={recenterRoute}
-          className="press absolute right-3 top-3 z-[500] flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-[#0E6B44] shadow-card ring-1 ring-black/10 transition hover:bg-suya-ivory focus:outline-none focus:ring-2 focus:ring-[#0E6B44]"
-          aria-label="Centrar mapa en la ruta"
-          title="Centrar mapa en la ruta"
-        >
-          <LocateFixed className="h-5 w-5" aria-hidden="true" />
-        </button>
+      {interactive && (
+        <div className="absolute right-3 top-[calc(0.75rem+env(safe-area-inset-top))] z-[500] flex gap-2">
+          {points.length > 1 && (
+            <button
+              type="button"
+              onClick={recenterRoute}
+              className="press flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-[#0E6B44] shadow-card ring-1 ring-black/10 transition hover:bg-suya-ivory focus:outline-none focus:ring-2 focus:ring-[#0E6B44]"
+              aria-label="Centrar mapa en la ruta"
+              title="Centrar mapa en la ruta"
+            >
+              <LocateFixed className="h-5 w-5" aria-hidden="true" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setMapExpanded((value) => !value)}
+            className="press flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-[#0E6B44] shadow-card ring-1 ring-black/10 transition hover:bg-suya-ivory focus:outline-none focus:ring-2 focus:ring-[#0E6B44]"
+            aria-label={mapExpanded ? 'Salir del mapa completo' : 'Ver mapa completo'}
+            aria-pressed={mapExpanded}
+            title={mapExpanded ? 'Salir del mapa completo' : 'Ver mapa completo'}
+          >
+            {mapExpanded ? (
+              <Minimize2 className="h-5 w-5" aria-hidden="true" />
+            ) : (
+              <Maximize2 className="h-5 w-5" aria-hidden="true" />
+            )}
+          </button>
+        </div>
       )}
       {navigation && (
         <div
           role="status"
           aria-live="polite"
-          className="absolute left-3 top-3 z-[500] max-w-[min(82%,21rem)] rounded-2xl bg-white/95 px-3.5 py-3 shadow-card ring-1 ring-black/10 backdrop-blur-sm"
+          className="absolute left-3 top-[calc(0.75rem+env(safe-area-inset-top))] z-[500] max-w-[min(82%,21rem)] rounded-2xl bg-white/95 px-3.5 py-3 shadow-card ring-1 ring-black/10 backdrop-blur-sm"
         >
           {rider && nextInstruction && routeStatus !== 'error' ? (
             <div className="flex items-center gap-3">
