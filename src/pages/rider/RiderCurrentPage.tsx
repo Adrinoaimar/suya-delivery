@@ -19,7 +19,7 @@ import { notificationService, safetyOperationsService } from '@/lib/services';
 import { selectActiveOrder, useOrderStore } from '@/store/orderStore';
 import { useTrackingStore } from '@/store/trackingStore';
 import { formatPrice, orderStatusLabel } from '@/utils/format';
-import { mergeTrails } from '@/utils/locationTrail';
+import { appendTrail, mergeTrails } from '@/utils/locationTrail';
 import type { LatLng, OrderStatus } from '@/types';
 
 /**
@@ -54,13 +54,20 @@ export default function RiderCurrentPage() {
     void safetyOperationsService
       .locationHistory(activeId)
       .then((history) => {
-        if (mounted) setRiderTrail(mergeTrails(history, []));
+        if (mounted) setRiderTrail((trail) => mergeTrails(history, trail));
       })
       .catch(() => undefined);
     return () => {
       mounted = false;
     };
   }, [activeId, tripTracking]);
+
+  // Si una lectura llega mientras el historial remoto todavía carga, no se pierde
+  // al reemplazar el estado con la respuesta histórica.
+  useEffect(() => {
+    if (!activeId || !tripTracking || !reading?.position) return;
+    setRiderTrail((trail) => appendTrail(trail, reading.position));
+  }, [activeId, reading?.position, tripTracking]);
 
   // Mostrar mapa con cualquier punto verificado; restaurante puede no tener coordenadas aún.
   const mapReady = active?.storePosition != null || active?.deliveryPosition != null;

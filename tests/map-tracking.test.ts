@@ -42,6 +42,12 @@ describe('seguimiento visual del mapa', () => {
     expect(readFileSync(root('src/pages/rider/RiderCurrentPage.tsx'), 'utf8')).toContain(
       'locationHistory(activeId)',
     );
+    expect(readFileSync(root('src/pages/rider/RiderCurrentPage.tsx'), 'utf8')).toContain(
+      'mergeTrails(history, trail)',
+    );
+    expect(readFileSync(root('src/pages/rider/RiderCurrentPage.tsx'), 'utf8')).toContain(
+      'appendTrail(trail, reading.position)',
+    );
     expect(customerTrack).toContain('key={order.id}');
     const riderHome = readFileSync(root('src/pages/rider/RiderHomePage.tsx'), 'utf8');
     expect(riderHome).toContain('<MapProvider');

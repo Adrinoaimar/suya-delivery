@@ -5,6 +5,7 @@ import type { Order, OrderStatus } from '@/types';
 
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'error';
 let orderGeneration = 0;
+let orderRefreshRequest = 0;
 
 interface OrderState {
   orders: Order[];
@@ -43,12 +44,17 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
   async refresh() {
     const generation = orderGeneration;
+    const requestId = ++orderRefreshRequest;
     set({ status: 'loading', error: null });
     try {
       const orders = await orderService.list();
-      if (generation === orderGeneration) set({ orders, status: 'ready', error: null });
+      if (generation === orderGeneration && requestId === orderRefreshRequest) {
+        set({ orders, status: 'ready', error: null });
+      }
     } catch (error) {
-      if (generation === orderGeneration) set({ status: 'error', error: errorMessage(error) });
+      if (generation === orderGeneration && requestId === orderRefreshRequest) {
+        set({ status: 'error', error: errorMessage(error) });
+      }
     }
   },
 
@@ -113,6 +119,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
 
   reset() {
     orderGeneration += 1;
+    orderRefreshRequest += 1;
     set({ orders: [], status: 'idle', error: null });
   },
 }));

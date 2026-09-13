@@ -26,7 +26,8 @@ export default function RiderHomePage() {
     [active?.storePosition, active?.deliveryPosition],
   );
   const mapOrigin = useMemo(
-    () => (active?.storePosition ? { ...active.storePosition, label: active.storeName } : undefined),
+    () =>
+      active?.storePosition ? { ...active.storePosition, label: active.storeName } : undefined,
     [active?.storePosition, active?.storeName],
   );
   const mapDestination = useMemo(
@@ -66,10 +67,17 @@ export default function RiderHomePage() {
           <span className="flex min-w-0 items-center gap-2 text-sm font-semibold">
             <span
               aria-hidden="true"
-              className={cn('h-2.5 w-2.5 shrink-0 rounded-full', reading ? 'bg-suya-lime' : 'bg-white/50')}
+              className={cn(
+                'h-2.5 w-2.5 shrink-0 rounded-full',
+                reading ? 'bg-suya-lime' : 'bg-white/50',
+              )}
             />
             <span className="truncate">
-              {guidingToDelivery ? 'Siguiendo tu ruta de entrega' : reading ? 'Ubicación activa' : 'Activa el GPS para ubicarte'}
+              {guidingToDelivery
+                ? 'Siguiendo tu ruta de entrega'
+                : reading
+                  ? 'Ubicación activa'
+                  : 'Activa el GPS para ubicarte'}
             </span>
           </span>
           <span className="shrink-0 text-xs text-white/65">Sullana</span>
@@ -96,11 +104,12 @@ export default function RiderHomePage() {
           onChange={(value) => {
             void riderOperationsService
               .setAvailability(value)
-              .then(() => {
-                setAvailable(value);
+              .then((nextStatus) => {
+                const nextAvailable = nextStatus === 'available';
+                setAvailable(nextAvailable);
                 notificationService.notify(
-                  value ? 'Ahora estás disponible' : 'Ya no recibirás pedidos',
-                  value ? 'success' : 'info',
+                  nextAvailable ? 'Ahora estás disponible' : 'Ya no recibirás pedidos',
+                  nextAvailable ? 'success' : 'info',
                 );
               })
               .catch((error: unknown) => {
