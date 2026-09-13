@@ -82,7 +82,7 @@ producción.
 
 ## Checkpoint F25: estabilización de mapas y APKs por rol
 
-- La rama `feat/backoffice-restaurant-ops` terminó en `17ac6aa`; PR #36 está abierto y mergeable.
+- La rama `feat/backoffice-restaurant-ops` terminó en `9cda312`; PR #36 está abierto y mergeable.
 - Leaflet ya no se reconstruye por cada lectura GPS ni redibuja la ruta del Cliente innecesariamente.
   Marcadores, rastro, ruta vial OSRM/OpenStreetMap, alternativas y guía de maniobras conservan estado.
 - El OTA nativo ahora aplica solo cuando `VITE_MOBILE_ROLE` es explícitamente `customer`; builds
@@ -90,12 +90,14 @@ producción.
 - Cliente y Rider tienen mapa móvil amplio y control `Ver mapa completo`, con salida por Escape,
   scroll bloqueado y safe area. MapProvider reacciona a cambios de conexión.
 - Evidencia local: 46 suites/204 tests, lint, typecheck, build aislado, escaneo de secretos, diff
-  limpio y smoke responsive en móvil/tablet/escritorio. CI final `34740936708`: browser,
+  limpio y smoke responsive en móvil/tablet/escritorio. CI final `34741542040`: browser,
   browser-e2e, build, debug, simulator y test verdes. Android publicó APK Rider y Back Office.
 - Producción responde HTTP 200 en los tres dominios y Back Office muestra `Suya Operaciones`; esto
   no prueba que el commit final esté desplegado mientras PR #36 permanezca abierto.
 - Pendiente externo: revisión/fusión autorizada de PR #36, publicación Cloudflare, migración de riders
   en Supabase real y prueba en dispositivos físicos. APKs son debug; firma release sigue pendiente.
+- APK Rider final: `output/apks/Suya-Rider-debug-9cda312.apk`, SHA-256 `599b88105d3a3a40d3336a6a62e85e81b69ab69cced08cc1a83f9ea38690bfed`.
+- APK Back Office final: `output/apks/Suya-Backoffice-debug-9cda312.apk`, SHA-256 `b0bbc3e6bd04c48d3654b2ab4e6adb7dd9bdb491d330331fb92d568e61c1b271`.
 
 ## Reglas de continuidad
 
