@@ -1,4 +1,5 @@
 import type { LatLng } from '@/types';
+import { distanceKm } from '@/utils/geo';
 
 export const DEFAULT_ROUTING_URL = 'https://router.project-osrm.org';
 
@@ -37,6 +38,8 @@ export interface RoutePlan {
   durationSeconds: number;
   alternatives: RouteAlternative[];
 }
+
+const MANEUVER_REACHED_KM = 0.03;
 
 type JsonObject = Record<string, unknown>;
 
@@ -154,6 +157,38 @@ function instructionsOf(route: JsonObject): RouteInstruction[] {
       ];
     });
   });
+}
+
+/**
+ * Selecciona la siguiente maniobra sin retroceder a un giro ya cruzado. La posición
+ * anterior permite detectar el cruce aunque el siguiente tramo sea más largo y el
+ * giro anterior vuelva a quedar más cerca en línea recta.
+ */
+export function selectNextRouteInstruction(
+  instructions: RouteInstruction[],
+  currentPosition: LatLng,
+  previousPosition: LatLng | null,
+  previousIndex = 0,
+): { instruction: RouteInstruction | null; index: number } {
+  const candidates = instructions.filter((instruction) => instruction.direction !== 'depart');
+  if (candidates.length === 0) return { instruction: null, index: 0 };
+
+  let index = Math.min(Math.max(previousIndex, 0), candidates.length - 1);
+  while (index < candidates.length - 1) {
+    const current = candidates[index]!;
+    const currentDistance = distanceKm(currentPosition, current.position);
+    const previousDistance = previousPosition
+      ? distanceKm(previousPosition, current.position)
+      : null;
+    const crossed =
+      previousDistance !== null &&
+      previousDistance <= MANEUVER_REACHED_KM &&
+      currentDistance > MANEUVER_REACHED_KM;
+    if (!crossed) break;
+    index += 1;
+  }
+
+  return { instruction: candidates[index]!, index };
 }
 
 function routeSummary(route: JsonObject): RouteAlternative | null {

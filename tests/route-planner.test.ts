@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseOsrmRoute } from '@/lib/routePlanner';
+import { parseOsrmRoute, selectNextRouteInstruction } from '@/lib/routePlanner';
 
 describe('planificador vial OSRM', () => {
   it('valida la geometría y convierte las maniobras a guía en español', () => {
@@ -77,5 +77,37 @@ describe('planificador vial OSRM', () => {
     expect(() => parseOsrmRoute({ code: 'NoRoute', routes: [] })).toThrow(
       'El motor de rutas no devolvió una ruta válida.',
     );
+  });
+
+  it('avanza la guía al cruzar una maniobra y no vuelve a mostrar el giro anterior', () => {
+    const turn = {
+      text: 'Gira a la derecha',
+      direction: 'right' as const,
+      distanceMeters: 200,
+      durationSeconds: 30,
+      position: { lat: -4.9, lng: -80.69 },
+    };
+    const arrival = {
+      text: 'Llegaste al punto de entrega',
+      direction: 'arrive' as const,
+      distanceMeters: 0,
+      durationSeconds: 0,
+      position: { lat: -4.901, lng: -80.69 },
+    };
+
+    const approaching = selectNextRouteInstruction(
+      [turn, arrival],
+      { lat: -4.8998, lng: -80.69 },
+      { lat: -4.8996, lng: -80.69 },
+    );
+    expect(approaching.instruction).toBe(turn);
+
+    const crossed = selectNextRouteInstruction(
+      [turn, arrival],
+      { lat: -4.9004, lng: -80.69 },
+      { lat: -4.8998, lng: -80.69 },
+      approaching.index,
+    );
+    expect(crossed.instruction).toBe(arrival);
   });
 });

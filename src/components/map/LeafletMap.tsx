@@ -20,6 +20,7 @@ import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import {
   fetchDrivingRoute,
+  selectNextRouteInstruction,
   type RouteDirection,
   type RouteInstruction,
   type RoutePlan,
@@ -62,6 +63,8 @@ export default function LeafletMap({
     end: { lat: number; lng: number };
   } | null>(null);
   const hasFittedRouteRef = useRef(false);
+  const navigationInstructionIndexRef = useRef(0);
+  const previousNavigationPositionRef = useRef<LatLng | null>(null);
   const [tileError, setTileError] = useState(false);
   const [routePlan, setRoutePlan] = useState<RoutePlan | null>(null);
   const [routeStatus, setRouteStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
@@ -128,11 +131,18 @@ export default function LeafletMap({
       routeBoundsRef.current = null;
       hasAppliedInitialViewRef.current = false;
       hasFittedRouteRef.current = false;
+      navigationInstructionIndexRef.current = 0;
+      previousNavigationPositionRef.current = null;
     };
   }, [interactive]);
 
   // Ajusta vista una sola vez. No depende de cada lectura GPS: así el mapa no se
   // reconstruye ni pierde tiles, zoom o rastro mientras cambia la posición.
+  useEffect(() => {
+    navigationInstructionIndexRef.current = 0;
+    previousNavigationPositionRef.current = null;
+  }, [routePlan]);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map || hasAppliedInitialViewRef.current || points.length === 0) return;
@@ -350,30 +360,15 @@ export default function LeafletMap({
     )
       return;
     const currentRider = { lat: riderLat, lng: riderLng };
-    const ahead = routePlan.instructions.filter(
-      (instruction) =>
-        instruction.direction !== 'depart' &&
-        instruction.direction !== 'arrive' &&
-        distanceKm(currentRider, instruction.position) >= 0.03,
+    const selected = selectNextRouteInstruction(
+      routePlan.instructions,
+      currentRider,
+      previousNavigationPositionRef.current,
+      navigationInstructionIndexRef.current,
     );
-    const arrival = routePlan.instructions.find(
-      (instruction) => instruction.direction === 'arrive',
-    );
-    const straightAhead = routePlan.instructions.find(
-      (instruction) =>
-        instruction.direction === 'straight' &&
-        distanceKm(currentRider, instruction.position) >= 0.03,
-    );
-    const fallback: RouteInstruction | null = arrival
-      ? {
-          text: 'Continúa hacia el destino',
-          direction: 'straight',
-          distanceMeters: distanceKm(currentRider, arrival.position) * 1000,
-          durationSeconds: arrival.durationSeconds,
-          position: arrival.position,
-        }
-      : (routePlan.instructions.at(-1) ?? null);
-    setNextInstruction(ahead[0] ?? straightAhead ?? fallback);
+    navigationInstructionIndexRef.current = selected.index;
+    previousNavigationPositionRef.current = currentRider;
+    setNextInstruction(selected.instruction);
   }, [navigation, riderLat, riderLng, routePlan]);
 
   // El marcador del repartidor se mueve y deja un rastro visible, sin recentrar de golpe.
