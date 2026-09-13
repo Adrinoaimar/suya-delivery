@@ -27,6 +27,8 @@ describe('seguimiento visual del mapa', () => {
     expect(map).toContain('Ver mapa completo');
     expect(map).toContain('Salir del mapa completo');
     expect(map).toContain('requestAnimationFrame');
+    expect(map).toContain("typeof ResizeObserver === 'function'");
+    expect(map).toContain("window.addEventListener('resize', handleResize)");
     expect(map).toContain('}, [interactive]);');
     expect(readFileSync(root('src/pages/rider/RiderCurrentPage.tsx'), 'utf8')).toContain(
       'navigation',

@@ -103,11 +103,20 @@ export default function LeafletMap({
 
     // Al cambiar el tamaño del contenedor (hoja inferior que se expande, rotación del
     // teléfono) Leaflet debe recalcular o quedan franjas grises sin tiles.
-    const observer = new ResizeObserver(() => map.invalidateSize());
-    observer.observe(containerRef.current);
+    const handleResize = () => map.invalidateSize();
+    const observer =
+      typeof ResizeObserver === 'function' ? new ResizeObserver(handleResize) : null;
+    if (observer) {
+      observer.observe(containerRef.current);
+    } else {
+      // WebView antiguos pueden no exponer ResizeObserver; el mapa sigue siendo usable
+      // y se recalcula al rotar o cambiar el tamaño de la ventana.
+      window.addEventListener('resize', handleResize);
+    }
 
     return () => {
-      observer.disconnect();
+      observer?.disconnect();
+      if (!observer) window.removeEventListener('resize', handleResize);
       map.remove();
       mapRef.current = null;
       originMarkerRef.current = null;
