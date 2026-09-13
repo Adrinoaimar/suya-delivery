@@ -383,6 +383,9 @@ export const safetyOperationsService: SafetyOperationsService = {
   async latestLocation(orderId) {
     return (await resolveSafetyService()).latestLocation(orderId);
   },
+  async locationHistory(orderId) {
+    return (await resolveSafetyService()).locationHistory(orderId);
+  },
   subscribeLocation(orderId, listener) {
     let unsubscribe: () => void = () => undefined;
     let cancelled = false;

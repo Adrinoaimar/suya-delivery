@@ -70,6 +70,24 @@ export class SupabaseSafetyServiceImpl implements SafetyOperationsService {
     return data ? { lat: Number(data.latitude), lng: Number(data.longitude) } : null;
   }
 
+  async locationHistory(orderId: string) {
+    const { data, error } = await this.client.from('rider_locations')
+      .select('latitude, longitude')
+      .eq('order_id', orderId)
+      .order('captured_at', { ascending: false })
+      .limit(180);
+    if (error) throw new Error(error.message);
+    if (!Array.isArray(data)) return [];
+    return data.flatMap((reading) => {
+      const latitude = Number(reading.latitude);
+      const longitude = Number(reading.longitude);
+      return Number.isFinite(latitude) && Number.isFinite(longitude) &&
+        latitude >= -90 && latitude <= 90 && longitude >= -180 && longitude <= 180
+        ? [{ lat: latitude, lng: longitude }]
+        : [];
+    }).reverse();
+  }
+
   subscribeLocation(orderId: string, listener: (position: { lat: number; lng: number }) => void) {
     const channel = this.client.channel(`order-location-${orderId}-${crypto.randomUUID()}`)
       .on('postgres_changes', {

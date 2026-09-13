@@ -279,6 +279,7 @@ export interface SafetyOperationsService {
   }): Promise<string>;
   resolveSos(incidentId: string): Promise<boolean>;
   latestLocation(orderId: string): Promise<LatLng | null>;
+  locationHistory(orderId: string): Promise<LatLng[]>;
   subscribeLocation(orderId: string, listener: (position: LatLng) => void): () => void;
 }
 

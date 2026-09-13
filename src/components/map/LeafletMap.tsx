@@ -37,6 +37,7 @@ export default function LeafletMap({
   origin,
   destination,
   rider,
+  riderTrail: historicalTrail = [],
   className,
   label,
   interactive = true,
@@ -129,6 +130,28 @@ export default function LeafletMap({
     else map.setView(latlngs[0], 15);
     hasAppliedInitialViewRef.current = true;
   }, [points]);
+
+  // Si el cliente abre el seguimiento a mitad del viaje, dibuja las posiciones
+  // autorizadas que ya existían antes de montar este mapa.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    const nextTrail = historicalTrail.slice(-240);
+    riderTrailRef.current = nextTrail.map((position) => [position.lat, position.lng]);
+    riderTrailLineRef.current?.remove();
+    riderTrailLineRef.current = null;
+    if (riderTrailRef.current.length > 0) {
+      riderTrailLineRef.current = L.polyline(riderTrailRef.current, {
+        color: '#8CC63F',
+        weight: 5,
+        opacity: 0.96,
+        dashArray: '1 10',
+        lineCap: 'round',
+        lineJoin: 'round',
+        interactive: false,
+      }).addTo(map);
+    }
+  }, [historicalTrail]);
 
   useEffect(() => {
     const map = mapRef.current;

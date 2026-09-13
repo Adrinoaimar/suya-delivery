@@ -10,6 +10,7 @@ describe('seguimiento visual del mapa', () => {
     const customerTrack = readFileSync(root('src/pages/customer/OrderTrackPage.tsx'), 'utf8');
 
     expect(map).toContain('riderTrailLineRef');
+    expect(map).toContain('historicalTrail');
     expect(map).toContain("color: '#8CC63F'");
     expect(map).toContain('LocateFixed');
     expect(map).toContain('Recorrido real');
@@ -36,6 +37,9 @@ describe('seguimiento visual del mapa', () => {
     expect(riderHome).toContain('h-[min(58dvh,520px)]');
     expect(riderHome).toContain('Siguiendo tu ruta de entrega');
     expect(customerTrack).toContain('const mapPoints = useMemo(');
+    expect(customerTrack).toContain('locationHistory(order.id)');
+    expect(customerTrack).toContain('mergeTrails(history, trail)');
+    expect(customerTrack).toContain('riderTrail={cancelled ? [] : riderTrail}');
     expect(customerTrack).toContain('h-[54%]');
   });
 });

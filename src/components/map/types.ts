@@ -7,6 +7,8 @@ export interface MapViewProps {
   destination?: RoutePoint;
   /** Posición actual del repartidor. */
   rider?: LatLng | null;
+  /** Posiciones recientes del repartidor para reconstruir el rastro al abrir el seguimiento. */
+  riderTrail?: LatLng[];
   className?: string;
   /** Etiqueta accesible: el mapa es una imagen, no un control. */
   label?: string;

@@ -19,6 +19,19 @@ import { orderRouteProgress, useOrderStatusNotifier } from '@/hooks/useOrders';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { formatPrice, orderStatusLabel } from '@/utils/format';
 import type { LatLng } from '@/types';
+import { distanceKm } from '@/utils/geo';
+
+const MAX_TRACK_POINTS = 240;
+
+function appendTrail(trail: LatLng[], position: LatLng): LatLng[] {
+  const last = trail.at(-1);
+  if (last && distanceKm(last, position) < 0.004) return trail;
+  return [...trail, position].slice(-MAX_TRACK_POINTS);
+}
+
+function mergeTrails(history: LatLng[], liveTrail: LatLng[]): LatLng[] {
+  return [...history, ...liveTrail].reduce<LatLng[]>(appendTrail, []);
+}
 
 export default function OrderTrackPage() {
   const { id = '' } = useParams();
@@ -30,6 +43,7 @@ export default function OrderTrackPage() {
   const [expanded, setExpanded] = useState(true);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [riderPosition, setRiderPosition] = useState<LatLng | null>(null);
+  const [riderTrail, setRiderTrail] = useState<LatLng[]>([]);
   const isDesktop = useIsDesktop();
 
   const progress = orderRouteProgress(order);
@@ -60,24 +74,46 @@ export default function OrderTrackPage() {
   useEffect(() => {
     if (!order?.riderId || !['picked_up', 'on_the_way'].includes(order.status)) {
       setRiderPosition(null);
+      setRiderTrail([]);
       return undefined;
     }
     let active = true;
+    setRiderTrail([]);
+    const appendPosition = (position: LatLng) => {
+      if (!active) return;
+      setRiderTrail((trail) => appendTrail(trail, position));
+    };
+    void safetyOperationsService
+      .locationHistory(order.id)
+      .then((history) => {
+        if (!active) return;
+        setRiderTrail((trail) => mergeTrails(history, trail));
+      })
+      .catch(() => undefined);
     void safetyOperationsService
       .latestLocation(order.id)
       .then((position) => {
-        if (active) setRiderPosition(position);
+        if (active && position) {
+          setRiderPosition(position);
+          appendPosition(position);
+        }
       })
       .catch(() => undefined);
     const unsubscribe = safetyOperationsService.subscribeLocation(order.id, (position) => {
-      if (active) setRiderPosition(position);
+      if (active) {
+        setRiderPosition(position);
+        appendPosition(position);
+      }
     });
     // Fallback para redes donde WebSocket/realtime está bloqueado: conserva ubicación visible.
     const poll = window.setInterval(() => {
       void safetyOperationsService
         .latestLocation(order.id)
         .then((position) => {
-          if (active && position) setRiderPosition(position);
+          if (active && position) {
+            setRiderPosition(position);
+            appendPosition(position);
+          }
         })
         .catch(() => undefined);
     }, 8_000);
@@ -198,6 +234,7 @@ export default function OrderTrackPage() {
                 origin={mapOrigin}
                 destination={mapDestination}
                 rider={cancelled ? null : riderPosition}
+                riderTrail={cancelled ? [] : riderTrail}
                 label={`Ubicaciones del pedido ${order.code}`}
               />
             ) : (
@@ -257,6 +294,7 @@ export default function OrderTrackPage() {
                   origin={mapOrigin}
                   destination={mapDestination}
                   rider={cancelled ? null : riderPosition}
+                  riderTrail={cancelled ? [] : riderTrail}
                   label={`Ubicaciones del pedido ${order.code}`}
                 />
               ) : (
