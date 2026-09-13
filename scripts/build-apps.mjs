@@ -21,7 +21,7 @@ for (const app of requested) {
     throw new Error(`Aplicación desconocida: ${app}. Usa ${supportedApps.join(', ')}.`);
   }
 
-  const mobileRole = app === 'rider' || app === 'backoffice' ? app : 'customer';
+  const mobileRole = app === 'mobile' ? 'unified' : app;
 
   await build({
     root: path.join(repoRoot, 'apps', app),

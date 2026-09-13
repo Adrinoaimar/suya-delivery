@@ -85,6 +85,8 @@ producción.
 - La rama `feat/backoffice-restaurant-ops` terminó en `17ac6aa`; PR #36 está abierto y mergeable.
 - Leaflet ya no se reconstruye por cada lectura GPS ni redibuja la ruta del Cliente innecesariamente.
   Marcadores, rastro, ruta vial OSRM/OpenStreetMap, alternativas y guía de maniobras conservan estado.
+- El OTA nativo ahora aplica solo cuando `VITE_MOBILE_ROLE` es explícitamente `customer`; builds
+  Rider, Back Office y APK unificada (`unified`) rechazan el bundle de Cliente por defecto.
 - Cliente y Rider tienen mapa móvil amplio y control `Ver mapa completo`, con salida por Escape,
   scroll bloqueado y safe area. MapProvider reacciona a cambios de conexión.
 - Evidencia local: 46 suites/204 tests, lint, typecheck, build aislado, escaneo de secretos, diff

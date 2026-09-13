@@ -41,7 +41,7 @@ export async function syncMobileLiveUpdate(): Promise<void> {
     // El manifiesto publicado hoy contiene únicamente el bundle de Suya Cliente.
     // Los roles nativos no deben instalarlo como siguiente bundle: al reiniciar
     // Rider o Back Office eso los convertiría en la app del cliente.
-    const mobileRole = import.meta.env.VITE_MOBILE_ROLE?.trim() || 'customer';
+    const mobileRole = import.meta.env.VITE_MOBILE_ROLE?.trim();
     if (mobileRole !== 'customer') return;
 
     const response = await fetch(`${UPDATE_MANIFEST_URL}?t=${Date.now()}`, {

@@ -14,8 +14,10 @@ describe('actualizaciones nativas por rol', () => {
 
     expect(liveUpdate).toContain('VITE_MOBILE_ROLE');
     expect(liveUpdate).toContain("mobileRole !== 'customer'");
+    expect(liveUpdate).toContain("const mobileRole = import.meta.env.VITE_MOBILE_ROLE?.trim();");
+    expect(liveUpdate).not.toContain("|| 'customer'");
     expect(apkBuilder).toContain('VITE_MOBILE_ROLE: target.build');
-    expect(appBuilder).toContain("const mobileRole = app === 'rider' || app === 'backoffice' ? app : 'customer';");
+    expect(appBuilder).toContain("const mobileRole = app === 'mobile' ? 'unified' : app;");
     expect(appBuilder).toContain("'import.meta.env.VITE_MOBILE_ROLE'");
     expect(androidBuild).toContain('versionCode 2');
     expect(iosProject).toContain('CURRENT_PROJECT_VERSION = 2;');
