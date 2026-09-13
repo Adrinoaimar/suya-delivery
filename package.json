@@ -15,6 +15,7 @@
     "build:rider": "tsc -b && node scripts/build-apps.mjs rider && node scripts/verify-app-bundles.mjs rider",
     "build:backoffice": "tsc -b && node scripts/build-apps.mjs backoffice && node scripts/verify-app-bundles.mjs backoffice",
     "build:mobile": "tsc -b && node scripts/build-apps.mjs mobile && node scripts/verify-app-bundles.mjs mobile && npx cap sync",
+    "build:mobile:roles": "node scripts/build-mobile-apks.mjs",
     "prepare:mobile-live-update": "node scripts/prepare-mobile-live-update.mjs",
     "mobile:sync": "npx cap sync",
     "mobile:copy": "npx cap copy",

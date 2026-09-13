@@ -1,10 +1,14 @@
 apply plugin: 'com.android.application'
 
+def suyaAndroidAppId = System.getenv('SUYA_ANDROID_APP_ID') ?: 'com.suya.app'
+def suyaAndroidAppName = System.getenv('SUYA_ANDROID_APP_NAME') ?: 'Suya'
+
 android {
     namespace = "com.suya.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.suya.app"
+        applicationId suyaAndroidAppId
+        manifestPlaceholders = [suyaAppName: suyaAndroidAppName]
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
