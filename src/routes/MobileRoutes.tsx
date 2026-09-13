@@ -96,15 +96,17 @@ function MobileBackofficeRoutes() {
           <Route path="offers" element={<OffersPage />} />
           <Route path="wallets" element={<WalletsOperationsPage />} />
           <Route path="riders" element={<RidersOperationsPage />} />
-          <Route
-            path="restaurants"
-            element={
-              <BackofficePage
-                title="Restaurantes"
-                description="Altas, membresías y verificación comercial."
-              />
-            }
-          />
+          <Route element={<RequireAccess anyOf={['platform_admin']} />}>
+            <Route
+              path="restaurants"
+              element={
+                <BackofficePage
+                  title="Restaurantes"
+                  description="Altas, membresías y verificación comercial."
+                />
+              }
+            />
+          </Route>
           <Route
             path="settings"
             element={

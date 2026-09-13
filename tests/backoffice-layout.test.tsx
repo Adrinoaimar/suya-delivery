@@ -41,5 +41,6 @@ describe('navegación del backoffice', () => {
     expect(screen.getByRole('link', { name: 'Dispositivos de pagos' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Repartidores' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Configuración' })).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Restaurantes' })).not.toBeInTheDocument();
   });
 });

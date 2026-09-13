@@ -25,6 +25,7 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
   const signOut = useAuthStore((state) => state.signOut);
   const location = useLocation();
   const navigationRef = useRef<HTMLElement | null>(null);
+  const isPlatformAdmin = identity?.access.includes('platform_admin') ?? false;
   const prefix = basePath.replace(/\/$/, '');
   const navigation = [
     { to: `${prefix}/`, label: 'Resumen', icon: LayoutDashboard, end: true },
@@ -34,9 +35,9 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
     { to: `${prefix}/offers`, label: 'Ofertas', icon: Tag },
     { to: `${prefix}/wallets`, label: 'Dispositivos de pagos', icon: Wallet },
     { to: `${prefix}/riders`, label: 'Repartidores', icon: Users },
-    { to: `${prefix}/restaurants`, label: 'Restaurantes', icon: Building2 },
+    { to: `${prefix}/restaurants`, label: 'Restaurantes', icon: Building2, platformAdminOnly: true },
     { to: `${prefix}/settings`, label: 'Configuración', icon: Settings },
-  ];
+  ].filter((item) => !item.platformAdminOnly || isPlatformAdmin);
 
   // En escritorio la navegación es vertical y puede necesitar desplazarse al cambiar de sección.
   // En móvil todas las secciones caben en una cuadrícula: así ningún texto queda cortado por un
