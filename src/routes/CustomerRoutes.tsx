@@ -20,6 +20,7 @@ const HelpPage = lazy(() => import('@/pages/customer/HelpPage'));
 const TableQrPage = lazy(() => import('@/pages/customer/TableQrPage'));
 const MenuPage = lazy(() => import('@/pages/customer/MenuPage'));
 const GuestOrderPage = lazy(() => import('@/pages/customer/GuestOrderPage'));
+const JobsRedirectPage = lazy(() => import('@/pages/customer/JobsRedirectPage'));
 const NotFoundPage = lazy(() => import('@/pages/shared/NotFoundPage'));
 const LoginPage = lazy(() => import('@/pages/shared/LoginPage'));
 const UnauthorizedPage = lazy(() => import('@/pages/shared/UnauthorizedPage'));
@@ -71,6 +72,7 @@ export function CustomerRoutes() {
   return (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
+        <Route path="jobs" element={<JobsRedirectPage />} />
         <Route path="table/:token" element={<TableQrPage />} />
         <Route path="menu/:slug" element={<MenuPage />} />
         <Route path="menu/:slug/pedido/:id" element={<GuestOrderPage />} />
