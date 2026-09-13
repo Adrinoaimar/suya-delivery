@@ -26,6 +26,10 @@ describe('seguimiento visual del mapa', () => {
     expect(readFileSync(root('src/pages/rider/RiderCurrentPage.tsx'), 'utf8')).toContain(
       'navigation',
     );
+    expect(readFileSync(root('src/pages/rider/RiderCurrentPage.tsx'), 'utf8')).toContain(
+      'key={active.id}',
+    );
+    expect(customerTrack).toContain('key={order.id}');
     const riderHome = readFileSync(root('src/pages/rider/RiderHomePage.tsx'), 'utf8');
     expect(riderHome).toContain('<MapProvider');
     expect(riderHome).toContain('Mapa de tu ubicación y zona de reparto');

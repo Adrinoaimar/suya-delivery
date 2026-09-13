@@ -111,6 +111,7 @@ export default function RiderCurrentPage() {
       <div className="relative h-[min(66dvh,600px)] min-h-[390px] overflow-hidden rounded-card border border-white/10 shadow-card sm:h-[min(70dvh,680px)] sm:min-h-[460px]">
         {mapReady ? (
           <MapProvider
+            key={active.id}
             points={mapPoints}
             origin={mapOrigin}
             destination={mapDestination}

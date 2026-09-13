@@ -193,6 +193,7 @@ export default function OrderTrackPage() {
           <div className="relative h-[54%] shrink-0 overflow-hidden bg-suya-ivory">
             {mapReady ? (
               <MapProvider
+                key={order.id}
                 points={mapPoints}
                 origin={mapOrigin}
                 destination={mapDestination}
@@ -251,6 +252,7 @@ export default function OrderTrackPage() {
             <div className="sticky top-24 h-[calc(100dvh-140px)] overflow-hidden rounded-card border border-suya-mist bg-white">
               {mapReady ? (
                 <MapProvider
+                  key={order.id}
                   points={mapPoints}
                   origin={mapOrigin}
                   destination={mapDestination}
