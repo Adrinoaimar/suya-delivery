@@ -71,6 +71,23 @@ function mapRider(row: RiderRow): RestaurantRider {
   };
 }
 
+function readableListError(error: unknown): Error {
+  const message =
+    error instanceof Error
+      ? error.message
+      : error && typeof error === 'object' && 'message' in error
+        ? String(error.message)
+        : '';
+  if (/list_restaurant_riders|restaurant_riders|schema cache|does not exist/i.test(message)) {
+    return new Error(
+      'La gestión de repartidores aún no está activada en la base de datos. Aplica la actualización de Suya y vuelve a intentar.',
+    );
+  }
+  return error instanceof Error
+    ? error
+    : new Error('No pudimos cargar los repartidores. Revisa la conexión y vuelve a intentar.');
+}
+
 function validateInput(input: InviteRestaurantRiderInput): InviteRestaurantRiderInput {
   const normalized = {
     ...input,
@@ -101,7 +118,7 @@ export class SupabaseRestaurantRiderService implements RestaurantRiderService {
     const { data, error } = await this.client.rpc('list_restaurant_riders', {
       target_restaurant: restaurantId,
     });
-    if (error) throw error;
+    if (error) throw readableListError(error);
     return (Array.isArray(data) ? data : []).map((row) => mapRider(row as RiderRow));
   }
 

@@ -78,7 +78,11 @@ export default function WalletsOperationsPage() {
       setDevices(nextDevices);
       setObservations(nextObservations);
       if (isPlatformAdmin) {
-        setRestaurantId((current) => current && visibleStores.some((store) => store.id === current) ? current : visibleStores[0]?.id || '');
+        setRestaurantId((current) =>
+          current && visibleStores.some((store) => store.id === current)
+            ? current
+            : visibleStores[0]?.id || '',
+        );
       } else {
         setRestaurantId(restaurantIds.length === 1 ? restaurantIds[0] : '');
       }
@@ -175,17 +179,33 @@ export default function WalletsOperationsPage() {
           </div>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-          {isPlatformAdmin ? <label className="text-sm font-semibold">
-            Cuenta de restaurante
-            <select
-              value={restaurantId}
-              onChange={(event) => setRestaurantId(event.target.value)}
-              className="mt-1 h-11 w-full rounded-btn border border-suya-border bg-white px-3 font-normal"
-            >
-              <option value="">Selecciona…</option>
-              {stores.map((store) => <option key={store.id} value={store.id}>{store.name}</option>)}
-            </select>
-          </label> : <div className="rounded-btn border border-suya-mist bg-[#F7FAF8] px-3 py-2.5"><p className="text-xs font-semibold uppercase tracking-wider text-suya-muted">Cuenta fijada</p><p className="mt-1 text-sm font-semibold">{stores.find((store) => store.id === activeRestaurantId)?.name ?? 'Restaurante pendiente de vincular'}</p></div>}
+          {isPlatformAdmin ? (
+            <label className="text-sm font-semibold">
+              Cuenta de restaurante
+              <select
+                value={restaurantId}
+                onChange={(event) => setRestaurantId(event.target.value)}
+                className="mt-1 h-11 w-full rounded-btn border border-suya-border bg-white px-3 font-normal"
+              >
+                <option value="">Selecciona…</option>
+                {stores.map((store) => (
+                  <option key={store.id} value={store.id}>
+                    {store.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <div className="rounded-btn border border-suya-mist bg-[#F7FAF8] px-3 py-2.5">
+              <p className="text-xs font-semibold uppercase tracking-wider text-suya-muted">
+                Cuenta fijada
+              </p>
+              <p className="mt-1 text-sm font-semibold">
+                {stores.find((store) => store.id === activeRestaurantId)?.name ??
+                  'Restaurante pendiente de vincular'}
+              </p>
+            </div>
+          )}
           <label className="text-sm font-semibold">
             Nombre del dispositivo
             <input
@@ -243,7 +263,11 @@ export default function WalletsOperationsPage() {
             Dispositivos conectados
           </h2>
         </div>
-        {!loading && devices.length === 0 ? (
+        {loading ? (
+          <Card role="status" className="p-8 text-center text-sm text-suya-muted">
+            Cargando dispositivos conectados…
+          </Card>
+        ) : devices.length === 0 ? (
           <EmptyState
             icon={<Smartphone className="h-6 w-6" />}
             title="Aún no hay dispositivos"
@@ -276,7 +300,11 @@ export default function WalletsOperationsPage() {
             Últimas observaciones
           </h2>
         </div>
-        {!loading && observations.length === 0 ? (
+        {loading ? (
+          <Card role="status" className="p-8 text-center text-sm text-suya-muted">
+            Cargando observaciones…
+          </Card>
+        ) : observations.length === 0 ? (
           <EmptyState
             icon={<WalletCards className="h-6 w-6" />}
             title="Todavía no hay notificaciones detectadas"

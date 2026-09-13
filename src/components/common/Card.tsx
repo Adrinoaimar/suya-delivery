@@ -1,16 +1,22 @@
-import type { ReactNode } from 'react';
+import type { HTMLAttributes, ReactNode } from 'react';
 import { cn } from '@/lib/cn';
 
-interface CardProps {
-  className?: string;
+interface CardProps extends HTMLAttributes<HTMLDivElement> {
   padded?: boolean;
   variant?: 'default' | 'glass';
   children: ReactNode;
 }
 
-export function Card({ className, padded = true, variant = 'default', children }: CardProps) {
+export function Card({
+  className,
+  padded = true,
+  variant = 'default',
+  children,
+  ...rest
+}: CardProps) {
   return (
     <div
+      {...rest}
       className={cn(
         'rounded-card',
         variant === 'glass' ? 'suya-lens' : 'border border-suya-border bg-white/90 shadow-card',

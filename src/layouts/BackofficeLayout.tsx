@@ -10,7 +10,8 @@ import {
   Users,
   Wallet,
 } from 'lucide-react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { LogoMark } from '@/components/common/Logo';
 import { cn } from '@/lib/cn';
 import { useAuthStore } from '@/store/authStore';
@@ -22,6 +23,8 @@ interface BackofficeLayoutProps {
 export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
   const identity = useAuthStore((state) => state.identity);
   const signOut = useAuthStore((state) => state.signOut);
+  const location = useLocation();
+  const navigationRef = useRef<HTMLElement | null>(null);
   const prefix = basePath.replace(/\/$/, '');
   const navigation = [
     { to: `${prefix}/`, label: 'Resumen', icon: LayoutDashboard, end: true },
@@ -34,6 +37,14 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
     { to: `${prefix}/restaurants`, label: 'Restaurantes', icon: Building2 },
     { to: `${prefix}/settings`, label: 'Configuración', icon: Settings },
   ];
+
+  // En móvil la navegación es horizontal; deja siempre la sección activa completa y visible
+  // después de cambiar de pantalla, evitando que el texto quede cortado entre dos pestañas.
+  useEffect(() => {
+    const activeLink = navigationRef.current?.querySelector<HTMLElement>('[aria-current="page"]');
+    activeLink?.scrollIntoView?.({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
+  }, [location.pathname]);
+
   return (
     <div className="min-h-dvh bg-transparent text-suya-carbon lg:grid lg:grid-cols-[250px_1fr]">
       <aside className="suya-lens-dark border-b border-white/10 p-4 text-white lg:sticky lg:top-0 lg:flex lg:h-dvh lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:border-b-0 lg:border-r">
@@ -45,6 +56,7 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
           </div>
         </div>
         <nav
+          ref={navigationRef}
           className="hide-scrollbar -mx-1 mt-4 flex gap-1 overflow-x-auto px-1 lg:mx-0 lg:mt-5 lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:px-0"
           aria-label="Operaciones"
         >

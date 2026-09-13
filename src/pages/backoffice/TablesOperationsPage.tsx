@@ -204,7 +204,11 @@ export default function TablesOperationsPage() {
           Crear mesa y QR
         </Button>
       </Card>
-      {visibleTables.length === 0 && (
+      {loading ? (
+        <Card role="status" className="p-8 text-center text-sm text-suya-muted">
+          Cargando mesas y códigos QR…
+        </Card>
+      ) : visibleTables.length === 0 ? (
         <Card className="border-dashed py-14 text-center">
           <Table2 className="mx-auto h-10 w-10 text-suya-green" />
           <h2 className="mt-4 font-display text-lg font-bold">Aún no hay mesas configuradas</h2>
@@ -212,7 +216,7 @@ export default function TablesOperationsPage() {
             Crea la primera mesa para generar su código público y recibir pedidos en cocina.
           </p>
         </Card>
-      )}
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {visibleTables.map((table) => {
           const store = stores.find((candidate) => candidate.id === table.restaurantId);

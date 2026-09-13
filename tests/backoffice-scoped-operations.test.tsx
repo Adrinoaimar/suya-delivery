@@ -171,5 +171,6 @@ describe('operaciones con alcance de cuenta de restaurante', () => {
       ),
     );
     expect(await screen.findByText(rider.email)).toBeInTheDocument();
+    expect(mocks.listRiders).toHaveBeenCalledTimes(1);
   });
 });

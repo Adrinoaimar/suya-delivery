@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import {
   Bike,
@@ -71,34 +71,43 @@ export default function RidersOperationsPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const loadRequestRef = useRef(0);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const allStores = await storeService.listStores();
-      const visibleStores = allStores.filter(
-        (store) => isPlatformAdmin || restaurantIds.includes(store.id),
-      );
-      const nextRestaurantId = isPlatformAdmin
-        ? restaurantId && visibleStores.some((store) => store.id === restaurantId)
-          ? restaurantId
-          : (visibleStores[0]?.id ?? '')
-        : restaurantIds.length === 1
-          ? restaurantIds[0]
-          : '';
-      const nextRiders = nextRestaurantId
-        ? await restaurantRiderService.list(nextRestaurantId)
-        : [];
-      setStores(visibleStores);
-      setRestaurantId(nextRestaurantId);
-      setRiders(nextRiders);
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'No pudimos cargar los repartidores.');
-    } finally {
-      setLoading(false);
-    }
-  }, [isPlatformAdmin, restaurantId, restaurantIds]);
+  const load = useCallback(
+    async (preferredRestaurantId = '') => {
+      const requestId = ++loadRequestRef.current;
+      setLoading(true);
+      setError(null);
+      setRiders([]);
+      try {
+        const allStores = await storeService.listStores();
+        const visibleStores = allStores.filter(
+          (store) => isPlatformAdmin || restaurantIds.includes(store.id),
+        );
+        const nextRestaurantId = isPlatformAdmin
+          ? preferredRestaurantId &&
+            visibleStores.some((store) => store.id === preferredRestaurantId)
+            ? preferredRestaurantId
+            : (visibleStores[0]?.id ?? '')
+          : restaurantIds.length === 1
+            ? restaurantIds[0]
+            : '';
+        const nextRiders = nextRestaurantId
+          ? await restaurantRiderService.list(nextRestaurantId)
+          : [];
+        if (requestId !== loadRequestRef.current) return;
+        setStores(visibleStores);
+        setRestaurantId(nextRestaurantId);
+        setRiders(nextRiders);
+      } catch (cause) {
+        if (requestId !== loadRequestRef.current) return;
+        setError(cause instanceof Error ? cause.message : 'No pudimos cargar los repartidores.');
+      } finally {
+        if (requestId === loadRequestRef.current) setLoading(false);
+      }
+    },
+    [isPlatformAdmin, restaurantIds],
+  );
 
   useEffect(() => {
     void load();
@@ -187,7 +196,10 @@ export default function RidersOperationsPage() {
             Cuenta de restaurante
             <select
               value={restaurantId}
-              onChange={(event) => setRestaurantId(event.target.value)}
+              onChange={(event) => {
+                setRestaurantId(event.target.value);
+                void load(event.target.value);
+              }}
               className="mt-1 h-11 w-full rounded-btn border border-suya-border bg-white px-3 font-normal"
               aria-label="Cuenta de restaurante"
             >
@@ -220,7 +232,8 @@ export default function RidersOperationsPage() {
                 <p className="font-semibold">Agregar a {restaurant?.name ?? 'tu restaurante'}</p>
                 <p className="mt-1 text-sm text-suya-muted">
                   Si es una cuenta nueva, recibirá una invitación por correo; si ya es repartidor,
-                  se vinculará directamente. En ambos casos quedará asociado únicamente a esta cuenta.
+                  se vinculará directamente. En ambos casos quedará asociado únicamente a esta
+                  cuenta.
                 </p>
               </div>
             </div>
@@ -304,7 +317,11 @@ export default function RidersOperationsPage() {
               </div>
               <Badge tone="neutral">{riders.length} vinculados</Badge>
             </div>
-            {!loading && riders.length === 0 ? (
+            {loading ? (
+              <Card role="status" className="p-8 text-center text-sm text-suya-muted">
+                Cargando repartidores…
+              </Card>
+            ) : riders.length === 0 ? (
               <EmptyState
                 icon={<Users className="h-6 w-6" />}
                 title="Aún no hay repartidores"

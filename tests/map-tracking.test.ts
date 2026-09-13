@@ -13,6 +13,12 @@ describe('seguimiento visual del mapa', () => {
     expect(map).toContain("color: '#8CC63F'");
     expect(map).toContain('LocateFixed');
     expect(map).toContain('Recorrido real');
+    expect(map).toContain('fetchDrivingRoute');
+    expect(map).toContain('Ruta alternativa');
+    expect(map).toContain('Guía vial no disponible');
+    expect(readFileSync(root('src/pages/rider/RiderCurrentPage.tsx'), 'utf8')).toContain(
+      'navigation',
+    );
     expect(customerTrack).toContain('const mapPoints = useMemo(');
   });
 });

@@ -1,17 +1,34 @@
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Bike, LocateFixed, MapPin, Store } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  Bike,
+  CornerUpLeft,
+  CornerUpRight,
+  LocateFixed,
+  MapPin,
+  RotateCcw,
+  Store,
+} from 'lucide-react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
+import {
+  fetchDrivingRoute,
+  type RouteDirection,
+  type RouteInstruction,
+  type RoutePlan,
+} from '@/lib/routePlanner';
 import { distanceKm } from '@/utils/geo';
 import type { MapViewProps } from './types';
 
 /**
  * Proveedor de mapa real sobre OpenStreetMap (Leaflet), con la misma lectura que un
- * mapa de ubicaciones: calles, puntos confirmados y repartidor. La línea entre puntos
- * es referencia visual, no una ruta calculada.
+ * mapa de ubicaciones: calles, puntos confirmados, ruta vial y repartidor. Si el motor
+ * vial no responde, conserva un trazo de referencia claramente diferenciado.
  */
 export default function LeafletMap({
   points,
@@ -21,14 +38,28 @@ export default function LeafletMap({
   className,
   label,
   interactive = true,
+  navigation = false,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const riderMarkerRef = useRef<L.Marker | null>(null);
   const riderTrailRef = useRef<[number, number][]>([]);
   const riderTrailLineRef = useRef<L.Polyline | null>(null);
+  const routeLayerRef = useRef<L.LayerGroup | null>(null);
   const routeBoundsRef = useRef<L.LatLngBounds | null>(null);
+  const lastRouteRequestRef = useRef<{
+    start: { lat: number; lng: number };
+    end: { lat: number; lng: number };
+  } | null>(null);
+  const hasFittedRouteRef = useRef(false);
   const [tileError, setTileError] = useState(false);
+  const [routePlan, setRoutePlan] = useState<RoutePlan | null>(null);
+  const [routeStatus, setRouteStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [nextInstruction, setNextInstruction] = useState<RouteInstruction | null>(null);
+  const riderLat = rider?.lat;
+  const riderLng = rider?.lng;
+  const destinationLat = destination?.lat;
+  const destinationLng = destination?.lng;
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return undefined;
@@ -41,19 +72,18 @@ export default function LeafletMap({
     });
     mapRef.current = map;
 
-    const tileUrl = import.meta.env.VITE_OSM_TILE_URL?.trim() ||
-      'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    const tileUrl =
+      import.meta.env.VITE_OSM_TILE_URL?.trim() || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
     const tiles = L.tileLayer(tileUrl, {
       maxZoom: 19,
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
     tiles.on('tileerror', () => setTileError(true));
 
     const latlngs = points.map((point) => [point.lat, point.lng] as [number, number]);
+    routeLayerRef.current = L.layerGroup().addTo(map);
     if (latlngs.length > 0) {
-      // Trazo doble: base verde Suya + línea amarilla punteada, como la ruta de la marca.
-      L.polyline(latlngs, { color: '#0E6B44', weight: 7, opacity: 0.95, lineCap: 'round' }).addTo(map);
-      L.polyline(latlngs, { color: '#FFC107', weight: 2.5, dashArray: '8 10' }).addTo(map);
       routeBoundsRef.current = L.latLngBounds(latlngs);
       map.fitBounds(routeBoundsRef.current.pad(0.25));
     } else {
@@ -61,14 +91,22 @@ export default function LeafletMap({
     }
 
     if (origin) {
-      L.marker([origin.lat, origin.lng], { icon: originIcon(), keyboard: true, title: origin.label ?? 'Negocio' })
+      L.marker([origin.lat, origin.lng], {
+        icon: originIcon(),
+        keyboard: true,
+        title: origin.label ?? 'Negocio',
+      })
         .addTo(map)
         .bindTooltip(origin.label ?? 'Negocio', { direction: 'top' })
         .bindPopup(`<strong>${escapeHtml(origin.label ?? 'Negocio')}</strong>`);
     }
 
     if (destination) {
-      L.marker([destination.lat, destination.lng], { icon: destinationIcon(), keyboard: true, title: destination.label ?? 'Tu dirección' })
+      L.marker([destination.lat, destination.lng], {
+        icon: destinationIcon(),
+        keyboard: true,
+        title: destination.label ?? 'Tu dirección',
+      })
         .addTo(map)
         .bindTooltip(destination.label ?? 'Tu dirección', { direction: 'top' })
         .bindPopup(`<strong>${escapeHtml(destination.label ?? 'Tu dirección')}</strong>`);
@@ -86,8 +124,172 @@ export default function LeafletMap({
       riderMarkerRef.current = null;
       riderTrailRef.current = [];
       riderTrailLineRef.current = null;
+      routeLayerRef.current = null;
+      routeBoundsRef.current = null;
+      hasFittedRouteRef.current = false;
     };
   }, [points, origin, destination, interactive]);
+
+  // El mapa muestra calles reales cuando es posible. En Rider se recalcula cada 50 m
+  // para que el camino siga al GPS sin generar una petición por cada lectura.
+  useEffect(() => {
+    const map = mapRef.current;
+    const layer = routeLayerRef.current;
+    if (!map || !layer) return undefined;
+
+    const currentRider =
+      riderLat !== undefined && riderLng !== undefined ? { lat: riderLat, lng: riderLng } : null;
+    const currentDestination =
+      destinationLat !== undefined && destinationLng !== undefined
+        ? { lat: destinationLat, lng: destinationLng }
+        : null;
+    const routingStart = navigation && currentRider ? currentRider : points[0];
+    const routingEnd = currentDestination ?? points.at(-1);
+    const previous = lastRouteRequestRef.current;
+    const minimumMovementKm = navigation ? 0.05 : 0;
+    const canReuseRoute = Boolean(
+      previous &&
+      distanceKm(previous.start, routingStart ?? previous.start) < minimumMovementKm &&
+      routingEnd &&
+      distanceKm(previous.end, routingEnd) < 0.01 &&
+      layer.getLayers().length > 0,
+    );
+    if (canReuseRoute) return undefined;
+
+    layer.clearLayers();
+    setRoutePlan(null);
+    setNextInstruction(null);
+    setRouteStatus('idle');
+
+    const fallbackPoints =
+      navigation && currentRider && routingEnd ? [currentRider, routingEnd] : points;
+    if (fallbackPoints.length > 1) {
+      drawFallbackRoute(layer, fallbackPoints);
+      routeBoundsRef.current = L.latLngBounds(
+        fallbackPoints.map((point) => [point.lat, point.lng] as [number, number]),
+      );
+    }
+
+    if (!routingStart || !routingEnd || distanceKm(routingStart, routingEnd) < 0.01) {
+      return undefined;
+    }
+
+    lastRouteRequestRef.current = { start: routingStart, end: routingEnd };
+    setRouteStatus('loading');
+    const controller = new AbortController();
+    let timedOut = false;
+    const timeoutId = window.setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, 8_000);
+    void fetchDrivingRoute(routingStart, routingEnd, controller.signal)
+      .then((plan) => {
+        if (controller.signal.aborted) return;
+        setRoutePlan(plan);
+        setNextInstruction(plan.instructions[0] ?? null);
+        setRouteStatus('ready');
+      })
+      .catch((cause: unknown) => {
+        if (controller.signal.aborted && !timedOut) return;
+        setRouteStatus('error');
+        // The direct reference remains on screen; it is intentionally not styled as a road.
+        if (cause instanceof Error && cause.name !== 'AbortError')
+          console.warn('No se pudo calcular la ruta vial:', cause.message);
+      })
+      .finally(() => window.clearTimeout(timeoutId));
+
+    return () => controller.abort();
+  }, [destinationLat, destinationLng, navigation, points, riderLat, riderLng]);
+
+  // Redibuja solo las capas de ruta, no el mapa completo ni sus marcadores.
+  useEffect(() => {
+    const map = mapRef.current;
+    const layer = routeLayerRef.current;
+    if (!map || !layer) return;
+    layer.clearLayers();
+    const currentRider =
+      riderLat !== undefined && riderLng !== undefined ? { lat: riderLat, lng: riderLng } : null;
+    const currentDestination =
+      destinationLat !== undefined && destinationLng !== undefined
+        ? { lat: destinationLat, lng: destinationLng }
+        : null;
+    const fallbackPoints =
+      navigation && currentRider && currentDestination
+        ? [currentRider, currentDestination]
+        : points;
+    if (!routePlan) {
+      if (fallbackPoints.length > 1) drawFallbackRoute(layer, fallbackPoints);
+      return;
+    }
+
+    routePlan.alternatives.forEach((alternative) => {
+      L.polyline(toLatLngs(alternative.geometry), {
+        color: '#0E6B44',
+        weight: 5,
+        opacity: 0.28,
+        dashArray: '10 12',
+        lineCap: 'round',
+        lineJoin: 'round',
+        interactive: false,
+      }).addTo(layer);
+    });
+    L.polyline(toLatLngs(routePlan.geometry), {
+      color: '#FFFFFF',
+      weight: 11,
+      opacity: 0.92,
+      lineCap: 'round',
+      lineJoin: 'round',
+      interactive: false,
+    }).addTo(layer);
+    L.polyline(toLatLngs(routePlan.geometry), {
+      color: '#0E6B44',
+      weight: 6,
+      opacity: 0.98,
+      lineCap: 'round',
+      lineJoin: 'round',
+      interactive: false,
+    }).addTo(layer);
+    routeBoundsRef.current = L.latLngBounds(toLatLngs(routePlan.geometry));
+    if (!hasFittedRouteRef.current) {
+      map.fitBounds(routeBoundsRef.current.pad(0.2), { animate: false });
+      hasFittedRouteRef.current = true;
+    }
+  }, [destinationLat, destinationLng, navigation, points, riderLat, riderLng, routePlan]);
+
+  useEffect(() => {
+    if (
+      !navigation ||
+      riderLat === undefined ||
+      riderLng === undefined ||
+      !routePlan?.instructions.length
+    )
+      return;
+    const currentRider = { lat: riderLat, lng: riderLng };
+    const ahead = routePlan.instructions.filter(
+      (instruction) =>
+        instruction.direction !== 'depart' &&
+        instruction.direction !== 'arrive' &&
+        distanceKm(currentRider, instruction.position) >= 0.03,
+    );
+    const arrival = routePlan.instructions.find(
+      (instruction) => instruction.direction === 'arrive',
+    );
+    const straightAhead = routePlan.instructions.find(
+      (instruction) =>
+        instruction.direction === 'straight' &&
+        distanceKm(currentRider, instruction.position) >= 0.03,
+    );
+    const fallback: RouteInstruction | null = arrival
+      ? {
+          text: 'Continúa hacia el destino',
+          direction: 'straight',
+          distanceMeters: distanceKm(currentRider, arrival.position) * 1000,
+          durationSeconds: arrival.durationSeconds,
+          position: arrival.position,
+        }
+      : (routePlan.instructions.at(-1) ?? null);
+    setNextInstruction(ahead[0] ?? straightAhead ?? fallback);
+  }, [navigation, riderLat, riderLng, routePlan]);
 
   // El marcador del repartidor se mueve y deja un rastro visible, sin recentrar de golpe.
   useEffect(() => {
@@ -105,7 +307,10 @@ export default function LeafletMap({
 
     const position: [number, number] = [rider.lat, rider.lng];
     const lastPosition = riderTrailRef.current.at(-1);
-    if (!lastPosition || distanceKm({ lat: lastPosition[0], lng: lastPosition[1] }, rider) >= 0.004) {
+    if (
+      !lastPosition ||
+      distanceKm({ lat: lastPosition[0], lng: lastPosition[1] }, rider) >= 0.004
+    ) {
       riderTrailRef.current = [...riderTrailRef.current, position];
       if (!riderTrailLineRef.current) {
         riderTrailLineRef.current = L.polyline(riderTrailRef.current, {
@@ -160,14 +365,73 @@ export default function LeafletMap({
           <LocateFixed className="h-5 w-5" aria-hidden="true" />
         </button>
       )}
+      {navigation && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="absolute left-3 top-3 z-[500] max-w-[min(82%,21rem)] rounded-2xl bg-white/95 px-3.5 py-3 shadow-card ring-1 ring-black/10 backdrop-blur-sm"
+        >
+          {rider && nextInstruction && routeStatus !== 'error' ? (
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-suya-green text-white">
+                {(() => {
+                  const Icon = instructionIcon(nextInstruction.direction);
+                  return <Icon className="h-6 w-6" aria-hidden="true" />;
+                })()}
+              </span>
+              <span className="min-w-0">
+                <strong className="block text-sm leading-tight text-suya-carbon">
+                  {nextInstruction.text}
+                </strong>
+                <span className="mt-1 block text-xs font-medium text-suya-muted">
+                  {formatDistance(
+                    rider
+                      ? distanceKm(rider, nextInstruction.position) * 1000
+                      : nextInstruction.distanceMeters,
+                  )}
+                  {routeStatus === 'loading' ? ' · actualizando ruta…' : ''}
+                </span>
+              </span>
+            </div>
+          ) : routeStatus === 'loading' ? (
+            <p className="text-sm font-semibold text-suya-carbon">Calculando ruta vial…</p>
+          ) : routeStatus === 'error' ? (
+            <p className="text-sm font-semibold text-suya-carbon">
+              Guía vial no disponible. Sigue el trazo y la dirección de entrega.
+            </p>
+          ) : (
+            <p className="text-sm font-semibold text-suya-carbon">Esperando una posición GPS…</p>
+          )}
+          <p className="mt-2 text-[10px] font-medium text-suya-muted">
+            Ruta vial · OSRM + OpenStreetMap
+          </p>
+        </div>
+      )}
       {rider && (
         <div className="absolute bottom-3 left-3 z-[500] flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-[11px] font-semibold text-[#0E6B44] shadow-card ring-1 ring-black/10">
           <span className="h-2 w-5 rounded-full bg-suya-lime" aria-hidden="true" />
           Recorrido real
         </div>
       )}
+      {routePlan && routePlan.alternatives.length > 0 && (
+        <div
+          className={cn(
+            'absolute left-3 z-[500] flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-[11px] font-semibold text-suya-muted shadow-card ring-1 ring-black/10',
+            rider ? 'bottom-14' : 'bottom-3',
+          )}
+        >
+          <span
+            className="h-0 w-5 border-t-2 border-dashed border-suya-green/45"
+            aria-hidden="true"
+          />
+          Ruta alternativa
+        </div>
+      )}
       {tileError && (
-        <div role="status" className="absolute inset-x-3 bottom-3 z-[500] rounded-xl bg-white/95 px-3 py-2 text-xs text-[#6B7076] shadow-md ring-1 ring-black/10">
+        <div
+          role="status"
+          className="absolute inset-x-3 bottom-3 z-[500] rounded-xl bg-white/95 px-3 py-2 text-xs text-[#6B7076] shadow-md ring-1 ring-black/10"
+        >
           No se pudieron cargar algunas calles. La ruta y las direcciones siguen disponibles.
         </div>
       )}
@@ -175,8 +439,64 @@ export default function LeafletMap({
   );
 }
 
+function toLatLngs(points: { lat: number; lng: number }[]): [number, number][] {
+  return points.map((point) => [point.lat, point.lng]);
+}
+
+function drawFallbackRoute(layer: L.LayerGroup, points: { lat: number; lng: number }[]): void {
+  const latlngs = toLatLngs(points);
+  L.polyline(latlngs, {
+    color: '#FFFFFF',
+    weight: 9,
+    opacity: 0.9,
+    lineCap: 'round',
+    lineJoin: 'round',
+    interactive: false,
+  }).addTo(layer);
+  L.polyline(latlngs, {
+    color: '#F2B544',
+    weight: 4,
+    opacity: 0.95,
+    dashArray: '9 11',
+    lineCap: 'round',
+    lineJoin: 'round',
+    interactive: false,
+  }).addTo(layer);
+}
+
+function instructionIcon(direction: RouteDirection): LucideIcon {
+  switch (direction) {
+    case 'left':
+    case 'sharp-left':
+      return ArrowLeft;
+    case 'slight-left':
+      return CornerUpLeft;
+    case 'right':
+    case 'sharp-right':
+      return ArrowRight;
+    case 'slight-right':
+      return CornerUpRight;
+    case 'uturn':
+      return RotateCcw;
+    case 'arrive':
+      return MapPin;
+    default:
+      return ArrowUp;
+  }
+}
+
+function formatDistance(meters: number): string {
+  if (meters < 1000) return `${Math.max(10, Math.round(meters / 10) * 10)} m`;
+  return `${(meters / 1000).toFixed(1)} km`;
+}
+
 function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character] ?? character));
+  return value.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character] ??
+      character,
+  );
 }
 
 function divIcon(html: string, size: number): L.DivIcon {
