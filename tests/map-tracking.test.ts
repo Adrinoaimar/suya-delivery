@@ -15,6 +15,8 @@ describe('seguimiento visual del mapa', () => {
     expect(map).toContain('const EMPTY_TRAIL: LatLng[] = []');
     expect(map).toContain('MAX_TRACK_POINTS');
     expect(map).toContain('setLatLngs(riderTrailRef.current)');
+    expect(map).toContain('Si la última lectura falla, conserva el rastro histórico');
+    expect(map).toContain('if (historicalTrail.length === 0)');
     expect(map).toContain("color: '#8CC63F'");
     expect(map).toContain('LocateFixed');
     expect(map).toContain('Recorrido real');

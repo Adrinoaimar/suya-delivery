@@ -379,9 +379,13 @@ export default function LeafletMap({
     if (!rider) {
       riderMarkerRef.current?.remove();
       riderMarkerRef.current = null;
-      riderTrailLineRef.current?.remove();
-      riderTrailLineRef.current = null;
-      riderTrailRef.current = [];
+      // Si la última lectura falla, conserva el rastro histórico que ya cargó el
+      // seguimiento. Solo se limpia cuando la fuente también confirma que no hay historial.
+      if (historicalTrail.length === 0) {
+        riderTrailLineRef.current?.remove();
+        riderTrailLineRef.current = null;
+        riderTrailRef.current = [];
+      }
       return;
     }
 
@@ -418,7 +422,7 @@ export default function LeafletMap({
     if (!map.getBounds().pad(-0.25).contains(position)) {
       map.panTo(position, { animate: true, duration: 0.8 });
     }
-  }, [rider]);
+  }, [historicalTrail, rider]);
 
   useEffect(() => {
     if (!mapExpanded) return undefined;
