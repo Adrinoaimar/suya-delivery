@@ -16,9 +16,12 @@ describe('seguimiento visual del mapa', () => {
     expect(map).toContain('fetchDrivingRoute');
     expect(map).toContain('Ruta alternativa');
     expect(map).toContain('Guía vial no disponible');
+    expect(map).toContain('hasAppliedInitialViewRef');
+    expect(map).toContain('}, [interactive]);');
     expect(readFileSync(root('src/pages/rider/RiderCurrentPage.tsx'), 'utf8')).toContain(
       'navigation',
     );
     expect(customerTrack).toContain('const mapPoints = useMemo(');
+    expect(customerTrack).toContain('h-[54%]');
   });
 });

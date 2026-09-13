@@ -190,7 +190,7 @@ export default function OrderTrackPage() {
       {/* Se monta un solo mapa: dos instancias de Leaflet a la vez duplicarían los tiles. */}
       {!isDesktop && (
         <div className="flex h-[calc(100dvh-var(--header-h)-var(--bottom-nav-h))] flex-col lg:hidden">
-          <div className="relative h-[45%] shrink-0 overflow-hidden bg-suya-ivory">
+          <div className="relative h-[54%] shrink-0 overflow-hidden bg-suya-ivory">
             {mapReady ? (
               <MapProvider
                 points={mapPoints}

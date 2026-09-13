@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { Skeleton } from '@/components/common/Skeleton';
 import type { MapViewProps } from './types';
 
@@ -11,9 +11,22 @@ const LeafletMap = lazy(() => import('./LeafletMap'));
  * Producción usa OpenStreetMap mediante Leaflet. Sin conexión no inventa posiciones.
  */
 export function MapProvider(props: MapViewProps) {
-  const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+  const [online, setOnline] = useState(
+    () => typeof navigator === 'undefined' || navigator.onLine !== false,
+  );
 
-  if (offline) {
+  useEffect(() => {
+    const handleOnline = () => setOnline(true);
+    const handleOffline = () => setOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  if (!online) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-suya-ivory p-6 text-center text-sm text-[#6B7076]" role="status">
         Mapa no disponible sin conexión. Dirección y referencia siguen visibles abajo.

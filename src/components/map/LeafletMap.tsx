@@ -42,11 +42,14 @@ export default function LeafletMap({
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const originMarkerRef = useRef<L.Marker | null>(null);
+  const destinationMarkerRef = useRef<L.Marker | null>(null);
   const riderMarkerRef = useRef<L.Marker | null>(null);
   const riderTrailRef = useRef<[number, number][]>([]);
   const riderTrailLineRef = useRef<L.Polyline | null>(null);
   const routeLayerRef = useRef<L.LayerGroup | null>(null);
   const routeBoundsRef = useRef<L.LatLngBounds | null>(null);
+  const hasAppliedInitialViewRef = useRef(false);
   const lastRouteRequestRef = useRef<{
     start: { lat: number; lng: number };
     end: { lat: number; lng: number };
@@ -58,8 +61,12 @@ export default function LeafletMap({
   const [nextInstruction, setNextInstruction] = useState<RouteInstruction | null>(null);
   const riderLat = rider?.lat;
   const riderLng = rider?.lng;
+  const originLat = origin?.lat;
+  const originLng = origin?.lng;
+  const originLabel = origin?.label;
   const destinationLat = destination?.lat;
   const destinationLng = destination?.lng;
+  const destinationLabel = destination?.label;
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return undefined;
@@ -81,36 +88,8 @@ export default function LeafletMap({
     }).addTo(map);
     tiles.on('tileerror', () => setTileError(true));
 
-    const latlngs = points.map((point) => [point.lat, point.lng] as [number, number]);
     routeLayerRef.current = L.layerGroup().addTo(map);
-    if (latlngs.length > 0) {
-      routeBoundsRef.current = L.latLngBounds(latlngs);
-      map.fitBounds(routeBoundsRef.current.pad(0.25));
-    } else {
-      map.setView([-4.8941, -80.6899], 14);
-    }
-
-    if (origin) {
-      L.marker([origin.lat, origin.lng], {
-        icon: originIcon(),
-        keyboard: true,
-        title: origin.label ?? 'Negocio',
-      })
-        .addTo(map)
-        .bindTooltip(origin.label ?? 'Negocio', { direction: 'top' })
-        .bindPopup(`<strong>${escapeHtml(origin.label ?? 'Negocio')}</strong>`);
-    }
-
-    if (destination) {
-      L.marker([destination.lat, destination.lng], {
-        icon: destinationIcon(),
-        keyboard: true,
-        title: destination.label ?? 'Tu dirección',
-      })
-        .addTo(map)
-        .bindTooltip(destination.label ?? 'Tu dirección', { direction: 'top' })
-        .bindPopup(`<strong>${escapeHtml(destination.label ?? 'Tu dirección')}</strong>`);
-    }
+    map.setView([-4.8941, -80.6899], 14);
 
     // Al cambiar el tamaño del contenedor (hoja inferior que se expande, rotación del
     // teléfono) Leaflet debe recalcular o quedan franjas grises sin tiles.
@@ -121,14 +100,63 @@ export default function LeafletMap({
       observer.disconnect();
       map.remove();
       mapRef.current = null;
+      originMarkerRef.current = null;
+      destinationMarkerRef.current = null;
       riderMarkerRef.current = null;
       riderTrailRef.current = [];
       riderTrailLineRef.current = null;
       routeLayerRef.current = null;
       routeBoundsRef.current = null;
+      hasAppliedInitialViewRef.current = false;
       hasFittedRouteRef.current = false;
     };
-  }, [points, origin, destination, interactive]);
+  }, [interactive]);
+
+  // Ajusta vista una sola vez. No depende de cada lectura GPS: así el mapa no se
+  // reconstruye ni pierde tiles, zoom o rastro mientras cambia la posición.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || hasAppliedInitialViewRef.current || points.length === 0) return;
+
+    const latlngs = points.map((point) => [point.lat, point.lng] as [number, number]);
+    routeBoundsRef.current = L.latLngBounds(latlngs);
+    if (latlngs.length > 1) map.fitBounds(routeBoundsRef.current.pad(0.25), { animate: false });
+    else map.setView(latlngs[0], 15);
+    hasAppliedInitialViewRef.current = true;
+  }, [points]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    originMarkerRef.current?.remove();
+    originMarkerRef.current = null;
+    if (originLat !== undefined && originLng !== undefined) {
+      const markerLabel = originLabel ?? 'Negocio';
+      originMarkerRef.current = L.marker([originLat, originLng], {
+        icon: originIcon(),
+        keyboard: true,
+        title: markerLabel,
+      })
+        .addTo(map)
+        .bindTooltip(markerLabel, { direction: 'top' })
+        .bindPopup(`<strong>${escapeHtml(markerLabel)}</strong>`);
+    }
+
+    destinationMarkerRef.current?.remove();
+    destinationMarkerRef.current = null;
+    if (destinationLat !== undefined && destinationLng !== undefined) {
+      const markerLabel = destinationLabel ?? 'Tu dirección';
+      destinationMarkerRef.current = L.marker([destinationLat, destinationLng], {
+        icon: destinationIcon(),
+        keyboard: true,
+        title: markerLabel,
+      })
+        .addTo(map)
+        .bindTooltip(markerLabel, { direction: 'top' })
+        .bindPopup(`<strong>${escapeHtml(markerLabel)}</strong>`);
+    }
+  }, [destinationLabel, destinationLat, destinationLng, originLabel, originLat, originLng]);
 
   // El mapa muestra calles reales cuando es posible. En Rider se recalcula cada 50 m
   // para que el camino siga al GPS sin generar una petición por cada lectura.
