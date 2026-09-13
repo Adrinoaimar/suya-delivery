@@ -26,6 +26,11 @@ describe('seguimiento visual del mapa', () => {
     expect(readFileSync(root('src/pages/rider/RiderCurrentPage.tsx'), 'utf8')).toContain(
       'navigation',
     );
+    const riderHome = readFileSync(root('src/pages/rider/RiderHomePage.tsx'), 'utf8');
+    expect(riderHome).toContain('<MapProvider');
+    expect(riderHome).toContain('Mapa de tu ubicación y zona de reparto');
+    expect(riderHome).toContain('h-[min(58dvh,520px)]');
+    expect(riderHome).toContain('Siguiendo tu ruta de entrega');
     expect(customerTrack).toContain('const mapPoints = useMemo(');
     expect(customerTrack).toContain('h-[54%]');
   });
