@@ -3,8 +3,8 @@
   "disclosure": "Todas las imágenes son ilustrativas y generadas con IA; no son fotos del negocio.",
   "uniqueImages": 192,
   "productLinks": 211,
-  "generated": 8,
-  "pending": 184,
+  "generated": 88,
+  "pending": 104,
   "items": [
     {
       "restaurant": "Donde Joel",
@@ -76,7 +76,7 @@
       "price": 35,
       "target": "public/images/generated/anda-paya/ap-005-chicharron-mixto.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -88,7 +88,7 @@
       "price": 30,
       "target": "public/images/generated/anda-paya/ap-006-jalea-de-cabrilla.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -100,7 +100,7 @@
       "price": 40,
       "target": "public/images/generated/anda-paya/ap-007-cabrilla-a-lo-macho.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -124,7 +124,7 @@
       "price": 20,
       "target": "public/images/generated/anda-paya/ap-009-ceviche-de-filete-del-dia.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -136,7 +136,7 @@
       "price": 20,
       "target": "public/images/generated/anda-paya/ap-010-ceviche-de-caballa.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -148,7 +148,7 @@
       "price": 25,
       "target": "public/images/generated/anda-paya/ap-011-ceviche-de-filete-con-caballa.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -160,7 +160,7 @@
       "price": 25,
       "target": "public/images/generated/anda-paya/ap-012-ceviche-de-filete-con-mariscos.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -172,7 +172,7 @@
       "price": 18,
       "target": "public/images/generated/anda-paya/ap-013-causa-acevichada.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -196,7 +196,7 @@
       "price": 20,
       "target": "public/images/generated/anda-paya/ap-015-arroz-con-mariscos.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -208,7 +208,7 @@
       "price": 10,
       "target": "public/images/generated/anda-paya/ap-016-chaufa-de-pollo.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -220,7 +220,7 @@
       "price": 12,
       "target": "public/images/generated/anda-paya/ap-017-chaufa-de-chancho.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -244,7 +244,7 @@
       "price": 20,
       "target": "public/images/generated/anda-paya/ap-019-seco-de-chavelo.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -256,7 +256,7 @@
       "price": 20,
       "target": "public/images/generated/anda-paya/ap-020-majado-de-yuca.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -268,7 +268,7 @@
       "price": 20,
       "target": "public/images/generated/anda-paya/ap-021-carne-alinada.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -280,7 +280,7 @@
       "price": 20,
       "target": "public/images/generated/anda-paya/ap-022-costillas-con-patacones.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -292,7 +292,7 @@
       "price": 20,
       "target": "public/images/generated/anda-paya/ap-023-tacu-tacu-criollo.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -304,7 +304,7 @@
       "price": 20,
       "target": "public/images/generated/anda-paya/ap-024-tacu-tacu-marino.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -316,7 +316,7 @@
       "price": 25,
       "target": "public/images/generated/anda-paya/ap-025-tacu-tacu-con-lomo-saltado-a-lo-pobre.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -328,7 +328,7 @@
       "price": 15,
       "target": "public/images/generated/anda-paya/ap-026-lomo-saltado.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -340,7 +340,7 @@
       "price": 20,
       "target": "public/images/generated/anda-paya/ap-027-lomo-saltado-a-lo-pobre.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -352,7 +352,7 @@
       "price": 60,
       "target": "public/images/generated/anda-paya/ap-028-ronda-marina.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -364,7 +364,7 @@
       "price": 60,
       "target": "public/images/generated/anda-paya/ap-029-ronda-criolla.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -376,7 +376,7 @@
       "price": 30,
       "target": "public/images/generated/anda-paya/ap-030-arma-tu-duo.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -388,7 +388,7 @@
       "price": 45,
       "target": "public/images/generated/anda-paya/ap-031-arma-tu-trio.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -400,7 +400,7 @@
       "price": 70,
       "target": "public/images/generated/anda-paya/ap-032-arma-tu-ronda.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -412,7 +412,7 @@
       "price": 15,
       "target": "public/images/generated/anda-paya/ap-033-leche-de-tigre-con-chicharron-de-pota.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -424,7 +424,7 @@
       "price": 15,
       "target": "public/images/generated/anda-paya/ap-034-alitas-6-unidades.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -436,7 +436,7 @@
       "price": 10,
       "target": "public/images/generated/anda-paya/ap-035-salchipapa.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -448,7 +448,7 @@
       "price": 12,
       "target": "public/images/generated/anda-paya/ap-036-pollipapa.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -460,7 +460,7 @@
       "price": 13,
       "target": "public/images/generated/anda-paya/ap-037-salchipollo.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -472,7 +472,7 @@
       "price": 15,
       "target": "public/images/generated/anda-paya/ap-038-pollipapa-a-lo-pobre.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -484,7 +484,7 @@
       "price": 15,
       "target": "public/images/generated/anda-paya/ap-039-chicharron-de-pollo.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -496,7 +496,7 @@
       "price": 6,
       "target": "public/images/generated/anda-paya/ap-040-hamburguesa-clasica.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -508,7 +508,7 @@
       "price": 7,
       "target": "public/images/generated/anda-paya/ap-041-hamburguesa-de-pollo.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -520,7 +520,7 @@
       "price": 10,
       "target": "public/images/generated/anda-paya/ap-042-hamburguesa-royal.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -532,7 +532,7 @@
       "price": 13,
       "target": "public/images/generated/anda-paya/ap-043-hamburguesa-andapaya.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -544,7 +544,7 @@
       "price": 15,
       "target": "public/images/generated/anda-paya/ap-044-mostrito-de-broaster.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -556,7 +556,7 @@
       "price": 20,
       "target": "public/images/generated/anda-paya/ap-045-mostrito-con-4-alitas.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -568,7 +568,7 @@
       "price": 15,
       "target": "public/images/generated/anda-paya/ap-046-pollo-a-la-parrilla.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -580,7 +580,7 @@
       "price": 15,
       "target": "public/images/generated/anda-paya/ap-047-mollejas.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -592,7 +592,7 @@
       "price": 15,
       "target": "public/images/generated/anda-paya/ap-048-pollo-a-la-plancha.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -604,7 +604,7 @@
       "price": 15,
       "target": "public/images/generated/anda-paya/ap-049-anticuchos.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -616,7 +616,7 @@
       "price": 15,
       "target": "public/images/generated/anda-paya/ap-050-chuleta.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -628,7 +628,7 @@
       "price": 7,
       "target": "public/images/generated/anda-paya/ap-051-chaufa-de-huevo.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -640,7 +640,7 @@
       "price": 5,
       "target": "public/images/generated/anda-paya/ap-052-porcion-de-arroz.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -652,7 +652,7 @@
       "price": 5,
       "target": "public/images/generated/anda-paya/ap-053-papas-fritas.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -664,7 +664,7 @@
       "price": 5,
       "target": "public/images/generated/anda-paya/ap-054-patacones.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -676,7 +676,7 @@
       "price": 5,
       "target": "public/images/generated/anda-paya/ap-055-platanos-maduros.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -688,7 +688,7 @@
       "price": 5,
       "target": "public/images/generated/anda-paya/ap-056-yucas-fritas.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -700,7 +700,7 @@
       "price": 5,
       "target": "public/images/generated/anda-paya/ap-057-camote.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Andá Paya",
@@ -712,7 +712,7 @@
       "price": 4,
       "target": "public/images/generated/anda-paya/ap-058-arroz.webp",
       "mirrorFolder": "Andá Paya",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -725,7 +725,7 @@
       "sortOrder": 10,
       "target": "public/images/generated/donde-joel/dj-p01-001-arroz-con-mariscos.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -738,7 +738,7 @@
       "sortOrder": 20,
       "target": "public/images/generated/donde-joel/dj-p01-002-tiradito-clasico.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -751,7 +751,7 @@
       "sortOrder": 30,
       "target": "public/images/generated/donde-joel/dj-p01-003-leche-de-tigre.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -764,7 +764,7 @@
       "sortOrder": 40,
       "target": "public/images/generated/donde-joel/dj-p01-004-chicharron-de-pescado.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -777,7 +777,7 @@
       "sortOrder": 50,
       "target": "public/images/generated/donde-joel/dj-p01-005-chicharron-de-caballa.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -790,7 +790,7 @@
       "sortOrder": 60,
       "target": "public/images/generated/donde-joel/dj-p01-006-seco-de-chavelo.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -803,7 +803,7 @@
       "sortOrder": 70,
       "target": "public/images/generated/donde-joel/dj-p01-007-majado-de-yuca.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -816,7 +816,7 @@
       "sortOrder": 80,
       "target": "public/images/generated/donde-joel/dj-p01-008-seco-de-chavelo-costillas.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -829,7 +829,7 @@
       "sortOrder": 90,
       "target": "public/images/generated/donde-joel/dj-p01-009-majado-de-yuca-costillas.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -842,7 +842,7 @@
       "sortOrder": 100,
       "target": "public/images/generated/donde-joel/dj-p01-010-criolla.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -855,7 +855,7 @@
       "sortOrder": 110,
       "target": "public/images/generated/donde-joel/dj-p01-011-marina.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -868,7 +868,7 @@
       "sortOrder": 120,
       "target": "public/images/generated/donde-joel/dj-p01-012-ronda-amazonica.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -881,7 +881,7 @@
       "sortOrder": 130,
       "target": "public/images/generated/donde-joel/dj-p01-013-mar-y-tierra.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -894,7 +894,7 @@
       "sortOrder": 140,
       "target": "public/images/generated/donde-joel/dj-p02-001-salchipapa-clasica.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -907,7 +907,7 @@
       "sortOrder": 150,
       "target": "public/images/generated/donde-joel/dj-p02-002-salchipollo.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -920,7 +920,7 @@
       "sortOrder": 160,
       "target": "public/images/generated/donde-joel/dj-p02-003-salchi-mixta.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -933,7 +933,7 @@
       "sortOrder": 170,
       "target": "public/images/generated/donde-joel/dj-p02-004-salchibrasa.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -946,7 +946,7 @@
       "sortOrder": 180,
       "target": "public/images/generated/donde-joel/dj-p02-005-salchibrason.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -959,7 +959,7 @@
       "sortOrder": 190,
       "target": "public/images/generated/donde-joel/dj-p02-006-salchipapa-a-lo-pobre.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -972,7 +972,7 @@
       "sortOrder": 200,
       "target": "public/images/generated/donde-joel/dj-p02-007-salchipapa-amazonica.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -985,7 +985,7 @@
       "sortOrder": 210,
       "target": "public/images/generated/donde-joel/dj-p02-008-brocheta-de-pollo.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -998,7 +998,7 @@
       "sortOrder": 220,
       "target": "public/images/generated/donde-joel/dj-p02-009-brocheta-de-lomo-fino.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -1011,7 +1011,7 @@
       "sortOrder": 230,
       "target": "public/images/generated/donde-joel/dj-p02-010-brocheta-de-chancho.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -1024,7 +1024,7 @@
       "sortOrder": 240,
       "target": "public/images/generated/donde-joel/dj-p02-011-chaufa-de-pollo.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -1037,7 +1037,7 @@
       "sortOrder": 250,
       "target": "public/images/generated/donde-joel/dj-p02-012-chaufa-a-lo-pobre.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -1050,7 +1050,7 @@
       "sortOrder": 260,
       "target": "public/images/generated/donde-joel/dj-p02-013-chaufa-de-chancho.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -1063,7 +1063,7 @@
       "sortOrder": 270,
       "target": "public/images/generated/donde-joel/dj-p02-014-chaufa-de-carne.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -1076,7 +1076,7 @@
       "sortOrder": 280,
       "target": "public/images/generated/donde-joel/dj-p02-015-chaufa-mixto.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
@@ -1141,7 +1141,7 @@
       "sortOrder": 330,
       "target": "public/images/generated/donde-joel/dj-p02-020-1-4-de-pollo-broaster.webp",
       "mirrorFolder": "Donde Joel",
-      "status": "pending"
+      "status": "generated"
     },
     {
       "restaurant": "Donde Joel",
