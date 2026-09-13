@@ -82,7 +82,7 @@ producción.
 
 ## Checkpoint F25: estabilización de mapas y APKs por rol
 
-- La rama `feat/backoffice-restaurant-ops` terminó en `c7db260`; PR #36 está abierto y mergeable.
+- La rama `feat/backoffice-restaurant-ops` terminó en `14ae039`; PR #36 está abierto y mergeable.
 - Leaflet ya no se reconstruye por cada lectura GPS ni redibuja la ruta del Cliente innecesariamente.
   Marcadores, rastro, ruta vial OSRM/OpenStreetMap, alternativas y guía de maniobras conservan estado.
 - El OTA nativo ahora aplica solo cuando `VITE_MOBILE_ROLE` es explícitamente `customer`; builds
@@ -115,22 +115,22 @@ producción.
   Ofertas, Dispositivos de pagos y Cuentas de restaurantes; el staff con cuenta fija ya no dispara una
   recarga duplicada del catálogo. Leaflet usa botones de zoom redondos y accesibles, dejando libre la
   tarjeta de guía.
-- Evidencia local: 53 suites/221 tests, lint, typecheck, build aislado, escaneo de secretos, diff
-  limpio, smoke responsive y comprobación Playwright del viewport completo. CI final Android `34750371671`
-  y workflows asociados: browser `34750371591`, test `34750371653`, simulator `34750371656` y build
-  `34750371677`, todos verdes. Android publicó APK Rider y Back Office.
+- Evidencia local: 53 suites/221 tests, lint, typecheck, escaneo de secretos y diff limpio; smoke
+  responsive y comprobación Playwright del viewport completo. CI final Android `34752142964` y workflows
+  asociados: browser `34752142937`, browser-e2e/build `34752142941`, test `34752142958` y simulator
+  `34752142928`, todos verdes. Android publicó APK Rider y Back Office.
 - Producción responde HTTP 200 en los tres dominios y Back Office muestra `Suya Operaciones`; esto
   no prueba que el commit final esté desplegado mientras PR #36 permanezca abierto.
 - Pendiente externo: revisión/fusión autorizada de PR #36, publicación Cloudflare, migración de riders
   en Supabase real y prueba en dispositivos físicos. APKs son debug; firma release sigue pendiente.
-- Las correcciones finales `bde9274`, `c7937a9`, `7d19b3f`, `9b924b5`, `7893880`, `9aaf6ff` y `c7db260` ocultan “Restaurantes” a staff de
+- Las correcciones finales `bde9274`, `c7937a9`, `7d19b3f`, `9b924b5`, `7893880`, `9aaf6ff`, `c7db260` y `14ae039` ocultan “Restaurantes” a staff de
   restaurante, protegen la ruta para `platform_admin`, agregan fallback para WebView sin
   `ResizeObserver` y limpian el Service Worker/cache del Cliente en builds operativos; los seis
   checks de PR #36 siguen verdes.
 - Evidencia funcional de roles: el portal operativo publicado muestra `Suya Operaciones`; las APKs
   contienen títulos `Suya Repartidor` y `Suya Operaciones`.
-- APK Rider final: `output/apks/Suya-Rider-debug-c7db260.apk`, SHA-256 `0a3a9aaf077287a1a3c2b94353c5c3688d18fae6bd885e0dacc1ae3038ed7be3`.
-- APK Back Office final: `output/apks/Suya-Backoffice-debug-c7db260.apk`, SHA-256 `7a6cac3b3543a9b8dd884f954c379562dbc26ad1e2b7cb75e2b70f083b38200f`.
+- APK Rider final: `output/apks/Suya-Rider-debug-14ae039.apk`, SHA-256 `d24baddd9fb0d289514b5d3a3f97581da51f73dbd09c7498f813e8df5c855981`.
+- APK Back Office final: `output/apks/Suya-Backoffice-debug-14ae039.apk`, SHA-256 `4536e6d9331afbe2a1750ed3de9d466b27a0394038ef13d0329b4d89c34a0aa7`.
 
 ## Reglas de continuidad
 
