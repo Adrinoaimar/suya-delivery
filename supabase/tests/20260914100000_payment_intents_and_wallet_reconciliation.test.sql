@@ -633,9 +633,13 @@ reset role;
 set local request.jwt.claims =
   '{"sub":"a6000000-0000-0000-0000-000000000001","role":"authenticated"}';
 set local role postgres;
-insert into private.order_secrets (order_id, delivery_code_hash, cancel_code_hash)
+insert into private.order_secrets (
+  order_id, delivery_code, cancel_code, delivery_code_hash, cancel_code_hash
+)
 values (
   'a6300000-0000-0000-0000-000000000008',
+  '1111',
+  '2222',
   extensions.crypt('1111', extensions.gen_salt('bf')),
   extensions.crypt('2222', extensions.gen_salt('bf'))
 );
