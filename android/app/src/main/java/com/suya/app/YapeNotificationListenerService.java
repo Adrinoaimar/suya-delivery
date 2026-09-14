@@ -181,8 +181,17 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         }
         JSONArray next = new JSONArray();
         next.put(event);
-        for (int index = 0; index < current.length() && next.length() < MAX_EVENTS; index++) {
-            next.put(current.opt(index));
+        // Keep unsent evidence ahead of already-synced history when the local
+        // bounded queue is full. Losing old UI history is safer than dropping
+        // a payment observation that still needs reconciliation.
+        for (int pass = 0; pass < 2 && next.length() < MAX_EVENTS; pass++) {
+            for (int index = 0; index < current.length() && next.length() < MAX_EVENTS; index++) {
+                JSONObject existing = current.optJSONObject(index);
+                if (existing == null || eventId.equals(existing.optString("eventId"))) continue;
+                boolean synced = existing.optBoolean("synced", false);
+                if ((pass == 0 && synced) || (pass == 1 && !synced)) continue;
+                next.put(existing);
+            }
         }
         String encrypted = encryptEvents(next.toString());
         // Never fall back to plaintext if Android Keystore is unavailable.
