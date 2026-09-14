@@ -102,6 +102,14 @@ if (new Set(projects).size !== projects.length)
 if (args.has('--deployment')) {
   required('CLOUDFLARE_ACCOUNT_ID');
   required('CLOUDFLARE_API_TOKEN');
+  const culqiGatewayEnabled = required('VITE_CULQI_GATEWAY_ENABLED');
+  const culqiPublicKey = required('VITE_CULQI_PUBLIC_KEY');
+  if (culqiGatewayEnabled !== 'true') {
+    failures.push('VITE_CULQI_GATEWAY_ENABLED debe ser true para una publicación productiva.');
+  }
+  if (culqiPublicKey && !/^pk_(?:test|live)_[A-Za-z0-9_-]+$/.test(culqiPublicKey)) {
+    failures.push('VITE_CULQI_PUBLIC_KEY debe ser una clave pública pk_test_ o pk_live_.');
+  }
 }
 
 if (projectFile) {

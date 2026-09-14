@@ -208,6 +208,12 @@ export default function CheckoutPage() {
     if (digits.length < 6 || digits.length > 15) next.phone = 'Escribe un teléfono válido.';
     if (needsGatewayEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
       next.email = 'Escribe un correo válido para abrir el checkout seguro.';
+    if (culqiGatewayEnabled && (method === 'yape' || method === 'card') && total < 6) {
+      next.payment = 'Culqi requiere un pago mínimo de S/ 6.00 para este checkout.';
+    }
+    if (culqiGatewayEnabled && method === 'yape' && total > 500) {
+      next.payment = 'El QR Yape de Culqi admite hasta S/ 500.00 por orden.';
+    }
 
     if (isDeliveryOrder && form.address.trim().length < 6)
       next.address = 'Indica la dirección de entrega.';
@@ -631,6 +637,11 @@ export default function CheckoutPage() {
                 {culqiGatewayEnabled && (method === 'yape' || method === 'card')
                   ? 'Al confirmar se crea una orden Culqi con monto exacto. El checkout muestra Yape o tarjeta y el webhook actualiza el estado.'
                   : 'Al confirmar se crea una referencia única y el servidor calcula el monto. Luego verás el QR configurado por el negocio o las instrucciones para pagar; la caja verifica la notificación antes de aceptar el pedido.'}
+              </p>
+            )}
+            {errors.payment && (
+              <p className="mt-2 text-xs font-semibold text-red-700" role="alert">
+                {errors.payment}
               </p>
             )}
           </Card>

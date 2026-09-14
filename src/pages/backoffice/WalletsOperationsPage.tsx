@@ -124,6 +124,19 @@ export default function WalletsOperationsPage() {
   }, [load]);
 
   useEffect(() => {
+    if (stores.length === 0) return;
+    const refreshObservations = () => {
+      if (document.visibilityState === 'hidden') return;
+      void walletObserverService
+        .listObservations(stores.map((store) => store.id))
+        .then(setObservations)
+        .catch(() => undefined);
+    };
+    const timer = window.setInterval(refreshObservations, 15_000);
+    return () => window.clearInterval(timer);
+  }, [stores]);
+
+  useEffect(() => {
     if (!activeRestaurantId) {
       setPaymentAccounts([]);
       setAccountLabel('Cuenta principal');
@@ -350,7 +363,7 @@ export default function WalletsOperationsPage() {
           <h1 className="font-display text-2xl font-bold">Dispositivos de pagos</h1>
           <p className="mt-1 max-w-2xl text-sm text-suya-muted">
             Conecta el celular de caja que observa las notificaciones de Yape, Plin, Lemon y otras
-            billeteras.
+            billeteras. Las nuevas observaciones aparecen automáticamente cada 15 segundos.
           </p>
         </div>
         <Button variant="secondary" onClick={() => void load()} disabled={loading}>
