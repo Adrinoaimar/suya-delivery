@@ -152,7 +152,7 @@ describe('WalletsOperationsPage', () => {
         amount: 30,
         createdAt: '2026-09-14T18:01:00.000Z',
         expiresAt: '2026-09-14T19:01:00.000Z',
-        senderName: 'Luis Dos',
+        senderName: 'Ana Uno',
       },
     ]);
     render(<WalletsOperationsPage />);
@@ -163,6 +163,8 @@ describe('WalletsOperationsPage', () => {
     });
 
     expect(await screen.findByText(/Hay 2 pedidos compatibles/)).toBeInTheDocument();
+    expect(screen.getByText('Pista: el remitente coincide con el cliente.')).toBeInTheDocument();
+    expect(screen.getByText('Pista: confirma el código completo antes de verificar.')).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Verificar pago' })).toHaveLength(2);
     expect(screen.getAllByRole('button', { name: 'Verificar pago' }).every((button) =>
       (button as HTMLButtonElement).disabled,

@@ -6,6 +6,7 @@ import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
+import { cn } from '@/lib/cn';
 import {
   nativeWalletObserver,
   notificationService,
@@ -34,6 +35,21 @@ const providerLabels: Record<string, string> = {
 
 function providerLabel(value: string): string {
   return providerLabels[value.toLowerCase()] ?? value.replaceAll('_', ' ');
+}
+
+function normalizedPersonName(value: string | null): string {
+  return (value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('es-PE')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function senderMatchesCustomer(senderName: string | null, customerName: string): boolean {
+  const sender = normalizedPersonName(senderName);
+  const customer = normalizedPersonName(customerName);
+  return Boolean(sender && customer && sender === customer);
 }
 
 function observationStatus(value: string): { label: string; tone: 'neutral' | 'sun' | 'lime' } {
@@ -769,6 +785,20 @@ export default function WalletsOperationsPage() {
                                     {candidate.checkoutReference} · Remitente:{' '}
                                     {candidate.senderName ?? 'no disponible'}
                                   </p>
+                                  {candidate.senderName && (
+                                    <p
+                                      className={cn(
+                                        'mt-1 text-xs font-semibold',
+                                        senderMatchesCustomer(candidate.senderName, candidate.customerName)
+                                          ? 'text-suya-green-dark'
+                                          : 'text-suya-sun-dark',
+                                      )}
+                                    >
+                                      {senderMatchesCustomer(candidate.senderName, candidate.customerName)
+                                        ? 'Pista: el remitente coincide con el cliente.'
+                                        : 'Pista: confirma el código completo antes de verificar.'}
+                                    </p>
+                                  )}
                                 </div>
                                 <Button
                                   type="button"
