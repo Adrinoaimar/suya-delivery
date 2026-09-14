@@ -79,7 +79,7 @@ begin
   insert into public.restaurant_payment_accounts as rpa (
     restaurant_id, provider, account_label, qr_payload, active
   ) values (p_restaurant_id, v_provider, v_label, v_qr, coalesce(p_active, false))
-  on conflict (restaurant_id, provider) do update set
+  on conflict on constraint restaurant_payment_accounts_restaurant_id_provider_key do update set
     account_label = excluded.account_label,
     qr_payload = excluded.qr_payload,
     active = excluded.active,
