@@ -225,6 +225,13 @@ producción.
 - CI PR #36 quedó 6/6 verde; Android run `34900548019` generó los tres roles. Rider `980ace1870e886943cb86e2c54bd377a51ca93fe6dd306c35599cc8d587276e9`, Back Office `6e5ad497344930c75ce362a334b98bdf1808bc4b0b0acad2ebcccb972453f305`, Caja `c961a776dc093af7d5d7183dd80ea134690f8e645f8d894a91841352908f47a8`.
 - Las tres APK pasaron `unzip -tqq` y siguen siendo debug. Producción continúa pendiente de configuración, migraciones/funciones, webhook, publicación, firma release y dos pagos físicos iguales de S/30.
 
+## Checkpoint F27.11: cuenta de restaurante visible desde el primer render (2026-09-14)
+
+- `762d7e0` fija la primera cuenta visible en Dispositivos de pagos apenas llega el catálogo; el selector ya no queda vacío mientras cargan observaciones o dispositivos.
+- Regresión UI nueva: la cuenta de restaurante queda seleccionada antes de terminar las cargas secundarias. La protección contra respuestas atrasadas y el bloqueo de verificación ambigua de dos S/30 se mantienen.
+- Evidencia local: 62 suites/260 pruebas, lint, typecheck, escaneo de secretos, build frontend sintético y `git diff --check` verdes.
+- Pendiente: CI debe recompilar las tres APK debug; producción aún requiere configuración, migraciones/Edge Functions, webhook, publicación, firma release y dos pagos físicos iguales de S/30.
+
 ## Reglas de continuidad
 
 - Git, pruebas y este archivo son estado canónico.
