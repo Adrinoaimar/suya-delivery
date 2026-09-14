@@ -66,6 +66,7 @@ export function orderStatusLabel(status: OrderStatus): string {
 const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   cash: 'Efectivo',
   yape: 'Yape',
+  lemon: 'Lemon',
   card: 'Tarjeta',
 };
 

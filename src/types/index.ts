@@ -151,7 +151,22 @@ export const ORDER_FLOW: OrderStatus[] = [
   'delivered',
 ];
 
-export type PaymentMethod = 'cash' | 'yape' | 'card';
+export type PaymentMethod = 'cash' | 'yape' | 'lemon' | 'card';
+
+export type PaymentIntentStatus = 'pending' | 'authorized' | 'failed' | 'refunded';
+
+export interface PaymentIntent {
+  attemptId: string;
+  orderId: string;
+  method: PaymentMethod;
+  status: PaymentIntentStatus;
+  amount: number;
+  currency: 'PEN';
+  checkoutReference: string;
+  expiresAt: string;
+  provider: string;
+  qrPayload: string | null;
+}
 
 export interface OrderStatusEvent {
   status: OrderStatus;
@@ -195,6 +210,8 @@ export interface Order {
   origin?: 'delivery' | 'suya_menu' | 'table_qr';
   /** Mesa asociada cuando el pedido nació desde un QR de mesa. */
   tableId?: string | null;
+  /** Intento digital creado por servidor; nunca contiene secretos ni datos de tarjeta. */
+  paymentIntent?: PaymentIntent | null;
 }
 
 export interface LatLng {

@@ -13,6 +13,7 @@ import type {
   Order,
   OrderStatus,
   PaymentMethod,
+  PaymentIntent,
   Product,
   Store,
   IncidentCategory,
@@ -168,10 +169,41 @@ export interface WalletObservation {
   verification: string;
 }
 
+export interface WalletPaymentCandidate {
+  paymentAttemptId: string;
+  orderId: string;
+  orderCode: string;
+  checkoutReference: string;
+  method: PaymentMethod;
+  amount: number;
+  createdAt: string;
+  expiresAt: string;
+  senderName: string | null;
+}
+
+export interface RestaurantPaymentAccount {
+  id: string;
+  restaurantId: string;
+  provider: 'yape' | 'lemon';
+  accountLabel: string;
+  qrPayload: string | null;
+  active: boolean;
+}
+
 export interface WalletObserverService {
   listDevices(restaurantIds: string[]): Promise<WalletObserverDevice[]>;
   createDevice(restaurantId: string, label: string): Promise<CreatedWalletObserverDevice>;
   listObservations(restaurantIds: string[]): Promise<WalletObservation[]>;
+  listPaymentCandidates(observationId: string): Promise<WalletPaymentCandidate[]>;
+  verifyObservation(observationId: string, paymentAttemptId: string): Promise<boolean>;
+  listPaymentAccounts(restaurantId: string): Promise<RestaurantPaymentAccount[]>;
+  savePaymentAccount(input: {
+    restaurantId: string;
+    provider: 'yape' | 'lemon';
+    accountLabel: string;
+    qrPayload: string | null;
+    active: boolean;
+  }): Promise<RestaurantPaymentAccount>;
 }
 
 export type ManagedRiderStatus = 'offline' | 'available' | 'busy' | 'suspended';
@@ -311,6 +343,12 @@ export interface PaymentResult {
 export interface PaymentService {
   /** La confirmación final de pagos digitales siempre proviene del backend/webhook. */
   authorize(method: PaymentMethod, amount: number): Promise<PaymentResult>;
+  createIntent(
+    orderId: string,
+    method: PaymentMethod,
+    guestAccessToken?: string | null,
+  ): Promise<PaymentIntent>;
+  getIntent(orderId: string, guestAccessToken?: string | null): Promise<PaymentIntent | null>;
 }
 
 export type NotificationLevel = 'info' | 'success' | 'warning' | 'danger';

@@ -1,6 +1,6 @@
 import { createId } from '@/utils/id';
 import type { PaymentService, PaymentResult } from './types';
-import type { PaymentMethod } from '@/types';
+import type { PaymentIntent, PaymentMethod } from '@/types';
 
 export class CashPaymentServiceImpl implements PaymentService {
   async authorize(method: PaymentMethod, amount: number): Promise<PaymentResult> {
@@ -19,6 +19,14 @@ export class CashPaymentServiceImpl implements PaymentService {
       reference: createId('cod'),
       message: `Pagarás ${amount.toFixed(2)} soles en efectivo al recibir tu pedido.`,
     };
+  }
+
+  async createIntent(): Promise<PaymentIntent> {
+    throw new Error('Los pagos digitales requieren Supabase configurado.');
+  }
+
+  async getIntent(): Promise<PaymentIntent | null> {
+    throw new Error('Los pagos digitales requieren Supabase configurado.');
   }
 }
 

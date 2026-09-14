@@ -1,6 +1,15 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Banknote, CircleUserRound, LocateFixed, MapPin, TicketPercent } from 'lucide-react';
+import {
+  Banknote,
+  CircleUserRound,
+  CreditCard,
+  LocateFixed,
+  MapPin,
+  QrCode,
+  TicketPercent,
+  WalletCards,
+} from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, ButtonLink } from '@/components/common/Button';
@@ -11,7 +20,7 @@ import { Input, Textarea } from '@/components/common/Input';
 import { Skeleton } from '@/components/common/Skeleton';
 import { track } from '@/lib/analytics';
 import { FREE_DELIVERY_THRESHOLD } from '@/lib/commerce';
-import { locationService, notificationService, offerService, paymentService } from '@/lib/services';
+import { locationService, notificationService, offerService } from '@/lib/services';
 import { useCatalogStore } from '@/store/catalogStore';
 import { cartTotals, useCartStore } from '@/store/cartStore';
 import { useOrderStore } from '@/store/orderStore';
@@ -39,7 +48,9 @@ export default function CheckoutPage() {
         tableNumber?: string;
         sessionId?: string | null;
       } | null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   });
   const isTableOrder = Boolean(tableContext?.tableId);
 
@@ -57,10 +68,12 @@ export default function CheckoutPage() {
   const [form, setForm] = useState({
     name: identity?.displayName ?? '',
     phone: identity?.phone ?? '',
-    address: identity?.defaultAddress ?? (isTableOrder ? `Mesa ${tableContext?.tableNumber ?? ''}`.trim() : ''),
+    address:
+      identity?.defaultAddress ??
+      (isTableOrder ? `Mesa ${tableContext?.tableNumber ?? ''}`.trim() : ''),
     reference: identity?.defaultReference ?? '',
   });
-  const method: PaymentMethod = 'cash';
+  const [method, setMethod] = useState<PaymentMethod>('cash');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [deliveryPosition, setDeliveryPosition] = useState<LatLng | null>(null);
@@ -86,20 +99,26 @@ export default function CheckoutPage() {
       active = false;
     };
   }, []);
-  useEffect(() => { setOfferInput(offerCode ?? ''); }, [offerCode]);
+  useEffect(() => {
+    setOfferInput(offerCode ?? '');
+  }, [offerCode]);
 
   useEffect(() => {
-    if (store && items.length > 0) track('checkout_start', { store_id: store.id, item_count: items.length });
+    if (store && items.length > 0)
+      track('checkout_start', { store_id: store.id, item_count: items.length });
   }, [items.length, store]);
 
   const base = cartTotals(items, store, FREE_DELIVERY_THRESHOLD);
-  const selectedOffer = offers.find((offer) => offer.code === offerCode && (!offer.restaurantId || offer.restaurantId === storeId));
+  const selectedOffer = offers.find(
+    (offer) => offer.code === offerCode && (!offer.restaurantId || offer.restaurantId === storeId),
+  );
   const offerMeetsMinimum = selectedOffer ? base.subtotal >= selectedOffer.minimumSubtotal : false;
-  const rawDiscount = selectedOffer && offerMeetsMinimum
-    ? selectedOffer.discountType === 'percent'
-      ? base.subtotal * selectedOffer.discountValue / 100
-      : selectedOffer.discountValue
-    : 0;
+  const rawDiscount =
+    selectedOffer && offerMeetsMinimum
+      ? selectedOffer.discountType === 'percent'
+        ? (base.subtotal * selectedOffer.discountValue) / 100
+        : selectedOffer.discountValue
+      : 0;
   const discount = Math.min(rawDiscount, base.subtotal + (isDeliveryOrder ? base.deliveryFee : 0));
   const deliveryFee = isDeliveryOrder ? base.deliveryFee : 0;
   const total = Math.max(0, base.subtotal + deliveryFee - discount);
@@ -107,11 +126,26 @@ export default function CheckoutPage() {
   function applyOffer() {
     const code = offerInput.trim().toUpperCase();
     const offer = offers.find((item) => item.code === code);
-    if (!offer) { notificationService.notify('Esa oferta no está vigente en la app.', 'warning'); return; }
-    if (offer.restaurantId && offer.restaurantId !== storeId) { notificationService.notify('Esta oferta no aplica a este negocio.', 'warning'); return; }
-    if (base.subtotal < offer.minimumSubtotal) { notificationService.notify(`Compra al menos ${formatPrice(offer.minimumSubtotal)} para usarla.`, 'warning'); return; }
+    if (!offer) {
+      notificationService.notify('Esa oferta no está vigente en la app.', 'warning');
+      return;
+    }
+    if (offer.restaurantId && offer.restaurantId !== storeId) {
+      notificationService.notify('Esta oferta no aplica a este negocio.', 'warning');
+      return;
+    }
+    if (base.subtotal < offer.minimumSubtotal) {
+      notificationService.notify(
+        `Compra al menos ${formatPrice(offer.minimumSubtotal)} para usarla.`,
+        'warning',
+      );
+      return;
+    }
     setOfferCode(code);
-    notificationService.notify('Oferta aplicada. El servidor validará el descuento al confirmar.', 'success');
+    notificationService.notify(
+      'Oferta aplicada. El servidor validará el descuento al confirmar.',
+      'success',
+    );
   }
 
   if (items.length === 0) {
@@ -168,8 +202,10 @@ export default function CheckoutPage() {
     const digits = form.phone.replace(/\D/g, '');
     if (digits.length < 6 || digits.length > 15) next.phone = 'Escribe un teléfono válido.';
 
-    if (isDeliveryOrder && form.address.trim().length < 6) next.address = 'Indica la dirección de entrega.';
-    if (isDeliveryOrder && !deliveryPosition) next.location = 'Confirma el punto de entrega con GPS.';
+    if (isDeliveryOrder && form.address.trim().length < 6)
+      next.address = 'Indica la dirección de entrega.';
+    if (isDeliveryOrder && !deliveryPosition)
+      next.location = 'Confirma el punto de entrega con GPS.';
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -190,9 +226,10 @@ export default function CheckoutPage() {
     } catch (error) {
       setErrors((current) => ({
         ...current,
-        location: error instanceof Error
-          ? error.message
-          : 'No pudimos obtener tu ubicación. Activa GPS y permiso de Suya.',
+        location:
+          error instanceof Error
+            ? error.message
+            : 'No pudimos obtener tu ubicación. Activa GPS y permiso de Suya.',
       }));
     } finally {
       setLocating(false);
@@ -222,12 +259,6 @@ export default function CheckoutPage() {
 
     setSubmitting(true);
     try {
-      const payment = await paymentService.authorize(method, total);
-      if (!payment.ok) {
-        notificationService.notify(payment.message, 'danger');
-        return;
-      }
-
       let tableSessionId = tableContext?.sessionId ?? undefined;
       if (tableContext?.tableId && !tableSessionId) {
         const { tableService } = await import('@/lib/services');
@@ -266,19 +297,25 @@ export default function CheckoutPage() {
       });
 
       const publicOrderPath = isGuestMenuOrder
-        ? (orderOrigin === 'suya_menu' && menuSlug
+        ? orderOrigin === 'suya_menu' && menuSlug
           ? `/menu/${menuSlug}/pedido/${order.id}`
-          : `/pedido/${order.id}`)
+          : `/pedido/${order.id}`
         : null;
       clearCart();
       sessionStorage.removeItem('suya.tableContext');
       if (publicOrderPath) {
-        try { sessionStorage.setItem('suya.guestOrder', JSON.stringify(order)); } catch { /* storage unavailable */ }
+        try {
+          sessionStorage.setItem('suya.guestOrder', JSON.stringify(order));
+        } catch {
+          /* storage unavailable */
+        }
       }
       notificationService.notify(
-        isMenuOrder
-          ? `Pedido confirmado. Pagarás ${formatPrice(order.total)} en efectivo.`
-          : `Pedido confirmado. Pagarás ${formatPrice(order.total)} en efectivo al recibirlo.`,
+        method === 'cash'
+          ? isMenuOrder
+            ? `Pedido confirmado. Pagarás ${formatPrice(order.total)} en efectivo.`
+            : `Pedido confirmado. Pagarás ${formatPrice(order.total)} en efectivo al recibirlo.`
+          : `Pedido creado. Paga ${formatPrice(order.total)} con ${method === 'yape' ? 'Yape' : 'Lemon'} y espera la verificación.`,
         'success',
       );
       navigate(publicOrderPath ?? `/orders/${order.id}/track`, {
@@ -286,7 +323,10 @@ export default function CheckoutPage() {
         state: publicOrderPath ? { guestOrder: order } : undefined,
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'No pudimos crear el pedido. Inténtalo nuevamente.';
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'No pudimos crear el pedido. Inténtalo nuevamente.';
       notificationService.notify(message, 'danger');
     } finally {
       setSubmitting(false);
@@ -301,20 +341,34 @@ export default function CheckoutPage() {
         </p>
         <h1 className="section-title">Confirmar pedido</h1>
         {isGuestMenuOrder && (
-          <p className="mt-1 text-sm text-[#68716C]">Puedes pedir como invitado. No necesitas crear una cuenta.</p>
+          <p className="mt-1 text-sm text-[#68716C]">
+            Puedes pedir como invitado. No necesitas crear una cuenta.
+          </p>
         )}
       </div>
 
       {isGuestMenuOrder && (
         <Card className="border-suya-sun bg-suya-sun-soft">
           <div className="flex items-start gap-3">
-            <CircleUserRound className="mt-0.5 h-5 w-5 shrink-0 text-[#8A6100]" aria-hidden="true" />
+            <CircleUserRound
+              className="mt-0.5 h-5 w-5 shrink-0 text-[#8A6100]"
+              aria-hidden="true"
+            />
             <div className="min-w-0 flex-1">
-              <h2 className="font-display text-[15px] font-bold text-suya-carbon">Suya Account es opcional</h2>
+              <h2 className="font-display text-[15px] font-bold text-suya-carbon">
+                Suya Account es opcional
+              </h2>
               <p className="mt-1 text-sm leading-5 text-[#5E511F]">
-                Ingresa para guardar tus datos, ver beneficios exclusivos y consultar tus pedidos desde cualquier dispositivo. También puedes continuar sin cuenta.
+                Ingresa para guardar tus datos, ver beneficios exclusivos y consultar tus pedidos
+                desde cualquier dispositivo. También puedes continuar sin cuenta.
               </p>
-              <ButtonLink to="/login" state={{ from: location.pathname }} variant="ghost" size="sm" className="mt-3 border-[#8A6100]/30 text-[#6B5100]">
+              <ButtonLink
+                to="/login"
+                state={{ from: location.pathname }}
+                variant="ghost"
+                size="sm"
+                className="mt-3 border-[#8A6100]/30 text-[#6B5100]"
+              >
                 Ingresar a Suya Account
               </ButtonLink>
             </div>
@@ -326,11 +380,16 @@ export default function CheckoutPage() {
         <div className="space-y-4">
           <Card>
             <h2 className="mb-3 font-display text-[15px] font-bold">
-              {isTableOrder ? 'Datos de mesa' : isDeliveryOrder ? 'Datos de entrega' : 'Datos del pedido'}
+              {isTableOrder
+                ? 'Datos de mesa'
+                : isDeliveryOrder
+                  ? 'Datos de entrega'
+                  : 'Datos del pedido'}
             </h2>
             {isTableOrder && (
               <p className="mb-3 rounded-btn bg-suya-lime-soft px-3 py-2 text-sm text-suya-green-dark">
-                Pedido para <strong>Mesa {tableContext?.tableNumber ?? 'asignada'}</strong>. No necesitas indicar dirección ni activar GPS.
+                Pedido para <strong>Mesa {tableContext?.tableNumber ?? 'asignada'}</strong>. No
+                necesitas indicar dirección ni activar GPS.
               </p>
             )}
             {isMenuOrder && !isTableOrder && (
@@ -358,80 +417,195 @@ export default function CheckoutPage() {
                 required
                 onChange={(event) => setForm({ ...form, phone: event.target.value })}
               />
-              {isDeliveryOrder && <div className="sm:col-span-2">
-                <Input
-                  label="Dirección"
-                  value={form.address}
-                  error={errors.address}
-                  autoComplete="street-address"
-                  placeholder="Av. José de Lama 480, Sullana"
-                  onChange={(event) => setForm({ ...form, address: event.target.value })}
-                />
-              </div>}
+              {isDeliveryOrder && (
+                <div className="sm:col-span-2">
+                  <Input
+                    label="Dirección"
+                    value={form.address}
+                    error={errors.address}
+                    autoComplete="street-address"
+                    placeholder="Av. José de Lama 480, Sullana"
+                    onChange={(event) => setForm({ ...form, address: event.target.value })}
+                  />
+                </div>
+              )}
               <div className="sm:col-span-2">
                 <Textarea
                   label={isMenuOrder ? 'Nota para el local (opcional)' : 'Referencia (opcional)'}
                   rows={2}
                   value={form.reference}
                   maxLength={300}
-                  hint={isMenuOrder
-                    ? 'Agrega una indicación especial si la necesitas.'
-                    : 'Ayuda al repartidor a encontrarte: color de fachada, piso, punto cercano.'}
+                  hint={
+                    isMenuOrder
+                      ? 'Agrega una indicación especial si la necesitas.'
+                      : 'Ayuda al repartidor a encontrarte: color de fachada, piso, punto cercano.'
+                  }
                   placeholder={isMenuOrder ? 'Ej. Sin cebolla' : undefined}
                   onChange={(event) => setForm({ ...form, reference: event.target.value })}
                 />
               </div>
-              {isDeliveryOrder && <div className="sm:col-span-2 rounded-btn border border-suya-mist p-3">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <span className="flex items-center gap-2 text-sm font-semibold">
-                    <MapPin className="h-4 w-4 text-suya-green" aria-hidden="true" />
-                    Punto exacto de entrega
-                  </span>
-                  <Button type="button" variant="ghost" size="sm" onClick={locateDelivery} disabled={locating}>
-                    <LocateFixed className="h-4 w-4" aria-hidden="true" />
-                    {locating ? 'Ubicando…' : deliveryPosition ? 'Actualizar GPS' : 'Usar mi ubicación'}
-                  </Button>
+              {isDeliveryOrder && (
+                <div className="rounded-btn border border-suya-mist p-3 sm:col-span-2">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <span className="flex items-center gap-2 text-sm font-semibold">
+                      <MapPin className="h-4 w-4 text-suya-green" aria-hidden="true" />
+                      Punto exacto de entrega
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={locateDelivery}
+                      disabled={locating}
+                    >
+                      <LocateFixed className="h-4 w-4" aria-hidden="true" />
+                      {locating
+                        ? 'Ubicando…'
+                        : deliveryPosition
+                          ? 'Actualizar GPS'
+                          : 'Usar mi ubicación'}
+                    </Button>
+                  </div>
+                  <p className="mt-2 text-xs text-[#6B7076]">
+                    {deliveryPosition
+                      ? `Punto confirmado: ${deliveryPosition.lat.toFixed(5)}, ${deliveryPosition.lng.toFixed(5)}`
+                      : 'Solo se solicita al tocar el botón. No enviamos tu dirección a geocodificadores públicos.'}
+                  </p>
+                  {errors.location && (
+                    <p className="mt-1 text-xs text-red-700" role="alert">
+                      {errors.location}
+                    </p>
+                  )}
                 </div>
-                <p className="mt-2 text-xs text-[#6B7076]">
-                  {deliveryPosition
-                    ? `Punto confirmado: ${deliveryPosition.lat.toFixed(5)}, ${deliveryPosition.lng.toFixed(5)}`
-                    : 'Solo se solicita al tocar el botón. No enviamos tu dirección a geocodificadores públicos.'}
-                </p>
-                {errors.location && <p className="mt-1 text-xs text-red-700" role="alert">{errors.location}</p>}
-              </div>}
+              )}
             </div>
           </Card>
 
           {Capacitor.isNativePlatform() && (
             <Card>
-              <h2 className="mb-3 flex items-center gap-2 font-display text-[15px] font-bold"><TicketPercent className="h-4 w-4 text-suya-green" />Oferta exclusiva de la app</h2>
-              <div className="flex flex-col gap-2 sm:flex-row"><Input label="Código de oferta" value={offerInput} onChange={(event) => setOfferInput(event.target.value.toUpperCase())} placeholder="SUYA10" /><Button type="button" variant="secondary" className="self-end sm:mb-0.5" onClick={applyOffer}>Aplicar</Button></div>
-              {selectedOffer && offerMeetsMinimum && <p className="mt-2 text-sm font-semibold text-suya-green">{selectedOffer.title}: − {formatPrice(discount)} aplicado.</p>}
-              {offerCode && !selectedOffer && <p className="mt-2 text-sm text-red-700">La oferta ya no está vigente o no aplica a este negocio.</p>}
-              {selectedOffer && !offerMeetsMinimum && <p className="mt-2 text-sm text-[#6B7076]">Compra mínima: {formatPrice(selectedOffer.minimumSubtotal)}.</p>}
-              {offerCode && <button type="button" className="mt-2 text-xs font-semibold text-[#6B7076] underline" onClick={() => setOfferCode(null)}>Quitar oferta</button>}
+              <h2 className="mb-3 flex items-center gap-2 font-display text-[15px] font-bold">
+                <TicketPercent className="h-4 w-4 text-suya-green" />
+                Oferta exclusiva de la app
+              </h2>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <Input
+                  label="Código de oferta"
+                  value={offerInput}
+                  onChange={(event) => setOfferInput(event.target.value.toUpperCase())}
+                  placeholder="SUYA10"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="self-end sm:mb-0.5"
+                  onClick={applyOffer}
+                >
+                  Aplicar
+                </Button>
+              </div>
+              {selectedOffer && offerMeetsMinimum && (
+                <p className="mt-2 text-sm font-semibold text-suya-green">
+                  {selectedOffer.title}: − {formatPrice(discount)} aplicado.
+                </p>
+              )}
+              {offerCode && !selectedOffer && (
+                <p className="mt-2 text-sm text-red-700">
+                  La oferta ya no está vigente o no aplica a este negocio.
+                </p>
+              )}
+              {selectedOffer && !offerMeetsMinimum && (
+                <p className="mt-2 text-sm text-[#6B7076]">
+                  Compra mínima: {formatPrice(selectedOffer.minimumSubtotal)}.
+                </p>
+              )}
+              {offerCode && (
+                <button
+                  type="button"
+                  className="mt-2 text-xs font-semibold text-[#6B7076] underline"
+                  onClick={() => setOfferCode(null)}
+                >
+                  Quitar oferta
+                </button>
+              )}
             </Card>
           )}
 
           <Card>
             <h2 className="mb-3 font-display text-[15px] font-bold">Método de pago</h2>
-            <div className="flex items-center gap-3 rounded-btn border border-suya-green bg-suya-lime-soft p-3">
-              <Banknote aria-hidden="true" className="h-5 w-5 text-suya-green" />
-              <span>
-                <span className="block text-[15px] font-semibold">Efectivo</span>
-                <span className="block text-xs text-[#6B7076]">
-                  {isTableOrder
-                    ? 'Paga en caja o al solicitar la cuenta'
-                    : isDeliveryOrder
-                      ? 'Paga al recibir tu pedido'
-                      : 'Paga directamente en el local'}
-                </span>
-              </span>
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                {
+                  value: 'cash' as const,
+                  label: 'Efectivo',
+                  description: isDeliveryOrder ? 'Al recibir' : 'En caja',
+                  icon: Banknote,
+                  disabled: false,
+                },
+                {
+                  value: 'yape' as const,
+                  label: 'Yape',
+                  description: 'QR o transferencia',
+                  icon: QrCode,
+                  disabled: false,
+                },
+                {
+                  value: 'lemon' as const,
+                  label: 'Lemon',
+                  description: 'Billetera digital',
+                  icon: WalletCards,
+                  disabled: false,
+                },
+                {
+                  value: 'card' as const,
+                  label: 'Tarjeta',
+                  description: 'Pasarela pendiente',
+                  icon: CreditCard,
+                  disabled: true,
+                },
+              ].map((option) => {
+                const Icon = option.icon;
+                const selected = method === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    disabled={option.disabled}
+                    onClick={() => setMethod(option.value)}
+                    aria-pressed={selected}
+                    className={`rounded-btn border p-3 text-left transition ${selected ? 'border-suya-green bg-suya-lime-soft' : 'border-suya-border bg-white'} ${option.disabled ? 'cursor-not-allowed opacity-50' : 'hover:border-suya-green/60'}`}
+                  >
+                    <Icon
+                      aria-hidden="true"
+                      className={`h-5 w-5 ${selected ? 'text-suya-green' : 'text-suya-muted'}`}
+                    />
+                    <span className="mt-2 block text-sm font-semibold">{option.label}</span>
+                    <span className="mt-0.5 block text-xs text-[#6B7076]">
+                      {option.description}
+                    </span>
+                    {option.disabled && (
+                      <span className="mt-1 block text-[11px] font-semibold text-[#8A6100]">
+                        Próximamente
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
-            <p className="mt-3 text-xs text-[#6B7076]">
-              Próximamente habilitaremos pagos digitales mediante una pasarela confirmada por el
-              servidor.
-            </p>
+            {method === 'cash' ? (
+              <p className="mt-3 text-xs text-[#6B7076]">
+                {isTableOrder
+                  ? 'Paga en caja o al solicitar la cuenta.'
+                  : isDeliveryOrder
+                    ? 'Paga al recibir tu pedido.'
+                    : 'Paga directamente en el local.'}
+              </p>
+            ) : (
+              <p className="mt-3 rounded-btn bg-suya-sun-soft px-3 py-2 text-xs text-[#5E511F]">
+                Al confirmar se crea una referencia única y el servidor calcula el monto. Luego
+                verás el QR configurado por el negocio o las instrucciones para pagar; la caja
+                verifica la notificación antes de aceptar el pedido.
+              </p>
+            )}
           </Card>
         </div>
 
@@ -453,7 +627,9 @@ export default function CheckoutPage() {
                 <dd className="font-medium">{formatPrice(base.subtotal)}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-[#6B7076]">{isTableOrder || !isDeliveryOrder ? 'Atención en mesa' : 'Envío'}</dt>
+                <dt className="text-[#6B7076]">
+                  {isTableOrder || !isDeliveryOrder ? 'Atención en mesa' : 'Envío'}
+                </dt>
                 <dd className="font-medium">
                   {deliveryFee === 0 ? (
                     <span className="text-suya-green">Gratis</span>
@@ -474,7 +650,9 @@ export default function CheckoutPage() {
               </div>
             </dl>
             <Button type="submit" fullWidth size="lg" className="mt-4" disabled={submitting}>
-              {submitting ? 'Procesando…' : `Confirmar pedido · ${formatPrice(total)}`}
+              {submitting
+                ? 'Procesando…'
+                : `${method === 'cash' ? 'Confirmar pedido' : 'Continuar con pago'} · ${formatPrice(total)}`}
             </Button>
             <p className="mt-2 text-center text-xs text-[#6B7076]">
               {isDeliveryOrder

@@ -17,6 +17,8 @@ import { SupabaseOfferServiceImpl } from './SupabaseOfferService';
 import { SupabaseWalletObserverService } from './SupabaseWalletObserverService';
 import { SupabaseRestaurantAccountService } from './SupabaseRestaurantAccountService';
 import { SupabaseRestaurantRiderService } from './SupabaseRestaurantRiderService';
+import { CashPaymentServiceImpl } from './CashPaymentService';
+import { SupabasePaymentService } from './SupabasePaymentService';
 import { Capacitor } from '@capacitor/core';
 import { CapacitorLocationService } from './CapacitorLocationService';
 import { BrowserLocationService } from './BrowserLocationService';
@@ -31,6 +33,7 @@ import type {
   WalletObserverService,
   RestaurantAccountService,
   RestaurantRiderService,
+  PaymentService,
 } from './types';
 
 let resolvedRestaurantAccountService: Promise<RestaurantAccountService> | null = null;
@@ -119,6 +122,18 @@ function resolveWalletObserverService(): Promise<WalletObserverService> {
           async listObservations() {
             return [];
           },
+          async listPaymentCandidates() {
+            return [];
+          },
+          async verifyObservation() {
+            throw new Error('La verificación de billeteras requiere Supabase.');
+          },
+          async listPaymentAccounts() {
+            return [];
+          },
+          async savePaymentAccount() {
+            throw new Error('La configuración de billeteras requiere Supabase.');
+          },
         });
   return resolvedWalletObserverService;
 }
@@ -132,6 +147,21 @@ export const walletObserverService: WalletObserverService = {
   },
   async listObservations(restaurantIds) {
     return (await resolveWalletObserverService()).listObservations(restaurantIds);
+  },
+  async listPaymentCandidates(observationId) {
+    return (await resolveWalletObserverService()).listPaymentCandidates(observationId);
+  },
+  async verifyObservation(observationId, paymentAttemptId) {
+    return (await resolveWalletObserverService()).verifyObservation(
+      observationId,
+      paymentAttemptId,
+    );
+  },
+  async listPaymentAccounts(restaurantId) {
+    return (await resolveWalletObserverService()).listPaymentAccounts(restaurantId);
+  },
+  async savePaymentAccount(input) {
+    return (await resolveWalletObserverService()).savePaymentAccount(input);
   },
 };
 
@@ -400,7 +430,26 @@ export const safetyOperationsService: SafetyOperationsService = {
     };
   },
 };
-export { CashPaymentService as paymentService } from './CashPaymentService';
+let resolvedPaymentService: PaymentService | null = null;
+function resolvePaymentService(): PaymentService {
+  if (resolvedPaymentService) return resolvedPaymentService;
+  resolvedPaymentService =
+    import.meta.env.VITE_BACKEND === 'supabase'
+      ? new SupabasePaymentService()
+      : new CashPaymentServiceImpl();
+  return resolvedPaymentService;
+}
+export const paymentService: PaymentService = {
+  authorize(method, amount) {
+    return resolvePaymentService().authorize(method, amount);
+  },
+  createIntent(orderId, method, guestAccessToken) {
+    return resolvePaymentService().createIntent(orderId, method, guestAccessToken);
+  },
+  getIntent(orderId, guestAccessToken) {
+    return resolvePaymentService().getIntent(orderId, guestAccessToken);
+  },
+};
 export { LocalNotificationService as notificationService } from './LocalNotificationService';
 export { BrowserLocationService } from './BrowserLocationService';
 export const locationService = Capacitor.isNativePlatform()

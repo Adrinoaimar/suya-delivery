@@ -13,6 +13,8 @@ import type {
   CreatedWalletObserverDevice,
   WalletObservation,
   WalletObserverDevice,
+  WalletPaymentCandidate,
+  RestaurantPaymentAccount,
 } from '@/lib/services';
 
 const providerLabels: Record<string, string> = {
@@ -55,6 +57,15 @@ export default function WalletsOperationsPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [candidateObservationId, setCandidateObservationId] = useState<string | null>(null);
+  const [candidates, setCandidates] = useState<WalletPaymentCandidate[]>([]);
+  const [candidateLoading, setCandidateLoading] = useState(false);
+  const [verifyingAttemptId, setVerifyingAttemptId] = useState<string | null>(null);
+  const [paymentAccounts, setPaymentAccounts] = useState<RestaurantPaymentAccount[]>([]);
+  const [accountProvider, setAccountProvider] = useState<'yape' | 'lemon'>('yape');
+  const [accountLabel, setAccountLabel] = useState('Cuenta principal');
+  const [qrPayload, setQrPayload] = useState('');
+  const [accountActive, setAccountActive] = useState(false);
   const loadRequestRef = useRef(0);
   const activeRestaurantId = isPlatformAdmin
     ? restaurantId
@@ -101,6 +112,34 @@ export default function WalletsOperationsPage() {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (!activeRestaurantId) {
+      setPaymentAccounts([]);
+      return;
+    }
+    let active = true;
+    void walletObserverService
+      .listPaymentAccounts(activeRestaurantId)
+      .then((accounts) => {
+        if (!active) return;
+        setPaymentAccounts(accounts);
+        const selected =
+          accounts.find((account) => account.provider === accountProvider) ?? accounts[0];
+        if (selected) {
+          setAccountProvider(selected.provider);
+          setAccountLabel(selected.accountLabel);
+          setQrPayload(selected.qrPayload ?? '');
+          setAccountActive(selected.active);
+        }
+      })
+      .catch(() => {
+        if (active) setPaymentAccounts([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [activeRestaurantId, accountProvider]);
+
   const storeNames = useMemo(
     () => new Map(stores.map((store) => [store.id, store.name])),
     [stores],
@@ -137,6 +176,81 @@ export default function WalletsOperationsPage() {
       notificationService.notify('Token copiado. Trátalo como una contraseña.', 'success');
     } catch {
       notificationService.notify('No pudimos copiar el token; cópialo manualmente.', 'warning');
+    }
+  };
+
+  const findCandidates = async (observationId: string) => {
+    setCandidateObservationId(observationId);
+    setCandidateLoading(true);
+    try {
+      setCandidates(await walletObserverService.listPaymentCandidates(observationId));
+    } catch (cause) {
+      setCandidates([]);
+      notificationService.notify(
+        cause instanceof Error ? cause.message : 'No pudimos buscar pedidos compatibles.',
+        'danger',
+      );
+    } finally {
+      setCandidateLoading(false);
+    }
+  };
+
+  const verifyCandidate = async (observationId: string, paymentAttemptId: string) => {
+    setVerifyingAttemptId(paymentAttemptId);
+    try {
+      const verified = await walletObserverService.verifyObservation(
+        observationId,
+        paymentAttemptId,
+      );
+      if (!verified) throw new Error('El servidor no verificó la operación.');
+      notificationService.notify('Pago verificado y vinculado al pedido.', 'success');
+      setCandidateObservationId(null);
+      setCandidates([]);
+      await load();
+    } catch (cause) {
+      notificationService.notify(
+        cause instanceof Error ? cause.message : 'No pudimos verificar el pago.',
+        'danger',
+      );
+    } finally {
+      setVerifyingAttemptId(null);
+    }
+  };
+
+  const selectAccountProvider = (provider: 'yape' | 'lemon') => {
+    const selected = paymentAccounts.find((account) => account.provider === provider);
+    setAccountProvider(provider);
+    setAccountLabel(selected?.accountLabel ?? 'Cuenta principal');
+    setQrPayload(selected?.qrPayload ?? '');
+    setAccountActive(selected?.active ?? false);
+  };
+
+  const saveAccount = async () => {
+    if (!activeRestaurantId || !accountLabel.trim()) {
+      notificationService.notify('Selecciona la cuenta y escribe un nombre.', 'warning');
+      return;
+    }
+    setBusy(true);
+    try {
+      const saved = await walletObserverService.savePaymentAccount({
+        restaurantId: activeRestaurantId,
+        provider: accountProvider,
+        accountLabel,
+        qrPayload: qrPayload || null,
+        active: accountActive,
+      });
+      setPaymentAccounts((current) => [
+        ...current.filter((account) => account.provider !== saved.provider),
+        saved,
+      ]);
+      notificationService.notify('Cuenta de pago guardada.', 'success');
+    } catch (cause) {
+      notificationService.notify(
+        cause instanceof Error ? cause.message : 'No pudimos guardar la cuenta de pago.',
+        'danger',
+      );
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -260,6 +374,69 @@ export default function WalletsOperationsPage() {
         </div>
       )}
 
+      {activeRestaurantId && (
+        <Card>
+          <div className="flex items-start gap-3">
+            <div className="rounded-2xl bg-suya-lime-soft p-3 text-suya-green">
+              <WalletCards className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <div>
+              <p className="font-semibold">Cuentas que verá el cliente</p>
+              <p className="mt-1 text-sm text-suya-muted">
+                Pega el contenido público del QR entregado por la billetera. No guardes claves,
+                contraseñas ni códigos de seguridad aquí. El monto del pedido se muestra aparte y se
+                valida en caja.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <label className="text-sm font-semibold">
+              Billetera
+              <select
+                value={accountProvider}
+                onChange={(event) => selectAccountProvider(event.target.value as 'yape' | 'lemon')}
+                className="mt-1 h-11 w-full rounded-btn border border-suya-border bg-white px-3 font-normal"
+              >
+                <option value="yape">Yape</option>
+                <option value="lemon">Lemon</option>
+              </select>
+            </label>
+            <label className="text-sm font-semibold">
+              Nombre visible
+              <input
+                value={accountLabel}
+                onChange={(event) => setAccountLabel(event.target.value)}
+                className="mt-1 h-11 w-full rounded-btn border border-suya-border px-3 font-normal"
+              />
+            </label>
+            <label className="text-sm font-semibold sm:col-span-2">
+              Contenido público del QR (opcional)
+              <textarea
+                value={qrPayload}
+                onChange={(event) => setQrPayload(event.target.value)}
+                maxLength={4000}
+                rows={3}
+                placeholder="Pega aquí el texto o enlace público del QR del negocio"
+                className="mt-1 w-full rounded-btn border border-suya-border px-3 py-2 font-mono text-xs font-normal"
+              />
+            </label>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                checked={accountActive}
+                onChange={(event) => setAccountActive(event.target.checked)}
+              />
+              Mostrar esta cuenta en el checkout
+            </label>
+            <Button type="button" onClick={() => void saveAccount()} disabled={busy}>
+              {busy ? 'Guardando…' : 'Guardar cuenta'}
+            </Button>
+          </div>
+        </Card>
+      )}
+
       <section aria-labelledby="wallet-devices-title">
         <div className="mb-3 flex items-center gap-2">
           <Smartphone className="h-5 w-5 text-suya-green" />
@@ -346,7 +523,71 @@ export default function WalletsOperationsPage() {
                         {observation.currency}
                       </span>
                     </p>
-                    <Badge tone={status.tone}>{status.label}</Badge>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone={status.tone}>{status.label}</Badge>
+                      {(observation.provider === 'yape' || observation.provider === 'lemon') &&
+                        observation.verification !== 'verified' && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => void findCandidates(observation.id)}
+                            disabled={candidateLoading && candidateObservationId === observation.id}
+                          >
+                            {candidateLoading && candidateObservationId === observation.id
+                              ? 'Buscando…'
+                              : 'Buscar pedido'}
+                          </Button>
+                        )}
+                    </div>
+                    {candidateObservationId === observation.id && (
+                      <div className="rounded-btn border border-suya-sun/60 bg-suya-sun-soft p-3 sm:col-span-4">
+                        <p className="text-xs font-semibold uppercase tracking-[.14em] text-suya-muted">
+                          Pedidos compatibles
+                        </p>
+                        {candidateLoading ? (
+                          <p className="mt-2 text-sm text-suya-muted">
+                            Comparando monto, billetera y ventana de tiempo…
+                          </p>
+                        ) : candidates.length === 0 ? (
+                          <p className="mt-2 text-sm text-suya-muted">
+                            No hay coincidencias exactas pendientes. No autorices esta fila
+                            manualmente desde el cliente.
+                          </p>
+                        ) : (
+                          <div className="mt-2 space-y-2">
+                            {candidates.map((candidate) => (
+                              <div
+                                key={candidate.paymentAttemptId}
+                                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-suya-border bg-white p-2.5 text-sm"
+                              >
+                                <div>
+                                  <p className="font-semibold">
+                                    Pedido #{candidate.orderCode} · {formatPrice(candidate.amount)}
+                                  </p>
+                                  <p className="text-xs text-suya-muted">
+                                    Referencia {candidate.checkoutReference} ·{' '}
+                                    {candidate.senderName ?? 'Remitente no disponible'}
+                                  </p>
+                                </div>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={() =>
+                                    void verifyCandidate(observation.id, candidate.paymentAttemptId)
+                                  }
+                                  disabled={verifyingAttemptId !== null}
+                                >
+                                  {verifyingAttemptId === candidate.paymentAttemptId
+                                    ? 'Verificando…'
+                                    : 'Verificar pago'}
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
