@@ -145,10 +145,10 @@ select ok(
   'verificar pago usa security definer'
 );
 select ok(
-  (select pg_get_functiondef('public.ingest_wallet_observation(text,text,text,text,text,bigint,text,timestamptz)'::regprocedure)
-    like '%do update set%'
-    and pg_get_functiondef('public.ingest_wallet_observation(text,text,text,text,text,bigint,text,timestamptz)'::regprocedure)
-      like '%code_fingerprint%'),
+  (select lower(pg_get_functiondef('public.ingest_wallet_observation(text,text,text,text,text,bigint,text,timestamptz)'::regprocedure))
+    like '%on conflict (device_id, event_id)%'
+    and lower(pg_get_functiondef('public.ingest_wallet_observation(text,text,text,text,text,bigint,text,timestamptz)'::regprocedure))
+      like '%excluded.code_fingerprint%'),
   'la ingesta enriquece la misma observación cuando llega una notificación expandida'
 );
 select ok(
