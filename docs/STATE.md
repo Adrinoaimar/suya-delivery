@@ -194,6 +194,13 @@ producción.
 - Suite serial: 61 archivos/254 pruebas; lint, typecheck, escaneo de secretos y `git diff --check` verdes. La ejecución paralela tuvo una carrera aislada en `mobile-routes`, que pasó sola.
 - Producción sigue pendiente de credenciales/configuración real, migraciones, webhook, publicación y dos pagos físicos S/30.
 
+## Checkpoint F27.7: persistencia reintentable del webhook (2026-09-14)
+
+- `a35faa6` hace que `culqi-webhook` devuelva `502` si falla la actualización de `payment_attempts`, para que Culqi reintente; también actualiza `updated_at` y limpia `failure_code` al autorizar.
+- Regresión nueva: `tests/payment-webhook.test.ts`; focalizadas 15/15, lint, typecheck y escaneo de secretos verdes.
+- CI PR #36 quedó 6/6 verde. No cambia la APK funcional; la última build debug disponible sigue siendo `df86977`.
+- Preflight de red contra el proyecto canónico sigue devolviendo HTTP 404 en las tres Edge Functions; no se declara producción lista.
+
 ## Reglas de continuidad
 
 - Git, pruebas y este archivo son estado canónico.
