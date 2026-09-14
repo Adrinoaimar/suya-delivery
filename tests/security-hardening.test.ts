@@ -37,6 +37,11 @@ describe('Suya hardening guards', () => {
     expect(listener).toMatch(/ingest_wallet_observation/);
     expect(listener).toMatch(/configureDeviceToken/);
     expect(listener).toMatch(/getPostTime\(\)/);
+    expect(listener).toMatch(/getKey\(\)/);
+    expect(listener).toMatch(/EXTRA_SUB_TEXT/);
+    expect(listener).toMatch(/EXTRA_INFO_TEXT/);
+    expect(listener).toMatch(/EXTRA_SUMMARY_TEXT/);
+    expect(listener).toMatch(/contentDigest/);
     expect(listener).toMatch(/scheduleSyncJob/);
     expect(listener).toMatch(/pass < 2/);
     expect(listener).toMatch(/optBoolean\("synced", false\)/);

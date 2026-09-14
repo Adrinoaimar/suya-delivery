@@ -11,7 +11,7 @@ La migración `20260907110000_wallet_observations.sql` crea una bandeja de obser
 
 ## Qué llega a la base
 
-La RPC `ingest_wallet_observation` recibe proveedor, monto en céntimos, moneda, nombre visible, código visible, fecha y un `event_id` idempotente. La base guarda el nombre y solo los últimos cuatro caracteres del código; el código completo se almacena como hash no recuperable. La notificación original nunca se envía: solo viaja el metadato mínimo.
+La RPC `ingest_wallet_observation` recibe proveedor, monto en céntimos, moneda, nombre visible, código visible, fecha y un `event_id` idempotente. El observador lee los campos estándar de Android (`title`, `text`, `bigText`, `subText`, `infoText` y `summaryText`) porque algunas versiones de Yape/Lemon colocan allí el código. La clave opaca de Android y el texto completo se usan únicamente para formar un hash local idempotente; nunca se envían. La base guarda el nombre y solo los últimos cuatro caracteres del código; el código completo se almacena como hash no recuperable. La notificación original nunca se envía: solo viaja el metadato mínimo.
 
 ## Revisión
 

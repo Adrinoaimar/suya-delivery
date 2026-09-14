@@ -14,7 +14,7 @@ Estado del código: commit `656ddff` (funcionalidad de pagos en `66d808f` y `a35
 6. En Back Office, seleccionar el restaurante correcto, guardar las cuentas Yape/Lemon y crear un dispositivo de caja. Abrir la APK dedicada Suya en el teléfono receptor, pegar el token y activar allí el acceso de notificaciones Android de forma explícita.
 
 El observador conserva eventos cifrados si pierde red y reintenta en segundo plano cada 15 minutos como máximo. Back Office actualiza las observaciones visibles cada 15 segundos. La observación conserva la hora de publicación original para no ampliar artificialmente la ventana de coincidencia.
-El parser admite etiquetas de remitente como `De:`/`From:` y separa el nombre del código de operación; el código completo sigue siendo la identidad principal del pago.
+El parser admite etiquetas de remitente como `De:`/`From:`, lee todos los campos estándar de texto de una notificación Android y separa el nombre del código de operación. La clave opaca de Android y el contenido se incorporan solo al hash idempotente local; el código completo sigue siendo la identidad principal del pago.
 
 La rama con este flujo aún debe desplegarse a producción: el dominio público comprobado antes del despliegue muestra el checkout anterior, con efectivo únicamente. El gate de Cloudflare rechaza publicar si faltan `VITE_CULQI_GATEWAY_ENABLED=true` o `VITE_CULQI_PUBLIC_KEY`. No declarar las pruebas reales listas hasta aplicar migraciones/Edge Functions, configurar secretos y publicar el build correcto.
 

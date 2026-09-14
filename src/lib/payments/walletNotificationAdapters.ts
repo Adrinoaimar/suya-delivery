@@ -5,6 +5,9 @@ export interface WalletNotificationInput {
   title?: string;
   text?: string;
   bigText?: string;
+  subText?: string;
+  infoText?: string;
+  summaryText?: string;
   packageName?: string;
   postedAt?: string;
 }
@@ -105,7 +108,11 @@ function fingerprint(prefix: string, value: string): string {
 }
 
 function combinedText(input: WalletNotificationInput): string {
-  return [input.title, input.text, input.bigText].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+  return [input.title, input.text, input.bigText, input.subText, input.infoText, input.summaryText]
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function senderName(text: string): string | null {

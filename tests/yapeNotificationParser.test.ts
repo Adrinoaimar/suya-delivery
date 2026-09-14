@@ -57,6 +57,18 @@ describe('parseYapeNotification', () => {
     });
   });
 
+  it('reads an identifier placed in a secondary notification field', () => {
+    const result = parseYapeNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Yape recibido',
+      text: 'Recibiste S/ 30.00',
+      subText: 'Código de operación: 842911',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({ amountCents: 3000, code: '842911' });
+  });
+
   it('ignores other apps and messages without a monetary amount', () => {
     expect(parseYapeNotification({ packageName: 'com.example.fake', text: 'Recibiste S/ 20.00' })).toBeNull();
     expect(parseYapeNotification({ packageName: 'com.bcp.innovacxion.yapeapp', text: 'Yape listo' })).toBeNull();

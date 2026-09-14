@@ -6,6 +6,7 @@ import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.text.TextUtils;
@@ -92,10 +93,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         Notification notification = statusBarNotification.getNotification();
         if (notification == null || notification.extras == null) return;
 
-        String title = notification.extras.getString(Notification.EXTRA_TITLE, "");
-        String text = notification.extras.getCharSequence(Notification.EXTRA_TEXT, "").toString();
-        String bigText = notification.extras.getCharSequence(Notification.EXTRA_BIG_TEXT, "").toString();
-        String combined = TextUtils.join(" ", new String[]{title, text, bigText}).replaceAll("\\s+", " ").trim();
+        String combined = combinedNotificationText(notification.extras);
         String lower = combined.toLowerCase(new Locale("es", "PE"));
         if (combined.isEmpty() || !adapter.matchesText(lower)) return;
 
@@ -107,8 +105,17 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         Matcher codeMatcher = CODE_PATTERN.matcher(combined);
         String code = codeMatcher.find() ? codeMatcher.group(1) : null;
         String senderName = extractSenderName(combined);
-        String observedAt = isoAt(statusBarNotification.getPostTime());
-        String eventId = sha256(adapter.source + "|" + statusBarNotification.getPackageName() + "|" + statusBarNotification.getPostTime() + "|" + money.amountCents + "|" + money.currency + "|" + (code == null ? "" : code));
+        long postTime = statusBarNotification.getPostTime();
+        String observedAt = isoAt(postTime);
+        String notificationKey = statusBarNotification.getKey();
+        if (TextUtils.isEmpty(notificationKey)) {
+            notificationKey = statusBarNotification.getPackageName() + "|" + statusBarNotification.getId() + "|" + statusBarNotification.getTag();
+        }
+        // The notification key stays local and is only included in the digest.
+        // Including the content digest also lets a later expanded notification
+        // add a code without being hidden by an earlier truncated version.
+        String contentDigest = sha256(combined);
+        String eventId = sha256(adapter.source + "|" + statusBarNotification.getPackageName() + "|" + notificationKey + "|" + postTime + "|" + money.amountCents + "|" + money.currency + "|" + (code == null ? "" : code) + "|" + contentDigest);
 
         JSONObject event = new JSONObject();
         try {
@@ -127,6 +134,25 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         }
         appendEvent(event);
         syncPendingEvents(this);
+    }
+
+    private static String combinedNotificationText(Bundle extras) {
+        StringBuilder result = new StringBuilder();
+        String[] keys = new String[]{
+                Notification.EXTRA_TITLE,
+                Notification.EXTRA_TEXT,
+                Notification.EXTRA_BIG_TEXT,
+                Notification.EXTRA_SUB_TEXT,
+                Notification.EXTRA_INFO_TEXT,
+                Notification.EXTRA_SUMMARY_TEXT
+        };
+        for (String key : keys) {
+            CharSequence value = extras.getCharSequence(key);
+            if (value == null || value.toString().trim().isEmpty()) continue;
+            if (result.length() > 0) result.append(' ');
+            result.append(value);
+        }
+        return result.toString().replaceAll("\\s+", " ").trim();
     }
 
     @Nullable
