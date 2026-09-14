@@ -179,6 +179,13 @@ producción.
 - APKs debug oficiales: Rider, Back Office y Caja en `output/apks/73a1253/`; las tres pasaron `unzip -t`. No se guardan binarios en documentación.
 - `verify:production` local sigue fallando correctamente sin configuración real; faltan llaves, migraciones/Edge Functions, publicación, smoke físico y dos pagos S/30.
 
+## Checkpoint F27.5: rechazo sin refresh y APK funcional 673a920 (2026-09-14)
+
+- `673a920` cubre el último borde del retry Culqi: si falla también la consulta de estado, invalida localmente la referencia y obliga a crear una nueva; además aclara que Suya guarda hash no reversible del código y solo muestra los últimos cuatro caracteres.
+- Evidencia local: 60 suites/249 tests, lint, typecheck, diff y escaneo de secretos verdes. CI PR #36 completo verde: DB `34873443644`, Android `34873443609`, iOS `34873443610`, browser `34873443608`, frontend/E2E `34873443611`.
+- APKs debug de `673a920` en `output/apks/673a920/`; Rider `e9fddcc5…`, Back Office `61103553…`, Caja `2576795e…`; las tres pasaron `unzip -t`.
+- `verify:production` y `verify:cloudflare` siguen rechazando la ausencia de configuración real. Faltan llaves Culqi/Supabase/Cloudflare, migraciones/funciones, webhook, publicación y pagos físicos.
+
 ## Reglas de continuidad
 
 - Git, pruebas y este archivo son estado canónico.
