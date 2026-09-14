@@ -1,6 +1,6 @@
 begin;
 
-select plan(79);
+select plan(80);
 
 select has_function(
   'public', 'refresh_payment_intent', array['uuid', 'text', 'text'],
@@ -352,9 +352,11 @@ select lives_ok(
   $$ select * from public.create_payment_intent('a6300000-0000-0000-0000-000000000004', 'yape') $$,
   'cliente uno crea intento renovable'
 );
+reset role;
 update public.payment_attempts
 set expires_at = now() - interval '1 minute'
 where order_id = 'a6300000-0000-0000-0000-000000000004';
+set local role authenticated;
 select lives_ok(
   $$ select * from public.refresh_payment_intent('a6300000-0000-0000-0000-000000000004', 'yape') $$,
   'un intento expirado genera una referencia nueva'
