@@ -68,11 +68,15 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
     };
   }, [order.id, order.paymentIntent, order.paymentMethod]);
 
-  const gatewayProvider = intent?.provider;
-  const gatewayStatus = intent?.status;
+  useEffect(() => {
+    if (!order.paymentIntent) return;
+    setIntent(order.paymentIntent);
+    setError(null);
+    setLoading(false);
+  }, [order.paymentIntent]);
 
   useEffect(() => {
-    if (gatewayProvider !== 'culqi' || gatewayStatus !== 'pending') return;
+    if (intent?.status !== 'pending') return;
     let active = true;
     const refresh = () => {
       void paymentService
@@ -87,7 +91,9 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
       active = false;
       window.clearInterval(timer);
     };
-  }, [gatewayProvider, gatewayStatus, order.id]);
+  }, [intent?.status, order.id]);
+
+  const gatewayStatus = intent?.status;
 
   if (order.paymentMethod === 'cash') return null;
   if (loading) {
