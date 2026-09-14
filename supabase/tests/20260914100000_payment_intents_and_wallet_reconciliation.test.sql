@@ -470,6 +470,93 @@ select is(
   2::bigint,
   'los dos pagos iguales quedan autorizados en su pedido correcto'
 );
+
+-- Negative identity loop: a notification exposing only the same last four
+-- characters must not let the operator choose between two S/30 attempts.
+insert into public.orders (
+  id, code, customer_id, restaurant_id, status, payment_method, subtotal, delivery_fee,
+  customer_name, customer_phone, delivery_address, estimated_minutes, idempotency_key
+) values
+  ('a6300000-0000-0000-0000-000000000005', 'PAYTEST5',
+   'a6000000-0000-0000-0000-000000000001', 'a6200000-0000-0000-0000-000000000001',
+   'confirmed', 'cash', 27, 3, 'Cliente Uno', '999111111', 'Dirección cinco', 30,
+   'a6400000-0000-0000-0000-000000000005'),
+  ('a6300000-0000-0000-0000-000000000006', 'PAYTEST6',
+   'a6000000-0000-0000-0000-000000000002', 'a6200000-0000-0000-0000-000000000001',
+   'confirmed', 'cash', 27, 3, 'Cliente Dos', '999222222', 'Dirección seis', 30,
+   'a6400000-0000-0000-0000-000000000006');
+
+set local request.jwt.claims =
+  '{"sub":"a6000000-0000-0000-0000-000000000001","role":"authenticated"}';
+set local role authenticated;
+select lives_ok(
+  $$ select * from public.create_payment_intent('a6300000-0000-0000-0000-000000000005', 'yape') $$,
+  'cliente uno crea intento para negativo de sufijo repetido'
+);
+reset role;
+set local request.jwt.claims =
+  '{"sub":"a6000000-0000-0000-0000-000000000002","role":"authenticated"}';
+set local role authenticated;
+select lives_ok(
+  $$ select * from public.create_payment_intent('a6300000-0000-0000-0000-000000000006', 'yape') $$,
+  'cliente dos crea intento para negativo de sufijo repetido'
+);
+reset role;
+
+update public.payment_attempts
+set payer_code_last4 = '1234', payer_code_digest = null
+where order_id in (
+  'a6300000-0000-0000-0000-000000000005',
+  'a6300000-0000-0000-0000-000000000006'
+);
+insert into public.wallet_observations (
+  id, device_id, restaurant_id, event_id, provider, sender_name, code_digest,
+  code_fingerprint, code_last4, amount_cents, currency, observed_at
+) values (
+  'a6600000-0000-0000-0000-000000000003', 'a6500000-0000-0000-0000-000000000001',
+  'a6200000-0000-0000-0000-000000000001', 'payment-loop-event-3', 'yape', 'Remitente no identificado',
+  null, null, '1234', 3000, 'PEN', now()
+);
+
+set local request.jwt.claims =
+  '{"sub":"a6000000-0000-0000-0000-000000000003","role":"authenticated"}';
+set local role authenticated;
+select is(
+  (select count(*) from public.list_wallet_payment_candidates('a6600000-0000-0000-0000-000000000003')),
+  2::bigint,
+  'el mismo sufijo muestra los dos candidatos y no decide por monto'
+);
+select throws_ok(
+  $$ select public.verify_wallet_payment(
+    'a6600000-0000-0000-0000-000000000003',
+    (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000005')
+  ) $$,
+  'payment identity is ambiguous; full operation code required',
+  'la verificación rechaza el sufijo ambiguo'
+);
+
+select lives_ok(
+  $$ select public.set_wallet_observation_code('a6600000-0000-0000-0000-000000000003', 'ABCD1234') $$,
+  'caja completa el código visible en la constancia'
+);
+update public.payment_attempts
+set payer_code_digest = encode(extensions.digest('abcd1234', 'sha256'), 'hex')
+where order_id = 'a6300000-0000-0000-0000-000000000005';
+update public.payment_attempts
+set payer_code_digest = encode(extensions.digest('wxyz1234', 'sha256'), 'hex')
+where order_id = 'a6300000-0000-0000-0000-000000000006';
+select is(
+  (select count(*) from public.list_wallet_payment_candidates('a6600000-0000-0000-0000-000000000003')),
+  1::bigint,
+  'el código completo reduce los candidatos a un solo pedido'
+);
+select lives_ok(
+  $$ select public.verify_wallet_payment(
+    'a6600000-0000-0000-0000-000000000003',
+    (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000005')
+  ) $$,
+  'el código completo autoriza únicamente el pedido correcto'
+);
 reset role;
 
 select * from finish();
