@@ -43,6 +43,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   const [submittingEvidence, setSubmittingEvidence] = useState(false);
   const [evidenceSaved, setEvidenceSaved] = useState(false);
   const [gatewayBusy, setGatewayBusy] = useState(false);
+  const [gatewayAwaitingWebhook, setGatewayAwaitingWebhook] = useState(false);
   const [manualBusy, setManualBusy] = useState(false);
 
   useEffect(() => {
@@ -93,6 +94,12 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
     };
   }, [intent?.status, order.id]);
 
+  useEffect(() => {
+    if (!intent || intent.status !== 'pending' || isExpired(intent)) {
+      setGatewayAwaitingWebhook(false);
+    }
+  }, [intent]);
+
   const gatewayStatus = intent?.status;
 
   if (order.paymentMethod === 'cash') return null;
@@ -119,6 +126,8 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
 
   const verified = intent.status === 'authorized';
   const gatewayExpired = isExpired(intent);
+  const gatewayWaitingForWebhook =
+    gatewayAwaitingWebhook && intent.status === 'pending' && !gatewayExpired;
   const copyReference = async () => {
     try {
       await navigator.clipboard.writeText(intent.checkoutReference);
@@ -170,13 +179,14 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   };
 
   const openGateway = async () => {
-    if (gatewayBusy || verified) return;
+    if (gatewayBusy || gatewayWaitingForWebhook || verified) return;
     const customerEmail = savedPaymentEmail(order.id);
     if (!customerEmail) {
       notificationService.notify('Falta el correo usado para abrir el checkout seguro.', 'warning');
       return;
     }
     setGatewayBusy(true);
+    setGatewayAwaitingWebhook(false);
     try {
       const activeIntent =
         intent.status === 'failed' || gatewayExpired || !intent.providerReference
@@ -214,6 +224,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         },
         onOrder: () => {
           setGatewayBusy(false);
+          setGatewayAwaitingWebhook(true);
           notificationService.notify(
             'Pago enviado. Culqi confirmará el monto mediante webhook; esta pantalla se actualizará sola.',
             'success',
@@ -221,11 +232,13 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         },
         onError: (message) => {
           setGatewayBusy(false);
+          setGatewayAwaitingWebhook(false);
           notificationService.notify(message, 'danger');
         },
       });
     } catch (cause) {
       setGatewayBusy(false);
+      setGatewayAwaitingWebhook(false);
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No pudimos abrir el checkout seguro.',
         'danger',
@@ -277,11 +290,13 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
             <Button
               type="button"
               onClick={() => void openGateway()}
-              disabled={gatewayBusy || verified}
+              disabled={gatewayBusy || gatewayWaitingForWebhook || verified}
             >
               <ExternalLink className="h-4 w-4" aria-hidden="true" />
               {gatewayBusy
                 ? 'Procesando…'
+                : gatewayWaitingForWebhook
+                  ? 'Esperando confirmación…'
                 : verified
                   ? 'Pago verificado'
                   : gatewayStatus === 'failed' || gatewayExpired

@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   createIntent: vi.fn(),
   submitEvidence: vi.fn(),
   notify: vi.fn(),
+  openCulqiCheckout: vi.fn(),
 }));
 
 vi.mock('@/lib/services', () => ({
@@ -20,7 +21,7 @@ vi.mock('@/lib/services', () => ({
 }));
 
 vi.mock('@/lib/payments/culqiCheckout', () => ({
-  openCulqiCheckout: vi.fn(),
+  openCulqiCheckout: mocks.openCulqiCheckout,
 }));
 
 const pendingIntent: PaymentIntent = {
@@ -50,6 +51,7 @@ function order(paymentIntent: PaymentIntent): Pick<Order, 'id' | 'code' | 'total
 afterEach(() => {
   vi.clearAllMocks();
   vi.useRealTimers();
+  sessionStorage.clear();
 });
 
 describe('PaymentInstructions', () => {
@@ -76,5 +78,29 @@ describe('PaymentInstructions', () => {
     });
 
     expect(mocks.getIntent).toHaveBeenCalledWith('order-1');
+  });
+
+  it('bloquea reintentos del QR mientras espera el webhook de Culqi', async () => {
+    const gatewayIntent: PaymentIntent = {
+      ...pendingIntent,
+      provider: 'culqi',
+      providerReference: 'ord_test_suya_123',
+    };
+    mocks.openCulqiCheckout.mockImplementationOnce(async (options: { onOrder: () => void }) => {
+      options.onOrder();
+    });
+    sessionStorage.setItem('suya.payment-email:order-1', 'cliente@example.com');
+    render(<PaymentInstructions order={order(gatewayIntent)} />);
+
+    const button = screen.getByRole('button', { name: 'Abrir QR Yape' });
+    await act(async () => {
+      button.click();
+    });
+
+    expect(screen.getByRole('button', { name: 'Esperando confirmación…' })).toBeDisabled();
+    expect(mocks.notify).toHaveBeenCalledWith(
+      'Pago enviado. Culqi confirmará el monto mediante webhook; esta pantalla se actualizará sola.',
+      'success',
+    );
   });
 });

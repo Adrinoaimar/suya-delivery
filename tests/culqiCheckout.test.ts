@@ -7,7 +7,7 @@ class FakeCulqiCheckout {
   publicKey: string;
   config: Record<string, unknown>;
   token: { id?: string } | undefined;
-  order: { id?: string } | undefined;
+  order: { id?: string; state?: string } | undefined;
   error: { user_message?: string; merchant_message?: string } | undefined;
   culqi: (() => void) | undefined;
   openCalls = 0;
@@ -114,5 +114,24 @@ describe('openCulqiCheckout', () => {
         paymentMethodsSort: ['tarjeta'],
       },
     });
+  });
+
+  it('entrega la orden Culqi cuando Yape completa el checkout por QR', async () => {
+    const onOrder = vi.fn();
+
+    await openCulqiCheckout({
+      intent,
+      method: 'yape',
+      onToken: vi.fn().mockResolvedValue(undefined),
+      onOrder,
+      onError: vi.fn(),
+    });
+
+    lastCheckout = FakeCulqiCheckout.instances.at(-1);
+    lastCheckout!.order = { id: 'ord_test_suya_123', state: 'paid' };
+    lastCheckout!.culqi?.();
+
+    expect(lastCheckout?.closeCalls).toBe(1);
+    expect(onOrder).toHaveBeenCalledWith({ id: 'ord_test_suya_123', state: 'paid' });
   });
 });
