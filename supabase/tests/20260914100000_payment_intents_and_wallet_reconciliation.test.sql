@@ -632,7 +632,7 @@ select lives_ok(
 reset role;
 set local request.jwt.claims =
   '{"sub":"a6000000-0000-0000-0000-000000000003","role":"authenticated"}';
-set local role authenticated;
+set local role service_role;
 update public.orders
 set status = 'cancelled', cancelled_at = now(), cancellation_reason = 'prueba de seguridad'
 where id = 'a6300000-0000-0000-0000-000000000008';
