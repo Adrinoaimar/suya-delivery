@@ -1,6 +1,6 @@
 begin;
 
-select plan(95);
+select plan(96);
 
 select has_function(
   'public', 'refresh_payment_intent', array['uuid', 'text', 'text'],
@@ -631,11 +631,20 @@ select lives_ok(
 );
 reset role;
 set local request.jwt.claims =
-  '{"sub":"a6000000-0000-0000-0000-000000000003","role":"authenticated"}';
-set local role service_role;
-update public.orders
-set status = 'cancelled', cancelled_at = now(), cancellation_reason = 'prueba de seguridad'
-where id = 'a6300000-0000-0000-0000-000000000008';
+  '{"sub":"a6000000-0000-0000-0000-000000000001","role":"authenticated"}';
+set local role postgres;
+insert into private.order_secrets (order_id, delivery_code_hash, cancel_code_hash)
+values (
+  'a6300000-0000-0000-0000-000000000008',
+  extensions.crypt('1111', extensions.gen_salt('bf')),
+  extensions.crypt('2222', extensions.gen_salt('bf'))
+);
+set local role authenticated;
+select is(
+  public.cancel_order_with_code('a6300000-0000-0000-0000-000000000008', '2222'),
+  true,
+  'cliente cancela por la ruta autorizada'
+);
 reset role;
 select is(
   (select status::text from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000008'),
