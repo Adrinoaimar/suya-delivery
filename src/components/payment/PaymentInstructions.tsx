@@ -13,11 +13,17 @@ interface PaymentInstructionsProps {
   order: Pick<Order, 'id' | 'code' | 'total' | 'paymentMethod' | 'paymentIntent'>;
 }
 
-function statusLabel(status: PaymentIntent['status']): string {
+function statusLabel(status: PaymentIntent['status'], expired = false): string {
   if (status === 'authorized') return 'Pago verificado';
   if (status === 'failed') return 'Pago rechazado';
   if (status === 'refunded') return 'Pago devuelto';
+  if (expired) return 'Intento expirado';
   return 'Pendiente de verificación';
+}
+
+function isExpired(intent: PaymentIntent): boolean {
+  const timestamp = Date.parse(intent.expiresAt);
+  return Number.isFinite(timestamp) && timestamp <= Date.now();
 }
 
 function savedPaymentEmail(orderId: string): string | null {
@@ -105,6 +111,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   }
 
   const verified = intent.status === 'authorized';
+  const gatewayExpired = isExpired(intent);
   const copyReference = async () => {
     try {
       await navigator.clipboard.writeText(intent.checkoutReference);
@@ -137,20 +144,26 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   };
 
   const openGateway = async () => {
+    if (gatewayBusy || verified) return;
     const customerEmail = savedPaymentEmail(order.id);
-    if (intent.method === 'card' && !customerEmail) {
-      notificationService.notify('Falta el correo usado para pagar con tarjeta.', 'warning');
+    if (!customerEmail) {
+      notificationService.notify('Falta el correo usado para abrir el checkout seguro.', 'warning');
       return;
     }
+    setGatewayBusy(true);
     try {
+      const activeIntent =
+        intent.status === 'failed' || gatewayExpired || !intent.providerReference
+          ? await paymentService.createIntent(order.id, intent.method, undefined, customerEmail)
+          : intent;
+      setIntent(activeIntent);
       await openCulqiCheckout({
-        intent,
-        method: intent.method === 'card' ? 'card' : 'yape',
+        intent: activeIntent,
+        method: activeIntent.method === 'card' ? 'card' : 'yape',
         onToken: async (tokenId) => {
-          setGatewayBusy(true);
           try {
             const providerReference = await paymentService.chargeCard(
-              intent,
+              activeIntent,
               tokenId,
               customerEmail,
             );
@@ -158,14 +171,14 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
               current ? { ...current, status: 'authorized', providerReference } : current,
             );
             notificationService.notify(
-              `${intent.method === 'card' ? 'Tarjeta' : 'Yape'} autorizado. Pedido identificado en Suya.`,
+              `${activeIntent.method === 'card' ? 'Tarjeta' : 'Yape'} autorizado. Pedido identificado en Suya.`,
               'success',
             );
           } catch (cause) {
             notificationService.notify(
               cause instanceof Error
                 ? cause.message
-                : `No pudimos procesar ${intent.method === 'card' ? 'la tarjeta' : 'Yape'}.`,
+                : `No pudimos procesar ${activeIntent.method === 'card' ? 'la tarjeta' : 'Yape'}.`,
               'danger',
             );
           } finally {
@@ -173,14 +186,19 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
           }
         },
         onOrder: () => {
+          setGatewayBusy(false);
           notificationService.notify(
             'Pago enviado. Culqi confirmará el monto mediante webhook; esta pantalla se actualizará sola.',
             'success',
           );
         },
-        onError: (message) => notificationService.notify(message, 'danger'),
+        onError: (message) => {
+          setGatewayBusy(false);
+          notificationService.notify(message, 'danger');
+        },
       });
     } catch (cause) {
+      setGatewayBusy(false);
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No pudimos abrir el checkout seguro.',
         'danger',
@@ -212,7 +230,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
             </p>
           </div>
         </div>
-        <Badge tone={verified ? 'lime' : 'sun'}>{statusLabel(intent.status)}</Badge>
+        <Badge tone={verified ? 'lime' : 'sun'}>{statusLabel(intent.status, gatewayExpired)}</Badge>
       </div>
 
       {intent.provider === 'culqi' ? (
@@ -232,13 +250,15 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
             <Button
               type="button"
               onClick={() => void openGateway()}
-              disabled={gatewayBusy || verified || gatewayStatus !== 'pending'}
+              disabled={gatewayBusy || verified}
             >
               <ExternalLink className="h-4 w-4" aria-hidden="true" />
               {gatewayBusy
                 ? 'Procesando…'
                 : verified
                   ? 'Pago verificado'
+                  : gatewayStatus === 'failed' || gatewayExpired
+                    ? 'Reintentar pago'
                   : intent.method === 'card'
                     ? 'Pagar con tarjeta'
                     : 'Abrir QR Yape'}
