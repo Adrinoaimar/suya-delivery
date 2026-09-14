@@ -108,6 +108,24 @@ describe('WalletsOperationsPage', () => {
     );
   });
 
+  it('preselecciona la primera cuenta antes de terminar las cargas secundarias', async () => {
+    let resolveObservations!: (value: unknown[]) => void;
+    const slowObservations = new Promise<unknown[]>((resolve) => {
+      resolveObservations = resolve;
+    });
+    mocks.listObservations.mockImplementationOnce(() => slowObservations);
+
+    render(<WalletsOperationsPage />);
+
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: 'Cuenta de restaurante' })).toHaveValue(
+        restaurant.id,
+      ),
+    );
+
+    resolveObservations([]);
+  });
+
   it('bloquea verificar cuando el sufijo coincide con varios pedidos', async () => {
     mocks.listPaymentCandidates.mockResolvedValue([
       {

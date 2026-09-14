@@ -106,6 +106,26 @@ export default function WalletsOperationsPage() {
         (store) => isPlatformAdmin || restaurantIds.includes(store.id),
       );
       const scopedRestaurantIds = visibleStores.map((store) => store.id);
+      // La cuenta debe quedar visible y preseleccionada aunque las cargas secundarias
+      // de dispositivos u observaciones tarden. Así el operador puede identificar el
+      // restaurante desde el primer render útil y no ve un selector vacío.
+      if (
+        requestId === loadRequestRef.current &&
+        observationRequestId === observationRequestRef.current
+      ) {
+        setStores(visibleStores);
+        if (isPlatformAdmin) {
+          setRestaurantId((current) =>
+            current && visibleStores.some((store) => store.id === current)
+              ? current
+              : visibleStores[0]?.id || '',
+          );
+        } else {
+          setRestaurantId((current) =>
+            current && restaurantIds.includes(current) ? current : restaurantIds[0] ?? '',
+          );
+        }
+      }
       const [nextDevices, nextObservations] = await Promise.all([
         walletObserverService.listDevices(scopedRestaurantIds),
         walletObserverService.listObservations(scopedRestaurantIds),
