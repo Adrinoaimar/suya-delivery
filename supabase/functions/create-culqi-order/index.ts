@@ -85,6 +85,11 @@ function isHttpsUrl(value: unknown): value is string {
   return typeof value === 'string' && /^https:\/\/[^\s]+$/i.test(value) && value.length <= 4000;
 }
 
+async function sha256Hex(value: string): Promise<string> {
+  const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
+  return Array.from(new Uint8Array(bytes), (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
 const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -142,7 +147,7 @@ Deno.serve(async (request) => {
   let intent = firstRow(await intentResponse.json());
   if (!intent) return json({ error: 'Supabase no devolvió el intento Culqi.' }, 502, origin);
 
-  const amount = amountCents(intent.amount);
+  let amount = amountCents(intent.amount);
   if (amount < 600) {
     return json({ error: 'Culqi requiere un mínimo de S/ 6.00 para este flujo.' }, 422, origin);
   }
@@ -150,36 +155,17 @@ Deno.serve(async (request) => {
     return json({ error: 'Culqi Yape permite hasta S/ 500.00 por orden.' }, 422, origin);
   }
   let existingProviderReference = text(intent.provider_reference);
-  if (existingProviderReference && text(intent.status, 'pending') === 'pending') {
-    const existingExpiration = Date.parse(text(intent.expires_at));
-    if (Number.isFinite(existingExpiration) && existingExpiration <= Date.now()) {
-      const refreshedExpiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
-      const resetResponse = await fetch(
-        `${supabaseUrl}/rest/v1/payment_attempts?id=eq.${text(intent.attempt_id)}&status=eq.pending&provider=eq.culqi&provider_reference=eq.${encodeURIComponent(existingProviderReference)}`,
-        {
-          method: 'PATCH',
-          headers: { ...serviceHeaders(serviceRoleKey), Prefer: 'return=minimal' },
-          body: JSON.stringify({
-            provider_reference: null,
-            gateway_qr_payload: null,
-            expires_at: refreshedExpiresAt,
-            failure_code: null,
-          }),
-        },
-      );
-      if (!resetResponse.ok) {
-        return json({ error: 'No se pudo renovar el intento Culqi vencido.' }, 502, origin);
-      }
-      intent = {
-        ...intent,
-        provider_reference: null,
-        qr_payload: null,
-        expires_at: refreshedExpiresAt,
-      };
-      existingProviderReference = '';
-    }
+  const intentStatus = text(intent.status, 'pending');
+  const intentExpired = Date.parse(text(intent.expires_at)) <= Date.now();
+  // A successful card/Yape charge is already final. Never overwrite its chr_
+  // reference by creating a fresh ord_ after a refresh.
+  if (existingProviderReference && intentStatus === 'authorized') {
+    return json({
+      paymentIntent: paymentIntentPayload(intent, method),
+      gatewayOrderId: existingProviderReference.startsWith('ord_') ? existingProviderReference : null,
+    }, 200, origin);
   }
-  if (existingProviderReference) {
+  if (existingProviderReference && intentStatus === 'pending' && !intentExpired) {
     if (!/^ord_(?:test|live)_[A-Za-z0-9_-]+$/.test(existingProviderReference)) {
       return json({ error: 'La referencia Culqi guardada es inválida.' }, 502, origin);
     }
@@ -211,6 +197,48 @@ Deno.serve(async (request) => {
   if (!customerEmail) {
     return json({ error: 'Correo requerido para abrir el checkout seguro.' }, 422, origin);
   }
+
+  // The row lock and digest are acquired immediately before the external
+  // provider call. A second browser retry receives 409 instead of creating a
+  // second Culqi order for the same Suya payment attempt.
+  const claimResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/claim_culqi_order_creation`, {
+    method: 'POST',
+    headers: {
+      apikey: anonKey,
+      Authorization: rpcAuthorization,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      p_payment_attempt_id: intent.attempt_id,
+      p_method: method,
+      p_guest_access_token: guestAccessToken,
+    }),
+  });
+  if (!claimResponse.ok) {
+    const detail = (await claimResponse.text()).toLowerCase();
+    return json({
+      error: detail.includes('already preparing')
+        ? 'Este pago ya está preparando el checkout. Espera un momento antes de reintentar.'
+        : 'No se pudo reservar la preparación del checkout.',
+    }, detail.includes('already preparing') ? 409 : 422, origin);
+  }
+  const claimedIntent = firstRow(await claimResponse.json());
+  if (!claimedIntent) return json({ error: 'Supabase no devolvió la reserva del checkout.' }, 502, origin);
+  intent = { ...intent, ...claimedIntent };
+  amount = amountCents(intent.amount);
+  existingProviderReference = text(intent.provider_reference);
+  if (existingProviderReference) {
+    if (!/^ord_(?:test|live)_[A-Za-z0-9_-]+$/.test(existingProviderReference)) {
+      return json({ error: 'La referencia Culqi guardada es inválida.' }, 502, origin);
+    }
+    return json({
+      paymentIntent: paymentIntentPayload(intent, method),
+      gatewayOrderId: existingProviderReference,
+    }, 200, origin);
+  }
+  const claimToken = text(claimedIntent.claim_token);
+  if (!claimToken) return json({ error: 'La reserva del checkout no devolvió su comprobante interno.' }, 502, origin);
+  const claimDigest = await sha256Hex(claimToken);
 
   const names = splitName(text(order.customer_name, 'Cliente Suya'));
   const expiration = Math.floor(new Date(text(intent.expires_at)).getTime() / 1000);
@@ -244,27 +272,51 @@ Deno.serve(async (request) => {
   });
   if (!culqiResponse.ok) {
     console.error('Culqi order creation failed', culqiResponse.status, (await culqiResponse.text()).slice(0, 300));
-    await fetch(`${supabaseUrl}/rest/v1/payment_attempts?id=eq.${text(intent.attempt_id)}`, {
+    await fetch(`${supabaseUrl}/rest/v1/payment_attempts?id=eq.${text(intent.attempt_id)}&status=eq.pending&gateway_order_claim_digest=eq.${claimDigest}`, {
       method: 'PATCH',
       headers: { ...serviceHeaders(serviceRoleKey), Prefer: 'return=minimal' },
-      body: JSON.stringify({ status: 'failed', failure_code: 'culqi_order_create_failed' }),
+      body: JSON.stringify({
+        status: 'failed',
+        failure_code: 'culqi_order_create_failed',
+        gateway_order_claim_digest: null,
+        gateway_order_claimed_at: null,
+      }),
     });
     return json({ error: 'Culqi no pudo preparar el pago. Intenta nuevamente.' }, 502, origin);
   }
   const culqiOrder = await culqiResponse.json() as { id?: unknown; qr?: unknown; state?: unknown };
   const providerReference = text(culqiOrder.id);
   if (!/^ord_(?:test|live)_[A-Za-z0-9_-]+$/.test(providerReference)) {
+    await fetch(`${supabaseUrl}/rest/v1/payment_attempts?id=eq.${text(intent.attempt_id)}&status=eq.pending&gateway_order_claim_digest=eq.${claimDigest}`, {
+      method: 'PATCH',
+      headers: { ...serviceHeaders(serviceRoleKey), Prefer: 'return=minimal' },
+      body: JSON.stringify({
+        status: 'failed',
+        failure_code: 'culqi_invalid_order_reference',
+        gateway_order_claim_digest: null,
+        gateway_order_claimed_at: null,
+      }),
+    });
     return json({ error: 'Culqi devolvió una orden inválida.' }, 502, origin);
   }
   const gatewayQr = isHttpsUrl(culqiOrder.qr) ? culqiOrder.qr : null;
-  const updateResponse = await fetch(`${supabaseUrl}/rest/v1/payment_attempts?id=eq.${text(intent.attempt_id)}`, {
+  const updateResponse = await fetch(`${supabaseUrl}/rest/v1/payment_attempts?id=eq.${text(intent.attempt_id)}&status=eq.pending&provider=eq.culqi&provider_reference=is.null&gateway_order_claim_digest=eq.${claimDigest}`, {
     method: 'PATCH',
-    headers: { ...serviceHeaders(serviceRoleKey), Prefer: 'return=minimal' },
-    body: JSON.stringify({ provider_reference: providerReference, gateway_qr_payload: gatewayQr }),
+    headers: { ...serviceHeaders(serviceRoleKey), Prefer: 'return=representation' },
+    body: JSON.stringify({
+      provider_reference: providerReference,
+      gateway_qr_payload: gatewayQr,
+      gateway_order_claim_digest: null,
+      gateway_order_claimed_at: null,
+    }),
   });
   if (!updateResponse.ok) {
     console.error('Payment attempt provider reference update failed', updateResponse.status, (await updateResponse.text()).slice(0, 240));
     return json({ error: 'No se pudo vincular la orden Culqi al pedido.' }, 502, origin);
+  }
+  const linkedRows = await updateResponse.json().catch(() => []);
+  if (!Array.isArray(linkedRows) || linkedRows.length === 0) {
+    return json({ error: 'La orden Culqi quedó pendiente de conciliación; no repitas el pago.' }, 502, origin);
   }
 
   return json({

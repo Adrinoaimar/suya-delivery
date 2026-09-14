@@ -1,6 +1,6 @@
 begin;
 
-select plan(61);
+select plan(70);
 
 select has_function(
   'public', 'create_payment_intent', array['uuid', 'text', 'text'],
@@ -49,6 +49,10 @@ select has_function(
 select has_function(
   'public', 'fail_culqi_payment_claim', array['uuid', 'text', 'text', 'text'],
   'liberar intento Culqi fallido existe'
+);
+select has_function(
+  'public', 'claim_culqi_order_creation', array['uuid', 'text', 'text'],
+  'reservar creación externa Culqi existe'
 );
 select has_function(
   'public', 'list_restaurant_payment_accounts', array['uuid'],
@@ -104,6 +108,18 @@ select ok(
     where table_schema = 'public' and table_name = 'payment_attempts'
       and column_name = 'gateway_claimed_at'),
   'el intento conserva la vigencia de la reserva Culqi'
+);
+select ok(
+  exists (select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'payment_attempts'
+      and column_name = 'gateway_order_claim_digest'),
+  'el intento conserva solo el digest de creación de orden Culqi'
+);
+select ok(
+  exists (select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'payment_attempts'
+      and column_name = 'gateway_order_claimed_at'),
+  'el intento conserva la vigencia de creación de orden Culqi'
 );
 select ok(
   exists (select 1 from pg_indexes
@@ -208,6 +224,20 @@ select ok(
   'la autorización Culqi exige la reserva efímera'
 );
 select ok(
+  (select prosecdef from pg_proc where oid = 'public.claim_culqi_order_creation(uuid,text,text)'::regprocedure),
+  'reservar creación Culqi usa security definer'
+);
+select ok(
+  has_function_privilege('anon', 'public.claim_culqi_order_creation(uuid,text,text)', 'execute')
+    and has_function_privilege('authenticated', 'public.claim_culqi_order_creation(uuid,text,text)', 'execute'),
+  'cliente y guest pueden reservar una sola creación Culqi'
+);
+select ok(
+  (select pg_get_functiondef('public.claim_culqi_order_creation(uuid,text,text)'::regprocedure)
+    like '%gateway_order_claim_digest%'),
+  'la creación externa queda ligada a su digest efímero'
+);
+select ok(
   (select pg_get_functiondef('public.list_wallet_payment_candidates(uuid)'::regprocedure) like '%payer_code_last4%'),
   'los candidatos exigen identidad del pagador'
 );
@@ -267,7 +297,11 @@ insert into public.orders (
   ('a6300000-0000-0000-0000-000000000002', 'PAYTEST2',
    'a6000000-0000-0000-0000-000000000002', 'a6200000-0000-0000-0000-000000000001',
    'confirmed', 'cash', 27, 3, 'Cliente Dos', '999222222', 'Dirección dos', 30,
-   'a6400000-0000-0000-0000-000000000002');
+   'a6400000-0000-0000-0000-000000000002'),
+  ('a6300000-0000-0000-0000-000000000003', 'PAYTEST3',
+   'a6000000-0000-0000-0000-000000000001', 'a6200000-0000-0000-0000-000000000001',
+   'confirmed', 'cash', 27, 3, 'Cliente Uno', '999111111', 'Dirección tres', 30,
+   'a6400000-0000-0000-0000-000000000003');
 
 set local request.jwt.claims =
   '{"sub":"a6000000-0000-0000-0000-000000000001","role":"authenticated"}';
@@ -279,6 +313,23 @@ select lives_ok(
 select lives_ok(
   $$ select public.submit_payment_evidence('a6300000-0000-0000-0000-000000000001', '111111') $$,
   'cliente uno registra su código completo'
+);
+select lives_ok(
+  $$ select * from public.create_culqi_payment_intent('a6300000-0000-0000-0000-000000000003', 'yape') $$,
+  'cliente uno crea intento Culqi de S/30'
+);
+select lives_ok(
+  $$ select * from public.claim_culqi_order_creation(
+    (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000003'), 'yape'
+  ) $$,
+  'primer toque reserva la creación externa Culqi'
+);
+select throws_ok(
+  $$ select * from public.claim_culqi_order_creation(
+    (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000003'), 'yape'
+  ) $$,
+  'payment attempt is already preparing',
+  'segundo toque no crea otra orden Culqi'
 );
 reset role;
 

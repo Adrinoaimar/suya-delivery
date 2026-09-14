@@ -1,6 +1,6 @@
 # F27 · Loop de pruebas de pago
 
-Estado del código: commit `6ae15b3`; CI de PR #36 verde. Este documento no contiene llaves ni datos de clientes.
+Estado del código: commit `ad70606` + hardening local de reserva de creación Culqi; CI debe validar la nueva migración antes de instalar. Este documento no contiene llaves ni datos de clientes.
 
 ## Preparación única
 
@@ -9,6 +9,8 @@ Estado del código: commit `6ae15b3`; CI de PR #36 verde. Este documento no cont
 3. Configurar el frontend con `VITE_CULQI_GATEWAY_ENABLED=true` y la llave pública `pk_test_...`; nunca colocar una `sk_...` en web o APK.
 4. Registrar el webhook Culqi `order.status.changed` apuntando a `culqi-webhook` y comprobar que responde por HTTPS.
 5. En Back Office, seleccionar el restaurante correcto, guardar las cuentas Yape/Lemon y crear un dispositivo de caja. Activar el acceso de notificaciones Android de forma explícita.
+
+La reserva de creación también cubre doble toque en `Continuar con pago`: una solicitud prepara la orden externa y la otra debe recibir `409`; no repitas el pago mientras el primer checkout esté preparando la orden.
 
 ## Caso 1 · Dos Yape de S/30
 

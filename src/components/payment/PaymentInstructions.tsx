@@ -229,9 +229,19 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
                 </p>
               </div>
             </div>
-            <Button type="button" onClick={() => void openGateway()} disabled={gatewayBusy}>
+            <Button
+              type="button"
+              onClick={() => void openGateway()}
+              disabled={gatewayBusy || verified || gatewayStatus !== 'pending'}
+            >
               <ExternalLink className="h-4 w-4" aria-hidden="true" />
-              {gatewayBusy ? 'Procesando…' : intent.method === 'card' ? 'Pagar con tarjeta' : 'Abrir QR Yape'}
+              {gatewayBusy
+                ? 'Procesando…'
+                : verified
+                  ? 'Pago verificado'
+                  : intent.method === 'card'
+                    ? 'Pagar con tarjeta'
+                    : 'Abrir QR Yape'}
             </Button>
           </div>
           {intent.qrPayload && /^https:\/\//i.test(intent.qrPayload) && (
