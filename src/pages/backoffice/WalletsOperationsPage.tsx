@@ -679,33 +679,49 @@ export default function WalletsOperationsPage() {
                           </Button>
                         )}
                     </div>
-                    {!observation.codeLast4 && observation.verification !== 'verified' && (
+                    {observation.verification !== 'verified' && (
                       <div className="flex flex-wrap items-end gap-2 sm:col-span-4">
-                        <label className="min-w-52 flex-1 text-xs font-semibold text-suya-muted">
-                          Código visible en la constancia
-                          <input
-                            value={observationCodeId === observation.id ? observationCode : ''}
-                            onFocus={() => setObservationCodeId(observation.id)}
-                            onChange={(event) => {
+                        {observation.codeLast4 && observationCodeId !== observation.id ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
                               setObservationCodeId(observation.id);
-                              setObservationCode(event.target.value);
+                              setObservationCode('');
                             }}
-                            maxLength={64}
-                            inputMode="text"
-                            placeholder="Ej. 384 o 482913"
-                            className="mt-1 h-10 w-full rounded-btn border border-suya-border bg-white px-3 text-sm font-normal"
-                            disabled={savingObservationCode}
-                          />
-                        </label>
-                        <Button
-                          type="button"
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => void saveObservationCode(observation.id)}
-                          disabled={savingObservationCode || observationCodeId !== observation.id}
-                        >
-                          {savingObservationCode ? 'Guardando…' : 'Agregar código'}
-                        </Button>
+                          >
+                            Agregar código completo
+                          </Button>
+                        ) : (
+                          <>
+                            <label className="min-w-52 flex-1 text-xs font-semibold text-suya-muted">
+                              Código visible en la constancia
+                              <input
+                                value={observationCodeId === observation.id ? observationCode : ''}
+                                onFocus={() => setObservationCodeId(observation.id)}
+                                onChange={(event) => {
+                                  setObservationCodeId(observation.id);
+                                  setObservationCode(event.target.value);
+                                }}
+                                maxLength={64}
+                                inputMode="text"
+                                placeholder="Ej. 384 o 482913"
+                                className="mt-1 h-10 w-full rounded-btn border border-suya-border bg-white px-3 text-sm font-normal"
+                                disabled={savingObservationCode}
+                              />
+                            </label>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => void saveObservationCode(observation.id)}
+                              disabled={savingObservationCode || observationCodeId !== observation.id}
+                            >
+                              {savingObservationCode ? 'Guardando…' : 'Agregar código'}
+                            </Button>
+                          </>
+                        )}
                       </div>
                     )}
                     {candidateObservationId === observation.id && (
