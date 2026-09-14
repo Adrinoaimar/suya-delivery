@@ -1,6 +1,6 @@
 begin;
 
-select plan(87);
+select plan(89);
 
 select has_function(
   'public', 'refresh_payment_intent', array['uuid', 'text', 'text'],
@@ -284,6 +284,11 @@ select ok(
   'la verificación rechaza identidad incompleta'
 );
 select ok(
+  (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure)
+    like '%v_attempt.created_at > v_observation.observed_at%'),
+  'la verificación rechaza intentos creados después de la notificación'
+);
+select ok(
   not has_table_privilege('authenticated', 'public.restaurant_payment_accounts', 'SELECT'),
   'la configuración de QR no queda expuesta por tabla'
 );
@@ -561,6 +566,49 @@ select lives_ok(
     (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000005')
   ) $$,
   'el código completo autoriza únicamente el pedido correcto'
+);
+
+-- Temporal negative: an observation cannot authorize a payment created later,
+-- even if the amount and visible code happen to match.
+reset role;
+insert into public.orders (
+  id, code, customer_id, restaurant_id, status, payment_method, subtotal, delivery_fee,
+  customer_name, customer_phone, delivery_address, estimated_minutes, idempotency_key
+) values (
+  'a6300000-0000-0000-0000-000000000007', 'PAYTEST7',
+  'a6000000-0000-0000-0000-000000000001', 'a6200000-0000-0000-0000-000000000001',
+  'confirmed', 'cash', 27, 3, 'Cliente Uno', '999111111', 'Dirección siete', 30,
+  'a6400000-0000-0000-0000-000000000007'
+);
+set local request.jwt.claims =
+  '{"sub":"a6000000-0000-0000-0000-000000000001","role":"authenticated"}';
+set local role authenticated;
+select lives_ok(
+  $$ select * from public.create_payment_intent('a6300000-0000-0000-0000-000000000007', 'yape') $$,
+  'cliente uno crea intento para el negativo temporal'
+);
+reset role;
+update public.payment_attempts
+set created_at = now() + interval '1 minute', payer_code_last4 = '7777', payer_code_digest = null
+where order_id = 'a6300000-0000-0000-0000-000000000007';
+insert into public.wallet_observations (
+  id, device_id, restaurant_id, event_id, provider, sender_name, code_digest,
+  code_fingerprint, code_last4, amount_cents, currency, observed_at
+) values (
+  'a6600000-0000-0000-0000-000000000004', 'a6500000-0000-0000-0000-000000000001',
+  'a6200000-0000-0000-0000-000000000001', 'payment-loop-event-4', 'yape', 'Remitente futuro',
+  null, null, '7777', 3000, 'PEN', now()
+);
+set local request.jwt.claims =
+  '{"sub":"a6000000-0000-0000-0000-000000000003","role":"authenticated"}';
+set local role authenticated;
+select throws_ok(
+  $$ select public.verify_wallet_payment(
+    'a6600000-0000-0000-0000-000000000004',
+    (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000007')
+  ) $$,
+  'wallet observation does not match payment identity',
+  'la verificación rechaza pagos creados después de la observación'
 );
 reset role;
 
