@@ -1,6 +1,6 @@
 begin;
 
-select plan(70);
+select plan(73);
 
 select has_function(
   'public', 'create_payment_intent', array['uuid', 'text', 'text'],
@@ -236,6 +236,21 @@ select ok(
   (select pg_get_functiondef('public.claim_culqi_order_creation(uuid,text,text)'::regprocedure)
     like '%gateway_order_claim_digest%'),
   'la creación externa queda ligada a su digest efímero'
+);
+select ok(
+  (select pg_get_functiondef('public.list_wallet_payment_candidates(uuid)'::regprocedure)
+    like '%pa.provider = ''wallet_observer''%'),
+  'las observaciones no buscan intentos Culqi'
+);
+select ok(
+  (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure)
+    like '%v_attempt.provider <> ''wallet_observer''%'),
+  'la verificación no puede autorizar una tentativa Culqi'
+);
+select ok(
+  (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure)
+    like '%payment identity is ambiguous%'),
+  'un sufijo ambiguo exige el código completo'
 );
 select ok(
   (select pg_get_functiondef('public.list_wallet_payment_candidates(uuid)'::regprocedure) like '%payer_code_last4%'),
