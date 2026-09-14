@@ -174,7 +174,7 @@ begin
   end if;
 
   if new.delivery_verified_at is distinct from old.delivery_verified_at
-    and current_user <> 'service_role'
+    and current_user not in ('service_role', 'postgres')
     and not private.is_platform_admin() then
     raise exception 'delivery verification is backend-only';
   end if;
