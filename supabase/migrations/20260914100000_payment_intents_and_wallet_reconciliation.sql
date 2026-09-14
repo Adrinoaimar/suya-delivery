@@ -76,7 +76,7 @@ begin
   end if;
   if v_qr is not null and length(v_qr) > 4000 then raise exception 'QR payload is too long'; end if;
   return query
-  insert into public.restaurant_payment_accounts (
+  insert into public.restaurant_payment_accounts as rpa (
     restaurant_id, provider, account_label, qr_payload, active
   ) values (p_restaurant_id, v_provider, v_label, v_qr, coalesce(p_active, false))
   on conflict (restaurant_id, provider) do update set
@@ -84,9 +84,8 @@ begin
     qr_payload = excluded.qr_payload,
     active = excluded.active,
     updated_at = now()
-  returning restaurant_payment_accounts.id, restaurant_payment_accounts.restaurant_id,
-    restaurant_payment_accounts.provider, restaurant_payment_accounts.account_label,
-    restaurant_payment_accounts.qr_payload, restaurant_payment_accounts.active;
+  returning rpa.id, rpa.restaurant_id, rpa.provider, rpa.account_label,
+    rpa.qr_payload, rpa.active;
 end;
 $$;
 
@@ -260,9 +259,9 @@ begin
 
   select pa.* into v_attempt
   from public.payment_attempts pa
-  where order_id = v_order.id
-    and status in ('pending', 'authorized')
-  order by created_at desc
+  where pa.order_id = v_order.id
+    and pa.status in ('pending', 'authorized')
+  order by pa.created_at desc
   limit 1
   for update;
   if found then
@@ -338,8 +337,8 @@ begin
   elsif v_order.customer_id <> (select auth.uid()) then
     return;
   end if;
-  select * into v_attempt from public.payment_attempts
-  where order_id = p_order_id order by created_at desc limit 1;
+  select pa.* into v_attempt from public.payment_attempts pa
+  where pa.order_id = p_order_id order by pa.created_at desc limit 1;
   if not found then return; end if;
   select rpa.qr_payload into v_qr_payload
   from public.restaurant_payment_accounts rpa
