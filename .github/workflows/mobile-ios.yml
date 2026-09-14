@@ -46,6 +46,11 @@ jobs:
           npm run security:secrets
           npm run build:mobile
 
+      - name: Limpiar artefactos SwiftPM del runner
+        run: |
+          rm -rf "$HOME/Library/Caches/org.swift.swiftpm/artifacts"
+          rm -rf "$HOME/Library/Developer/Xcode/DerivedData/SourcePackages"
+
       - name: Compilar para simulador sin firma
         run: |
           xcodebuild \
