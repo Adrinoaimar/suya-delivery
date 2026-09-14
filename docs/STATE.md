@@ -171,6 +171,14 @@ producción.
 - APK Back Office: `output/apks/5348ab6/Suya-Backoffice-debug-68be2a50eca0342432ec45b3ade497c4f7f8ca89/Suya-Backoffice-debug.apk`, SHA-256 `937d3827dfd87c814e46efa757038dc1e7358716730cc64955e918af2f1eec5f`.
 - Pendiente externo sin cambios: secretos/configuración Culqi-Supabase, migraciones/Edge Functions, publicación y pagos físicos.
 
+## Checkpoint F27.4: rechazo Culqi y APK 73a1253 (2026-09-14)
+
+- `73a1253` actualiza `PaymentInstructions` después de un rechazo Culqi: el estado fallido se refresca desde el servidor y el reintento no reutiliza la referencia anterior. Se añadió regresión para tarjeta.
+- Evidencia local: 60 suites/248 tests, lint, typecheck, diff y `build:apps` con configuración pública sintética verdes. El escaneo de secretos no encontró secretos versionados.
+- CI PR #36 completo verde: DB `34871217318`, Android `34871217256`, iOS `34871217214`, browser `34871217191`, frontend/E2E `34871217316`.
+- APKs debug oficiales: Rider, Back Office y Caja en `output/apks/73a1253/`; las tres pasaron `unzip -t`. No se guardan binarios en documentación.
+- `verify:production` local sigue fallando correctamente sin configuración real; faltan llaves, migraciones/Edge Functions, publicación, smoke físico y dos pagos S/30.
+
 ## Reglas de continuidad
 
 - Git, pruebas y este archivo son estado canónico.
