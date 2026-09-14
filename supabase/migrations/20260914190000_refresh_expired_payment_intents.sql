@@ -23,6 +23,7 @@ set search_path = ''
 as $$
 declare
   v_intent record;
+  v_new_attempt public.payment_attempts%rowtype;
 begin
   -- Delegate identity and amount checks to the canonical creator first.
   select * into v_intent
@@ -37,8 +38,30 @@ begin
       and pa.status = 'pending'
       and pa.expires_at <= now();
 
+    insert into public.payment_attempts (
+      order_id, provider, method, status, amount, idempotency_key, expires_at
+    ) values (
+      v_intent.order_id,
+      'wallet_observer',
+      v_intent.method,
+      'pending',
+      v_intent.amount,
+      'order:' || v_intent.order_id::text || ':' || v_intent.method::text || ':renewal:' || public.gen_random_uuid()::text,
+      now() + interval '30 minutes'
+    ) returning * into v_new_attempt;
+
     return query
-    select * from public.create_payment_intent(p_order_id, p_method, p_guest_access_token);
+    select
+      v_new_attempt.id,
+      v_new_attempt.order_id,
+      v_new_attempt.method,
+      v_new_attempt.status,
+      v_new_attempt.amount,
+      'PEN'::text,
+      v_new_attempt.checkout_reference,
+      v_new_attempt.expires_at,
+      v_new_attempt.provider,
+      v_intent.qr_payload;
     return;
   end if;
 
