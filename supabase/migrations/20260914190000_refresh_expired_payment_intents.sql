@@ -31,11 +31,11 @@ begin
   if not found then return; end if;
 
   if v_intent.status = 'pending' and v_intent.expires_at <= now() then
-    update public.payment_attempts
+    update public.payment_attempts as pa
     set status = 'failed', failure_code = 'expired', updated_at = now()
-    where id = v_intent.attempt_id
-      and status = 'pending'
-      and expires_at <= now();
+    where pa.id = v_intent.attempt_id
+      and pa.status = 'pending'
+      and pa.expires_at <= now();
 
     return query
     select * from public.create_payment_intent(p_order_id, p_method, p_guest_access_token);
