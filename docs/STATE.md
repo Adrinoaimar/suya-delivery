@@ -141,6 +141,14 @@ producción.
 - APK Rider final: `output/apks/Suya-Rider-debug-e462834.apk`, SHA-256 `51e32850de9b959f5112fa9afd8880915ac1a85b97330014b64a4777ec701ea8`.
 - APK Back Office final: `output/apks/Suya-Backoffice-debug-e462834.apk`, SHA-256 `36b10d7d7389a158210056ad5f4147aca18ad1b3563badaf1c92817beac251c1`.
 
+## Checkpoint F27: pagos identificables y APK 9d973fc (2026-09-14)
+
+- `9d973fc` bloquea reintentos del QR Yape de Culqi mientras espera el webhook y libera el control al autorizar, fallar o vencer; el flujo manual conserva código completo/fingerprint para distinguir dos pagos de S/30.
+- El observador Android es opt-in, cifra la cola local, conserva eventos no sincronizados y nunca autoriza por sí solo. Back Office muestra restaurante, cliente, remitente, monto, hora y código enmascarado; permite completar el código faltante.
+- Evidencia: 59 suites/244 tests locales, lint, typecheck y escaneo de secretos verdes; CI PR #36 completo verde (browser, E2E, DB, Android, iOS). APKs debug Rider/Back Office están en `output/apks/9d973fc/`.
+- Gate local: `verify:production` y `verify:cloudflare` requieren variables públicas/configuración de proveedor; `db:test` y `db:lint` requieren Postgres local. CI remoto sí pasó base, build y E2E. No se declara producción lista.
+- Pendiente externo: configurar llaves Culqi/Supabase y webhook, aplicar migraciones en el proyecto real, publicar build, validar login y ejecutar casos físicos Yape/Lemon/tarjeta.
+
 ## Reglas de continuidad
 
 - Git, pruebas y este archivo son estado canónico.
