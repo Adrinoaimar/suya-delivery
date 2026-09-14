@@ -143,12 +143,17 @@ export class SupabasePaymentService implements PaymentService {
     customerEmail?: string | null,
     suppliedGuestAccessToken?: string | null,
   ): Promise<string> {
-    if (intent.provider !== 'culqi' || intent.method !== 'card') {
-      throw new Error('Este intento no corresponde a una tarjeta Culqi.');
+    if (intent.provider !== 'culqi' || (intent.method !== 'card' && intent.method !== 'yape')) {
+      throw new Error('Este intento no corresponde a un token Culqi compatible.');
     }
+    const tokenPattern = intent.method === 'card'
+      ? /^tkn_(?:test|live)_[A-Za-z0-9_-]+$/
+      : /^ype_(?:test|live)_[A-Za-z0-9_-]+$/;
+    if (!tokenPattern.test(tokenId)) throw new Error('El token Culqi no corresponde al método elegido.');
     const { data, error } = await this.client.functions.invoke('charge-culqi-card', {
       body: {
         attemptId: intent.attemptId,
+        method: intent.method,
         tokenId,
         customerEmail: customerEmail?.trim() || null,
         guestAccessToken: guestToken(intent.orderId, suppliedGuestAccessToken),

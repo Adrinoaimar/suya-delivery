@@ -76,7 +76,44 @@ describe('SupabasePaymentService', () => {
     expect(invoke).toHaveBeenCalledWith('charge-culqi-card', {
       body: {
         attemptId: 'attempt-1',
+        method: 'card',
         tokenId: 'tkn_test_12345678',
+        customerEmail: 'cliente@suya.test',
+        guestAccessToken: null,
+      },
+    });
+  });
+
+  it('envía un token Yape Culqi al mismo flujo seguro de cargo', async () => {
+    const invoke = vi.fn(async () => ({
+      data: { status: 'authorized', providerReference: 'chr_test_yape123' },
+      error: null,
+    }));
+    const client = {
+      ...fakeClient({ data: null, error: null }),
+      functions: { invoke },
+    } as unknown as SupabaseClient;
+    const intent: PaymentIntent = {
+      attemptId: 'attempt-yape',
+      orderId: 'order-yape',
+      method: 'yape',
+      status: 'pending',
+      amount: 30,
+      currency: 'PEN',
+      checkoutReference: 'SUYA-YAPE123',
+      expiresAt: '2026-09-14T18:30:00.000Z',
+      provider: 'culqi',
+      providerReference: 'ord_test_yape123',
+      qrPayload: null,
+    };
+    await expect(
+      new SupabasePaymentService(client).chargeCard(intent, 'ype_test_yape123', 'cliente@suya.test'),
+    ).resolves.toBe('chr_test_yape123');
+    expect(invoke).toHaveBeenCalledWith('charge-culqi-card', {
+      body: {
+        attemptId: 'attempt-yape',
+        method: 'yape',
+        tokenId: 'ype_test_yape123',
         customerEmail: 'cliente@suya.test',
         guestAccessToken: null,
       },

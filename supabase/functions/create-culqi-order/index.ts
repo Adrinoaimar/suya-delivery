@@ -139,7 +139,7 @@ Deno.serve(async (request) => {
     const detail = (await intentResponse.text()).slice(0, 240);
     return json({ error: detail || 'No se pudo crear el intento Culqi.' }, 422, origin);
   }
-  const intent = firstRow(await intentResponse.json());
+  let intent = firstRow(await intentResponse.json());
   if (!intent) return json({ error: 'Supabase no devolvió el intento Culqi.' }, 502, origin);
 
   const amount = amountCents(intent.amount);
@@ -149,7 +149,36 @@ Deno.serve(async (request) => {
   if (method === 'yape' && amount > 50000) {
     return json({ error: 'Culqi Yape permite hasta S/ 500.00 por orden.' }, 422, origin);
   }
-  const existingProviderReference = text(intent.provider_reference);
+  let existingProviderReference = text(intent.provider_reference);
+  if (existingProviderReference && text(intent.status, 'pending') === 'pending') {
+    const existingExpiration = Date.parse(text(intent.expires_at));
+    if (Number.isFinite(existingExpiration) && existingExpiration <= Date.now()) {
+      const refreshedExpiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
+      const resetResponse = await fetch(
+        `${supabaseUrl}/rest/v1/payment_attempts?id=eq.${text(intent.attempt_id)}&status=eq.pending&provider=eq.culqi&provider_reference=eq.${encodeURIComponent(existingProviderReference)}`,
+        {
+          method: 'PATCH',
+          headers: { ...serviceHeaders(serviceRoleKey), Prefer: 'return=minimal' },
+          body: JSON.stringify({
+            provider_reference: null,
+            gateway_qr_payload: null,
+            expires_at: refreshedExpiresAt,
+            failure_code: null,
+          }),
+        },
+      );
+      if (!resetResponse.ok) {
+        return json({ error: 'No se pudo renovar el intento Culqi vencido.' }, 502, origin);
+      }
+      intent = {
+        ...intent,
+        provider_reference: null,
+        qr_payload: null,
+        expires_at: refreshedExpiresAt,
+      };
+      existingProviderReference = '';
+    }
+  }
   if (existingProviderReference) {
     if (!/^ord_(?:test|live)_[A-Za-z0-9_-]+$/.test(existingProviderReference)) {
       return json({ error: 'La referencia Culqi guardada es inválida.' }, 502, origin);

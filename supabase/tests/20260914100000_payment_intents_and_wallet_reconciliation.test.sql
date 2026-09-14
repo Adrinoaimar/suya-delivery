@@ -1,6 +1,6 @@
 begin;
 
-select plan(41);
+select plan(61);
 
 select has_function(
   'public', 'create_payment_intent', array['uuid', 'text', 'text'],
@@ -37,6 +37,18 @@ select has_function(
 select has_function(
   'public', 'authorize_culqi_card_payment', array['uuid', 'text', 'text'],
   'autorizar cargo de tarjeta Culqi existe'
+);
+select has_function(
+  'public', 'claim_culqi_payment', array['uuid', 'text', 'text'],
+  'reservar intento Culqi antes del cargo existe'
+);
+select has_function(
+  'public', 'authorize_culqi_payment', array['uuid', 'text', 'text', 'text', 'text'],
+  'autorizar token Culqi con reserva existe'
+);
+select has_function(
+  'public', 'fail_culqi_payment_claim', array['uuid', 'text', 'text', 'text'],
+  'liberar intento Culqi fallido existe'
 );
 select has_function(
   'public', 'list_restaurant_payment_accounts', array['uuid'],
@@ -82,6 +94,18 @@ select ok(
   'el intento puede conservar el QR generado por la pasarela'
 );
 select ok(
+  exists (select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'payment_attempts'
+      and column_name = 'gateway_claim_digest'),
+  'el intento conserva solo el digest de la reserva Culqi'
+);
+select ok(
+  exists (select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'payment_attempts'
+      and column_name = 'gateway_claimed_at'),
+  'el intento conserva la vigencia de la reserva Culqi'
+);
+select ok(
   exists (select 1 from pg_indexes
     where indexname = 'payment_attempts_checkout_reference_uidx'),
   'la referencia visible es única'
@@ -106,6 +130,11 @@ select ok(
 select ok(
   (select prosecdef from pg_proc where oid = 'public.authorize_culqi_card_payment(uuid,text,text)'::regprocedure),
   'autorizar tarjeta Culqi usa security definer'
+);
+select ok(
+  (select prosecdef from pg_proc where oid = 'public.claim_culqi_payment(uuid,text,text)'::regprocedure)
+    and (select prosecdef from pg_proc where oid = 'public.authorize_culqi_payment(uuid,text,text,text,text)'::regprocedure),
+  'reservar y autorizar Culqi usan security definer'
 );
 select ok(
   has_function_privilege('authenticated', 'public.list_restaurant_payment_accounts(uuid)', 'execute')
@@ -148,6 +177,16 @@ select ok(
   'solo backoffice verifica observaciones'
 );
 select ok(
+  has_function_privilege('anon', 'public.claim_culqi_payment(uuid,text,text)', 'execute')
+    and has_function_privilege('anon', 'public.authorize_culqi_payment(uuid,text,text,text,text)', 'execute')
+    and has_function_privilege('anon', 'public.fail_culqi_payment_claim(uuid,text,text,text)', 'execute'),
+  'cliente y guest usan RPCs Culqi reservadas'
+);
+select ok(
+  not has_function_privilege('authenticated', 'public.authorize_culqi_card_payment(uuid,text,text)', 'execute'),
+  'la RPC Culqi antigua sin reserva queda revocada'
+);
+select ok(
   (select pg_get_functiondef('public.create_payment_intent(uuid,text,text)'::regprocedure) like '%for update%'),
   'crear intento bloquea el pedido'
 );
@@ -162,6 +201,11 @@ select ok(
 select ok(
   (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) like '%status = ''authorized''%'),
   'la verificación autoriza el intento'
+);
+select ok(
+  (select pg_get_functiondef('public.authorize_culqi_payment(uuid,text,text,text,text)'::regprocedure)
+    like '%gateway_claim_digest%'),
+  'la autorización Culqi exige la reserva efímera'
 );
 select ok(
   (select pg_get_functiondef('public.list_wallet_payment_candidates(uuid)'::regprocedure) like '%payer_code_last4%'),
@@ -188,6 +232,137 @@ select ok(
     like '%digital payment must be authorized before preparation%'),
   'la preparación exige pago digital autorizado'
 );
+
+-- Behavioral loop: two different customers pay the same S/30.00 amount.
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+) values
+  ('00000000-0000-0000-0000-000000000000', 'a6000000-0000-0000-0000-000000000001',
+   'authenticated', 'authenticated', 'payment-one@example.test', '', now(),
+   '{"provider":"email","providers":["email"]}', '{"display_name":"Cliente Uno"}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', 'a6000000-0000-0000-0000-000000000002',
+   'authenticated', 'authenticated', 'payment-two@example.test', '', now(),
+   '{"provider":"email","providers":["email"]}', '{"display_name":"Cliente Dos"}', now(), now()),
+  ('00000000-0000-0000-0000-000000000000', 'a6000000-0000-0000-0000-000000000003',
+   'authenticated', 'authenticated', 'payment-owner@example.test', '', now(),
+   '{"provider":"email","providers":["email"]}', '{"display_name":"Caja Suya"}', now(), now());
+insert into public.categories (id, slug, name, icon)
+values ('a6100000-0000-0000-0000-000000000001', 'payment-loop-test', 'Pagos', 'wallet');
+insert into public.restaurants (id, slug, category_id, name, address, active, accepting_orders)
+values (
+  'a6200000-0000-0000-0000-000000000001', 'payment-loop-test',
+  'a6100000-0000-0000-0000-000000000001', 'Payment Loop Test', 'Caja de prueba', true, true
+);
+insert into public.restaurant_members (restaurant_id, user_id, role)
+values ('a6200000-0000-0000-0000-000000000001', 'a6000000-0000-0000-0000-000000000003', 'owner');
+insert into public.orders (
+  id, code, customer_id, restaurant_id, status, payment_method, subtotal, delivery_fee,
+  customer_name, customer_phone, delivery_address, estimated_minutes, idempotency_key
+) values
+  ('a6300000-0000-0000-0000-000000000001', 'PAYTEST1',
+   'a6000000-0000-0000-0000-000000000001', 'a6200000-0000-0000-0000-000000000001',
+   'confirmed', 'cash', 27, 3, 'Cliente Uno', '999111111', 'Dirección uno', 30,
+   'a6400000-0000-0000-0000-000000000001'),
+  ('a6300000-0000-0000-0000-000000000002', 'PAYTEST2',
+   'a6000000-0000-0000-0000-000000000002', 'a6200000-0000-0000-0000-000000000001',
+   'confirmed', 'cash', 27, 3, 'Cliente Dos', '999222222', 'Dirección dos', 30,
+   'a6400000-0000-0000-0000-000000000002');
+
+set local request.jwt.claims =
+  '{"sub":"a6000000-0000-0000-0000-000000000001","role":"authenticated"}';
+set local role authenticated;
+select lives_ok(
+  $$ select * from public.create_payment_intent('a6300000-0000-0000-0000-000000000001', 'yape') $$,
+  'cliente uno crea intento Yape de S/30'
+);
+select lives_ok(
+  $$ select public.submit_payment_evidence('a6300000-0000-0000-0000-000000000001', '111111') $$,
+  'cliente uno registra su código completo'
+);
+reset role;
+
+set local request.jwt.claims =
+  '{"sub":"a6000000-0000-0000-0000-000000000002","role":"authenticated"}';
+set local role authenticated;
+select lives_ok(
+  $$ select * from public.create_payment_intent('a6300000-0000-0000-0000-000000000002', 'yape') $$,
+  'cliente dos crea segundo intento Yape de S/30'
+);
+select lives_ok(
+  $$ select public.submit_payment_evidence('a6300000-0000-0000-0000-000000000002', '222222') $$,
+  'cliente dos registra un código distinto'
+);
+reset role;
+
+insert into public.wallet_observer_devices (
+  id, restaurant_id, label, token_hash, token_last4
+) values (
+  'a6500000-0000-0000-0000-000000000001', 'a6200000-0000-0000-0000-000000000001',
+  'Caja de prueba', extensions.crypt('payment-loop-device-token', extensions.gen_salt('bf')), 'beef'
+);
+insert into public.wallet_observations (
+  id, device_id, restaurant_id, event_id, provider, sender_name, code_digest,
+  code_fingerprint, code_last4, amount_cents, currency, observed_at
+) values
+  (
+    'a6600000-0000-0000-0000-000000000001', 'a6500000-0000-0000-0000-000000000001',
+    'a6200000-0000-0000-0000-000000000001', 'payment-loop-event-1', 'yape', 'Ana Uno',
+    extensions.crypt('111111', extensions.gen_salt('bf')),
+    encode(extensions.digest('111111', 'sha256'), 'hex'), '1111', 3000, 'PEN', now()
+  ),
+  (
+    'a6600000-0000-0000-0000-000000000002', 'a6500000-0000-0000-0000-000000000001',
+    'a6200000-0000-0000-0000-000000000001', 'payment-loop-event-2', 'yape', 'Ana Dos',
+    extensions.crypt('222222', extensions.gen_salt('bf')),
+    encode(extensions.digest('222222', 'sha256'), 'hex'), '2222', 3000, 'PEN', now()
+  );
+
+set local request.jwt.claims =
+  '{"sub":"a6000000-0000-0000-0000-000000000003","role":"authenticated"}';
+set local role authenticated;
+select is(
+  (select count(*) from public.list_wallet_payment_candidates('a6600000-0000-0000-0000-000000000001')),
+  1::bigint,
+  'S/30 observado uno solo encuentra su intento por código'
+);
+select is(
+  (select count(*) from public.list_wallet_payment_candidates('a6600000-0000-0000-0000-000000000002')),
+  1::bigint,
+  'S/30 observado dos solo encuentra su intento por código'
+);
+select is(
+  (select order_id::text from public.list_wallet_payment_candidates('a6600000-0000-0000-0000-000000000001') limit 1),
+  'a6300000-0000-0000-0000-000000000001',
+  'el primer código no cruza al cliente dos'
+);
+select is(
+  (select order_id::text from public.list_wallet_payment_candidates('a6600000-0000-0000-0000-000000000002') limit 1),
+  'a6300000-0000-0000-0000-000000000002',
+  'el segundo código no cruza al cliente uno'
+);
+select lives_ok(
+  $$ select public.verify_wallet_payment(
+    'a6600000-0000-0000-0000-000000000001',
+    (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000001')
+  ) $$,
+  'caja autoriza el primer pago exacto'
+);
+select lives_ok(
+  $$ select public.verify_wallet_payment(
+    'a6600000-0000-0000-0000-000000000002',
+    (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000002')
+  ) $$,
+  'caja autoriza el segundo pago exacto'
+);
+select is(
+  (select count(*) from public.payment_attempts where order_id in (
+    'a6300000-0000-0000-0000-000000000001', 'a6300000-0000-0000-0000-000000000002'
+  ) and status = 'authorized'),
+  2::bigint,
+  'los dos pagos iguales quedan autorizados en su pedido correcto'
+);
+reset role;
 
 select * from finish();
 rollback;

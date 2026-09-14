@@ -34,7 +34,7 @@ Si la notificación no muestra el código, caja puede copiarlo desde la constanc
 
 ## Culqi: Yape y tarjeta
 
-El flujo opcional Culqi crea la orden desde `create-culqi-payment-intent`, usando monto bloqueado del pedido. `create-culqi-order` crea la orden Culqi con metadata de `suya_order_id`, `suya_payment_attempt_id` y referencia visible. El cliente abre Checkout v4; Yape genera QR asociado al monto exacto. Tarjeta devuelve token al frontend de Culqi y `charge-culqi-card` crea el cargo en servidor. Datos de tarjeta nunca pasan por Suya.
+El flujo opcional Culqi crea la orden desde `create-culqi-payment-intent`, usando monto bloqueado del pedido. `create-culqi-order` crea la orden Culqi con metadata de `suya_order_id`, `suya_payment_attempt_id` y referencia visible. El cliente abre Checkout v4; Yape genera QR asociado al monto exacto. Tarjeta o Yape pueden devolver un token al frontend de Culqi y `charge-culqi-card` crea el cargo en servidor. Antes del cargo, Suya reserva atómicamente el intento para evitar doble cobro por reintentos concurrentes. Datos de tarjeta nunca pasan por Suya.
 
 La integración actual usa Checkout v4 por rapidez para las pruebas; Culqi indica migrar a Checkout Custom porque v4 quedará deprecado.
 

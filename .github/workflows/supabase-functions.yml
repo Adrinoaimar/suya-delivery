@@ -25,7 +25,7 @@ jobs:
         run: supabase functions deploy invite-restaurant-rider --project-ref cggxooilzhqlcnofgtmi
       - name: Desplegar creación de orden Culqi
         run: supabase functions deploy create-culqi-order --project-ref cggxooilzhqlcnofgtmi
-      - name: Desplegar cobro de tarjeta Culqi
+      - name: Desplegar cobro de tokens Culqi (tarjeta/Yape)
         run: supabase functions deploy charge-culqi-card --project-ref cggxooilzhqlcnofgtmi
       - name: Desplegar webhook Culqi
         run: supabase functions deploy culqi-webhook --project-ref cggxooilzhqlcnofgtmi

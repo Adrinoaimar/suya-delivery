@@ -147,13 +147,6 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         intent,
         method: intent.method === 'card' ? 'card' : 'yape',
         onToken: async (tokenId) => {
-          if (intent.method !== 'card') {
-            notificationService.notify(
-              'Culqi entregó un token Yape; continúa desde el checkout y espera el webhook de la orden.',
-              'warning',
-            );
-            return;
-          }
           setGatewayBusy(true);
           try {
             const providerReference = await paymentService.chargeCard(
@@ -164,10 +157,15 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
             setIntent((current) =>
               current ? { ...current, status: 'authorized', providerReference } : current,
             );
-            notificationService.notify('Tarjeta autorizada. Pedido identificado en Suya.', 'success');
+            notificationService.notify(
+              `${intent.method === 'card' ? 'Tarjeta' : 'Yape'} autorizado. Pedido identificado en Suya.`,
+              'success',
+            );
           } catch (cause) {
             notificationService.notify(
-              cause instanceof Error ? cause.message : 'No pudimos procesar la tarjeta.',
+              cause instanceof Error
+                ? cause.message
+                : `No pudimos procesar ${intent.method === 'card' ? 'la tarjeta' : 'Yape'}.`,
               'danger',
             );
           } finally {
