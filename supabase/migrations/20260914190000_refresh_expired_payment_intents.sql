@@ -46,7 +46,7 @@ begin
       v_intent.method,
       'pending',
       v_intent.amount,
-      'order:' || v_intent.order_id::text || ':' || v_intent.method::text || ':renewal:' || public.gen_random_uuid()::text,
+      'order:' || v_intent.order_id::text || ':' || v_intent.method::text || ':renewal:' || extensions.gen_random_uuid()::text,
       now() + interval '30 minutes'
     ) returning * into v_new_attempt;
 
