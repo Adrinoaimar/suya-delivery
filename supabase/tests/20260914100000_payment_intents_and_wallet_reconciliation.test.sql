@@ -473,6 +473,7 @@ select is(
 
 -- Negative identity loop: a notification exposing only the same last four
 -- characters must not let the operator choose between two S/30 attempts.
+reset role;
 insert into public.orders (
   id, code, customer_id, restaurant_id, status, payment_method, subtotal, delivery_fee,
   customer_name, customer_phone, delivery_address, estimated_minutes, idempotency_key
