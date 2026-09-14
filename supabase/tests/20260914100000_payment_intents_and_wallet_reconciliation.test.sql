@@ -1,6 +1,6 @@
 begin;
 
-select plan(96);
+select plan(95);
 
 select has_function(
   'public', 'refresh_payment_intent', array['uuid', 'text', 'text'],
@@ -630,9 +630,13 @@ select lives_ok(
   'cliente crea intento antes de cancelar'
 );
 reset role;
+set local request.jwt.claims =
+  '{"sub":"a6000000-0000-0000-0000-000000000003","role":"authenticated"}';
+set local role authenticated;
 update public.orders
 set status = 'cancelled', cancelled_at = now(), cancellation_reason = 'prueba de seguridad'
 where id = 'a6300000-0000-0000-0000-000000000008';
+reset role;
 select is(
   (select status::text from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000008'),
   'failed',
