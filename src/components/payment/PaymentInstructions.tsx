@@ -198,6 +198,9 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         method: activeIntent.method === 'card' ? 'card' : 'yape',
         customerEmail,
         onToken: async (tokenId) => {
+          // Custom Checkout abre un modal no bloqueante. El callback puede
+          // llegar después de que openCulqiCheckout() haya retornado.
+          setGatewayBusy(true);
           try {
             const providerReference = await paymentService.chargeCard(
               activeIntent,
@@ -236,6 +239,10 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
           notificationService.notify(message, 'danger');
         },
       });
+      // Culqi.open() no espera a que el usuario cierre el modal. Liberamos el
+      // estado de apertura para no dejar la pantalla bloqueada si lo cancela;
+      // onToken vuelve a marcarlo ocupado durante el cobro.
+      setGatewayBusy(false);
     } catch (cause) {
       setGatewayBusy(false);
       setGatewayAwaitingWebhook(false);

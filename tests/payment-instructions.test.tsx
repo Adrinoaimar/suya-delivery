@@ -103,4 +103,22 @@ describe('PaymentInstructions', () => {
       'success',
     );
   });
+
+  it('no deja el botón bloqueado si el usuario cierra el checkout sin completar el pago', async () => {
+    const gatewayIntent: PaymentIntent = {
+      ...pendingIntent,
+      provider: 'culqi',
+      providerReference: 'ord_test_suya_cancel',
+    };
+    mocks.openCulqiCheckout.mockResolvedValueOnce(undefined);
+    sessionStorage.setItem('suya.payment-email:order-1', 'cliente@example.com');
+    render(<PaymentInstructions order={order(gatewayIntent)} />);
+
+    const button = screen.getByRole('button', { name: 'Abrir QR Yape' });
+    await act(async () => {
+      button.click();
+    });
+
+    expect(screen.getByRole('button', { name: 'Abrir QR Yape' })).not.toBeDisabled();
+  });
 });

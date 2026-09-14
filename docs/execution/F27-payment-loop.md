@@ -1,6 +1,6 @@
 # F27 · Loop de pruebas de pago
 
-Estado del código: commit `5348ab6`; CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
+Estado del código: commit `cf09cad`; CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
 
 Último checkpoint: el QR de billeteras de Culqi usa la opción `billetera` del Custom Checkout (la opción `yape` corresponde al flujo de token/código de aprobación); queda bloqueado mientras espera `order.status.changed`. La pantalla se actualiza por polling y solo libera preparación cuando el servidor marca `authorized`. El flujo manual distingue pagos iguales con fingerprint/código completo; Back Office añade una pista visual de coincidencia entre remitente y cliente, sin autorizar por sí sola; y la observación Android sigue siendo evidencia no autorizante.
 
@@ -18,6 +18,7 @@ El parser admite etiquetas de remitente como `De:`/`From:` y separa el nombre de
 La rama con este flujo aún debe desplegarse a producción: el dominio público comprobado antes del despliegue muestra el checkout anterior, con efectivo únicamente. El gate de Cloudflare rechaza publicar si faltan `VITE_CULQI_GATEWAY_ENABLED=true` o `VITE_CULQI_PUBLIC_KEY`. No declarar las pruebas reales listas hasta aplicar migraciones/Edge Functions, configurar secretos y publicar el build correcto.
 
 La reserva de creación también cubre doble toque en `Continuar con pago`: una solicitud prepara la orden externa y la otra debe recibir `409`; no repitas el pago mientras el primer checkout esté preparando la orden.
+Si el cliente cierra el modal de Culqi sin completar el pago, la pantalla libera el estado de apertura y permite reintentar; durante el cargo por token permanece bloqueada hasta la respuesta del backend.
 
 ## Caso 1 · Dos Yape de S/30
 
