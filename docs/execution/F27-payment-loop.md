@@ -1,6 +1,6 @@
 # F27 · Loop de pruebas de pago
 
-Estado del código: commit `7ba4ef0` (captura el remitente en el formato «te envió» y conserva la preselección temprana de cuenta implementada en `762d7e0`; identificación Android sobre `53cb470`; funcionalidad de pagos en `66d808f` y `a35faa6`); CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
+Estado del código: commit `c1c1626` (estabiliza y enriquece notificaciones expandidas sobre `f890b34`; captura el remitente en el formato «te envió» y conserva la preselección temprana de cuenta implementada en `762d7e0`; identificación Android sobre `53cb470`; funcionalidad de pagos en `66d808f` y `a35faa6`); CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
 
 Último checkpoint: el QR de billeteras de Culqi usa la opción `billetera` del Custom Checkout (la opción `yape` corresponde al flujo de token/código de aprobación); queda bloqueado mientras espera `order.status.changed`. La pantalla se actualiza por polling y solo libera preparación cuando el servidor marca `authorized`. El flujo manual distingue pagos iguales con fingerprint/código completo; Back Office añade una pista visual de coincidencia entre remitente y cliente, sin autorizar por sí sola; y la observación Android sigue siendo evidencia no autorizante.
 
@@ -22,7 +22,9 @@ La reserva de creación también cubre doble toque en `Continuar con pago`: una 
 En Dispositivos de pagos, la primera cuenta visible se fija apenas llega el catálogo; las cargas lentas de observaciones o dispositivos ya no dejan el selector sin restaurante.
 Si el cliente cierra el modal de Culqi sin completar el pago, la pantalla libera el estado de apertura y permite reintentar; durante el cargo por token permanece bloqueada hasta la respuesta del backend. Si el token es rechazado, refresca el intento cerrado desde el servidor antes de permitir otro pago; si ese refresh falla, invalida localmente la referencia y obliga a crear otra, evitando reutilizar una referencia `pending` local.
 
-CI Android `34906267296` recompiló Rider, Back Office y Caja para el checkpoint documental `cb2d232`; los seis checks del PR #36 quedaron verdes y las tres APK pasaron `unzip -tqq`. Los hashes y rutas exactas están en `docs/STATE.md`.
+CI Android `34909402331` recompiló Rider, Back Office y Caja para `c1c1626`; los checks del PR #36 quedaron verdes y las tres APK pasaron `unzip -tqq`. Los hashes y rutas exactas están en `docs/STATE.md`.
+
+El listener mantiene un identificador estable cuando una billetera actualiza una misma notificación desde una vista corta a una expandida. La cola local cifra el evento, completa campos faltantes y vuelve a sincronizarlo; la RPC solo enriquece observaciones abiertas y preserva las verificadas.
 
 ## Caso 1 · Dos Yape de S/30
 

@@ -258,6 +258,15 @@ producción.
 - Caja: `output/apks/cb2d232/Suya-Wallet-Observer-debug-38ee8706da04e6c69963eb1a685993c0bd09492f/Suya-Wallet-Observer-debug.apk`; SHA-256 `4bbd2b1a11497784b27449082717d64fd57a9b5444f6cabc91e6bf31fd394c1e`.
 - Las tres pasaron `unzip -tqq` y siguen siendo debug. Producción requiere configuración, migraciones/Edge Functions, webhook, publicación, firma release y dos pagos físicos iguales de S/30.
 
+## Checkpoint F27.15: notificaciones expandidas sin duplicados y APKs finales `c1c1626` (2026-09-14)
+
+- `f890b34` estabiliza el identificador de una notificación de billetera y enriquece la misma observación cuando llega después el código de operación o el remitente; las observaciones verificadas no se sobrescriben. El test de integración cubre la secuencia corta/expandida y conserva una sola fila.
+- Evidencia local: 62 suites/262 pruebas, typecheck, lint, escaneo de secretos y `git diff --check` verdes. CI final `c1c1626` pasó base de datos, frontend, E2E, Android e iOS; Android run `34909402331` generó los tres roles.
+- Rider: `output/apks/c1c1626/Suya-Rider-debug-36fa6a9e956522117c8e49b5454b59c05dd7b7d3/Suya-Rider-debug.apk`; SHA-256 `e2a32c40c311cf525452124ae3b52d9f8f1eb771a1385ea194b5832c409b896d`.
+- Back Office: `output/apks/c1c1626/Suya-Backoffice-debug-36fa6a9e956522117c8e49b5454b59c05dd7b7d3/Suya-Backoffice-debug.apk`; SHA-256 `546e1b987c866b7369c68e4c38c6100b090a0bc40115bae29e10af32d992bcb0`.
+- Caja/Wallet Observer: `output/apks/c1c1626/Suya-Wallet-Observer-debug-36fa6a9e956522117c8e49b5454b59c05dd7b7d3/Suya-Wallet-Observer-debug.apk`; SHA-256 `9a378db501e5ebade67c26e826d3a95c9c652133decfaff45004c67ee2bd25ee`.
+- Las tres pasaron `unzip -tqq` y siguen siendo debug, no release-signed. Producción requiere configuración real, migraciones/Edge Functions, webhook, publicación, firma release y dos pagos físicos iguales de S/30.
+
 ## Reglas de continuidad
 
 - Git, pruebas y este archivo son estado canónico.
