@@ -22,6 +22,8 @@ La reserva de creación también cubre doble toque en `Continuar con pago`: una 
 En Dispositivos de pagos, la primera cuenta visible se fija apenas llega el catálogo; las cargas lentas de observaciones o dispositivos ya no dejan el selector sin restaurante.
 Si el cliente cierra el modal de Culqi sin completar el pago, la pantalla libera el estado de apertura y permite reintentar; durante el cargo por token permanece bloqueada hasta la respuesta del backend. Si el token es rechazado, refresca el intento cerrado desde el servidor antes de permitir otro pago; si ese refresh falla, invalida localmente la referencia y obliga a crear otra, evitando reutilizar una referencia `pending` local.
 
+CI Android `34906267296` recompiló Rider, Back Office y Caja para el checkpoint documental `cb2d232`; los seis checks del PR #36 quedaron verdes y las tres APK pasaron `unzip -tqq`. Los hashes y rutas exactas están en `docs/STATE.md`.
+
 ## Caso 1 · Dos Yape de S/30
 
 1. Crear dos pedidos desde dos sesiones de cliente, ambos por S/30.00, y anotar sus referencias visibles.
