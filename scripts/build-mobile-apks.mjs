@@ -23,12 +23,19 @@ const targets = {
     oauthScheme: 'com.suya.backoffice',
     artifact: 'Suya-Backoffice-debug.apk',
   },
+  walletobserver: {
+    build: 'walletobserver',
+    appId: 'com.suya.walletobserver',
+    appName: 'Suya',
+    oauthScheme: 'com.suya.walletobserver',
+    artifact: 'Suya-Wallet-Observer-debug.apk',
+  },
 };
 
 const requested = process.argv[2] ? [process.argv[2]] : Object.keys(targets);
 for (const name of requested) {
   if (!(name in targets)) {
-    throw new Error(`Rol desconocido: ${name}. Usa rider, backoffice o ambos.`);
+    throw new Error(`Rol desconocido: ${name}. Usa rider, backoffice o walletobserver.`);
   }
 }
 

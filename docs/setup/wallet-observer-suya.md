@@ -6,7 +6,7 @@ La migración `20260907110000_wallet_observations.sql` crea una bandeja de obser
 
 1. Aplicar las migraciones de Suya en el proyecto Supabase (`supabase db push` desde un entorno autenticado).
 2. Desde una sesión de propietario/manager llamar `create_wallet_observer_device(restaurant_id, 'Caja principal')`.
-3. En **Back Office → Dispositivos de pagos**, crea el dispositivo. En Android el token queda configurado de forma cifrada en el celular de caja; en web copia el token a la aplicación observadora autorizada.
+3. En **Back Office → Dispositivos de pagos**, crea el dispositivo. Abre la APK dedicada **Suya** en el celular de caja, pega el token una sola vez y concede el permiso de notificaciones; queda guardado de forma cifrada.
 4. No usar `service_role` en el APK.
 
 ## Qué llega a la base

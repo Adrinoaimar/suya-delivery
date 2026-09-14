@@ -20,6 +20,7 @@ Android:
 
 - Rider: `com.suya.rider`, pantalla inicial de acceso de repartidor.
 - Backoffice: `com.suya.backoffice`, pantalla inicial de acceso de operaciones.
+- Caja: `com.suya.walletobserver`, pantalla mínima para vincular el teléfono receptor y sincronizar evidencia de billeteras.
 
 ```bash
 npm run build:mobile:roles
@@ -29,6 +30,7 @@ Salidas:
 
 - `output/android/Suya-Rider-debug.apk`
 - `output/android/Suya-Backoffice-debug.apk`
+- `output/android/Suya-Wallet-Observer-debug.apk`
 
 Son APKs debug para validación interna, no releases firmados para distribución. Google OAuth requiere
 autorizar también los callbacks `com.suya.rider://auth/callback` y

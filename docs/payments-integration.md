@@ -53,4 +53,4 @@ Yape Culqi exige órdenes dentro de sus límites publicados; el backend rechaza 
 
 ## Observer Android
 
-El observador de notificaciones es opt-in, visible en Back Office, requiere permiso del sistema y sincroniza evidencia mínima `unverified`. Si falla la red, conserva los eventos cifrados y los reintenta en segundo plano con red disponible; usa la hora original de publicación para ajustar la ventana. Nunca confirma pagos por sí solo.
+El observador de notificaciones vive en la APK Android dedicada de caja (no en Rider ni Back Office), es opt-in, requiere permiso del sistema y sincroniza evidencia mínima `unverified`. Back Office crea el dispositivo y muestra el token una sola vez; la APK de caja lo guarda cifrado. Si falla la red, conserva los eventos cifrados y los reintenta en segundo plano con red disponible; usa la hora original de publicación para ajustar la ventana. Nunca confirma pagos por sí solo.

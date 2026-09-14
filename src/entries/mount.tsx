@@ -11,6 +11,8 @@ import '@/styles/index.css';
 
 interface MountOptions {
   Bootstrap?: ComponentType;
+  /** Skips auth/session work for native utility surfaces with their own pairing flow. */
+  bootstrapAuth?: boolean;
   /** Starts the customer catalog while the intro is still visible. */
   preloadCatalog?: boolean;
   registerServiceWorker?: boolean;
@@ -25,7 +27,7 @@ export function mountApp(Routes: ComponentType, options: MountOptions = {}): voi
     <StrictMode>
       <BrowserRouter basename={basename}>
         <AppShell>
-          <AuthBootstrap />
+          {options.bootstrapAuth !== false && <AuthBootstrap />}
           {options.preloadCatalog && <CatalogBootstrap />}
           {options.Bootstrap && <options.Bootstrap />}
           <Routes />

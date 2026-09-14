@@ -88,3 +88,11 @@ jobs:
           path: output/android/Suya-Backoffice-debug.apk
           if-no-files-found: error
           retention-days: 14
+
+      - name: Publicar APK de sincronización de caja
+        uses: actions/upload-artifact@v4
+        with:
+          name: Suya-Wallet-Observer-debug-${{ github.sha }}
+          path: output/android/Suya-Wallet-Observer-debug.apk
+          if-no-files-found: error
+          retention-days: 14

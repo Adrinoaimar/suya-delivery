@@ -45,7 +45,7 @@ describe('Suya hardening guards', () => {
     expect(source('android/app/src/main/java/com/suya/app/SuyaWalletSyncJobService.java')).toMatch(/jobFinished/);
     const manifest = source('android/app/src/main/AndroidManifest.xml');
     expect(manifest).toMatch(/RECEIVE_BOOT_COMPLETED/);
-    expect(gradle).toMatch(/suyaWalletObserverEnabled = suyaAndroidAppId == 'com\.suya\.rider'/);
+    expect(gradle).toMatch(/suyaWalletObserverEnabled = suyaAndroidAppId == 'com\.suya\.walletobserver'/);
     expect(manifest).toMatch(/android:enabled="\$\{suyaWalletObserverEnabled\}"/);
   });
 

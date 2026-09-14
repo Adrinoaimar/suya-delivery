@@ -26,6 +26,9 @@ export const nativeWalletObserver = {
   sync(): Promise<NativeWalletObserverStatus> {
     return plugin.sync();
   },
+  clear(): Promise<NativeWalletObserverStatus> {
+    return plugin.clear();
+  },
   openNotificationSettings(): Promise<void> {
     return plugin.openNotificationSettings();
   },

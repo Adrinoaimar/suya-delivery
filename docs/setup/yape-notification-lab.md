@@ -2,7 +2,7 @@
 
 ## Qué hace
 
-La variante Android de Suya incluye un `NotificationListenerService` opt-in que
+La APK Android dedicada de caja de Suya incluye un `NotificationListenerService` opt-in que
 reconoce notificaciones de paquetes allowlist verificados de Yape, Lemon, Plin
 (apps bancarias participantes) y Mercado Pago, extrae monto, moneda, nombre y código cuando están visibles y guarda hasta 100
 observaciones cifradas. Con un dispositivo de caja configurado, sincroniza solo ese metadato
@@ -23,8 +23,8 @@ orden como pagada con este laboratorio.
 
 ## Prueba controlada
 
-1. Instala el APK de laboratorio en un Android de pruebas.
-2. Crea un dispositivo en Back Office, configura el token en el APK de caja y
+1. Instala la APK dedicada de caja en un Android de pruebas; Rider y Back Office no observan billeteras.
+2. Crea un dispositivo en Back Office, copia el token una sola vez en la APK de caja y
    concede acceso a notificaciones en Ajustes de Android.
 3. Recibe un pago de prueba de bajo monto en una billetera admitida y revisa que
    aparezcan proveedor, monto, moneda y código en **Dispositivos de pagos**.

@@ -11,17 +11,8 @@ const mocks = vi.hoisted(() => ({
   listObservations: vi.fn(),
   listPaymentAccounts: vi.fn(),
   listPaymentCandidates: vi.fn(),
-  getNativeStatus: vi.fn(),
   notify: vi.fn(),
 }));
-
-vi.mock('@capacitor/core', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@capacitor/core')>();
-  return {
-    ...actual,
-    Capacitor: { ...actual.Capacitor, getPlatform: () => 'android' },
-  };
-});
 
 vi.mock('@/lib/services', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/services')>()),
@@ -35,13 +26,6 @@ vi.mock('@/lib/services', async (importOriginal) => ({
     setObservationCode: vi.fn(),
     verifyObservation: vi.fn(),
     savePaymentAccount: vi.fn(),
-  },
-  nativeWalletObserver: {
-    getStatus: mocks.getNativeStatus,
-    configure: vi.fn(),
-    sync: vi.fn(),
-    clear: vi.fn(),
-    openNotificationSettings: vi.fn(),
   },
   notificationService: { notify: mocks.notify },
 }));
@@ -89,11 +73,6 @@ beforeEach(() => {
   mocks.listStores.mockResolvedValue([restaurant]);
   mocks.listDevices.mockResolvedValue([]);
   mocks.listPaymentAccounts.mockResolvedValue([]);
-  mocks.getNativeStatus.mockResolvedValue({
-    configured: false,
-    notificationAccess: false,
-    role: 'ready',
-  });
   mocks.listObservations.mockResolvedValue([
     {
       id: 'observation-1',
@@ -169,15 +148,5 @@ describe('WalletsOperationsPage', () => {
     expect(screen.getAllByRole('button', { name: 'Verificar pago' }).every((button) =>
       (button as HTMLButtonElement).disabled,
     )).toBe(true);
-  });
-
-  it('refresca el acceso de notificaciones al volver de Ajustes Android', async () => {
-    render(<WalletsOperationsPage />);
-
-    await waitFor(() => expect(mocks.getNativeStatus).toHaveBeenCalledTimes(1));
-
-    window.dispatchEvent(new Event('focus'));
-
-    await waitFor(() => expect(mocks.getNativeStatus).toHaveBeenCalledTimes(2));
   });
 });

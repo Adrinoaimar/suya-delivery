@@ -6,7 +6,7 @@ import path from 'node:path';
 import { assertProductionBuildConfig } from './lib/production-build-config.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const supportedApps = ['customer', 'rider', 'backoffice', 'mobile'];
+const supportedApps = ['customer', 'rider', 'backoffice', 'walletobserver', 'mobile'];
 const webApps = ['customer', 'rider', 'backoffice'];
 const requested = process.argv[2] ? [process.argv[2]] : webApps;
 

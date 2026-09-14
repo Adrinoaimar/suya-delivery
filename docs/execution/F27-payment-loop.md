@@ -10,7 +10,7 @@ Estado del código: commit `5348ab6`; CI valida base de datos, frontend, E2E, An
 2. Mantener en GitHub/Supabase únicamente secretos de prueba hasta completar la validación: `CULQI_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY` y `ALLOWED_ORIGINS`.
 3. Configurar el frontend con `VITE_CULQI_GATEWAY_ENABLED=true` y la llave pública `pk_test_...`; nunca colocar una `sk_...` en web o APK. El cliente usa Culqi Custom Checkout (`https://js.culqi.com/checkout-js`).
 4. Registrar el webhook Culqi `order.status.changed` apuntando a `culqi-webhook` y comprobar que responde por HTTPS.
-5. En Back Office, seleccionar el restaurante correcto, guardar las cuentas Yape/Lemon y crear un dispositivo de caja. Activar el acceso de notificaciones Android de forma explícita.
+5. En Back Office, seleccionar el restaurante correcto, guardar las cuentas Yape/Lemon y crear un dispositivo de caja. Abrir la APK dedicada Suya en el teléfono receptor, pegar el token y activar allí el acceso de notificaciones Android de forma explícita.
 
 El observador conserva eventos cifrados si pierde red y reintenta en segundo plano cada 15 minutos como máximo. Back Office actualiza las observaciones visibles cada 15 segundos. La observación conserva la hora de publicación original para no ampliar artificialmente la ventana de coincidencia.
 El parser admite etiquetas de remitente como `De:`/`From:` y separa el nombre del código de operación; el código completo sigue siendo la identidad principal del pago.

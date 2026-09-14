@@ -14,6 +14,7 @@
     "build:customer": "tsc -b && node scripts/build-apps.mjs customer && node scripts/verify-app-bundles.mjs customer",
     "build:rider": "tsc -b && node scripts/build-apps.mjs rider && node scripts/verify-app-bundles.mjs rider",
     "build:backoffice": "tsc -b && node scripts/build-apps.mjs backoffice && node scripts/verify-app-bundles.mjs backoffice",
+    "build:walletobserver": "tsc -b && node scripts/build-apps.mjs walletobserver && node scripts/verify-app-bundles.mjs walletobserver",
     "build:mobile": "tsc -b && node scripts/build-apps.mjs mobile && node scripts/verify-app-bundles.mjs mobile && npx cap sync",
     "build:mobile:roles": "node scripts/build-mobile-apks.mjs",
     "prepare:mobile-live-update": "node scripts/prepare-mobile-live-update.mjs",

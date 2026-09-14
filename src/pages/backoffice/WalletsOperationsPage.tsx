@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Capacitor } from '@capacitor/core';
 import { Check, Copy, Eye, KeyRound, RefreshCw, Smartphone, WalletCards } from 'lucide-react';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
@@ -8,7 +7,6 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { cn } from '@/lib/cn';
 import {
-  nativeWalletObserver,
   notificationService,
   storeService,
   walletObserverService,
@@ -23,7 +21,6 @@ import type {
   WalletPaymentCandidate,
   RestaurantPaymentAccount,
 } from '@/lib/services';
-import type { NativeWalletObserverStatus } from '@/lib/services/NativeWalletObserverService';
 
 const providerLabels: Record<string, string> = {
   yape: 'Yape',
@@ -69,7 +66,6 @@ function dateLabel(value: string | null): string {
 
 export default function WalletsOperationsPage() {
   const identity = useAuthStore((state) => state.identity);
-  const isAndroid = Capacitor.getPlatform() === 'android';
   const restaurantIds = useMemo(() => identity?.restaurantIds ?? [], [identity?.restaurantIds]);
   const isPlatformAdmin = identity?.access.includes('platform_admin') ?? false;
   const [stores, setStores] = useState<Store[]>([]);
@@ -93,7 +89,6 @@ export default function WalletsOperationsPage() {
   const [accountLabel, setAccountLabel] = useState('Cuenta principal');
   const [qrPayload, setQrPayload] = useState('');
   const [accountActive, setAccountActive] = useState(false);
-  const [nativeStatus, setNativeStatus] = useState<NativeWalletObserverStatus | null>(null);
   const loadRequestRef = useRef(0);
   const canSelectRestaurant = isPlatformAdmin || restaurantIds.length > 1;
   const activeRestaurantId = restaurantId || (isPlatformAdmin ? '' : restaurantIds[0] ?? '');
@@ -187,28 +182,6 @@ export default function WalletsOperationsPage() {
     };
   }, [activeRestaurantId, accountProvider]);
 
-  useEffect(() => {
-    if (!isAndroid) return;
-    let active = true;
-    const refreshNativeStatus = () => {
-      if (document.visibilityState === 'hidden') return;
-      void nativeWalletObserver
-        .getStatus()
-        .then((status) => {
-          if (active) setNativeStatus(status);
-        })
-        .catch(() => undefined);
-    };
-    refreshNativeStatus();
-    window.addEventListener('focus', refreshNativeStatus);
-    document.addEventListener('visibilitychange', refreshNativeStatus);
-    return () => {
-      active = false;
-      window.removeEventListener('focus', refreshNativeStatus);
-      document.removeEventListener('visibilitychange', refreshNativeStatus);
-    };
-  }, [isAndroid]);
-
   const storeNames = useMemo(
     () => new Map(stores.map((store) => [store.id, store.name])),
     [stores],
@@ -227,25 +200,10 @@ export default function WalletsOperationsPage() {
       const created = await walletObserverService.createDevice(activeRestaurantId, label);
       setDevices((current) => [created, ...current]);
       setNewDevice(created);
-      if (isAndroid) {
-        try {
-          const status = await nativeWalletObserver.configure(created.deviceToken);
-          setNativeStatus(status);
-          notificationService.notify(
-            status.notificationAccess
-              ? 'Dispositivo creado y observador sincronizando en este celular.'
-              : 'Dispositivo creado. Activa el acceso a notificaciones para comenzar a observar.',
-            status.notificationAccess ? 'success' : 'warning',
-          );
-        } catch {
-          notificationService.notify(
-            'Dispositivo creado. No pudimos configurar el observador nativo; revisa la app actualizada.',
-            'warning',
-          );
-        }
-      } else {
-        notificationService.notify('Dispositivo creado. Guarda el token ahora.', 'success');
-      }
+      notificationService.notify(
+        'Dispositivo creado. Abre la aplicación de caja en el teléfono receptor y pega el token.',
+        'success',
+      );
     } catch (cause) {
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No pudimos crear el dispositivo.',
@@ -486,55 +444,6 @@ export default function WalletsOperationsPage() {
             </div>
           </Card>
         </div>
-      )}
-
-      {isAndroid && (
-        <Card className="border-suya-green/20 bg-suya-lime-soft/35">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <p className="font-semibold">Sincronización de caja en este dispositivo</p>
-              <p className="mt-1 max-w-2xl text-sm text-suya-muted">
-                El observador opt-in guarda la evidencia cifrada y la envía al servidor con el
-                token del restaurante. Nunca autoriza un pago por sí solo.
-              </p>
-              <p className="mt-2 text-xs font-semibold text-suya-green-dark">
-                Estado:{' '}
-                {nativeStatus?.configured
-                  ? nativeStatus.notificationAccess
-                    ? 'configurado y con acceso a notificaciones'
-                    : 'configurado; falta activar acceso a notificaciones'
-                  : 'sin configurar'}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() =>
-                  void nativeWalletObserver.openNotificationSettings().catch(() =>
-                    notificationService.notify('Abre Ajustes y concede acceso a notificaciones.', 'warning'),
-                  )
-                }
-              >
-                Abrir ajustes
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() =>
-                  void nativeWalletObserver
-                    .sync()
-                    .then(setNativeStatus)
-                    .catch(() => notificationService.notify('No pudimos sincronizar todavía.', 'warning'))
-                }
-              >
-                Sincronizar
-              </Button>
-            </div>
-          </div>
-        </Card>
       )}
 
       {activeRestaurantId && (
