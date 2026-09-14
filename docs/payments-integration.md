@@ -36,9 +36,9 @@ Si la notificación no muestra el código, caja puede copiarlo desde la constanc
 
 ## Culqi: Yape y tarjeta
 
-El flujo opcional Culqi crea la orden desde `create-culqi-payment-intent`, usando monto bloqueado del pedido. `create-culqi-order` crea la orden Culqi con metadata de `suya_order_id`, `suya_payment_attempt_id` y referencia visible. Antes de llamar a Culqi, una reserva efímera de creación evita que dos toques creen dos órdenes externas; un intento ya autorizado se devuelve sin reemplazar su referencia `chr_`. El cliente abre Checkout v4; Yape genera QR asociado al monto exacto. Tarjeta o Yape pueden devolver un token al frontend de Culqi y `charge-culqi-card` crea el cargo en servidor. Antes del cargo, Suya reserva atómicamente el intento para evitar doble cobro por reintentos concurrentes. Datos de tarjeta nunca pasan por Suya.
+El flujo opcional Culqi crea la orden desde `create-culqi-payment-intent`, usando monto bloqueado del pedido. `create-culqi-order` crea la orden Culqi con metadata de `suya_order_id`, `suya_payment_attempt_id` y referencia visible. Antes de llamar a Culqi, una reserva efímera de creación evita que dos toques creen dos órdenes externas; un intento ya autorizado se devuelve sin reemplazar su referencia `chr_`. El cliente abre Culqi Custom Checkout; Yape genera QR asociado al monto exacto. Tarjeta o Yape pueden devolver un token al frontend de Culqi y `charge-culqi-card` crea el cargo en servidor. Antes del cargo, Suya reserva atómicamente el intento para evitar doble cobro por reintentos concurrentes. Datos de tarjeta nunca pasan por Suya.
 
-La integración actual usa Checkout v4 por rapidez para las pruebas; Culqi indica migrar a Checkout Custom porque v4 quedará deprecado.
+La integración usa `https://js.culqi.com/checkout-js`, con configuración de monto, orden, correo y método permitido por pedido. Se evita Checkout v4 porque Culqi indica que dejará de estar disponible.
 
 `culqi-webhook` recibe `order.status.changed`, consulta nuevamente la orden con `CULQI_SECRET_KEY`, valida estado, monto y moneda, y actualiza el intento de forma idempotente. No se autoriza por callback del navegador.
 

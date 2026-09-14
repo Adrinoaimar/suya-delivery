@@ -186,6 +186,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
       await openCulqiCheckout({
         intent: activeIntent,
         method: activeIntent.method === 'card' ? 'card' : 'yape',
+        customerEmail,
         onToken: async (tokenId) => {
           try {
             const providerReference = await paymentService.chargeCard(
