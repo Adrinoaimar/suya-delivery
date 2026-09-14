@@ -1,6 +1,6 @@
 begin;
 
-select plan(89);
+select plan(90);
 
 select has_function(
   'public', 'refresh_payment_intent', array['uuid', 'text', 'text'],
