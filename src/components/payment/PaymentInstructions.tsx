@@ -283,7 +283,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
               <div>
                 <p className="font-semibold text-suya-carbon">Checkout seguro de Culqi</p>
                 <p className="mt-1 text-sm text-suya-muted">
-                  Genera QR Yape o captura tarjeta con el monto exacto de este pedido.
+                  Genera un QR de billetera (Yape) o captura tarjeta con el monto exacto de este pedido.
                 </p>
               </div>
             </div>

@@ -110,7 +110,7 @@ export async function openCulqiCheckout(options: {
   const paymentMethods =
     options.method === 'card'
       ? { tarjeta: true, yape: false, billetera: false, bancaMovil: false, agente: false, cuotealo: false }
-      : { tarjeta: false, yape: true, billetera: false, bancaMovil: false, agente: false, cuotealo: false };
+      : { tarjeta: false, yape: false, billetera: true, bancaMovil: false, agente: false, cuotealo: false };
   const enabledMethods = Object.entries(paymentMethods)
     .filter(([, enabled]) => enabled)
     .map(([method]) => method);

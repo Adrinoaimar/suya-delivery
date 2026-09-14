@@ -60,7 +60,7 @@ afterEach(() => {
 });
 
 describe('openCulqiCheckout', () => {
-  it('configura Custom Checkout con orden, monto exacto y solo Yape', async () => {
+  it('configura Custom Checkout con orden, monto exacto y QR de billeteras', async () => {
     const onToken = vi.fn().mockResolvedValue(undefined);
 
     await openCulqiCheckout({
@@ -85,16 +85,16 @@ describe('openCulqiCheckout', () => {
       client: { email: 'cliente@example.com' },
       options: {
         modal: true,
-        paymentMethods: { tarjeta: false, yape: true },
-        paymentMethodsSort: ['yape'],
+        paymentMethods: { tarjeta: false, yape: false, billetera: true },
+        paymentMethodsSort: ['billetera'],
       },
     });
 
-    lastCheckout!.token = { id: 'ype_test_suya_123' };
+    lastCheckout!.order = { id: 'ord_test_suya_123', state: 'paid' };
     lastCheckout!.culqi?.();
 
     expect(lastCheckout?.closeCalls).toBe(1);
-    expect(onToken).toHaveBeenCalledWith('ype_test_suya_123');
+    expect(onToken).not.toHaveBeenCalled();
   });
 
   it('limita Custom Checkout a tarjeta cuando el pedido usa tarjeta', async () => {
@@ -116,7 +116,7 @@ describe('openCulqiCheckout', () => {
     });
   });
 
-  it('entrega la orden Culqi cuando Yape completa el checkout por QR', async () => {
+  it('entrega la orden Culqi cuando el QR de billeteras completa el checkout', async () => {
     const onOrder = vi.fn();
 
     await openCulqiCheckout({

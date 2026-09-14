@@ -1,8 +1,8 @@
 # F27 · Loop de pruebas de pago
 
-Estado del código: commit `9d973fc`; CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
+Estado del código: commit `362cfd6`; CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
 
-Último checkpoint: el QR Yape de Culqi queda bloqueado mientras espera `order.status.changed`; la pantalla se actualiza por polling y solo libera preparación cuando el servidor marca `authorized`. El flujo manual distingue pagos iguales con fingerprint/código completo y la observación Android sigue siendo evidencia no autorizante.
+Último checkpoint: el QR de billeteras de Culqi usa la opción `billetera` del Custom Checkout (la opción `yape` corresponde al flujo de token/código de aprobación); queda bloqueado mientras espera `order.status.changed`. La pantalla se actualiza por polling y solo libera preparación cuando el servidor marca `authorized`. El flujo manual distingue pagos iguales con fingerprint/código completo y la observación Android sigue siendo evidencia no autorizante.
 
 ## Preparación única
 
@@ -31,7 +31,7 @@ La reserva de creación también cubre doble toque en `Continuar con pago`: una 
 ## Caso 2 · Culqi Yape QR dinámico
 
 1. Crear un pedido entre S/6.00 y S/500.00.
-2. Abrir `Abrir QR Yape`; el QR debe pertenecer a la orden Culqi y mostrar el monto exacto.
+2. Abrir `Abrir QR Yape`; Culqi debe mostrar `Billeteras móviles`, generar un QR ligado a la orden y mostrar el monto exacto.
 3. Pagar, esperar `order.status.changed` y confirmar que la pantalla se actualiza a `Pago verificado` después del webhook.
 4. Recargar la pantalla y confirmar que el intento conserva la misma referencia y no crea una segunda orden mientras siga vigente.
 

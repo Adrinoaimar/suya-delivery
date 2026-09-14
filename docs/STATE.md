@@ -149,6 +149,12 @@ producción.
 - Gate local: `verify:production` y `verify:cloudflare` requieren variables públicas/configuración de proveedor; `db:test` y `db:lint` requieren Postgres local. CI remoto sí pasó base, build y E2E. No se declara producción lista.
 - Pendiente externo: configurar llaves Culqi/Supabase y webhook, aplicar migraciones en el proyecto real, publicar build, validar login y ejecutar casos físicos Yape/Lemon/tarjeta.
 
+## Checkpoint F27.1: QR de billeteras y APK 362cfd6 (2026-09-14)
+
+- `362cfd6` corrige el mapeo del Custom Checkout: el QR de una orden Culqi usa `billetera`; `yape` queda reservado para token/código de aprobación. Back Office también bloquea verificaciones ambiguas por monto/código parcial.
+- Evidencia: 59 suites/245 tests locales, typecheck/lint/diff verdes; CI PR #36 completo verde (browser, E2E, DB, Android, iOS). APKs debug nuevas están en `output/apks/362cfd6/`.
+- Pendiente externo: configurar llaves Culqi/Supabase y webhook, aplicar migraciones en el proyecto real, publicar build y ejecutar casos físicos Yape/Lemon/tarjeta.
+
 ## Reglas de continuidad
 
 - Git, pruebas y este archivo son estado canónico.
