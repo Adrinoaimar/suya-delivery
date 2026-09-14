@@ -1,6 +1,6 @@
 # F27 · Loop de pruebas de pago
 
-Estado del código: commit `f743654`; CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
+Estado del código: commit `50f4a95`; CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
 
 ## Preparación única
 
