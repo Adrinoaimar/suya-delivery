@@ -129,7 +129,7 @@ function resolveWalletObserverService(): Promise<WalletObserverService> {
             throw new Error('La verificación de billeteras requiere Supabase.');
           },
           async listPaymentAccounts() {
-      return [];
+            return [];
           },
           async savePaymentAccount() {
             throw new Error('La configuración de billeteras requiere Supabase.');
@@ -443,11 +443,14 @@ export const paymentService: PaymentService = {
   authorize(method, amount) {
     return resolvePaymentService().authorize(method, amount);
   },
-  createIntent(orderId, method, guestAccessToken) {
-    return resolvePaymentService().createIntent(orderId, method, guestAccessToken);
+  createIntent(orderId, method, guestAccessToken, customerEmail) {
+    return resolvePaymentService().createIntent(orderId, method, guestAccessToken, customerEmail);
   },
   submitEvidence(orderId, code, guestAccessToken) {
     return resolvePaymentService().submitEvidence(orderId, code, guestAccessToken);
+  },
+  chargeCard(intent, tokenId, customerEmail, guestAccessToken) {
+    return resolvePaymentService().chargeCard(intent, tokenId, customerEmail, guestAccessToken);
   },
   getIntent(orderId, guestAccessToken) {
     return resolvePaymentService().getIntent(orderId, guestAccessToken);

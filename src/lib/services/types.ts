@@ -347,12 +347,19 @@ export interface PaymentService {
     orderId: string,
     method: PaymentMethod,
     guestAccessToken?: string | null,
+    customerEmail?: string | null,
   ): Promise<PaymentIntent>;
   submitEvidence(
     orderId: string,
     code: string,
     guestAccessToken?: string | null,
   ): Promise<boolean>;
+  chargeCard(
+    intent: PaymentIntent,
+    tokenId: string,
+    customerEmail?: string | null,
+    guestAccessToken?: string | null,
+  ): Promise<string>;
   getIntent(orderId: string, guestAccessToken?: string | null): Promise<PaymentIntent | null>;
 }
 

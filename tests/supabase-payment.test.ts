@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { describe, expect, it, vi } from 'vitest';
 import { SupabasePaymentService } from '@/lib/services/SupabasePaymentService';
+import type { PaymentIntent } from '@/types';
 
 function fakeClient(response: { data: unknown; error: { message: string } | null }) {
   return {
@@ -18,6 +19,7 @@ const intentRow = {
   checkout_reference: 'SUYA-AB12CD34',
   expires_at: '2026-09-14T18:30:00.000Z',
   provider: 'wallet_observer',
+  provider_reference: null,
   qr_payload: 'yape://public-business-qr',
 };
 
@@ -41,6 +43,42 @@ describe('SupabasePaymentService', () => {
       amount: 30,
       checkoutReference: 'SUYA-AB12CD34',
       qrPayload: 'yape://public-business-qr',
+      providerReference: null,
+    });
+  });
+
+  it('envía token Culqi al backend y no maneja datos de tarjeta en Suya', async () => {
+    const invoke = vi.fn(async () => ({
+      data: { status: 'authorized', providerReference: 'chr_test_12345678' },
+      error: null,
+    }));
+    const client = {
+      ...fakeClient({ data: null, error: null }),
+      functions: { invoke },
+    } as unknown as SupabaseClient;
+    const intent: PaymentIntent = {
+      attemptId: 'attempt-1',
+      orderId: 'order-1',
+      method: 'card',
+      status: 'pending',
+      amount: 30,
+      currency: 'PEN',
+      checkoutReference: 'SUYA-AB12CD34',
+      expiresAt: '2026-09-14T18:30:00.000Z',
+      provider: 'culqi',
+      providerReference: 'ord_test_12345678',
+      qrPayload: null,
+    };
+    await expect(
+      new SupabasePaymentService(client).chargeCard(intent, 'tkn_test_12345678', 'cliente@suya.test'),
+    ).resolves.toBe('chr_test_12345678');
+    expect(invoke).toHaveBeenCalledWith('charge-culqi-card', {
+      body: {
+        attemptId: 'attempt-1',
+        tokenId: 'tkn_test_12345678',
+        customerEmail: 'cliente@suya.test',
+        guestAccessToken: null,
+      },
     });
   });
 

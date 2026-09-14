@@ -165,6 +165,7 @@ export interface PaymentIntent {
   checkoutReference: string;
   expiresAt: string;
   provider: string;
+  providerReference: string | null;
   qrPayload: string | null;
 }
 
@@ -176,6 +177,7 @@ export interface OrderStatusEvent {
 export interface CustomerInfo {
   name: string;
   phone: string;
+  email?: string;
   address: string;
   reference: string;
 }

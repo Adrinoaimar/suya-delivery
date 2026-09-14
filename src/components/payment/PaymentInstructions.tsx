@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Copy, LoaderCircle, QrCode, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, Copy, ExternalLink, LoaderCircle, QrCode, ShieldCheck } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { notificationService, paymentService } from '@/lib/services';
+import { openCulqiCheckout } from '@/lib/payments/culqiCheckout';
 import type { Order, PaymentIntent } from '@/types';
 import { formatDateTime, formatPrice, paymentLabel } from '@/utils/format';
 
@@ -19,6 +20,15 @@ function statusLabel(status: PaymentIntent['status']): string {
   return 'Pendiente de verificación';
 }
 
+function savedPaymentEmail(orderId: string): string | null {
+  try {
+    const email = sessionStorage.getItem(`suya.payment-email:${orderId}`)?.trim().toLowerCase();
+    return email || null;
+  } catch {
+    return null;
+  }
+}
+
 export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   const [intent, setIntent] = useState<PaymentIntent | null>(order.paymentIntent ?? null);
   const [loading, setLoading] = useState(!order.paymentIntent);
@@ -26,6 +36,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   const [evidenceCode, setEvidenceCode] = useState('');
   const [submittingEvidence, setSubmittingEvidence] = useState(false);
   const [evidenceSaved, setEvidenceSaved] = useState(false);
+  const [gatewayBusy, setGatewayBusy] = useState(false);
 
   useEffect(() => {
     if (order.paymentMethod === 'cash' || order.paymentIntent) return;
@@ -49,6 +60,27 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
       active = false;
     };
   }, [order.id, order.paymentIntent, order.paymentMethod]);
+
+  const gatewayProvider = intent?.provider;
+  const gatewayStatus = intent?.status;
+
+  useEffect(() => {
+    if (gatewayProvider !== 'culqi' || gatewayStatus !== 'pending') return;
+    let active = true;
+    const refresh = () => {
+      void paymentService
+        .getIntent(order.id)
+        .then((value) => {
+          if (active && value) setIntent(value);
+        })
+        .catch(() => undefined);
+    };
+    const timer = window.setInterval(refresh, 5_000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [gatewayProvider, gatewayStatus, order.id]);
 
   if (order.paymentMethod === 'cash') return null;
   if (loading) {
@@ -104,6 +136,53 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
     }
   };
 
+  const openGateway = async () => {
+    const customerEmail = savedPaymentEmail(order.id);
+    if (intent.method === 'card' && !customerEmail) {
+      notificationService.notify('Falta el correo usado para pagar con tarjeta.', 'warning');
+      return;
+    }
+    try {
+      await openCulqiCheckout({
+        intent,
+        method: intent.method === 'card' ? 'card' : 'yape',
+        onToken: async (tokenId) => {
+          setGatewayBusy(true);
+          try {
+            const providerReference = await paymentService.chargeCard(
+              intent,
+              tokenId,
+              customerEmail,
+            );
+            setIntent((current) =>
+              current ? { ...current, status: 'authorized', providerReference } : current,
+            );
+            notificationService.notify('Tarjeta autorizada. Pedido identificado en Suya.', 'success');
+          } catch (cause) {
+            notificationService.notify(
+              cause instanceof Error ? cause.message : 'No pudimos procesar la tarjeta.',
+              'danger',
+            );
+          } finally {
+            setGatewayBusy(false);
+          }
+        },
+        onOrder: () => {
+          notificationService.notify(
+            'Pago enviado. Culqi confirmará el monto mediante webhook; esta pantalla se actualizará sola.',
+            'success',
+          );
+        },
+        onError: (message) => notificationService.notify(message, 'danger'),
+      });
+    } catch (cause) {
+      notificationService.notify(
+        cause instanceof Error ? cause.message : 'No pudimos abrir el checkout seguro.',
+        'danger',
+      );
+    }
+  };
+
   return (
     <Card
       className={
@@ -131,7 +210,35 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         <Badge tone={verified ? 'lime' : 'sun'}>{statusLabel(intent.status)}</Badge>
       </div>
 
-      {intent.qrPayload ? (
+      {intent.provider === 'culqi' ? (
+        <div className="mt-4 rounded-card border border-suya-green/20 bg-white p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-suya-lime-soft text-suya-green">
+                <QrCode className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div>
+                <p className="font-semibold text-suya-carbon">Checkout seguro de Culqi</p>
+                <p className="mt-1 text-sm text-suya-muted">
+                  Genera QR Yape o captura tarjeta con el monto exacto de este pedido.
+                </p>
+              </div>
+            </div>
+            <Button type="button" onClick={() => void openGateway()} disabled={gatewayBusy}>
+              <ExternalLink className="h-4 w-4" aria-hidden="true" />
+              {gatewayBusy ? 'Procesando…' : intent.method === 'card' ? 'Pagar con tarjeta' : 'Abrir QR Yape'}
+            </Button>
+          </div>
+          {intent.qrPayload && /^https:\/\//i.test(intent.qrPayload) && (
+            <div className="mt-4 flex justify-center rounded-btn border border-suya-mist bg-white p-3">
+              <img src={intent.qrPayload} alt="QR Yape generado para este pedido" className="h-44 w-44" />
+            </div>
+          )}
+          <p className="mt-3 text-xs text-suya-muted">
+            Referencia Culqi: <span className="font-mono">{intent.providerReference ?? 'pendiente'}</span>
+          </p>
+        </div>
+      ) : intent.qrPayload ? (
         <div className="mt-4 flex flex-col items-center gap-3 rounded-card border border-suya-border bg-white p-4 sm:flex-row sm:items-start">
           <div className="rounded-xl border border-suya-mist bg-white p-2">
             <QRCodeSVG value={intent.qrPayload} size={156} level="M" includeMargin />
@@ -172,7 +279,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         </Button>
       </div>
 
-      {!verified && (intent.method === 'yape' || intent.method === 'lemon') && (
+      {!verified && intent.provider !== 'culqi' && (intent.method === 'yape' || intent.method === 'lemon') && (
         <div className="mt-4 rounded-btn border border-suya-green/20 bg-white/75 p-3">
           <p className="text-sm font-semibold text-suya-carbon">
             Identifica tu pago antes de cerrar esta pantalla
@@ -212,8 +319,9 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
       <div className="mt-4 flex items-start gap-2 border-t border-black/10 pt-3 text-xs text-suya-muted">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-suya-green" aria-hidden="true" />
         <p>
-          La notificación del celular de caja solo es evidencia. El restaurante debe verificar
-          monto, billetera, hora y referencia antes de liberar el pedido.
+          {intent.provider === 'culqi'
+            ? 'Culqi confirma el pago por webhook. Suya conserva la referencia del pedido y no libera por una notificación local.'
+            : 'La notificación del celular de caja solo es evidencia. El restaurante debe verificar monto, billetera, hora y referencia antes de liberar el pedido.'}
         </p>
       </div>
     </Card>

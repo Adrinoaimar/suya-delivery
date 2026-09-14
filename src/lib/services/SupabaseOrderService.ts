@@ -1,7 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
-import type { CartItem, Order, OrderStatus, ProductExtra } from '@/types';
-import type { PaymentIntent } from '@/types';
+import type { CartItem, Order, OrderStatus, PaymentIntent, PaymentIntentStatus, PaymentMethod, ProductExtra } from '@/types';
 import type {
   AvailableRider,
   CodeResult,
@@ -25,6 +24,20 @@ interface OrderItemRow {
 
 interface OrderEventRow {
   status: OrderStatus;
+  created_at: string;
+}
+
+interface PaymentAttemptRow {
+  id: string;
+  order_id: string;
+  provider: string;
+  provider_reference: string | null;
+  method: PaymentMethod;
+  status: PaymentIntentStatus;
+  amount: number | string;
+  checkout_reference: string;
+  expires_at: string;
+  gateway_qr_payload?: string | null;
   created_at: string;
 }
 
@@ -56,6 +69,7 @@ interface OrderRow {
     | { name: string; latitude: number | null; longitude: number | null }[];
   order_items: OrderItemRow[];
   order_events: OrderEventRow[];
+  payment_attempts?: PaymentAttemptRow[];
 }
 
 interface OrderCodes {
@@ -106,7 +120,8 @@ const ORDER_SELECT = `
   delivery_latitude, delivery_longitude,
   restaurants!inner(name, latitude, longitude),
   order_items(id, product_id, product_name, unit_price, quantity, extras, note, image_url),
-  order_events(status, created_at)
+  order_events(status, created_at),
+  payment_attempts(id, order_id, provider, provider_reference, method, status, amount, checkout_reference, expires_at, gateway_qr_payload, created_at)
 `;
 const PENDING_REQUEST_KEY = 'suya.pending-cash-order';
 const GUEST_TOKEN_PREFIX = 'suya.guest-order-token:';
@@ -143,6 +158,24 @@ function amount(value: number | string): number {
   const parsed = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(parsed)) throw new Error('Supabase devolvió un monto de pedido inválido.');
   return parsed;
+}
+
+function paymentIntentFromAttempts(rows: PaymentAttemptRow[] | undefined): PaymentIntent | null {
+  const row = [...(rows ?? [])].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+  if (!row) return null;
+  return {
+    attemptId: row.id,
+    orderId: row.order_id,
+    method: row.method,
+    status: row.status,
+    amount: amount(row.amount),
+    currency: 'PEN',
+    checkoutReference: row.checkout_reference,
+    expiresAt: row.expires_at,
+    provider: row.provider,
+    providerReference: row.provider_reference,
+    qrPayload: row.gateway_qr_payload ?? null,
+  };
 }
 
 function extras(value: unknown): ProductExtra[] {
@@ -216,6 +249,7 @@ function mapOrder(row: OrderRow, codes?: OrderCodes): Order {
     deliveryCode: codes?.delivery_code ?? '',
     cancelCode: codes?.cancel_code ?? '',
     cancellationReason: row.cancellation_reason,
+    paymentIntent: paymentIntentFromAttempts(row.payment_attempts),
   };
 }
 
@@ -462,7 +496,12 @@ export class SupabaseOrderServiceImpl
     const paymentIntent =
       input.paymentMethod === 'cash'
         ? null
-        : await this.payments.createIntent(result.order_id, input.paymentMethod, accessToken);
+        : await this.payments.createIntent(
+            result.order_id,
+            input.paymentMethod,
+            accessToken,
+            input.customer.email,
+          );
     if (accessToken) {
       const guest = await this.guestRow(result.order_id, accessToken);
       if (!guest) throw new Error('El pedido fue creado, pero no pudo recuperarse. Reintenta.');
@@ -538,6 +577,7 @@ export class SupabaseOrderServiceImpl
     const channel = this.client
       .channel(`orders-${crypto.randomUUID()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, listener)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payment_attempts' }, listener)
       .subscribe();
     return () => {
       void this.client.removeChannel(channel);

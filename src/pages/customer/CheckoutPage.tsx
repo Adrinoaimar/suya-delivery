@@ -25,7 +25,7 @@ import { useCatalogStore } from '@/store/catalogStore';
 import { cartTotals, useCartStore } from '@/store/cartStore';
 import { useOrderStore } from '@/store/orderStore';
 import { useAuthStore } from '@/store/authStore';
-import { formatPrice } from '@/utils/format';
+import { formatPrice, paymentLabel } from '@/utils/format';
 import type { AppOffer, PaymentMethod } from '@/types';
 import type { LatLng } from '@/types';
 
@@ -68,6 +68,7 @@ export default function CheckoutPage() {
   const [form, setForm] = useState({
     name: identity?.displayName ?? '',
     phone: identity?.phone ?? '',
+    email: identity?.email ?? '',
     address:
       identity?.defaultAddress ??
       (isTableOrder ? `Mesa ${tableContext?.tableNumber ?? ''}`.trim() : ''),
@@ -83,6 +84,10 @@ export default function CheckoutPage() {
   const isMenuOrder = orderOrigin === 'suya_menu' || Boolean(tableContext?.tableId);
   const isDeliveryOrder = !isMenuOrder;
   const isGuestMenuOrder = isMenuOrder && !identity;
+  const culqiGatewayEnabled =
+    import.meta.env.VITE_CULQI_GATEWAY_ENABLED === 'true' &&
+    Boolean(import.meta.env.VITE_CULQI_PUBLIC_KEY?.trim());
+  const needsGatewayEmail = culqiGatewayEnabled && (method === 'yape' || method === 'card');
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -201,6 +206,8 @@ export default function CheckoutPage() {
     // Cuenta dígitos reales: «+  » pasaba el patrón anterior y guardaba un contacto inútil.
     const digits = form.phone.replace(/\D/g, '');
     if (digits.length < 6 || digits.length > 15) next.phone = 'Escribe un teléfono válido.';
+    if (needsGatewayEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
+      next.email = 'Escribe un correo válido para abrir el checkout seguro.';
 
     if (isDeliveryOrder && form.address.trim().length < 6)
       next.address = 'Indica la dirección de entrega.';
@@ -273,6 +280,7 @@ export default function CheckoutPage() {
         customer: {
           name: form.name.trim(),
           phone: form.phone.trim(),
+          email: form.email.trim().toLowerCase(),
           address: isTableOrder
             ? `Mesa ${tableContext?.tableNumber ?? 'asignada'}`
             : isDeliveryOrder
@@ -303,6 +311,13 @@ export default function CheckoutPage() {
         : null;
       clearCart();
       sessionStorage.removeItem('suya.tableContext');
+      if (form.email.trim()) {
+        try {
+          sessionStorage.setItem(`suya.payment-email:${order.id}`, form.email.trim().toLowerCase());
+        } catch {
+          /* storage unavailable */
+        }
+      }
       if (publicOrderPath) {
         try {
           sessionStorage.setItem('suya.guestOrder', JSON.stringify(order));
@@ -315,7 +330,7 @@ export default function CheckoutPage() {
           ? isMenuOrder
             ? `Pedido confirmado. Pagarás ${formatPrice(order.total)} en efectivo.`
             : `Pedido confirmado. Pagarás ${formatPrice(order.total)} en efectivo al recibirlo.`
-          : `Pedido creado. Paga ${formatPrice(order.total)} con ${method === 'yape' ? 'Yape' : 'Lemon'} y espera la verificación.`,
+          : `Pedido creado. Paga ${formatPrice(order.total)} con ${paymentLabel(method)} y espera la verificación.`,
         'success',
       );
       navigate(publicOrderPath ?? `/orders/${order.id}/track`, {
@@ -417,6 +432,18 @@ export default function CheckoutPage() {
                 required
                 onChange={(event) => setForm({ ...form, phone: event.target.value })}
               />
+              {needsGatewayEmail && (
+                <Input
+                  label="Correo para el checkout seguro"
+                  type="email"
+                  value={form.email}
+                  error={errors.email}
+                  autoComplete="email"
+                  placeholder="tu@correo.com"
+                  required
+                  onChange={(event) => setForm({ ...form, email: event.target.value })}
+                />
+              )}
               {isDeliveryOrder && (
                 <div className="sm:col-span-2">
                   <Input
@@ -544,7 +571,7 @@ export default function CheckoutPage() {
                 {
                   value: 'yape' as const,
                   label: 'Yape',
-                  description: 'QR o transferencia',
+                  description: culqiGatewayEnabled ? 'QR exacto por Culqi' : 'QR del negocio',
                   icon: QrCode,
                   disabled: false,
                 },
@@ -558,9 +585,9 @@ export default function CheckoutPage() {
                 {
                   value: 'card' as const,
                   label: 'Tarjeta',
-                  description: 'Pasarela pendiente',
+                  description: culqiGatewayEnabled ? 'Checkout seguro' : 'Configura Culqi',
                   icon: CreditCard,
-                  disabled: true,
+                  disabled: !culqiGatewayEnabled,
                 },
               ].map((option) => {
                 const Icon = option.icon;
@@ -584,7 +611,7 @@ export default function CheckoutPage() {
                     </span>
                     {option.disabled && (
                       <span className="mt-1 block text-[11px] font-semibold text-[#8A6100]">
-                        Próximamente
+                        {culqiGatewayEnabled ? 'Próximamente' : 'No configurado'}
                       </span>
                     )}
                   </button>
@@ -601,9 +628,9 @@ export default function CheckoutPage() {
               </p>
             ) : (
               <p className="mt-3 rounded-btn bg-suya-sun-soft px-3 py-2 text-xs text-[#5E511F]">
-                Al confirmar se crea una referencia única y el servidor calcula el monto. Luego
-                verás el QR configurado por el negocio o las instrucciones para pagar; la caja
-                verifica la notificación antes de aceptar el pedido.
+                {culqiGatewayEnabled && (method === 'yape' || method === 'card')
+                  ? 'Al confirmar se crea una orden Culqi con monto exacto. El checkout muestra Yape o tarjeta y el webhook actualiza el estado.'
+                  : 'Al confirmar se crea una referencia única y el servidor calcula el monto. Luego verás el QR configurado por el negocio o las instrucciones para pagar; la caja verifica la notificación antes de aceptar el pedido.'}
               </p>
             )}
           </Card>

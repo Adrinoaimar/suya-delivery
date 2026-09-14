@@ -13,6 +13,7 @@ interface PaymentIntentRow {
   checkout_reference?: unknown;
   expires_at?: unknown;
   provider?: unknown;
+  provider_reference?: unknown;
   qr_payload?: unknown;
 }
 
@@ -52,6 +53,7 @@ function mapIntent(row: PaymentIntentRow): PaymentIntent {
     checkoutReference: text(row.checkout_reference),
     expiresAt: text(row.expires_at),
     provider: text(row.provider, 'wallet_observer'),
+    providerReference: typeof row.provider_reference === 'string' ? row.provider_reference : null,
     qrPayload: typeof row.qr_payload === 'string' ? row.qr_payload : null,
   };
   if (!intent.attemptId || !intent.orderId || !intent.checkoutReference) {
@@ -101,18 +103,63 @@ export class SupabasePaymentService implements PaymentService {
     orderId: string,
     method: PaymentMethod,
     guestAccessToken?: string | null,
+    customerEmail?: string | null,
   ): Promise<PaymentIntent> {
     if (!orderId) throw new Error('No pudimos identificar el pedido para iniciar el pago.');
     if (method === 'cash') throw new Error('El efectivo no requiere intento digital.');
+    const token = guestToken(orderId, guestAccessToken);
+    const gatewayEnabled = import.meta.env.VITE_CULQI_GATEWAY_ENABLED === 'true';
+    if (gatewayEnabled && (method === 'card' || method === 'yape')) {
+      const { data, error } = await this.client.functions.invoke('create-culqi-order', {
+        body: {
+          orderId,
+          method,
+          guestAccessToken: token,
+          customerEmail: customerEmail?.trim() || null,
+        },
+      });
+      if (error) throw new Error(error.message);
+      const row = firstRow(data && typeof data === 'object' && 'paymentIntent' in data ? data.paymentIntent : data);
+      if (!row) throw new Error('La pasarela no devolvió el intento de pago.');
+      return mapIntent(row);
+    }
+    if (method === 'card') {
+      throw new Error('Tarjeta requiere configurar Culqi en esta aplicación.');
+    }
     const { data, error } = await this.client.rpc('create_payment_intent', {
       p_order_id: orderId,
       p_method: method,
-      p_guest_access_token: guestAccessToken ?? null,
+      p_guest_access_token: token,
     });
     if (error) throw new Error(error.message);
     const row = firstRow(data);
     if (!row) throw new Error('Supabase no devolvió el intento de pago.');
     return mapIntent(row);
+  }
+
+  async chargeCard(
+    intent: PaymentIntent,
+    tokenId: string,
+    customerEmail?: string | null,
+    suppliedGuestAccessToken?: string | null,
+  ): Promise<string> {
+    if (intent.provider !== 'culqi' || intent.method !== 'card') {
+      throw new Error('Este intento no corresponde a una tarjeta Culqi.');
+    }
+    const { data, error } = await this.client.functions.invoke('charge-culqi-card', {
+      body: {
+        attemptId: intent.attemptId,
+        tokenId,
+        customerEmail: customerEmail?.trim() || null,
+        guestAccessToken: guestToken(intent.orderId, suppliedGuestAccessToken),
+      },
+    });
+    if (error) throw new Error(error.message);
+    const reference = data && typeof data === 'object' && typeof data.providerReference === 'string'
+      ? data.providerReference
+      : '';
+    if (!reference) throw new Error('Culqi no devolvió la referencia del cargo.');
+    return reference;
   }
 
   async submitEvidence(

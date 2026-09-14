@@ -1,6 +1,6 @@
 begin;
 
-select plan(27);
+select plan(35);
 
 select has_function(
   'public', 'create_payment_intent', array['uuid', 'text', 'text'],
@@ -21,6 +21,18 @@ select has_function(
 select has_function(
   'public', 'submit_payment_evidence', array['uuid', 'text', 'text'],
   'vincular código de identidad del pago existe'
+);
+select has_function(
+  'public', 'create_culqi_payment_intent', array['uuid', 'text', 'text'],
+  'crear intento Culqi existe'
+);
+select has_function(
+  'public', 'get_culqi_card_payment_context', array['uuid', 'text'],
+  'leer contexto de tarjeta Culqi existe'
+);
+select has_function(
+  'public', 'authorize_culqi_card_payment', array['uuid', 'text', 'text'],
+  'autorizar cargo de tarjeta Culqi existe'
 );
 select has_function(
   'public', 'list_restaurant_payment_accounts', array['uuid'],
@@ -48,6 +60,12 @@ select ok(
   'el intento conserva el sufijo del código del pagador'
 );
 select ok(
+  exists (select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'payment_attempts'
+      and column_name = 'gateway_qr_payload'),
+  'el intento puede conservar el QR generado por la pasarela'
+);
+select ok(
   exists (select 1 from pg_indexes
     where indexname = 'payment_attempts_checkout_reference_uidx'),
   'la referencia visible es única'
@@ -66,6 +84,14 @@ select ok(
   'verificar pago usa security definer'
 );
 select ok(
+  (select prosecdef from pg_proc where oid = 'public.create_culqi_payment_intent(uuid,text,text)'::regprocedure),
+  'crear intento Culqi usa security definer'
+);
+select ok(
+  (select prosecdef from pg_proc where oid = 'public.authorize_culqi_card_payment(uuid,text,text)'::regprocedure),
+  'autorizar tarjeta Culqi usa security definer'
+);
+select ok(
   has_function_privilege('authenticated', 'public.list_restaurant_payment_accounts(uuid)', 'execute')
     and not has_function_privilege('anon', 'public.list_restaurant_payment_accounts(uuid)', 'execute'),
   'solo backoffice lee cuentas digitales'
@@ -79,6 +105,11 @@ select ok(
   has_function_privilege('anon', 'public.create_payment_intent(uuid,text,text)', 'execute')
     and has_function_privilege('authenticated', 'public.create_payment_intent(uuid,text,text)', 'execute'),
   'cliente y guest pueden iniciar pago con RPC'
+);
+select ok(
+  has_function_privilege('anon', 'public.create_culqi_payment_intent(uuid,text,text)', 'execute')
+    and has_function_privilege('authenticated', 'public.create_culqi_payment_intent(uuid,text,text)', 'execute'),
+  'cliente y guest pueden iniciar orden Culqi con RPC'
 );
 select ok(
   has_function_privilege('anon', 'public.submit_payment_evidence(uuid,text,text)', 'execute')
@@ -122,6 +153,11 @@ select ok(
 select ok(
   not has_table_privilege('authenticated', 'public.restaurant_payment_accounts', 'SELECT'),
   'la configuración de QR no queda expuesta por tabla'
+);
+select ok(
+  (select pg_get_functiondef('public.transition_order(uuid,public.order_status,public.order_status)'::regprocedure)
+    like '%digital payment must be authorized before preparation%'),
+  'la preparación exige pago digital autorizado'
 );
 
 select * from finish();
