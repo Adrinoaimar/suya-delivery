@@ -208,6 +208,16 @@ producción.
 - Evidencia local: 62 suites/257 pruebas, lint, typecheck y `git diff --check` verdes. La validación SQL depende de CI porque esta máquina no tiene Postgres local.
 - Pendiente externo sin cambios: CI, migración en Supabase real, credenciales/webhook, publicación y dos pagos físicos S/30.
 
+## Checkpoint F27.9: identificador Android y APKs CI `53cb470` (2026-09-14)
+
+- El Wallet Observer lee `title`, `text`, `bigText`, `subText`, `infoText` y `summaryText`, porque el código de la constancia puede aparecer en cualquiera de esos campos. Usa la clave opaca de Android y un hash del contenido solo para deduplicación local; nunca envía la notificación completa.
+- La prueba del parser cubre un código en `subText`; la cola continúa cifrada y la observación sigue siendo evidencia no autorizante. El workflow Android dejó de pedir el paquete obsoleto `tools` y solicita solo `platform-tools`.
+- Evidencia local: 62 suites/258 pruebas, lint, typecheck, escaneo de secretos, build frontend sintético y `git diff --check` verdes. CI PR #36 quedó 6/6 verde; Android run `34893689556` generó los tres roles.
+- APK Rider: `output/apks/53cb470/Suya-Rider-debug.apk`; SHA-256 `ab7badc460eff36af31cfa51b2f2871999902141d8587c9e4bc9204845d90f07`.
+- APK Back Office: `output/apks/53cb470/Suya-Backoffice-debug.apk`; SHA-256 `2184155a0a4a3e1daaa0b44dfc590748208536e0016a381e3d8a2f1e1f5042f2`.
+- APK Caja: `output/apks/53cb470/Suya-Wallet-Observer-debug.apk`; SHA-256 `ce03e2045e41aed9972e873001bb2aac9a179c17a750d5440cc8eba872751753`.
+- Las tres pasaron `unzip -tqq` y siguen siendo debug. `verify:production` y `verify:payments` locales siguen rechazando la ausencia de configuración real; faltan migraciones/Edge Functions, webhook, publicación y dos pagos físicos iguales de S/30.
+
 ## Reglas de continuidad
 
 - Git, pruebas y este archivo son estado canónico.
