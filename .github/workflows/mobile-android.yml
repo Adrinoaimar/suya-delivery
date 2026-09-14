@@ -62,6 +62,11 @@ jobs:
           java-version: '21'
 
       - uses: android-actions/setup-android@v3
+        with:
+          # The action default still includes the removed legacy `tools` package.
+          # Install only the supported platform-tools here; the next step pins
+          # the exact platform and build-tools versions used by this project.
+          packages: platform-tools
 
       - name: Instalar SDK Android requerido
         run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;35.0.0"
