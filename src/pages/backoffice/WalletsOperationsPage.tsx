@@ -202,7 +202,7 @@ export default function WalletsOperationsPage() {
           );
         } catch {
           notificationService.notify(
-            'Dispositivo creado. No pudimos configurar el observador nativo; revisa el APK.',
+            'Dispositivo creado. No pudimos configurar el observador nativo; revisa la app actualizada.',
             'warning',
           );
         }
@@ -367,9 +367,9 @@ export default function WalletsOperationsPage() {
           <div>
             <p className="font-semibold">Conecta un celular de caja</p>
             <p className="mt-1 text-sm text-suya-muted">
-              Crea un dispositivo por restaurante y pega su token en Suya Wallet Observer. Este
-              dispositivo observa pagos; no es el celular del repartidor ni confirma pagos
-              automáticamente.
+              Crea un dispositivo por restaurante y configura el observador de pagos en el celular
+              de caja. Este dispositivo observa pagos; no es el celular del repartidor ni confirma
+              pagos automáticamente.
             </p>
           </div>
         </div>

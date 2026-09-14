@@ -36,8 +36,12 @@ describe('Suya hardening guards', () => {
     expect(listener).toMatch(/AES\/GCM\/NoPadding/);
     expect(listener).toMatch(/ingest_wallet_observation/);
     expect(listener).toMatch(/configureDeviceToken/);
+    expect(listener).toMatch(/getPostTime\(\)/);
+    expect(listener).toMatch(/scheduleSyncJob/);
     expect(listener).not.toContain('service_role');
     expect(listener).not.toContain('putString(EVENTS_KEY, next.toString())');
+    expect(source('android/app/src/main/java/com/suya/app/SuyaWalletSyncJobService.java')).toMatch(/jobFinished/);
+    expect(source('android/app/src/main/AndroidManifest.xml')).toMatch(/RECEIVE_BOOT_COMPLETED/);
   });
 
   it('ships defensive headers with every static Pages bundle', () => {

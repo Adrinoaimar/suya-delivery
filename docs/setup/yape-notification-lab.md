@@ -7,7 +7,10 @@ reconoce notificaciones de paquetes allowlist verificados de Yape, Lemon, Plin
 (apps bancarias participantes) y Mercado Pago, extrae monto, moneda, nombre y código cuando están visibles y guarda hasta 100
 observaciones cifradas. Con un dispositivo de caja configurado, sincroniza solo ese metadato
 minimizado mediante `ingest_wallet_observation`; no abre billeteras y no modifica
-pedidos. Las futuras billeteras requieren registrar su package ID verificado en
+pedidos. Si la red falla, conserva la evidencia cifrada y un `JobScheduler` persistente
+la reintenta cuando vuelve la conectividad, como máximo cada 15 minutos. La hora enviada
+corresponde a la publicación original de la notificación, no al momento posterior de
+sincronización. Las futuras billeteras requieren registrar su package ID verificado en
 un adaptador; no se aceptan IDs adivinados.
 
 Cada registro lleva `verification: unverified`: una notificación o captura puede

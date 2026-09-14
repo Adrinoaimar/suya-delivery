@@ -1,6 +1,9 @@
 package com.suya.app;
 
 import android.app.Notification;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.service.notification.NotificationListenerService;
@@ -56,6 +59,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     private static final String DEVICE_TOKEN_KEY = "device_token";
     private static final String KEY_ALIAS = "suya_yape_observed_events";
     private static final String KEYSTORE = "AndroidKeyStore";
+    private static final int SYNC_JOB_ID = 170914;
     private static final int MAX_EVENTS = 100;
     private static final ExecutorService SYNC_EXECUTOR = Executors.newSingleThreadExecutor();
     private static final Pattern MONEY_PATTERN = Pattern.compile("(S\\/?|S\\.|PEN|ARS|USD|US\\$|\\$)\\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?)", Pattern.CASE_INSENSITIVE);
@@ -103,7 +107,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         Matcher codeMatcher = CODE_PATTERN.matcher(combined);
         String code = codeMatcher.find() ? codeMatcher.group(1) : null;
         String senderName = extractSenderName(combined);
-        String observedAt = isoNow();
+        String observedAt = isoAt(statusBarNotification.getPostTime());
         String eventId = sha256(adapter.source + "|" + statusBarNotification.getPackageName() + "|" + statusBarNotification.getPostTime() + "|" + money.amountCents + "|" + money.currency + "|" + (code == null ? "" : code));
 
         JSONObject event = new JSONObject();
@@ -194,6 +198,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
                 .edit()
                 .putString(DEVICE_TOKEN_KEY, encrypted)
                 .apply();
+        scheduleSyncJob(context);
         syncPendingEvents(context);
         return true;
     }
@@ -201,6 +206,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     public static void clearDeviceToken(Context context) {
         if (context == null) return;
         context.getSharedPreferences(PREFS, MODE_PRIVATE).edit().remove(DEVICE_TOKEN_KEY).apply();
+        cancelSyncJob(context);
     }
 
     public static boolean isDeviceConfigured(Context context) {
@@ -214,6 +220,29 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         if (context == null) return;
         final Context appContext = context.getApplicationContext();
         SYNC_EXECUTOR.execute(() -> syncPendingEventsBlocking(appContext));
+    }
+
+    static void syncPendingEventsBlockingForJob(Context context) {
+        syncPendingEventsBlocking(context.getApplicationContext());
+    }
+
+    private static void scheduleSyncJob(Context context) {
+        JobScheduler scheduler = (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        if (scheduler == null) return;
+        JobInfo job = new JobInfo.Builder(
+                SYNC_JOB_ID,
+                new ComponentName(context, SuyaWalletSyncJobService.class))
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                .setPersisted(true)
+                .setPeriodic(15 * 60 * 1000L)
+                .setBackoffCriteria(30 * 1000L, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
+                .build();
+        scheduler.schedule(job);
+    }
+
+    private static void cancelSyncJob(Context context) {
+        JobScheduler scheduler = (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        if (scheduler != null) scheduler.cancel(SYNC_JOB_ID);
     }
 
     private static void syncPendingEventsBlocking(Context context) {
@@ -374,6 +403,16 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
         format.setTimeZone(TimeZone.getTimeZone("UTC"));
         return format.format(new Date());
+    }
+
+    private static String isoAt(long timestamp) {
+        return timestamp > 0 ? isoFormat().format(new Date(timestamp)) : isoNow();
+    }
+
+    private static SimpleDateFormat isoFormat() {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+        format.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return format;
     }
 
     private static String sha256(String value) {
