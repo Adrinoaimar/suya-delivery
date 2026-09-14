@@ -42,6 +42,18 @@ describe('parseYapeNotification', () => {
     expect(result).toMatchObject({ amountCents: 3000, senderName: 'Ana María Torres' });
   });
 
+  it('captures the sender when Yape places the name before the verb', () => {
+    const result = parseYapeNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Ana María Torres',
+      text: 'te envió S/ 30.00',
+      infoText: 'Yape',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({ amountCents: 3000, senderName: 'Ana María Torres' });
+  });
+
   it('captures sender labels with punctuation without swallowing the operation code', () => {
     const result = parseYapeNotification({
       packageName: 'com.bcp.innovacxion.yapeapp',
