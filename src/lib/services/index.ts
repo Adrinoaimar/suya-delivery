@@ -129,7 +129,7 @@ function resolveWalletObserverService(): Promise<WalletObserverService> {
             throw new Error('La verificación de billeteras requiere Supabase.');
           },
           async listPaymentAccounts() {
-            return [];
+      return [];
           },
           async savePaymentAccount() {
             throw new Error('La configuración de billeteras requiere Supabase.');
@@ -446,12 +446,16 @@ export const paymentService: PaymentService = {
   createIntent(orderId, method, guestAccessToken) {
     return resolvePaymentService().createIntent(orderId, method, guestAccessToken);
   },
+  submitEvidence(orderId, code, guestAccessToken) {
+    return resolvePaymentService().submitEvidence(orderId, code, guestAccessToken);
+  },
   getIntent(orderId, guestAccessToken) {
     return resolvePaymentService().getIntent(orderId, guestAccessToken);
   },
 };
 export { LocalNotificationService as notificationService } from './LocalNotificationService';
 export { BrowserLocationService } from './BrowserLocationService';
+export { nativeWalletObserver } from './NativeWalletObserverService';
 export const locationService = Capacitor.isNativePlatform()
   ? CapacitorLocationService
   : BrowserLocationService;

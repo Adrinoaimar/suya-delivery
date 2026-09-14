@@ -1,6 +1,6 @@
 begin;
 
-select plan(22);
+select plan(27);
 
 select has_function(
   'public', 'create_payment_intent', array['uuid', 'text', 'text'],
@@ -17,6 +17,10 @@ select has_function(
 select has_function(
   'public', 'verify_wallet_payment', array['uuid', 'uuid'],
   'verificar pago observado existe'
+);
+select has_function(
+  'public', 'submit_payment_evidence', array['uuid', 'text', 'text'],
+  'vincular código de identidad del pago existe'
 );
 select has_function(
   'public', 'list_restaurant_payment_accounts', array['uuid'],
@@ -36,6 +40,12 @@ select ok(
     where table_schema = 'public' and table_name = 'payment_attempts'
       and column_name = 'checkout_reference'),
   'el intento tiene referencia visible'
+);
+select ok(
+  exists (select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'payment_attempts'
+      and column_name = 'payer_code_last4'),
+  'el intento conserva el sufijo del código del pagador'
 );
 select ok(
   exists (select 1 from pg_indexes
@@ -71,6 +81,11 @@ select ok(
   'cliente y guest pueden iniciar pago con RPC'
 );
 select ok(
+  has_function_privilege('anon', 'public.submit_payment_evidence(uuid,text,text)', 'execute')
+    and has_function_privilege('authenticated', 'public.submit_payment_evidence(uuid,text,text)', 'execute'),
+  'cliente y guest pueden vincular el código de constancia'
+);
+select ok(
   not has_function_privilege('anon', 'public.list_wallet_payment_candidates(uuid)', 'execute')
     and has_function_privilege('authenticated', 'public.list_wallet_payment_candidates(uuid)', 'execute'),
   'solo backoffice busca candidatos'
@@ -95,6 +110,14 @@ select ok(
 select ok(
   (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) like '%status = ''authorized''%'),
   'la verificación autoriza el intento'
+);
+select ok(
+  (select pg_get_functiondef('public.list_wallet_payment_candidates(uuid)'::regprocedure) like '%payer_code_last4%'),
+  'los candidatos exigen identidad del pagador'
+);
+select ok(
+  (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) like '%payment identity%'),
+  'la verificación rechaza identidad incompleta'
 );
 select ok(
   not has_table_privilege('authenticated', 'public.restaurant_payment_accounts', 'SELECT'),

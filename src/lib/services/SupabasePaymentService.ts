@@ -65,6 +65,15 @@ function firstRow(data: unknown): PaymentIntentRow | null {
   return data && typeof data === 'object' ? (data as PaymentIntentRow) : null;
 }
 
+function guestToken(orderId: string, supplied?: string | null): string | null {
+  if (supplied !== undefined) return supplied;
+  try {
+    return sessionStorage.getItem(`suya.guest-order-token:${orderId}`);
+  } catch {
+    return null;
+  }
+}
+
 export class SupabasePaymentService implements PaymentService {
   private readonly client: SupabaseClient;
 
@@ -106,20 +115,30 @@ export class SupabasePaymentService implements PaymentService {
     return mapIntent(row);
   }
 
+  async submitEvidence(
+    orderId: string,
+    code: string,
+    suppliedGuestAccessToken?: string | null,
+  ): Promise<boolean> {
+    if (!orderId) throw new Error('No pudimos identificar el pedido.');
+    if (!/^[a-z0-9-]{3,64}$/iu.test(code.trim())) {
+      throw new Error('Escribe un código de operación válido.');
+    }
+    const { data, error } = await this.client.rpc('submit_payment_evidence', {
+      p_order_id: orderId,
+      p_code: code.trim(),
+      p_guest_access_token: guestToken(orderId, suppliedGuestAccessToken),
+    });
+    if (error) throw new Error(error.message);
+    return data === true;
+  }
+
   async getIntent(
     orderId: string,
     guestAccessToken?: string | null,
   ): Promise<PaymentIntent | null> {
     if (!orderId) return null;
-    const token =
-      guestAccessToken ??
-      (() => {
-        try {
-          return sessionStorage.getItem(`suya.guest-order-token:${orderId}`);
-        } catch {
-          return null;
-        }
-      })();
+    const token = guestToken(orderId, guestAccessToken);
     const { data, error } = await this.client.rpc('get_payment_intent', {
       p_order_id: orderId,
       p_guest_access_token: token,

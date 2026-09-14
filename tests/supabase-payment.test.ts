@@ -58,4 +58,15 @@ describe('SupabasePaymentService', () => {
       new SupabasePaymentService(incomplete).createIntent('order-1', 'yape'),
     ).rejects.toThrow('datos completos');
   });
+
+  it('vincula el código de constancia usando el token guest de la sesión', async () => {
+    const client = fakeClient({ data: true, error: null });
+    const service = new SupabasePaymentService(client);
+    await expect(service.submitEvidence('order-1', ' 384 ')).resolves.toBe(true);
+    expect(client.rpc).toHaveBeenCalledWith('submit_payment_evidence', {
+      p_order_id: 'order-1',
+      p_code: '384',
+      p_guest_access_token: null,
+    });
+  });
 });

@@ -348,6 +348,11 @@ export interface PaymentService {
     method: PaymentMethod,
     guestAccessToken?: string | null,
   ): Promise<PaymentIntent>;
+  submitEvidence(
+    orderId: string,
+    code: string,
+    guestAccessToken?: string | null,
+  ): Promise<boolean>;
   getIntent(orderId: string, guestAccessToken?: string | null): Promise<PaymentIntent | null>;
 }
 

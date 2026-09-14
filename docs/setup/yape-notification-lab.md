@@ -4,8 +4,9 @@
 
 La variante Android de Suya incluye un `NotificationListenerService` opt-in que
 reconoce notificaciones de paquetes allowlist verificados de Yape, Lemon, Plin
-(apps bancarias participantes) y Mercado Pago, extrae monto, moneda y código cuando están visibles y guarda hasta 100
-observaciones localmente. No envía datos, no abre billeteras y no modifica
+(apps bancarias participantes) y Mercado Pago, extrae monto, moneda, nombre y código cuando están visibles y guarda hasta 100
+observaciones cifradas. Con un dispositivo de caja configurado, sincroniza solo ese metadato
+minimizado mediante `ingest_wallet_observation`; no abre billeteras y no modifica
 pedidos. Las futuras billeteras requieren registrar su package ID verificado en
 un adaptador; no se aceptan IDs adivinados.
 
@@ -16,10 +17,11 @@ orden como pagada con este laboratorio.
 ## Prueba controlada
 
 1. Instala el APK de laboratorio en un Android de pruebas.
-2. Concede manualmente a Suya el acceso a notificaciones en Ajustes de Android.
+2. Crea un dispositivo en Back Office, configura el token en el APK de caja y
+   concede acceso a notificaciones en Ajustes de Android.
 3. Recibe un pago de prueba de bajo monto en una billetera admitida y revisa que
-   aparezcan proveedor, monto, moneda y código en el almacenamiento local del
-   laboratorio. Plin se observa desde la app bancaria que emite la notificación.
+   aparezcan proveedor, monto, moneda y código en **Dispositivos de pagos**.
+   Plin se observa desde la app bancaria que emite la notificación.
 4. Revoca el permiso y elimina los datos de Suya al terminar.
 
 En una build `debug`, el archivo de observaciones se puede inspeccionar con:

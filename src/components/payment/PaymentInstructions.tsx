@@ -23,6 +23,9 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   const [intent, setIntent] = useState<PaymentIntent | null>(order.paymentIntent ?? null);
   const [loading, setLoading] = useState(!order.paymentIntent);
   const [error, setError] = useState<string | null>(null);
+  const [evidenceCode, setEvidenceCode] = useState('');
+  const [submittingEvidence, setSubmittingEvidence] = useState(false);
+  const [evidenceSaved, setEvidenceSaved] = useState(false);
 
   useEffect(() => {
     if (order.paymentMethod === 'cash' || order.paymentIntent) return;
@@ -76,6 +79,28 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
       notificationService.notify('Referencia copiada.', 'success');
     } catch {
       notificationService.notify('No pudimos copiarla; escríbela manualmente.', 'warning');
+    }
+  };
+
+  const saveEvidence = async () => {
+    if (!evidenceCode.trim()) {
+      notificationService.notify('Escribe el código de seguridad u operación de la constancia.', 'warning');
+      return;
+    }
+    setSubmittingEvidence(true);
+    try {
+      const saved = await paymentService.submitEvidence(order.id, evidenceCode);
+      if (!saved) throw new Error('No pudimos vincular la constancia al pedido.');
+      setEvidenceCode('');
+      setEvidenceSaved(true);
+      notificationService.notify('Código guardado. Caja podrá identificar este pago.', 'success');
+    } catch (cause) {
+      notificationService.notify(
+        cause instanceof Error ? cause.message : 'No pudimos guardar el código.',
+        'danger',
+      );
+    } finally {
+      setSubmittingEvidence(false);
     }
   };
 
@@ -146,6 +171,43 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
           Copiar referencia
         </Button>
       </div>
+
+      {!verified && (intent.method === 'yape' || intent.method === 'lemon') && (
+        <div className="mt-4 rounded-btn border border-suya-green/20 bg-white/75 p-3">
+          <p className="text-sm font-semibold text-suya-carbon">
+            Identifica tu pago antes de cerrar esta pantalla
+          </p>
+          <p className="mt-1 text-xs text-suya-muted">
+            Después de pagar, escribe el código de seguridad u operación que aparece en tu
+            constancia. Solo guardamos sus últimos cuatro caracteres; así un pago de S/30 no se
+            confunde con otro pago de S/30.
+          </p>
+          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+            <label className="min-w-0 flex-1 text-xs font-semibold text-suya-carbon">
+              Código de constancia
+              <input
+                value={evidenceCode}
+                onChange={(event) => setEvidenceCode(event.target.value)}
+                autoComplete="one-time-code"
+                inputMode="text"
+                maxLength={64}
+                placeholder="Ej. 384"
+                className="mt-1 h-11 w-full rounded-btn border border-suya-border bg-white px-3 text-sm font-normal outline-none focus:border-suya-green focus:ring-2 focus:ring-suya-green/20"
+                disabled={submittingEvidence || evidenceSaved}
+              />
+            </label>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => void saveEvidence()}
+              disabled={submittingEvidence || evidenceSaved || !evidenceCode.trim()}
+            >
+              {submittingEvidence ? 'Guardando…' : evidenceSaved ? 'Código vinculado' : 'Vincular código'}
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="mt-4 flex items-start gap-2 border-t border-black/10 pt-3 text-xs text-suya-muted">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-suya-green" aria-hidden="true" />

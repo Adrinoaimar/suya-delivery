@@ -34,6 +34,9 @@ describe('Suya hardening guards', () => {
     expect(gradle).toMatch(/minifyEnabled true/);
     expect(gradle).toMatch(/shrinkResources true/);
     expect(listener).toMatch(/AES\/GCM\/NoPadding/);
+    expect(listener).toMatch(/ingest_wallet_observation/);
+    expect(listener).toMatch(/configureDeviceToken/);
+    expect(listener).not.toContain('service_role');
     expect(listener).not.toContain('putString(EVENTS_KEY, next.toString())');
   });
 
