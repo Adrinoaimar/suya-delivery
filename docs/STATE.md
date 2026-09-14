@@ -163,6 +163,14 @@ producción.
 - APK Back Office: `output/apks/8b60212/Suya-Backoffice-debug-e54e0664f226fd267a18be4a8e558208d42b21b2/Suya-Backoffice-debug.apk`, SHA-256 `f5f1a0b601d771e00f781974d99ec6e813e80ebbd9718aecb545851c78dbb8ea`.
 - Pendiente externo: configurar llaves Culqi/Supabase y webhook, aplicar migraciones en el proyecto real, publicar build y ejecutar casos físicos Yape/Lemon/tarjeta.
 
+## Checkpoint F27.3: pista de remitente y APK 5348ab6 (2026-09-14)
+
+- `5348ab6` muestra en Back Office si el remitente de la notificación coincide con el nombre del cliente; si no coincide, exige confirmar el código completo. Esta pista nunca autoriza por sí sola.
+- Evidencia local: 59 suites/246 tests, lint, typecheck, escaneo de secretos y diff limpios; CI PR #36 completo verde: Android `34855111412`, iOS `34855111400`, browser `34855111427`, frontend/E2E `34855111372`, base `34855111398`.
+- APK Rider: `output/apks/5348ab6/Suya-Rider-debug-68be2a50eca0342432ec45b3ade497c4f7f8ca89/Suya-Rider-debug.apk`, SHA-256 `b757294c15ed3a93496b492a7e71257b02d5b8be2da0a9644d025f779a11861f`.
+- APK Back Office: `output/apks/5348ab6/Suya-Backoffice-debug-68be2a50eca0342432ec45b3ade497c4f7f8ca89/Suya-Backoffice-debug.apk`, SHA-256 `937d3827dfd87c814e46efa757038dc1e7358716730cc64955e918af2f1eec5f`.
+- Pendiente externo sin cambios: secretos/configuración Culqi-Supabase, migraciones/Edge Functions, publicación y pagos físicos.
+
 ## Reglas de continuidad
 
 - Git, pruebas y este archivo son estado canónico.
