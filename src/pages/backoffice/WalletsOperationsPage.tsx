@@ -174,14 +174,22 @@ export default function WalletsOperationsPage() {
   useEffect(() => {
     if (!isAndroid) return;
     let active = true;
-    void nativeWalletObserver
-      .getStatus()
-      .then((status) => {
-        if (active) setNativeStatus(status);
-      })
-      .catch(() => undefined);
+    const refreshNativeStatus = () => {
+      if (document.visibilityState === 'hidden') return;
+      void nativeWalletObserver
+        .getStatus()
+        .then((status) => {
+          if (active) setNativeStatus(status);
+        })
+        .catch(() => undefined);
+    };
+    refreshNativeStatus();
+    window.addEventListener('focus', refreshNativeStatus);
+    document.addEventListener('visibilitychange', refreshNativeStatus);
     return () => {
       active = false;
+      window.removeEventListener('focus', refreshNativeStatus);
+      document.removeEventListener('visibilitychange', refreshNativeStatus);
     };
   }, [isAndroid]);
 
