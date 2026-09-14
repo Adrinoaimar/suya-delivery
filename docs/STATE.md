@@ -155,6 +155,14 @@ producción.
 - Evidencia: 59 suites/245 tests locales, typecheck/lint/diff verdes; CI PR #36 completo verde (browser, E2E, DB, Android, iOS). APKs debug nuevas están en `output/apks/362cfd6/`.
 - Pendiente externo: configurar llaves Culqi/Supabase y webhook, aplicar migraciones en el proyecto real, publicar build y ejecutar casos físicos Yape/Lemon/tarjeta.
 
+## Checkpoint F27.2: refresco del observador Android y APK 8b60212 (2026-09-14)
+
+- `8b60212` refresca automáticamente el estado del observador Android al recuperar foco o volver a estar visible después de Ajustes; así Back Office no conserva el mensaje obsoleto de permiso pendiente. Se añadió regresión UI específica.
+- Evidencia local: 59 suites/246 tests, lint, typecheck, escaneo de secretos y diff limpio; CI PR #36 verde: Android `34852757234`, iOS `34852756986`, browser `34852757022`, frontend `34852757034` y base `34852757047`.
+- APK Rider: `output/apks/8b60212/Suya-Rider-debug-e54e0664f226fd267a18be4a8e558208d42b21b2/Suya-Rider-debug.apk`, SHA-256 `d6aaacabaeb1c6fd864394f7ef88bff67a540a438bee067b48ccd85fa662fc16`.
+- APK Back Office: `output/apks/8b60212/Suya-Backoffice-debug-e54e0664f226fd267a18be4a8e558208d42b21b2/Suya-Backoffice-debug.apk`, SHA-256 `f5f1a0b601d771e00f781974d99ec6e813e80ebbd9718aecb545851c78dbb8ea`.
+- Pendiente externo: configurar llaves Culqi/Supabase y webhook, aplicar migraciones en el proyecto real, publicar build y ejecutar casos físicos Yape/Lemon/tarjeta.
+
 ## Reglas de continuidad
 
 - Git, pruebas y este archivo son estado canónico.

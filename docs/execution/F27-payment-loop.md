@@ -1,8 +1,8 @@
 # F27 · Loop de pruebas de pago
 
-Estado del código: commit `362cfd6`; CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
+Estado del código: commit `8b60212`; CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
 
-Último checkpoint: el QR de billeteras de Culqi usa la opción `billetera` del Custom Checkout (la opción `yape` corresponde al flujo de token/código de aprobación); queda bloqueado mientras espera `order.status.changed`. La pantalla se actualiza por polling y solo libera preparación cuando el servidor marca `authorized`. El flujo manual distingue pagos iguales con fingerprint/código completo y la observación Android sigue siendo evidencia no autorizante.
+Último checkpoint: el QR de billeteras de Culqi usa la opción `billetera` del Custom Checkout (la opción `yape` corresponde al flujo de token/código de aprobación); queda bloqueado mientras espera `order.status.changed`. La pantalla se actualiza por polling y solo libera preparación cuando el servidor marca `authorized`. El flujo manual distingue pagos iguales con fingerprint/código completo y la observación Android sigue siendo evidencia no autorizante. Back Office refresca el permiso del observador al volver de Ajustes Android.
 
 ## Preparación única
 
