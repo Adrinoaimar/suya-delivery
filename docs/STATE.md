@@ -241,6 +241,15 @@ producción.
 - Caja: `output/apks/911f799/Suya-Wallet-Observer-debug-1cdd61a6b85942dd2d1a64c6e1651e777f505fa7/Suya-Wallet-Observer-debug.apk`; SHA-256 `8214dc36e47426d694f91315b627583ee96ae4b0f28b7bbe6653365fc897e7a9`.
 - Las tres pasaron `unzip -tqq` y siguen siendo debug. Producción requiere configuración, migraciones/Edge Functions, webhook, publicación, firma release y dos pagos físicos iguales de S/30.
 
+## Checkpoint F27.13: remitente antes del verbo y APKs CI `7ba4ef0` (2026-09-14)
+
+- `7ba4ef0` corrige la lectura del remitente cuando la constancia dice «Ana te envió…»; contempla `envió` con tilde y conserva la misma evidencia no autorizante en web y Android.
+- Evidencia local: 62 suites/261 pruebas, lint, typecheck, escaneo de secretos y `git diff --check` verdes. CI PR #36 quedó 6/6 verde; Android run `34905720480`.
+- Rider: `output/apks/7ba4ef0/Suya-Rider-debug-f9014b61bdc67a332edfc3b84821b4589fc631d8/Suya-Rider-debug.apk`; SHA-256 `34f24dbc5cce1fa963b44d523a9a48123af8c767d9b93c530f849c1b34cc0a59`.
+- Back Office: `output/apks/7ba4ef0/Suya-Backoffice-debug-f9014b61bdc67a332edfc3b84821b4589fc631d8/Suya-Backoffice-debug.apk`; SHA-256 `efa77f120c1489fc41c740d4245a5b56c895f6df67799704de7c779c074ca52b`.
+- Caja: `output/apks/7ba4ef0/Suya-Wallet-Observer-debug-f9014b61bdc67a332edfc3b84821b4589fc631d8/Suya-Wallet-Observer-debug.apk`; SHA-256 `3e080294f7461e1d4e4834ed3b92dddea0bd33be7641a27c44e2763c0f62595c`.
+- Las tres pasaron `unzip -tqq` y siguen siendo debug. Producción requiere configuración, migraciones/Edge Functions, webhook, publicación, firma release y dos pagos físicos iguales de S/30.
+
 ## Reglas de continuidad
 
 - Git, pruebas y este archivo son estado canónico.
