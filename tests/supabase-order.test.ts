@@ -238,7 +238,7 @@ describe('SupabaseOrderServiceImpl', () => {
       rowResult: { data: buildRow({ payment_method: 'yape' }), error: null },
       rpc: async (name) => {
         if (name === 'set_order_delivery_coordinates') return { data: true, error: null };
-        if (name === 'create_payment_intent') {
+        if (name === 'refresh_payment_intent') {
           return {
             data: [
               {
@@ -267,7 +267,7 @@ describe('SupabaseOrderServiceImpl', () => {
 
     const order = await new SupabaseOrderServiceImpl(client).create(createInput('yape'));
 
-    expect(rpc).toHaveBeenCalledWith('create_payment_intent', {
+    expect(rpc).toHaveBeenCalledWith('refresh_payment_intent', {
       p_order_id: buildRow().id,
       p_method: 'yape',
       p_guest_access_token: null,
