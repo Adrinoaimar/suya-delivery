@@ -218,6 +218,13 @@ producción.
 - APK Caja: `output/apks/53cb470/Suya-Wallet-Observer-debug.apk`; SHA-256 `ce03e2045e41aed9972e873001bb2aac9a179c17a750d5440cc8eba872751753`.
 - Las tres pasaron `unzip -tqq` y siguen siendo debug. `verify:production` y `verify:payments` locales siguen rechazando la ausencia de configuración real; faltan migraciones/Edge Functions, webhook, publicación y dos pagos físicos iguales de S/30.
 
+## Checkpoint F27.10: conciliación sin respuestas atrasadas y APKs CI `a5cd734` (2026-09-14)
+
+- Back Office asigna un identificador monotónico a cada recarga de observaciones y descarta respuestas viejas; la lista visible no puede retroceder mientras se buscan o verifican pagos.
+- Regresión UI: dos recargas automáticas fuera de orden conservan la observación más nueva. Evidencia local: 62 suites/259 pruebas, lint, typecheck, escaneo de secretos, build sintético y diff limpios.
+- CI PR #36 quedó 6/6 verde; Android run `34900548019` generó los tres roles. Rider `980ace1870e886943cb86e2c54bd377a51ca93fe6dd306c35599cc8d587276e9`, Back Office `6e5ad497344930c75ce362a334b98bdf1808bc4b0b0acad2ebcccb972453f305`, Caja `c961a776dc093af7d5d7183dd80ea134690f8e645f8d894a91841352908f47a8`.
+- Las tres APK pasaron `unzip -tqq` y siguen siendo debug. Producción continúa pendiente de configuración, migraciones/funciones, webhook, publicación, firma release y dos pagos físicos iguales de S/30.
+
 ## Reglas de continuidad
 
 - Git, pruebas y este archivo son estado canónico.
