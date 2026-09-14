@@ -90,12 +90,14 @@ export default function WalletsOperationsPage() {
   const [qrPayload, setQrPayload] = useState('');
   const [accountActive, setAccountActive] = useState(false);
   const loadRequestRef = useRef(0);
+  const observationRequestRef = useRef(0);
   const candidateRequestRef = useRef(0);
   const canSelectRestaurant = isPlatformAdmin || restaurantIds.length > 1;
   const activeRestaurantId = restaurantId || (isPlatformAdmin ? '' : restaurantIds[0] ?? '');
 
   const load = useCallback(async () => {
     const requestId = ++loadRequestRef.current;
+    const observationRequestId = ++observationRequestRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -108,7 +110,11 @@ export default function WalletsOperationsPage() {
         walletObserverService.listDevices(scopedRestaurantIds),
         walletObserverService.listObservations(scopedRestaurantIds),
       ]);
-      if (requestId !== loadRequestRef.current) return;
+      if (
+        requestId !== loadRequestRef.current ||
+        observationRequestId !== observationRequestRef.current
+      )
+        return;
       setStores(visibleStores);
       setDevices(nextDevices);
       setObservations(nextObservations);
@@ -139,9 +145,12 @@ export default function WalletsOperationsPage() {
     if (stores.length === 0) return;
     const refreshObservations = () => {
       if (document.visibilityState === 'hidden') return;
+      const requestId = ++observationRequestRef.current;
       void walletObserverService
         .listObservations(stores.map((store) => store.id))
-        .then(setObservations)
+        .then((nextObservations) => {
+          if (requestId === observationRequestRef.current) setObservations(nextObservations);
+        })
         .catch(() => undefined);
     };
     const timer = window.setInterval(refreshObservations, 15_000);

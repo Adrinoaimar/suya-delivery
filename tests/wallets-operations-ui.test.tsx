@@ -234,4 +234,61 @@ describe('WalletsOperationsPage', () => {
     });
     expect(await screen.findByText(/Pedido #DOS/)).toBeInTheDocument();
   });
+
+  it('descarta una recarga automática vieja de observaciones', async () => {
+    vi.useFakeTimers();
+    try {
+      let resolveSlow!: (value: unknown[]) => void;
+      let resolveFresh!: (value: unknown[]) => void;
+      const slowRequest = new Promise<unknown[]>((resolve) => {
+        resolveSlow = resolve;
+      });
+      const freshRequest = new Promise<unknown[]>((resolve) => {
+        resolveFresh = resolve;
+      });
+      const originalObservation = {
+        id: 'observation-1',
+        restaurantId: restaurant.id,
+        deviceId: 'device-1',
+        provider: 'yape',
+        senderName: 'Ana Uno',
+        codeLast4: '1234',
+        amountCents: 3000,
+        currency: 'PEN',
+        observedAt: '2026-09-14T18:30:00.000Z',
+        verification: 'unverified',
+      };
+      const newestObservation = { ...originalObservation, id: 'observation-new', senderName: 'Luis Dos', codeLast4: '5678' };
+      mocks.listObservations
+        .mockResolvedValueOnce([originalObservation])
+        .mockImplementationOnce(() => slowRequest)
+        .mockImplementationOnce(() => freshRequest);
+
+      render(<WalletsOperationsPage />);
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+      expect(screen.getByText('••••1234')).toBeInTheDocument();
+
+      await act(async () => {
+        vi.advanceTimersByTime(30_000);
+        await Promise.resolve();
+      });
+      await act(async () => {
+        resolveFresh([newestObservation]);
+        await Promise.resolve();
+      });
+      await act(async () => {
+        resolveSlow([originalObservation]);
+        await Promise.resolve();
+      });
+
+      expect(screen.getByText('Luis Dos')).toBeInTheDocument();
+      expect(screen.queryByText('••••1234')).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
