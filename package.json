@@ -31,6 +31,7 @@
     "security:secrets": "node scripts/check-secrets.mjs",
     "verify:production": "node scripts/verify-production-build.mjs",
     "verify:cloudflare": "node scripts/check-cloudflare-config.mjs",
+    "verify:payments": "node scripts/verify-payment-readiness.mjs",
     "verify:apps": "node scripts/verify-app-bundles.mjs",
     "typecheck": "tsc -b",
     "test": "vitest run",

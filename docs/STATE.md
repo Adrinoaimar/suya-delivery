@@ -186,6 +186,13 @@ producción.
 - APKs debug de `673a920` en `output/apks/673a920/`; Rider `e9fddcc5…`, Back Office `61103553…`, Caja `2576795e…`; las tres pasaron `unzip -t`.
 - `verify:production` y `verify:cloudflare` siguen rechazando la ausencia de configuración real. Faltan llaves Culqi/Supabase/Cloudflare, migraciones/funciones, webhook, publicación y pagos físicos.
 
+## Checkpoint F27.6: preflight de pagos (2026-09-14)
+
+- `npm run verify:payments` valida project ref, Supabase público, Culqi público, mapas y orígenes canónicos sin hacer red ni mutaciones; `--deployment` añade secretos de Edge Functions y `--network` solo hace `OPTIONS`.
+- El gate rechaza mapas ausentes o `mock` y claves secretas `sk_` en frontend. Configuración sintética válida y regresiones negativas pasaron.
+- Suite serial: 61 archivos/252 pruebas; lint, typecheck, escaneo de secretos y `git diff --check` verdes. La ejecución paralela tuvo una carrera aislada en `mobile-routes`, que pasó sola.
+- Producción sigue pendiente de credenciales/configuración real, migraciones, webhook, publicación y dos pagos físicos S/30.
+
 ## Reglas de continuidad
 
 - Git, pruebas y este archivo son estado canónico.
