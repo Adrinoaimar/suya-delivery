@@ -149,4 +149,28 @@ describe('PaymentInstructions', () => {
     expect(mocks.getIntent).toHaveBeenCalledWith('order-1');
     expect(screen.getByRole('button', { name: 'Reintentar pago' })).toBeEnabled();
   });
+
+  it('fuerza un reintento nuevo si no puede refrescar el rechazo del servidor', async () => {
+    const gatewayIntent: PaymentIntent = {
+      ...pendingIntent,
+      method: 'card',
+      provider: 'culqi',
+      providerReference: 'ord_test_suya_refresh_unavailable',
+    };
+    mocks.chargeCard.mockRejectedValueOnce(new Error('Culqi rechazó el pago'));
+    mocks.getIntent.mockRejectedValueOnce(new Error('Red no disponible'));
+    mocks.openCulqiCheckout.mockImplementationOnce(
+      async (options: { onToken: (tokenId: string) => Promise<void> }) => {
+        await options.onToken('tkn_test_refresh_unavailable');
+      },
+    );
+    sessionStorage.setItem('suya.payment-email:order-1', 'cliente@example.com');
+    render(<PaymentInstructions order={order(gatewayIntent)} />);
+
+    await act(async () => {
+      screen.getByRole('button', { name: 'Pagar con tarjeta' }).click();
+    });
+
+    expect(screen.getByRole('button', { name: 'Reintentar pago' })).toBeEnabled();
+  });
 });

@@ -219,7 +219,13 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
             // conserves el estado pending local: así el próximo toque crea
             // una orden/referencia nueva y no reusa la anterior.
             const refreshed = await paymentService.getIntent(order.id).catch(() => null);
-            if (refreshed) setIntent(refreshed);
+            setIntent(
+              refreshed ?? {
+                ...activeIntent,
+                status: 'failed',
+                providerReference: null,
+              },
+            );
             notificationService.notify(
               cause instanceof Error
                 ? cause.message
@@ -392,8 +398,8 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
           </p>
           <p className="mt-1 text-xs text-suya-muted">
             Después de pagar, escribe el código de seguridad u operación que aparece en tu
-            constancia. Solo guardamos sus últimos cuatro caracteres; así un pago de S/30 no se
-            confunde con otro pago de S/30.
+            constancia. Suya guarda un hash no reversible y solo muestra sus últimos cuatro
+            caracteres; así un pago de S/30 no se confunde con otro pago de S/30.
           </p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
             <label className="min-w-0 flex-1 text-xs font-semibold text-suya-carbon">
