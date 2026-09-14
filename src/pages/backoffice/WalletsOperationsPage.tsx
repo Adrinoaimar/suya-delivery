@@ -69,6 +69,9 @@ export default function WalletsOperationsPage() {
   const [candidates, setCandidates] = useState<WalletPaymentCandidate[]>([]);
   const [candidateLoading, setCandidateLoading] = useState(false);
   const [verifyingAttemptId, setVerifyingAttemptId] = useState<string | null>(null);
+  const [observationCodeId, setObservationCodeId] = useState<string | null>(null);
+  const [observationCode, setObservationCode] = useState('');
+  const [savingObservationCode, setSavingObservationCode] = useState(false);
   const [paymentAccounts, setPaymentAccounts] = useState<RestaurantPaymentAccount[]>([]);
   const [accountProvider, setAccountProvider] = useState<'yape' | 'lemon'>('yape');
   const [accountLabel, setAccountLabel] = useState('Cuenta principal');
@@ -255,6 +258,33 @@ export default function WalletsOperationsPage() {
       );
     } finally {
       setVerifyingAttemptId(null);
+    }
+  };
+
+  const saveObservationCode = async (observationId: string) => {
+    if (!observationCode.trim()) {
+      notificationService.notify('Escribe el código visible en la constancia.', 'warning');
+      return;
+    }
+    setSavingObservationCode(true);
+    try {
+      const saved = await walletObserverService.setObservationCode(
+        observationId,
+        observationCode,
+      );
+      if (!saved) throw new Error('El servidor no guardó el código de operación.');
+      setObservationCode('');
+      setObservationCodeId(null);
+      notificationService.notify('Código agregado. Buscando el pedido exacto…', 'success');
+      await load();
+      await findCandidates(observationId);
+    } catch (cause) {
+      notificationService.notify(
+        cause instanceof Error ? cause.message : 'No pudimos guardar el código observado.',
+        'danger',
+      );
+    } finally {
+      setSavingObservationCode(false);
     }
   };
 
@@ -630,6 +660,35 @@ export default function WalletsOperationsPage() {
                           </Button>
                         )}
                     </div>
+                    {!observation.codeLast4 && observation.verification !== 'verified' && (
+                      <div className="flex flex-wrap items-end gap-2 sm:col-span-4">
+                        <label className="min-w-52 flex-1 text-xs font-semibold text-suya-muted">
+                          Código visible en la constancia
+                          <input
+                            value={observationCodeId === observation.id ? observationCode : ''}
+                            onFocus={() => setObservationCodeId(observation.id)}
+                            onChange={(event) => {
+                              setObservationCodeId(observation.id);
+                              setObservationCode(event.target.value);
+                            }}
+                            maxLength={64}
+                            inputMode="text"
+                            placeholder="Ej. 384 o 482913"
+                            className="mt-1 h-10 w-full rounded-btn border border-suya-border bg-white px-3 text-sm font-normal"
+                            disabled={savingObservationCode}
+                          />
+                        </label>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => void saveObservationCode(observation.id)}
+                          disabled={savingObservationCode || observationCodeId !== observation.id}
+                        >
+                          {savingObservationCode ? 'Guardando…' : 'Agregar código'}
+                        </Button>
+                      </div>
+                    )}
                     {candidateObservationId === observation.id && (
                       <div className="rounded-btn border border-suya-sun/60 bg-suya-sun-soft p-3 sm:col-span-4">
                         <p className="text-xs font-semibold uppercase tracking-[.14em] text-suya-muted">
@@ -656,8 +715,9 @@ export default function WalletsOperationsPage() {
                                     Pedido #{candidate.orderCode} · {formatPrice(candidate.amount)}
                                   </p>
                                   <p className="text-xs text-suya-muted">
-                                    Referencia {candidate.checkoutReference} ·{' '}
-                                    {candidate.senderName ?? 'Remitente no disponible'}
+                                    Cliente: {candidate.customerName} · Referencia{' '}
+                                    {candidate.checkoutReference} · Remitente:{' '}
+                                    {candidate.senderName ?? 'no disponible'}
                                   </p>
                                 </div>
                                 <Button

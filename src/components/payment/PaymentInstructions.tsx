@@ -147,6 +147,13 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         intent,
         method: intent.method === 'card' ? 'card' : 'yape',
         onToken: async (tokenId) => {
+          if (intent.method !== 'card') {
+            notificationService.notify(
+              'Culqi entregó un token Yape; continúa desde el checkout y espera el webhook de la orden.',
+              'warning',
+            );
+            return;
+          }
           setGatewayBusy(true);
           try {
             const providerReference = await paymentService.chargeCard(

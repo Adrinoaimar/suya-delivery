@@ -173,6 +173,7 @@ export interface WalletPaymentCandidate {
   paymentAttemptId: string;
   orderId: string;
   orderCode: string;
+  customerName: string;
   checkoutReference: string;
   method: PaymentMethod;
   amount: number;
@@ -195,6 +196,7 @@ export interface WalletObserverService {
   createDevice(restaurantId: string, label: string): Promise<CreatedWalletObserverDevice>;
   listObservations(restaurantIds: string[]): Promise<WalletObservation[]>;
   listPaymentCandidates(observationId: string): Promise<WalletPaymentCandidate[]>;
+  setObservationCode(observationId: string, code: string): Promise<boolean>;
   verifyObservation(observationId: string, paymentAttemptId: string): Promise<boolean>;
   listPaymentAccounts(restaurantId: string): Promise<RestaurantPaymentAccount[]>;
   savePaymentAccount(input: {

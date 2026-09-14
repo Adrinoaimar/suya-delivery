@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { describe, expect, it, vi } from 'vitest';
 import { SupabasePaymentService } from '@/lib/services/SupabasePaymentService';
+import { SupabaseWalletObserverService } from '@/lib/services/SupabaseWalletObserverService';
 import type { PaymentIntent } from '@/types';
 
 function fakeClient(response: { data: unknown; error: { message: string } | null }) {
@@ -105,6 +106,16 @@ describe('SupabasePaymentService', () => {
       p_order_id: 'order-1',
       p_code: '384',
       p_guest_access_token: null,
+    });
+  });
+
+  it('permite completar el código faltante desde backoffice sin exponer el código completo', async () => {
+    const client = fakeClient({ data: true, error: null });
+    const service = new SupabaseWalletObserverService(client);
+    await expect(service.setObservationCode('observation-1', ' 482913 ')).resolves.toBe(true);
+    expect(client.rpc).toHaveBeenCalledWith('set_wallet_observation_code', {
+      p_observation_id: 'observation-1',
+      p_code: '482913',
     });
   });
 });

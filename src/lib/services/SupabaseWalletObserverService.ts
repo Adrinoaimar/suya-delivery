@@ -43,6 +43,7 @@ type CandidateRow = {
   payment_attempt_id?: unknown;
   order_id?: unknown;
   order_code?: unknown;
+  customer_name?: unknown;
   checkout_reference?: unknown;
   method?: unknown;
   amount?: unknown;
@@ -196,6 +197,7 @@ export class SupabaseWalletObserverService implements WalletObserverService {
           paymentAttemptId: candidate.payment_attempt_id,
           orderId: candidate.order_id,
           orderCode: candidate.order_code,
+          customerName: text(candidate.customer_name, 'Cliente'),
           checkoutReference: candidate.checkout_reference,
           method: candidate.method === 'lemon' ? 'lemon' : 'yape',
           amount: numberValue(candidate.amount),
@@ -205,6 +207,19 @@ export class SupabaseWalletObserverService implements WalletObserverService {
         },
       ];
     });
+  }
+
+  async setObservationCode(observationId: string, code: string): Promise<boolean> {
+    const normalized = code.trim();
+    if (!observationId || !/^[a-z0-9-]{3,64}$/iu.test(normalized)) {
+      throw new Error('Escribe un código de operación válido.');
+    }
+    const { data, error } = await this.client.rpc('set_wallet_observation_code', {
+      p_observation_id: observationId,
+      p_code: normalized,
+    });
+    if (error) throw new Error(error.message);
+    return data === true;
   }
 
   async verifyObservation(observationId: string, paymentAttemptId: string): Promise<boolean> {

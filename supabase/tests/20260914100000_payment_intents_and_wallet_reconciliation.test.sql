@@ -1,6 +1,6 @@
 begin;
 
-select plan(35);
+select plan(41);
 
 select has_function(
   'public', 'create_payment_intent', array['uuid', 'text', 'text'],
@@ -21,6 +21,10 @@ select has_function(
 select has_function(
   'public', 'submit_payment_evidence', array['uuid', 'text', 'text'],
   'vincular código de identidad del pago existe'
+);
+select has_function(
+  'public', 'set_wallet_observation_code', array['uuid', 'text'],
+  'completar código observado desde backoffice existe'
 );
 select has_function(
   'public', 'create_culqi_payment_intent', array['uuid', 'text', 'text'],
@@ -58,6 +62,18 @@ select ok(
     where table_schema = 'public' and table_name = 'payment_attempts'
       and column_name = 'payer_code_last4'),
   'el intento conserva el sufijo del código del pagador'
+);
+select ok(
+  exists (select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'payment_attempts'
+      and column_name = 'payer_code_digest'),
+  'el intento conserva digest exacto del código del pagador'
+);
+select ok(
+  exists (select 1 from information_schema.columns
+    where table_schema = 'public' and table_name = 'wallet_observations'
+      and column_name = 'code_fingerprint'),
+  'la observación conserva fingerprint exacto del código'
 );
 select ok(
   exists (select 1 from information_schema.columns
@@ -122,6 +138,11 @@ select ok(
   'solo backoffice busca candidatos'
 );
 select ok(
+  not has_function_privilege('anon', 'public.set_wallet_observation_code(uuid,text)', 'execute')
+    and has_function_privilege('authenticated', 'public.set_wallet_observation_code(uuid,text)', 'execute'),
+  'solo backoffice completa código observado'
+);
+select ok(
   not has_function_privilege('anon', 'public.verify_wallet_payment(uuid,uuid)', 'execute')
     and has_function_privilege('authenticated', 'public.verify_wallet_payment(uuid,uuid)', 'execute'),
   'solo backoffice verifica observaciones'
@@ -145,6 +166,14 @@ select ok(
 select ok(
   (select pg_get_functiondef('public.list_wallet_payment_candidates(uuid)'::regprocedure) like '%payer_code_last4%'),
   'los candidatos exigen identidad del pagador'
+);
+select ok(
+  (select pg_get_functiondef('public.list_wallet_payment_candidates(uuid)'::regprocedure) like '%code_fingerprint%'),
+  'los candidatos prefieren fingerprint exacto sobre solo monto'
+);
+select ok(
+  (select pg_get_functiondef('public.submit_payment_evidence(uuid,text,text)'::regprocedure) like '%payer_code_digest%'),
+  'la evidencia del cliente guarda digest exacto'
 );
 select ok(
   (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) like '%payment identity%'),

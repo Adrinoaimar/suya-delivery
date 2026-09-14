@@ -24,6 +24,16 @@ orden como pagada con este laboratorio.
    Plin se observa desde la app bancaria que emite la notificación.
 4. Revoca el permiso y elimina los datos de Suya al terminar.
 
+## Prueba de identidad: dos pagos de S/30
+
+1. Crea dos pedidos distintos de exactamente S/30 y verifica que cada uno muestre una referencia `SUYA-…` diferente.
+2. Haz que dos personas paguen por Yape. Cada persona escribe en su pedido el código completo visible en su constancia; Suya guarda solo un fingerprint y los últimos cuatro.
+3. En **Dispositivos de pagos**, revisa nombre visible, hora, monto y código. Si la notificación no trae código, caja puede agregarlo desde la constancia del cliente.
+4. Busca candidatos: solo aparece el pedido cuyo proveedor, monto, ventana y código coinciden. Verificar el código del segundo pedido sobre la primera observación debe fallar.
+5. Confirma un pedido y prueba **Iniciar preparación**. El servidor debe permitirlo solo para el intento `authorized`; el otro permanece pendiente.
+
+Repite la misma prueba con Lemon manual. Para Culqi, usa dos órdenes distintas desde Checkout y verifica que cada `ord_test_…` permanezca ligado a un solo pedido; el webhook es la fuente final de estado.
+
 En una build `debug`, el archivo de observaciones se puede inspeccionar con:
 
 ```powershell

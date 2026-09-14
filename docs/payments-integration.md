@@ -30,6 +30,8 @@ No integrar claves de prueba como producción ni publicar una opción visual que
 
 Cada pedido digital nace con monto calculado por servidor y referencia única. Yape/Lemon manuales conservan solo los últimos cuatro caracteres del código de constancia; Back Office exige coincidencia exacta de restaurante, proveedor, monto PEN, ventana temporal y código antes de autorizar. Dos pagos de S/30 no se mezclan por monto.
 
+Si la notificación no muestra el código, caja puede copiarlo desde la constancia del cliente en **Dispositivos de pagos**. Suya guarda un fingerprint no reversible y solo muestra los últimos cuatro caracteres; también muestra el nombre visible del remitente y el cliente del pedido para resolver rápido una coincidencia.
+
 ## Culqi: Yape y tarjeta
 
 El flujo opcional Culqi crea la orden desde `create-culqi-payment-intent`, usando monto bloqueado del pedido. `create-culqi-order` crea la orden Culqi con metadata de `suya_order_id`, `suya_payment_attempt_id` y referencia visible. El cliente abre Checkout v4; Yape genera QR asociado al monto exacto. Tarjeta devuelve token al frontend de Culqi y `charge-culqi-card` crea el cargo en servidor. Datos de tarjeta nunca pasan por Suya.

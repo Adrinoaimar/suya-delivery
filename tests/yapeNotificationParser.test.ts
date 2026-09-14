@@ -13,6 +13,7 @@ describe('parseYapeNotification', () => {
     expect(result).toMatchObject({
       amountCents: 2550,
       currency: 'PEN',
+      senderName: null,
       code: '482',
       verification: 'unverified',
     });
@@ -28,6 +29,17 @@ describe('parseYapeNotification', () => {
     });
 
     expect(result).toMatchObject({ amountCents: 125000, code: '987654321' });
+  });
+
+  it('captures the visible sender when the wallet notification includes it', () => {
+    const result = parseYapeNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Yape',
+      text: 'Recibiste S/ 30.00 de Ana María Torres',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({ amountCents: 3000, senderName: 'Ana María Torres' });
   });
 
   it('ignores other apps and messages without a monetary amount', () => {

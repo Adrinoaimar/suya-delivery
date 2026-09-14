@@ -125,6 +125,9 @@ function resolveWalletObserverService(): Promise<WalletObserverService> {
           async listPaymentCandidates() {
             return [];
           },
+          async setObservationCode() {
+            throw new Error('La conexión de billeteras requiere Supabase.');
+          },
           async verifyObservation() {
             throw new Error('La verificación de billeteras requiere Supabase.');
           },
@@ -150,6 +153,9 @@ export const walletObserverService: WalletObserverService = {
   },
   async listPaymentCandidates(observationId) {
     return (await resolveWalletObserverService()).listPaymentCandidates(observationId);
+  },
+  async setObservationCode(observationId, code) {
+    return (await resolveWalletObserverService()).setObservationCode(observationId, code);
   },
   async verifyObservation(observationId, paymentAttemptId) {
     return (await resolveWalletObserverService()).verifyObservation(

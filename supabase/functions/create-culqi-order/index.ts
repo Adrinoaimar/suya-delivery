@@ -42,6 +42,22 @@ function firstRow(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' ? (value as Record<string, unknown>) : null;
 }
 
+function paymentIntentPayload(intent: Record<string, unknown>, method: 'yape' | 'card') {
+  return {
+    attempt_id: text(intent.attempt_id),
+    order_id: text(intent.order_id),
+    method,
+    status: text(intent.status, 'pending'),
+    amount: Number(intent.amount),
+    currency: 'PEN',
+    checkout_reference: text(intent.checkout_reference),
+    expires_at: text(intent.expires_at),
+    provider: 'culqi',
+    provider_reference: text(intent.provider_reference) || null,
+    qr_payload: isHttpsUrl(intent.qr_payload) ? intent.qr_payload : null,
+  };
+}
+
 function text(value: unknown, fallback = ''): string {
   return typeof value === 'string' ? value : value == null ? fallback : String(value);
 }
@@ -133,6 +149,16 @@ Deno.serve(async (request) => {
   if (method === 'yape' && amount > 50000) {
     return json({ error: 'Culqi Yape permite hasta S/ 500.00 por orden.' }, 422, origin);
   }
+  const existingProviderReference = text(intent.provider_reference);
+  if (existingProviderReference) {
+    if (!/^ord_(?:test|live)_[A-Za-z0-9_-]+$/.test(existingProviderReference)) {
+      return json({ error: 'La referencia Culqi guardada es inválida.' }, 502, origin);
+    }
+    return json({
+      paymentIntent: paymentIntentPayload(intent, method),
+      gatewayOrderId: existingProviderReference,
+    }, 200, origin);
+  }
 
   const orderUrl = new URL(`${supabaseUrl}/rest/v1/orders`);
   orderUrl.searchParams.set('id', `eq.${orderId}`);
@@ -213,19 +239,7 @@ Deno.serve(async (request) => {
   }
 
   return json({
-    paymentIntent: {
-      attempt_id: text(intent.attempt_id),
-      order_id: text(intent.order_id),
-      method,
-      status: text(intent.status, 'pending'),
-      amount: Number(intent.amount),
-      currency: 'PEN',
-      checkout_reference: text(intent.checkout_reference),
-      expires_at: text(intent.expires_at),
-      provider: 'culqi',
-      provider_reference: providerReference,
-      qr_payload: gatewayQr,
-    },
+    paymentIntent: paymentIntentPayload({ ...intent, provider_reference: providerReference, qr_payload: gatewayQr }, method),
     gatewayOrderId: providerReference,
   }, 200, origin);
 });

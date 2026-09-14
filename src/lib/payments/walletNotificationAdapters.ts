@@ -15,6 +15,7 @@ export interface WalletObservedPayment {
   verification: 'unverified';
   amountCents: number;
   currency: WalletCurrency;
+  senderName: string | null;
   code: string | null;
   observedAt: string;
   fingerprint: string;
@@ -73,6 +74,7 @@ export const DEFAULT_WALLET_NOTIFICATION_ADAPTERS: readonly WalletNotificationAd
 
 const MONEY_PATTERN = /(s\/?|s\.|pen|ars|usd|us\$|\$)\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?)/gi;
 const CODE_PATTERN = /(?:c[oó]digo(?:\s+(?:de\s+)?(?:seguridad|operaci[oó]n|aprobaci[oó]n))?|operaci[oó]n|referencia|reference|ref\.?|id(?:\s+de)?\s+(?:transferencia|operaci[oó]n))\b\s*[:#-]?\s*([a-z0-9-]{3,20})/i;
+const SENDER_PATTERN = /(?:^|\b)(?:de|from)\s+([\p{L}][\p{L}'-]*(?:\s+[\p{L}][\p{L}'-]*){0,3})(?=(?:\s+(?:te\b|env[ií]o|sent\b|por\b|s\/?|pen\b|$)|$))/iu;
 
 function normalizeAmount(value: string): number | null {
   const compact = value.replace(/\s/g, '');
@@ -104,6 +106,12 @@ function fingerprint(prefix: string, value: string): string {
 
 function combinedText(input: WalletNotificationInput): string {
   return [input.title, input.text, input.bigText].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+}
+
+function senderName(text: string): string | null {
+  const match = text.match(SENDER_PATTERN);
+  const value = match?.[1]?.replace(/\s+/g, ' ').trim() ?? '';
+  return value.length >= 2 && value.length <= 120 ? value : null;
 }
 
 function matchesAdapter(input: WalletNotificationInput, adapter: WalletNotificationAdapter, text: string): boolean {
@@ -149,6 +157,7 @@ export function parseWalletNotification(
     verification: 'unverified',
     amountCents,
     currency,
+    senderName: senderName(text),
     code: codeMatch?.[1] ?? null,
     observedAt,
     fingerprint: fingerprint(adapter.provider, stable),

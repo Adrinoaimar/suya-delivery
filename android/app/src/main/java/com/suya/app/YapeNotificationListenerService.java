@@ -60,7 +60,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     private static final ExecutorService SYNC_EXECUTOR = Executors.newSingleThreadExecutor();
     private static final Pattern MONEY_PATTERN = Pattern.compile("(S\\/?|S\\.|PEN|ARS|USD|US\\$|\\$)\\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CODE_PATTERN = Pattern.compile("(?:c[oó]digo(?:\\s+(?:de\\s+)?(?:seguridad|operaci[oó]n|aprobaci[oó]n))?|operaci[oó]n|referencia|reference|ref\\.?|id(?:\\s+de)?\\s+(?:transferencia|operaci[oó]n))\\b\\s*[:#-]?\\s*([a-z0-9-]{3,20})", Pattern.CASE_INSENSITIVE);
-    private static final Pattern SENDER_PATTERN = Pattern.compile("(?:^|\\b)(?:de|from)\\s+([\\p{L}][\\p{L}'-]*(?:\\s+[\\p{L}][\\p{L}'-]*){0,3})(?=\\s+(?:te\\b|env[ií]o|sent\\b|por\\b|S\\/?|PEN\\b|$))|^([\\p{L}][\\p{L}'-]*(?:\\s+[\\p{L}][\\p{L}'-]*){0,3})(?=\\s+te\\s+(?:env[ií]o|sent))", Pattern.CASE_INSENSITIVE);
+    private static final Pattern SENDER_PATTERN = Pattern.compile("(?:^|\\b)(?:de|from)\\s+([\\p{L}][\\p{L}'-]*(?:\\s+[\\p{L}][\\p{L}'-]*){0,3})(?=(?:\\s+(?:te\\b|env[ií]o|sent\\b|por\\b|S\\/?|PEN\\b|$)|$))|^([\\p{L}][\\p{L}'-]*(?:\\s+[\\p{L}][\\p{L}'-]*){0,3})(?=\\s+te\\s+(?:env[ií]o|sent))", Pattern.CASE_INSENSITIVE);
     private static final WalletAdapter[] ADAPTERS = new WalletAdapter[]{
             new WalletAdapter("yape", "yape_notification",
                     new String[]{"com.bcp.innovacxion.yapeapp", "com.bcp.yape.app"},

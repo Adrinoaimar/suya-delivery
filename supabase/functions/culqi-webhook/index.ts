@@ -28,6 +28,9 @@ Deno.serve(async (request) => {
   } else if (event.data && typeof event.data === 'object') {
     eventData = event.data as Record<string, unknown>;
   }
+  if (eventData.object && typeof eventData.object === 'object') {
+    eventData = eventData.object as Record<string, unknown>;
+  }
   const providerReference = text(eventData.id);
   if (!/^ord_(?:test|live)_[A-Za-z0-9_-]+$/.test(providerReference)) return json({ received: true });
 
