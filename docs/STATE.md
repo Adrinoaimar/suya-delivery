@@ -201,6 +201,13 @@ producción.
 - CI PR #36 quedó 6/6 verde. No cambia la APK funcional; la última build debug disponible sigue siendo `df86977`.
 - Preflight de red contra el proyecto canónico sigue devolviendo HTTP 404 en las tres Edge Functions; no se declara producción lista.
 
+## Checkpoint F27.8: cierre seguro al cancelar pedido (2026-09-14)
+
+- Se añadió un trigger que marca como fallido cualquier intento de billetera pendiente cuando el pedido pasa a cancelado; candidatos y verificación final también excluyen pedidos cancelados o entregados.
+- Regresión pgTAP preparada para comprobar cancelación después de crear el intento, ausencia de candidato y rechazo de la autorización.
+- Evidencia local: 62 suites/257 pruebas, lint, typecheck y `git diff --check` verdes. La validación SQL depende de CI porque esta máquina no tiene Postgres local.
+- Pendiente externo sin cambios: CI, migración en Supabase real, credenciales/webhook, publicación y dos pagos físicos S/30.
+
 ## Reglas de continuidad
 
 - Git, pruebas y este archivo son estado canónico.

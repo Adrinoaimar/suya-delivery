@@ -1,6 +1,6 @@
 begin;
 
-select plan(90);
+select plan(96);
 
 select has_function(
   'public', 'refresh_payment_intent', array['uuid', 'text', 'text'],
@@ -609,6 +609,64 @@ select throws_ok(
   ) $$,
   'wallet observation does not match payment identity',
   'la verificación rechaza pagos creados después de la observación'
+);
+reset role;
+
+-- A cancelled order closes its pending attempt and cannot be reconciled later.
+insert into public.orders (
+  id, code, customer_id, restaurant_id, status, payment_method, subtotal, delivery_fee,
+  customer_name, customer_phone, delivery_address, estimated_minutes, idempotency_key
+) values (
+  'a6300000-0000-0000-0000-000000000008', 'PAYTEST8',
+  'a6000000-0000-0000-0000-000000000001', 'a6200000-0000-0000-0000-000000000001',
+  'confirmed', 'cash', 27, 3, 'Cliente Cancelado', '999333333', 'Dirección ocho', 30,
+  'a6400000-0000-0000-0000-000000000008'
+);
+set local request.jwt.claims =
+  '{"sub":"a6000000-0000-0000-0000-000000000001","role":"authenticated"}';
+set local role authenticated;
+select lives_ok(
+  $$ select * from public.create_payment_intent('a6300000-0000-0000-0000-000000000008', 'yape') $$,
+  'cliente crea intento antes de cancelar'
+);
+reset role;
+update public.orders
+set status = 'cancelled', cancelled_at = now(), cancellation_reason = 'prueba de seguridad'
+where id = 'a6300000-0000-0000-0000-000000000008';
+select is(
+  (select status::text from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000008'),
+  'failed',
+  'cancelar pedido cierra el intento pendiente'
+);
+select is(
+  (select failure_code from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000008'),
+  'order_cancelled',
+  'el intento cancelado conserva motivo operativo'
+);
+insert into public.wallet_observations (
+  id, device_id, restaurant_id, event_id, provider, sender_name, code_digest,
+  code_fingerprint, code_last4, amount_cents, currency, observed_at
+) values (
+  'a6600000-0000-0000-0000-000000000005', 'a6500000-0000-0000-0000-000000000001',
+  'a6200000-0000-0000-0000-000000000001', 'payment-loop-event-5', 'yape', 'Cliente Cancelado',
+  extensions.crypt('333333', extensions.gen_salt('bf')),
+  encode(extensions.digest('333333', 'sha256'), 'hex'), '3333', 3000, 'PEN', now()
+);
+set local request.jwt.claims =
+  '{"sub":"a6000000-0000-0000-0000-000000000003","role":"authenticated"}';
+set local role authenticated;
+select is(
+  (select count(*) from public.list_wallet_payment_candidates('a6600000-0000-0000-0000-000000000005')),
+  0::bigint,
+  'un pedido cancelado no aparece como candidato de conciliación'
+);
+select throws_ok(
+  $$ select public.verify_wallet_payment(
+    'a6600000-0000-0000-0000-000000000005',
+    (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000008')
+  ) $$,
+  'cancelled order cannot be verified',
+  'la autorización final rechaza un pedido cancelado'
 );
 reset role;
 

@@ -37,6 +37,9 @@ No integrar claves de prueba como producción ni publicar una opción visual que
 
 Cada pedido digital nace con monto calculado por servidor y referencia única. Yape/Lemon manuales conservan solo los últimos cuatro caracteres del código de constancia; Back Office exige coincidencia exacta de restaurante, proveedor, monto PEN, ventana temporal y código antes de autorizar. Dos pagos de S/30 no se mezclan por monto.
 
+Si el pedido se cancela, un trigger cierra cualquier intento pendiente como `failed` con motivo
+`order_cancelled`; además, la búsqueda y la RPC final rechazan pedidos cancelados o entregados.
+
 Si la notificación no muestra el código, caja puede copiarlo desde la constancia del cliente en **Dispositivos de pagos**. Suya guarda un fingerprint no reversible y solo muestra los últimos cuatro caracteres; también muestra el nombre visible del remitente y el cliente del pedido para resolver rápido una coincidencia.
 
 ## Culqi: Yape y tarjeta

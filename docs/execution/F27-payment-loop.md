@@ -50,6 +50,7 @@ Si el cliente cierra el modal de Culqi sin completar el pago, la pantalla libera
 - Monto distinto, proveedor distinto o ventana vencida: no debe aparecer candidato.
 - Notificación sin código: Back Office puede completar el código visible en la constancia; solo entonces se busca coincidencia.
 - Referencia manual vencida: el cliente debe pulsar `Generar nueva referencia`; la anterior queda `failed/expired` y no se crean dos pendientes.
+- Pedido cancelado después de crear el intento: el intento queda `failed/order_cancelled`, no aparece como candidato y la RPC final rechaza verificarlo.
 
 ## Evidencia y límites
 
