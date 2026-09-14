@@ -13,7 +13,7 @@ const FAQ = [
   {
     question: '¿Cómo pago?',
     answer:
-      'Puedes elegir efectivo, Yape o Lemon. En pagos digitales Suya crea una referencia única, muestra el monto exacto y el restaurante verifica la operación antes de aceptarla. Tarjeta quedará disponible al conectar una pasarela autorizada.',
+      'Puedes elegir efectivo, Yape o Lemon. En pagos digitales Suya crea una referencia única, muestra el monto exacto y el restaurante verifica el código de la constancia antes de aceptarlo. Cuando Culqi está habilitado, Yape usa un QR dinámico y tarjeta abre un checkout seguro.',
   },
   {
     question: '¿Puedo seguir mi pedido?',

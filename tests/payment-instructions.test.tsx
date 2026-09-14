@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PaymentInstructions } from '@/components/payment/PaymentInstructions';
 import type { Order, PaymentIntent } from '@/types';
@@ -68,6 +68,27 @@ describe('PaymentInstructions', () => {
     );
 
     expect(screen.getByText('Pago verificado')).toBeInTheDocument();
+  });
+
+  it('permite corregir el código de la constancia mientras sigue pendiente', async () => {
+    mocks.submitEvidence.mockResolvedValueOnce(true);
+    render(<PaymentInstructions order={order(pendingIntent)} />);
+
+    const input = screen.getByLabelText('Código de constancia');
+    expect(input).toHaveAttribute('inputmode', 'numeric');
+    fireEvent.change(input, { target: { value: '384' } });
+    await act(async () => {
+      screen.getByRole('button', { name: 'Vincular código' }).click();
+    });
+
+    expect(await screen.findByRole('button', { name: 'Cambiar código' })).toBeInTheDocument();
+    await act(async () => {
+      screen.getByRole('button', { name: 'Cambiar código' }).click();
+    });
+    expect(screen.getByLabelText('Código de constancia')).toHaveValue('');
+    expect(screen.getByRole('button', { name: 'Vincular código' })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Código de constancia'), { target: { value: '482' } });
+    expect(screen.getByRole('button', { name: 'Vincular código' })).toBeEnabled();
   });
 
   it('polls manual wallet intents while they remain pending', async () => {

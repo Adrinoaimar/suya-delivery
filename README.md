@@ -95,7 +95,8 @@ tipos, estilo y pruebas, construye y despliega.
   datos operativos.
 - Carrito persistente de un solo negocio, con extras, notas y cálculo de envío.
 - Checkout con efectivo y billeteras digitales Yape/Lemon mediante intentos server-side, referencia
-  única y verificación operativa; tarjeta permanece bloqueada hasta conectar una pasarela autorizada.
+  única y código de constancia; tarjeta y QR Yape dinámico se habilitan mediante Culqi cuando la
+  pasarela está configurada.
 - Pedido con código `#SUY-XXXXX`, línea de tiempo de estados y seguimiento en mapa.
 - Panel del repartidor con disponibilidad, viaje activo, historial y ganancias demo, y rastreo de
   ubicación obligatorio mientras el turno está activo.
@@ -117,7 +118,7 @@ tipos, estilo y pruebas, construye y despliega.
 | Ubicación del repartidor      | Obligatoria mientras está disponible: el panel mantiene el rastreo durante todo el turno y retira la disponibilidad si se pierde el permiso                                                                        |
 | Movimiento del repartidor     | Interpolación sobre una polilínea de Sullana (`src/data/route.json`)                                                                                                                                               |
 | Mapa                          | Mapa real con calles (Leaflet + OpenStreetMap) por defecto, con ruta trazada y el repartidor moviéndose sobre ella. Sin conexión cae al `MockMap` en SVG; el adaptador de Google Maps queda listo para una API key |
-| Pagos                         | Efectivo local; Yape/Lemon crean un intento con monto del pedido, referencia única y evidencia de notificación que Back Office debe verificar. No se guardan secretos ni datos de tarjeta. |
+| Pagos                         | Efectivo local; Yape/Lemon manuales crean un intento con monto del pedido, referencia única y código de constancia que Back Office debe verificar. Culqi añade QR Yape dinámico y tarjeta con webhook. No se guardan secretos ni datos de tarjeta. |
 | Notificaciones                | Toasts locales, no push                                                                                                                                                                                            |
 | Compartir ubicación           | `BroadcastChannel` + `localStorage`: sincroniza **entre pestañas del mismo navegador**, no entre dispositivos                                                                                                      |
 | SOS                           | Registra hora y estado en el dispositivo y avisa visualmente en `/share/:token`. **No contacta a la policía ni a emergencias**                                                                                     |
@@ -139,8 +140,8 @@ Nada de esto está implementado y la arquitectura ya deja el lugar donde va:
 
 - Backend y base de datos (pedidos, catálogos, comercios, repartidores, administradores).
 - Autenticación real y roles.
-- Pasarela autorizada para tarjeta y QR dinámico; hoy Yape/Lemon usan QR público opcional del negocio
-  más referencia y verificación manual auditable.
+- Pasarela autorizada para tarjeta y QR Yape dinámico; sin Culqi, Yape/Lemon usan QR público
+  opcional del negocio más código de constancia y verificación manual auditable.
 - WebSockets o push para estados de pedido y ubicación en tiempo real entre dispositivos.
 - Google Maps con API key y rutas reales.
 - Panel de comercios y de operaciones.

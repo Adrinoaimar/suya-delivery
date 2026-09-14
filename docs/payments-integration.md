@@ -2,15 +2,20 @@
 
 ## Estado actual
 
-El checkout habilita efectivo, Yape y Lemon. Para Yape/Lemon, Supabase crea un `payment_attempt`
-con el total calculado por servidor, una referencia `SUYA-XXXXXXXX` y expiración. El celular de
-caja solo ingresa evidencia de la notificación; Back Office busca coincidencias exactas por
-restaurante, billetera, monto y ventana de tiempo, y un rol autorizado confirma el pago mediante
-`verify_wallet_payment`. Una notificación nunca libera una orden automáticamente.
+El checkout habilita efectivo, Yape, Lemon y tarjeta cuando Culqi está configurado. Para Yape/Lemon
+manuales, Supabase crea un `payment_attempt` con el total calculado por servidor, una referencia
+`SUYA-XXXXXXXX` y expiración. La referencia Suya correlaciona el pedido; el código de seguridad u
+operación de la constancia es el identificador fuerte del pago. El celular de caja solo ingresa
+evidencia de la notificación; Back Office busca coincidencias exactas por restaurante, billetera,
+monto, ventana de tiempo y código, y un rol autorizado confirma mediante `verify_wallet_payment`.
+Una notificación nunca libera una orden automáticamente.
 
-El QR del negocio es opcional y se configura en **Back Office → Dispositivos de pagos**. Es un
-payload público del QR comercial; el cliente escribe el monto exacto indicado por Suya. No se
-presenta como QR dinámico mientras no exista un proveedor que lo genere con monto embebido.
+El QR estático del negocio es opcional y se configura en **Back Office → Dispositivos de pagos**.
+El cliente escribe el monto exacto indicado por Suya y luego registra el código de la constancia.
+No se presenta como QR dinámico: el QR dinámico por monto solo se usa en el flujo Culqi. Yape
+Empresa ofrece operación por cajas y verificación en su portal ([sitio oficial](https://empresas.yape.com.pe/)),
+pero este repositorio no inventa una API/webhook que no esté disponible; para autorización automática
+se requiere un proveedor con webhook firmado.
 Si una referencia manual vence, Suya cierra ese intento y genera una referencia nueva sin dejar
 dos intentos pendientes para el mismo pedido.
 

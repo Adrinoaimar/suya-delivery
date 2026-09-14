@@ -577,14 +577,14 @@ export default function CheckoutPage() {
                 {
                   value: 'yape' as const,
                   label: 'Yape',
-                  description: culqiGatewayEnabled ? 'QR exacto por Culqi' : 'QR del negocio',
+                  description: culqiGatewayEnabled ? 'QR exacto por Culqi' : 'QR + código de constancia',
                   icon: QrCode,
                   disabled: false,
                 },
                 {
                   value: 'lemon' as const,
                   label: 'Lemon',
-                  description: 'Billetera digital',
+                  description: 'Billetera + referencia',
                   icon: WalletCards,
                   disabled: false,
                 },
@@ -636,7 +636,7 @@ export default function CheckoutPage() {
               <p className="mt-3 rounded-btn bg-suya-sun-soft px-3 py-2 text-xs text-[#5E511F]">
                 {culqiGatewayEnabled && (method === 'yape' || method === 'card')
                   ? 'Al confirmar se crea una orden Culqi con monto exacto. El checkout muestra Yape o tarjeta y el webhook actualiza el estado.'
-                  : 'Al confirmar se crea una referencia única y el servidor calcula el monto. Luego verás el QR configurado por el negocio o las instrucciones para pagar; la caja verifica la notificación antes de aceptar el pedido.'}
+                  : 'Al confirmar se crea una referencia única y el servidor calcula el monto. Luego verás el QR del negocio o las instrucciones para pagar; conserva el código de la constancia porque caja lo usa para distinguir pagos iguales.'}
               </p>
             )}
             {errors.payment && (

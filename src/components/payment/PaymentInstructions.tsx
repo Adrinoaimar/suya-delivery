@@ -160,6 +160,11 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
     }
   };
 
+  const editEvidence = () => {
+    setEvidenceSaved(false);
+    setEvidenceCode('');
+  };
+
   const renewManualIntent = async () => {
     if (manualBusy || intent.provider === 'culqi') return;
     setManualBusy(true);
@@ -402,33 +407,46 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
           </p>
           <p className="mt-1 text-xs text-suya-muted">
             Después de pagar, escribe el código de seguridad u operación que aparece en tu
-            constancia. Suya guarda un hash no reversible y solo muestra sus últimos cuatro
-            caracteres; así un pago de S/30 no se confunde con otro pago de S/30.
+            constancia. En Yape suele ser el código de seguridad de 3 dígitos; si la constancia
+            muestra un código de operación, copia el valor completo. Suya guarda un hash no
+            reversible y solo muestra los últimos cuatro caracteres; así un pago de S/30 no se
+            confunde con otro pago de S/30.
           </p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
             <label className="min-w-0 flex-1 text-xs font-semibold text-suya-carbon">
-              Código de constancia
+              Código de constancia {intent.method === 'lemon' ? 'o referencia' : ''}
               <input
                 value={evidenceCode}
                 onChange={(event) => setEvidenceCode(event.target.value)}
                 autoComplete="one-time-code"
-                inputMode="text"
+                inputMode={intent.method === 'yape' ? 'numeric' : 'text'}
                 maxLength={64}
-                placeholder="Ej. 384"
+                placeholder={intent.method === 'yape' ? 'Ej. 384' : 'Ej. LM-123'}
                 className="mt-1 h-11 w-full rounded-btn border border-suya-border bg-white px-3 text-sm font-normal outline-none focus:border-suya-green focus:ring-2 focus:ring-suya-green/20"
                 disabled={submittingEvidence || evidenceSaved}
               />
             </label>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={() => void saveEvidence()}
-              disabled={submittingEvidence || evidenceSaved || !evidenceCode.trim()}
-            >
-              {submittingEvidence ? 'Guardando…' : evidenceSaved ? 'Código vinculado' : 'Vincular código'}
-            </Button>
+            {evidenceSaved ? (
+              <Button type="button" variant="secondary" size="sm" onClick={editEvidence}>
+                Cambiar código
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => void saveEvidence()}
+                disabled={submittingEvidence || !evidenceCode.trim()}
+              >
+                {submittingEvidence ? 'Guardando…' : 'Vincular código'}
+              </Button>
+            )}
           </div>
+          {evidenceSaved && (
+            <p className="mt-2 text-xs font-semibold text-suya-green-dark">
+              Código vinculado. Puedes cambiarlo mientras el pago siga pendiente.
+            </p>
+          )}
         </div>
       )}
 
