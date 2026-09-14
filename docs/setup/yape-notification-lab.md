@@ -13,6 +13,10 @@ corresponde a la publicación original de la notificación, no al momento poster
 sincronización. Las futuras billeteras requieren registrar su package ID verificado en
 un adaptador; no se aceptan IDs adivinados.
 
+El extractor acepta remitentes con etiquetas `De:`, `From:`, `Remitente:` o `Sender:` y
+separa esas etiquetas de códigos como `seguridad`, `operación` o `referencia`; el nombre
+visible es contexto, no autorización.
+
 Cada registro lleva `verification: unverified`: una notificación o captura puede
 ser falsa, retrasarse o no incluir todos los datos. Nunca se debe marcar una
 orden como pagada con este laboratorio.

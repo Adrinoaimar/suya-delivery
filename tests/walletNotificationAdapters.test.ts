@@ -36,6 +36,22 @@ describe('wallet notification adapters', () => {
     expect(result?.verification).toBe('unverified');
   });
 
+  it('captures an English sender label and keeps the reference separate', () => {
+    const result = parseWalletNotification({
+      packageName: 'com.applemoncash',
+      title: 'Lemon received',
+      text: 'You received S/ 20.00 from Juan Pérez. Reference: LM-123',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({
+      provider: 'lemon',
+      amountCents: 2000,
+      senderName: 'Juan Pérez',
+      code: 'LM-123',
+    });
+  });
+
   it('rejects unverified package IDs even when message says Lemon', () => {
     expect(
       parseWalletNotification({ packageName: 'com.example.lemon', text: 'Lemon recibiste S/ 10.00' }),

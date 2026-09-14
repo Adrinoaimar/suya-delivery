@@ -1,6 +1,6 @@
 # F27 · Loop de pruebas de pago
 
-Estado del código: commit `825fce0`; CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
+Estado del código: commit `f0dc838`; CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
 
 ## Preparación única
 
@@ -11,6 +11,7 @@ Estado del código: commit `825fce0`; CI valida base de datos, frontend, E2E, An
 5. En Back Office, seleccionar el restaurante correcto, guardar las cuentas Yape/Lemon y crear un dispositivo de caja. Activar el acceso de notificaciones Android de forma explícita.
 
 El observador conserva eventos cifrados si pierde red y reintenta en segundo plano cada 15 minutos como máximo. La observación conserva la hora de publicación original para no ampliar artificialmente la ventana de coincidencia.
+El parser admite etiquetas de remitente como `De:`/`From:` y separa el nombre del código de operación; el código completo sigue siendo la identidad principal del pago.
 
 La reserva de creación también cubre doble toque en `Continuar con pago`: una solicitud prepara la orden externa y la otra debe recibir `409`; no repitas el pago mientras el primer checkout esté preparando la orden.
 
