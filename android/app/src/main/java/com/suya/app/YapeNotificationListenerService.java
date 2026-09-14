@@ -112,10 +112,11 @@ public final class YapeNotificationListenerService extends NotificationListenerS
             notificationKey = statusBarNotification.getPackageName() + "|" + statusBarNotification.getId() + "|" + statusBarNotification.getTag();
         }
         // The notification key stays local and is only included in the digest.
-        // Including the content digest also lets a later expanded notification
-        // add a code without being hidden by an earlier truncated version.
-        String contentDigest = sha256(combined);
-        String eventId = sha256(adapter.source + "|" + statusBarNotification.getPackageName() + "|" + notificationKey + "|" + postTime + "|" + money.amountCents + "|" + money.currency + "|" + (code == null ? "" : code) + "|" + contentDigest);
+        // Do not include notification content or the operation code: wallets
+        // commonly post a truncated notification and then expand the same
+        // notification with the code. The stable event lets the backend and
+        // local queue enrich one observation instead of creating a duplicate.
+        String eventId = sha256(adapter.source + "|" + statusBarNotification.getPackageName() + "|" + notificationKey + "|" + postTime + "|" + money.amountCents + "|" + money.currency);
 
         JSONObject event = new JSONObject();
         try {
@@ -203,7 +204,23 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         }
         String eventId = event.optString("eventId");
         for (int index = 0; index < current.length(); index++) {
-            if (eventId.equals(current.optJSONObject(index).optString("eventId"))) return;
+            JSONObject existing = current.optJSONObject(index);
+            if (!eventId.equals(existing == null ? null : existing.optString("eventId"))) continue;
+            try {
+                boolean enriched = mergeEvidenceField(existing, event, "code")
+                        | mergeEvidenceField(existing, event, "senderName");
+                if (enriched) {
+                    // A previously uploaded event must be retried so the RPC
+                    // can fill the missing identity fields server-side.
+                    existing.put("synced", false);
+                    current.put(index, existing);
+                    String encrypted = encryptEvents(current.toString());
+                    if (encrypted != null) preferences.edit().putString(EVENTS_KEY, encrypted).apply();
+                }
+            } catch (JSONException ignored) {
+                // Keep the original encrypted event if enrichment fails.
+            }
+            return;
         }
         JSONArray next = new JSONArray();
         next.put(event);
@@ -222,6 +239,17 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         String encrypted = encryptEvents(next.toString());
         // Never fall back to plaintext if Android Keystore is unavailable.
         if (encrypted != null) preferences.edit().putString(EVENTS_KEY, encrypted).apply();
+    }
+
+    private static boolean mergeEvidenceField(JSONObject existing, JSONObject incoming, String key) throws JSONException {
+        Object incomingValue = incoming.opt(key);
+        if (incomingValue == null || incomingValue == JSONObject.NULL
+                || TextUtils.isEmpty(incomingValue.toString().trim())) return false;
+        Object existingValue = existing.opt(key);
+        if (existingValue != null && existingValue != JSONObject.NULL
+                && !TextUtils.isEmpty(existingValue.toString().trim())) return false;
+        existing.put(key, incomingValue);
+        return true;
     }
 
     /** Stores the observer token encrypted and starts a best-effort background sync. */

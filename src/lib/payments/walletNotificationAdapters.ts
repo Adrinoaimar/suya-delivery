@@ -156,7 +156,9 @@ export function parseWalletNotification(
 
   const codeMatch = text.match(CODE_PATTERN);
   const observedAt = input.postedAt ?? new Date().toISOString();
-  const stable = `${adapter.source}|${input.packageName}|${observedAt}|${amountCents}|${currency}|${codeMatch?.[1] ?? ''}`;
+  // Wallets may expand one notification later with the operation code. Keep
+  // the fingerprint stable so that enrichment updates the same observation.
+  const stable = `${adapter.source}|${input.packageName}|${observedAt}|${amountCents}|${currency}`;
 
   return {
     provider: adapter.provider,

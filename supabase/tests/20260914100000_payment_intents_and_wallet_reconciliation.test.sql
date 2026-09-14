@@ -1,6 +1,6 @@
 begin;
 
-select plan(96);
+select plan(102);
 
 select has_function(
   'public', 'refresh_payment_intent', array['uuid', 'text', 'text'],
@@ -143,6 +143,13 @@ select ok(
 select ok(
   (select prosecdef from pg_proc where oid = 'public.verify_wallet_payment(uuid,uuid)'::regprocedure),
   'verificar pago usa security definer'
+);
+select ok(
+  (select pg_get_functiondef('public.ingest_wallet_observation(text,text,text,text,text,bigint,text,timestamptz)'::regprocedure)
+    like '%do update set%'
+    and pg_get_functiondef('public.ingest_wallet_observation(text,text,text,text,text,bigint,text,timestamptz)'::regprocedure)
+      like '%code_fingerprint%'),
+  'la ingesta enriquece la misma observación cuando llega una notificación expandida'
 );
 select ok(
   (select prosecdef from pg_proc where oid = 'public.create_culqi_payment_intent(uuid,text,text)'::regprocedure),
@@ -414,6 +421,48 @@ insert into public.wallet_observer_devices (
   'a6500000-0000-0000-0000-000000000001', 'a6200000-0000-0000-0000-000000000001',
   'Caja de prueba', extensions.crypt('payment-loop-device-token', extensions.gen_salt('bf')), 'beef'
 );
+insert into public.wallet_observer_devices (
+  id, restaurant_id, label, token_hash, token_last4
+) values (
+  'a6500000-0000-0000-0000-000000000002', 'a6200000-0000-0000-0000-000000000001',
+  'Caja de enriquecimiento',
+  extensions.crypt('wallet-observer-enrichment-device-token-12345678901234567890', extensions.gen_salt('bf')),
+  '7890'
+);
+
+set local request.jwt.claims = '{"role":"anon"}';
+set local role anon;
+select lives_ok(
+  $$ select * from public.ingest_wallet_observation(
+    'wallet-observer-enrichment-device-token-12345678901234567890',
+    'expanded-notification-event', 'yape', null, null, 3000, 'PEN', now()
+  ) $$,
+  'la notificación corta se guarda como una observación'
+);
+select lives_ok(
+  $$ select * from public.ingest_wallet_observation(
+    'wallet-observer-enrichment-device-token-12345678901234567890',
+    'expanded-notification-event', 'yape', 'Ana Dos', 'OP-5678', 3000, 'PEN', now()
+  ) $$,
+  'la notificación expandida reutiliza el mismo evento'
+);
+select is(
+  (select count(*) from public.wallet_observations where event_id = 'expanded-notification-event'),
+  1::bigint,
+  'la expansión no duplica la observación'
+);
+select is(
+  (select code_last4 from public.wallet_observations where event_id = 'expanded-notification-event'),
+  '5678',
+  'la expansión conserva el sufijo del código'
+);
+select is(
+  (select sender_name from public.wallet_observations where event_id = 'expanded-notification-event'),
+  'Ana Dos',
+  'la expansión completa el remitente'
+);
+reset role;
+
 insert into public.wallet_observations (
   id, device_id, restaurant_id, event_id, provider, sender_name, code_digest,
   code_fingerprint, code_last4, amount_cents, currency, observed_at

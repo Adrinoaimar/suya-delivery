@@ -41,7 +41,8 @@ describe('Suya hardening guards', () => {
     expect(listener).toMatch(/EXTRA_SUB_TEXT/);
     expect(listener).toMatch(/EXTRA_INFO_TEXT/);
     expect(listener).toMatch(/EXTRA_SUMMARY_TEXT/);
-    expect(listener).toMatch(/contentDigest/);
+    expect(listener).toMatch(/The stable event/);
+    expect(listener).toMatch(/mergeEvidenceField/);
     expect(listener).toMatch(/scheduleSyncJob/);
     expect(listener).toMatch(/pass < 2/);
     expect(listener).toMatch(/optBoolean\("synced", false\)/);

@@ -80,6 +80,24 @@ describe('wallet notification adapters', () => {
     expect(result?.verification).toBe('unverified');
   });
 
+  it('keeps the same fingerprint when the wallet later expands the notification with a code', () => {
+    const first = parseWalletNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Yape recibido',
+      text: 'Recibiste S/ 30.00',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+    const expanded = parseWalletNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Yape recibido',
+      text: 'Recibiste S/ 30.00. Código de operación: 842911',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(expanded?.code).toBe('842911');
+    expect(expanded?.fingerprint).toBe(first?.fingerprint);
+  });
+
   it('supports future wallets only through explicit package allowlist', () => {
     const generic = createGenericWalletNotificationAdapter({
       source: 'generic_notification',
