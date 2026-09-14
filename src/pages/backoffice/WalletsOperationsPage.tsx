@@ -740,6 +740,13 @@ export default function WalletsOperationsPage() {
                           </p>
                         ) : (
                           <div className="mt-2 space-y-2">
+                            {candidates.length > 1 && (
+                              <p className="rounded-xl border border-suya-sun/60 bg-white p-2.5 text-sm text-suya-carbon">
+                                Hay {candidates.length} pedidos compatibles. Agrega el código
+                                completo de la constancia para identificar uno solo antes de
+                                verificar.
+                              </p>
+                            )}
                             {candidates.map((candidate) => (
                               <div
                                 key={candidate.paymentAttemptId}
@@ -761,7 +768,7 @@ export default function WalletsOperationsPage() {
                                   onClick={() =>
                                     void verifyCandidate(observation.id, candidate.paymentAttemptId)
                                   }
-                                  disabled={verifyingAttemptId !== null}
+                                  disabled={verifyingAttemptId !== null || candidates.length !== 1}
                                 >
                                   {verifyingAttemptId === candidate.paymentAttemptId
                                     ? 'Verificando…'
