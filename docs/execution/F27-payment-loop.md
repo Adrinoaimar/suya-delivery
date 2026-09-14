@@ -42,6 +42,7 @@ La reserva de creación también cubre doble toque en `Continuar con pago`: una 
 - Código equivocado: no debe aparecer candidato ni autorizar.
 - Monto distinto, proveedor distinto o ventana vencida: no debe aparecer candidato.
 - Notificación sin código: Back Office puede completar el código visible en la constancia; solo entonces se busca coincidencia.
+- Referencia manual vencida: el cliente debe pulsar `Generar nueva referencia`; la anterior queda `failed/expired` y no se crean dos pendientes.
 
 ## Evidencia y límites
 

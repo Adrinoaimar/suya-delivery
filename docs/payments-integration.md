@@ -11,6 +11,8 @@ restaurante, billetera, monto y ventana de tiempo, y un rol autorizado confirma 
 El QR del negocio es opcional y se configura en **Back Office → Dispositivos de pagos**. Es un
 payload público del QR comercial; el cliente escribe el monto exacto indicado por Suya. No se
 presenta como QR dinámico mientras no exista un proveedor que lo genere con monto embebido.
+Si una referencia manual vence, Suya cierra ese intento y genera una referencia nueva sin dejar
+dos intentos pendientes para el mismo pedido.
 
 Tarjeta queda bloqueada si Culqi no está configurado; con el flag y webhook activos usa checkout seguro.
 

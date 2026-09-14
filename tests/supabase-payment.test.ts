@@ -33,7 +33,7 @@ describe('SupabasePaymentService', () => {
       'guest-token',
     );
 
-    expect(client.rpc).toHaveBeenCalledWith('create_payment_intent', {
+    expect(client.rpc).toHaveBeenCalledWith('refresh_payment_intent', {
       p_order_id: 'order-1',
       p_method: 'yape',
       p_guest_access_token: 'guest-token',

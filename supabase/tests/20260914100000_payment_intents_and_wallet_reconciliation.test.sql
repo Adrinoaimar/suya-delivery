@@ -1,6 +1,11 @@
 begin;
 
-select plan(73);
+select plan(79);
+
+select has_function(
+  'public', 'refresh_payment_intent', array['uuid', 'text', 'text'],
+  'renovar intento expirado existe'
+);
 
 select has_function(
   'public', 'create_payment_intent', array['uuid', 'text', 'text'],
@@ -168,6 +173,11 @@ select ok(
   'cliente y guest pueden iniciar pago con RPC'
 );
 select ok(
+  has_function_privilege('anon', 'public.refresh_payment_intent(uuid,text,text)', 'execute')
+    and has_function_privilege('authenticated', 'public.refresh_payment_intent(uuid,text,text)', 'execute'),
+  'cliente y guest pueden renovar un intento expirado'
+);
+select ok(
   has_function_privilege('anon', 'public.create_culqi_payment_intent(uuid,text,text)', 'execute')
     and has_function_privilege('authenticated', 'public.create_culqi_payment_intent(uuid,text,text)', 'execute'),
   'cliente y guest pueden iniciar orden Culqi con RPC'
@@ -209,6 +219,11 @@ select ok(
 select ok(
   (select pg_get_functiondef('public.create_payment_intent(uuid,text,text)'::regprocedure) like '%v_order.total%'),
   'el monto sale del pedido bloqueado'
+);
+select ok(
+  (select pg_get_functiondef('public.refresh_payment_intent(uuid,text,text)'::regprocedure)
+    like '%expires_at <= now()%'),
+  'la renovación solo reemplaza intentos expirados'
 );
 select ok(
   (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) like '%verification_status = ''verified''%'),
@@ -316,7 +331,11 @@ insert into public.orders (
   ('a6300000-0000-0000-0000-000000000003', 'PAYTEST3',
    'a6000000-0000-0000-0000-000000000001', 'a6200000-0000-0000-0000-000000000001',
    'confirmed', 'cash', 27, 3, 'Cliente Uno', '999111111', 'Dirección tres', 30,
-   'a6400000-0000-0000-0000-000000000003');
+   'a6400000-0000-0000-0000-000000000003'),
+  ('a6300000-0000-0000-0000-000000000004', 'PAYTEST4',
+   'a6000000-0000-0000-0000-000000000001', 'a6200000-0000-0000-0000-000000000001',
+   'confirmed', 'cash', 27, 3, 'Cliente Uno', '999111111', 'Dirección cuatro', 30,
+   'a6400000-0000-0000-0000-000000000004');
 
 set local request.jwt.claims =
   '{"sub":"a6000000-0000-0000-0000-000000000001","role":"authenticated"}';
@@ -328,6 +347,27 @@ select lives_ok(
 select lives_ok(
   $$ select public.submit_payment_evidence('a6300000-0000-0000-0000-000000000001', '111111') $$,
   'cliente uno registra su código completo'
+);
+select lives_ok(
+  $$ select * from public.create_payment_intent('a6300000-0000-0000-0000-000000000004', 'yape') $$,
+  'cliente uno crea intento renovable'
+);
+update public.payment_attempts
+set expires_at = now() - interval '1 minute'
+where order_id = 'a6300000-0000-0000-0000-000000000004';
+select lives_ok(
+  $$ select * from public.refresh_payment_intent('a6300000-0000-0000-0000-000000000004', 'yape') $$,
+  'un intento expirado genera una referencia nueva'
+);
+select is(
+  (select count(*) from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000004' and status = 'pending'),
+  1::bigint,
+  'la renovación conserva un solo intento pendiente'
+);
+select is(
+  (select count(*) from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000004' and status = 'failed' and failure_code = 'expired'),
+  1::bigint,
+  'el intento vencido queda cerrado como expirado'
 );
 select lives_ok(
   $$ select * from public.create_culqi_payment_intent('a6300000-0000-0000-0000-000000000003', 'yape') $$,

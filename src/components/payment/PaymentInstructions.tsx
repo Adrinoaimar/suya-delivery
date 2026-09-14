@@ -43,6 +43,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   const [submittingEvidence, setSubmittingEvidence] = useState(false);
   const [evidenceSaved, setEvidenceSaved] = useState(false);
   const [gatewayBusy, setGatewayBusy] = useState(false);
+  const [manualBusy, setManualBusy] = useState(false);
 
   useEffect(() => {
     if (order.paymentMethod === 'cash' || order.paymentIntent) return;
@@ -140,6 +141,25 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
       );
     } finally {
       setSubmittingEvidence(false);
+    }
+  };
+
+  const renewManualIntent = async () => {
+    if (manualBusy || intent.provider === 'culqi') return;
+    setManualBusy(true);
+    try {
+      const refreshed = await paymentService.createIntent(order.id, intent.method);
+      setIntent(refreshed);
+      setEvidenceCode('');
+      setEvidenceSaved(false);
+      notificationService.notify('Nueva referencia de pago generada.', 'success');
+    } catch (cause) {
+      notificationService.notify(
+        cause instanceof Error ? cause.message : 'No pudimos generar una nueva referencia.',
+        'danger',
+      );
+    } finally {
+      setManualBusy(false);
     }
   };
 
@@ -313,6 +333,23 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
           Copiar referencia
         </Button>
       </div>
+
+      {intent.provider !== 'culqi' && (gatewayExpired || intent.status === 'failed') && (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-btn border border-suya-sun/60 bg-white/80 p-3">
+          <p className="text-sm text-suya-carbon">
+            Esta referencia ya no acepta pagos. Genera otra antes de pagar.
+          </p>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => void renewManualIntent()}
+            disabled={manualBusy}
+          >
+            {manualBusy ? 'Generando…' : 'Generar nueva referencia'}
+          </Button>
+        </div>
+      )}
 
       {!verified && intent.provider !== 'culqi' && (intent.method === 'yape' || intent.method === 'lemon') && (
         <div className="mt-4 rounded-btn border border-suya-green/20 bg-white/75 p-3">

@@ -126,7 +126,7 @@ export class SupabasePaymentService implements PaymentService {
     if (method === 'card') {
       throw new Error('Tarjeta requiere configurar Culqi en esta aplicación.');
     }
-    const { data, error } = await this.client.rpc('create_payment_intent', {
+    const { data, error } = await this.client.rpc('refresh_payment_intent', {
       p_order_id: orderId,
       p_method: method,
       p_guest_access_token: token,
