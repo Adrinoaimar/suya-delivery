@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import WalletsOperationsPage from '@/pages/backoffice/WalletsOperationsPage';
 import { useAuthStore } from '@/store/authStore';
 import type { AuthIdentity } from '@/lib/auth/types';
+import type { WalletPaymentCandidate } from '@/lib/services';
 import type { Store } from '@/types';
 
 const mocks = vi.hoisted(() => ({
@@ -148,5 +149,89 @@ describe('WalletsOperationsPage', () => {
     expect(screen.getAllByRole('button', { name: 'Verificar pago' }).every((button) =>
       (button as HTMLButtonElement).disabled,
     )).toBe(true);
+  });
+
+  it('descarta una respuesta vieja al buscar candidatos en rápida sucesión', async () => {
+    const firstObservation = { id: 'observation-1', codeLast4: '1234' };
+    const secondObservation = { id: 'observation-2', codeLast4: '5678' };
+    mocks.listObservations.mockResolvedValue([
+      {
+        ...firstObservation,
+        restaurantId: restaurant.id,
+        deviceId: 'device-1',
+        provider: 'yape',
+        senderName: 'Ana Uno',
+        amountCents: 3000,
+        currency: 'PEN',
+        observedAt: '2026-09-14T18:30:00.000Z',
+        verification: 'unverified',
+      },
+      {
+        ...secondObservation,
+        restaurantId: restaurant.id,
+        deviceId: 'device-1',
+        provider: 'yape',
+        senderName: 'Luis Dos',
+        amountCents: 3000,
+        currency: 'PEN',
+        observedAt: '2026-09-14T18:31:00.000Z',
+        verification: 'unverified',
+      },
+    ]);
+    let resolveFirst!: (value: WalletPaymentCandidate[]) => void;
+    let resolveSecond!: (value: WalletPaymentCandidate[]) => void;
+    const firstRequest = new Promise<WalletPaymentCandidate[]>((resolve) => {
+      resolveFirst = resolve;
+    });
+    const secondRequest = new Promise<WalletPaymentCandidate[]>((resolve) => {
+      resolveSecond = resolve;
+    });
+    mocks.listPaymentCandidates.mockImplementation((id: string) =>
+      id === firstObservation.id ? firstRequest : secondRequest,
+    );
+
+    render(<WalletsOperationsPage />);
+    const searchButtons = await screen.findAllByRole('button', { name: 'Buscar pedido' });
+    await act(async () => {
+      searchButtons[0].click();
+      searchButtons[1].click();
+    });
+
+    await act(async () => {
+      resolveFirst([
+        {
+          paymentAttemptId: 'attempt-old',
+          orderId: 'order-old',
+          orderCode: 'UNO',
+          customerName: 'Cliente viejo',
+          checkoutReference: 'SUYA-OLD',
+          method: 'yape',
+          amount: 30,
+          createdAt: '2026-09-14T18:00:00.000Z',
+          expiresAt: '2026-09-14T19:00:00.000Z',
+          senderName: 'Ana Uno',
+        },
+      ]);
+      await Promise.resolve();
+    });
+    expect(screen.queryByText(/Pedido #UNO/)).not.toBeInTheDocument();
+
+    await act(async () => {
+      resolveSecond([
+        {
+          paymentAttemptId: 'attempt-current',
+          orderId: 'order-current',
+          orderCode: 'DOS',
+          customerName: 'Cliente actual',
+          checkoutReference: 'SUYA-CURRENT',
+          method: 'yape',
+          amount: 30,
+          createdAt: '2026-09-14T18:01:00.000Z',
+          expiresAt: '2026-09-14T19:01:00.000Z',
+          senderName: 'Luis Dos',
+        },
+      ]);
+    });
+    expect(await screen.findByText(/Pedido #DOS/)).toBeInTheDocument();
   });
 });

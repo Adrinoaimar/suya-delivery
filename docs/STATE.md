@@ -190,7 +190,8 @@ producción.
 
 - `npm run verify:payments` valida project ref, Supabase público, Culqi público, mapas y orígenes canónicos sin hacer red ni mutaciones; `--deployment` añade secretos de Edge Functions y `--network` solo hace `OPTIONS`.
 - El gate rechaza mapas ausentes o `mock` y claves secretas `sk_` en frontend. Configuración sintética válida y regresiones negativas pasaron.
-- Suite serial: 61 archivos/252 pruebas; lint, typecheck, escaneo de secretos y `git diff --check` verdes. La ejecución paralela tuvo una carrera aislada en `mobile-routes`, que pasó sola.
+- Culqi conserva el botón bloqueado durante un cargo aunque el token llegue antes de cerrar `open()`; Back Office ignora respuestas viejas de candidatos cuando se consultan filas superpuestas.
+- Suite serial: 61 archivos/254 pruebas; lint, typecheck, escaneo de secretos y `git diff --check` verdes. La ejecución paralela tuvo una carrera aislada en `mobile-routes`, que pasó sola.
 - Producción sigue pendiente de credenciales/configuración real, migraciones, webhook, publicación y dos pagos físicos S/30.
 
 ## Reglas de continuidad

@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PaymentInstructions } from '@/components/payment/PaymentInstructions';
 import type { Order, PaymentIntent } from '@/types';
@@ -169,6 +169,44 @@ describe('PaymentInstructions', () => {
 
     await act(async () => {
       screen.getByRole('button', { name: 'Pagar con tarjeta' }).click();
+    });
+
+    expect(screen.getByRole('button', { name: 'Reintentar pago' })).toBeEnabled();
+  });
+
+  it('mantiene bloqueado el cargo si Culqi entrega el token antes de cerrar open', async () => {
+    const gatewayIntent: PaymentIntent = {
+      ...pendingIntent,
+      method: 'card',
+      provider: 'culqi',
+      providerReference: 'ord_test_suya_sync_token',
+    };
+    let rejectCharge!: (cause: Error) => void;
+    mocks.chargeCard.mockImplementationOnce(
+      () =>
+        new Promise((_resolve, reject) => {
+          rejectCharge = reject;
+        }),
+    );
+    mocks.getIntent.mockResolvedValueOnce({ ...gatewayIntent, status: 'failed' });
+    mocks.openCulqiCheckout.mockImplementationOnce(
+      (options: { onToken: (tokenId: string) => Promise<void> }) => {
+        void options.onToken('tkn_test_sync_token');
+        return Promise.resolve();
+      },
+    );
+    sessionStorage.setItem('suya.payment-email:order-1', 'cliente@example.com');
+    render(<PaymentInstructions order={order(gatewayIntent)} />);
+
+    await act(async () => {
+      screen.getByRole('button', { name: 'Pagar con tarjeta' }).click();
+    });
+    await waitFor(() => expect(mocks.chargeCard).toHaveBeenCalled());
+
+    expect(screen.getByRole('button', { name: 'Procesando…' })).toBeDisabled();
+
+    await act(async () => {
+      rejectCharge(new Error('Culqi rechazó el pago'));
     });
 
     expect(screen.getByRole('button', { name: 'Reintentar pago' })).toBeEnabled();

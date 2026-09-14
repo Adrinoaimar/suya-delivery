@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CheckCircle2, Copy, ExternalLink, LoaderCircle, QrCode, ShieldCheck } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Badge } from '@/components/common/Badge';
@@ -45,6 +45,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   const [gatewayBusy, setGatewayBusy] = useState(false);
   const [gatewayAwaitingWebhook, setGatewayAwaitingWebhook] = useState(false);
   const [manualBusy, setManualBusy] = useState(false);
+  const gatewayTokenBusyRef = useRef(false);
 
   useEffect(() => {
     if (order.paymentMethod === 'cash' || order.paymentIntent) return;
@@ -187,6 +188,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
     }
     setGatewayBusy(true);
     setGatewayAwaitingWebhook(false);
+    gatewayTokenBusyRef.current = false;
     try {
       const activeIntent =
         intent.status === 'failed' || gatewayExpired || !intent.providerReference
@@ -200,6 +202,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         onToken: async (tokenId) => {
           // Custom Checkout abre un modal no bloqueante. El callback puede
           // llegar después de que openCulqiCheckout() haya retornado.
+          gatewayTokenBusyRef.current = true;
           setGatewayBusy(true);
           try {
             const providerReference = await paymentService.chargeCard(
@@ -233,6 +236,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
               'danger',
             );
           } finally {
+            gatewayTokenBusyRef.current = false;
             setGatewayBusy(false);
           }
         },
@@ -253,7 +257,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
       // Culqi.open() no espera a que el usuario cierre el modal. Liberamos el
       // estado de apertura para no dejar la pantalla bloqueada si lo cancela;
       // onToken vuelve a marcarlo ocupado durante el cobro.
-      setGatewayBusy(false);
+      if (!gatewayTokenBusyRef.current) setGatewayBusy(false);
     } catch (cause) {
       setGatewayBusy(false);
       setGatewayAwaitingWebhook(false);

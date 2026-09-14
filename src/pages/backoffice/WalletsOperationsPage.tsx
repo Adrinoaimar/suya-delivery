@@ -90,6 +90,7 @@ export default function WalletsOperationsPage() {
   const [qrPayload, setQrPayload] = useState('');
   const [accountActive, setAccountActive] = useState(false);
   const loadRequestRef = useRef(0);
+  const candidateRequestRef = useRef(0);
   const canSelectRestaurant = isPlatformAdmin || restaurantIds.length > 1;
   const activeRestaurantId = restaurantId || (isPlatformAdmin ? '' : restaurantIds[0] ?? '');
 
@@ -225,18 +226,23 @@ export default function WalletsOperationsPage() {
   };
 
   const findCandidates = async (observationId: string) => {
+    const requestId = ++candidateRequestRef.current;
     setCandidateObservationId(observationId);
     setCandidateLoading(true);
+    setCandidates([]);
     try {
-      setCandidates(await walletObserverService.listPaymentCandidates(observationId));
+      const nextCandidates = await walletObserverService.listPaymentCandidates(observationId);
+      if (requestId !== candidateRequestRef.current) return;
+      setCandidates(nextCandidates);
     } catch (cause) {
+      if (requestId !== candidateRequestRef.current) return;
       setCandidates([]);
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No pudimos buscar pedidos compatibles.',
         'danger',
       );
     } finally {
-      setCandidateLoading(false);
+      if (requestId === candidateRequestRef.current) setCandidateLoading(false);
     }
   };
 
