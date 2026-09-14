@@ -232,6 +232,15 @@ producción.
 - Evidencia local: 62 suites/260 pruebas, lint, typecheck, escaneo de secretos, build frontend sintético y `git diff --check` verdes.
 - Pendiente: CI debe recompilar las tres APK debug; producción aún requiere configuración, migraciones/Edge Functions, webhook, publicación, firma release y dos pagos físicos iguales de S/30.
 
+## Checkpoint F27.12: APKs CI con preselección temprana `911f799` (2026-09-14)
+
+- La compilación CI `34903110997` incluye el código funcional `762d7e0`: la cuenta de restaurante aparece preseleccionada antes de que terminen las cargas de observaciones y dispositivos.
+- PR #36 quedó 6/6 verde: base, frontend, browser, browser-E2E, Android e iOS. Suite local: 62 suites/260 pruebas; lint, typecheck, secretos, build sintético y diff limpios.
+- Rider: `output/apks/911f799/Suya-Rider-debug-1cdd61a6b85942dd2d1a64c6e1651e777f505fa7/Suya-Rider-debug.apk`; SHA-256 `c7dfe988159d0d29ef87a19f649bf50aca27a6d6ccdc6c408395bade94bcc413`.
+- Back Office: `output/apks/911f799/Suya-Backoffice-debug-1cdd61a6b85942dd2d1a64c6e1651e777f505fa7/Suya-Backoffice-debug.apk`; SHA-256 `75bb4bc4cce030e40fc33d5753dc807e4030e0f8b37b97d5050b1f19d85be111`.
+- Caja: `output/apks/911f799/Suya-Wallet-Observer-debug-1cdd61a6b85942dd2d1a64c6e1651e777f505fa7/Suya-Wallet-Observer-debug.apk`; SHA-256 `8214dc36e47426d694f91315b627583ee96ae4b0f28b7bbe6653365fc897e7a9`.
+- Las tres pasaron `unzip -tqq` y siguen siendo debug. Producción requiere configuración, migraciones/Edge Functions, webhook, publicación, firma release y dos pagos físicos iguales de S/30.
+
 ## Reglas de continuidad
 
 - Git, pruebas y este archivo son estado canónico.
