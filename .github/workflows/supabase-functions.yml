@@ -8,17 +8,60 @@ permissions:
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      CULQI_SECRET_KEY: ${{ secrets.CULQI_SECRET_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
     steps:
       - uses: actions/checkout@v4
-      - name: Validar token de despliegue
-        run: test -n "$SUPABASE_ACCESS_TOKEN"
+      - name: Validar credenciales y orígenes de producción
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SUPABASE_ACCESS_TOKEN"
+          test -n "$SUPABASE_DB_PASSWORD"
+          test -n "$CULQI_SECRET_KEY"
+          test -n "$SUPABASE_SERVICE_ROLE_KEY"
+          test -n "$ALLOWED_ORIGINS"
+          for origin in \
+            https://suyadelivery.com \
+            https://rider.suyadelivery.com \
+            https://panel.suyadelivery.com; do
+            case ",${ALLOWED_ORIGINS}," in
+              *,${origin},*) ;;
+              *) echo "Falta origen permitido: ${origin}" >&2; exit 1 ;;
+            esac
+          done
       - uses: supabase/setup-cli@v1
         with:
           version: 2.115.0
+      - name: Aplicar migraciones remotas
+        run: >-
+          supabase db push
+          --project-ref cggxooilzhqlcnofgtmi
+          --password "$SUPABASE_DB_PASSWORD"
+          --skip-vault
+          --yes
+      - name: Configurar secretos de Edge Functions
+        shell: bash
+        run: |
+          set -euo pipefail
+          secret_file="$RUNNER_TEMP/suya-edge-functions.env"
+          umask 077
+          {
+            printf 'CULQI_SECRET_KEY=%s\n' "$CULQI_SECRET_KEY"
+            printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SUPABASE_SERVICE_ROLE_KEY"
+            printf 'ALLOWED_ORIGINS=%s\n' "$ALLOWED_ORIGINS"
+          } > "$secret_file"
+          trap 'rm -f "$secret_file"' EXIT
+          supabase secrets set \
+            --project-ref cggxooilzhqlcnofgtmi \
+            --env-file "$secret_file"
       - name: Desplegar invitación de propietarios
         run: supabase functions deploy invite-restaurant-owner --project-ref cggxooilzhqlcnofgtmi
       - name: Desplegar invitación de repartidores

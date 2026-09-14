@@ -1,11 +1,11 @@
 # F27 · Loop de pruebas de pago
 
-Estado del código: commit `50f4a95`; CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
+Estado del código: commit `a534b04`; CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
 
 ## Preparación única
 
-1. Aplicar migraciones en el proyecto Supabase de prueba y desplegar las Edge Functions desde la misma revisión.
-2. Configurar en Supabase únicamente secretos de prueba: `CULQI_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY` y `ALLOWED_ORIGINS`.
+1. Desde `main`, ejecutar el workflow manual `Desplegar Edge Functions Supabase`. Su preflight exige `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `CULQI_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY` y `ALLOWED_ORIGINS`; aplica migraciones y configura los secretos antes de desplegar las Edge Functions.
+2. Mantener en GitHub/Supabase únicamente secretos de prueba hasta completar la validación: `CULQI_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY` y `ALLOWED_ORIGINS`.
 3. Configurar el frontend con `VITE_CULQI_GATEWAY_ENABLED=true` y la llave pública `pk_test_...`; nunca colocar una `sk_...` en web o APK. El cliente usa Culqi Custom Checkout (`https://js.culqi.com/checkout-js`).
 4. Registrar el webhook Culqi `order.status.changed` apuntando a `culqi-webhook` y comprobar que responde por HTTPS.
 5. En Back Office, seleccionar el restaurante correcto, guardar las cuentas Yape/Lemon y crear un dispositivo de caja. Activar el acceso de notificaciones Android de forma explícita.
@@ -51,4 +51,4 @@ La reserva de creación también cubre doble toque en `Continuar con pago`: una 
 
 Guardar solo referencias, estados, timestamps y hashes de APK; no guardar llaves, números completos, credenciales ni capturas con datos personales. Una observación Android es evidencia mínima, opt-in y revisable; nunca reemplaza la confirmación del proveedor ni autoriza por sí sola.
 
-Referencias oficiales: [órdenes Culqi](https://docs.culqi.com/es/documentacion/pagos-online/ordenes-de-pago/ordenes/), [billeteras móviles](https://docs.culqi.com/es/documentacion/pagos-online/ordenes-de-pago/billetera-moviles), [Checkout](https://docs.culqi.com/es/documentacion/checkout/v4) y [webhooks](https://docs.culqi.com/es/documentacion/pagos-online/webhooks/).
+Referencias oficiales: [órdenes Culqi](https://docs.culqi.com/es/documentacion/pagos-online/ordenes-de-pago/ordenes/), [billeteras móviles](https://docs.culqi.com/es/documentacion/pagos-online/ordenes-de-pago/billetera-moviles), [Custom Checkout](https://docs.culqi.com/es/documentacion/checkout/checkout-custom) y [webhooks](https://docs.culqi.com/es/documentacion/pagos-online/webhooks/).
