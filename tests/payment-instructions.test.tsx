@@ -6,6 +6,7 @@ import type { Order, PaymentIntent } from '@/types';
 const mocks = vi.hoisted(() => ({
   getIntent: vi.fn(),
   createIntent: vi.fn(),
+  chargeCard: vi.fn(),
   submitEvidence: vi.fn(),
   notify: vi.fn(),
   openCulqiCheckout: vi.fn(),
@@ -15,6 +16,7 @@ vi.mock('@/lib/services', () => ({
   paymentService: {
     getIntent: mocks.getIntent,
     createIntent: mocks.createIntent,
+    chargeCard: mocks.chargeCard,
     submitEvidence: mocks.submitEvidence,
   },
   notificationService: { notify: mocks.notify },
@@ -120,5 +122,31 @@ describe('PaymentInstructions', () => {
     });
 
     expect(screen.getByRole('button', { name: 'Abrir QR Yape' })).not.toBeDisabled();
+  });
+
+  it('refresca el intento fallido para que un reintento no use la referencia vieja', async () => {
+    const gatewayIntent: PaymentIntent = {
+      ...pendingIntent,
+      method: 'card',
+      provider: 'culqi',
+      providerReference: 'ord_test_suya_declined',
+    };
+    const failedIntent = { ...gatewayIntent, status: 'failed' as const };
+    mocks.chargeCard.mockRejectedValueOnce(new Error('Culqi rechazó el pago'));
+    mocks.getIntent.mockResolvedValueOnce(failedIntent);
+    mocks.openCulqiCheckout.mockImplementationOnce(
+      async (options: { onToken: (tokenId: string) => Promise<void> }) => {
+        await options.onToken('tkn_test_declined');
+      },
+    );
+    sessionStorage.setItem('suya.payment-email:order-1', 'cliente@example.com');
+    render(<PaymentInstructions order={order(gatewayIntent)} />);
+
+    await act(async () => {
+      screen.getByRole('button', { name: 'Pagar con tarjeta' }).click();
+    });
+
+    expect(mocks.getIntent).toHaveBeenCalledWith('order-1');
+    expect(screen.getByRole('button', { name: 'Reintentar pago' })).toBeEnabled();
   });
 });

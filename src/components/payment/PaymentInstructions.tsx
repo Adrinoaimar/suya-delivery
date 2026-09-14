@@ -215,6 +215,11 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
               'success',
             );
           } catch (cause) {
+            // El backend cierra el intento cuando Culqi rechaza el cargo. No
+            // conserves el estado pending local: así el próximo toque crea
+            // una orden/referencia nueva y no reusa la anterior.
+            const refreshed = await paymentService.getIntent(order.id).catch(() => null);
+            if (refreshed) setIntent(refreshed);
             notificationService.notify(
               cause instanceof Error
                 ? cause.message
