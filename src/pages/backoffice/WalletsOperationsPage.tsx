@@ -79,11 +79,8 @@ export default function WalletsOperationsPage() {
   const [accountActive, setAccountActive] = useState(false);
   const [nativeStatus, setNativeStatus] = useState<NativeWalletObserverStatus | null>(null);
   const loadRequestRef = useRef(0);
-  const activeRestaurantId = isPlatformAdmin
-    ? restaurantId
-    : restaurantIds.length === 1
-      ? restaurantIds[0]
-      : '';
+  const canSelectRestaurant = isPlatformAdmin || restaurantIds.length > 1;
+  const activeRestaurantId = restaurantId || (isPlatformAdmin ? '' : restaurantIds[0] ?? '');
 
   const load = useCallback(async () => {
     const requestId = ++loadRequestRef.current;
@@ -110,7 +107,9 @@ export default function WalletsOperationsPage() {
             : visibleStores[0]?.id || '',
         );
       } else {
-        setRestaurantId(restaurantIds.length === 1 ? restaurantIds[0] : '');
+        setRestaurantId((current) =>
+          current && restaurantIds.includes(current) ? current : restaurantIds[0] ?? '',
+        );
       }
     } catch (cause) {
       if (requestId !== loadRequestRef.current) return;
@@ -127,8 +126,15 @@ export default function WalletsOperationsPage() {
   useEffect(() => {
     if (!activeRestaurantId) {
       setPaymentAccounts([]);
+      setAccountLabel('Cuenta principal');
+      setQrPayload('');
+      setAccountActive(false);
       return;
     }
+    setPaymentAccounts([]);
+    setAccountLabel('Cuenta principal');
+    setQrPayload('');
+    setAccountActive(false);
     let active = true;
     void walletObserverService
       .listPaymentAccounts(activeRestaurantId)
@@ -368,7 +374,7 @@ export default function WalletsOperationsPage() {
           </div>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-          {isPlatformAdmin ? (
+          {canSelectRestaurant ? (
             <label className="text-sm font-semibold">
               Cuenta de restaurante
               <select
