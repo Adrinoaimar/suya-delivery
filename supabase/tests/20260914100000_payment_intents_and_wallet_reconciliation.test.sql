@@ -446,6 +446,7 @@ select lives_ok(
   ) $$,
   'la notificación expandida reutiliza el mismo evento'
 );
+reset role;
 select is(
   (select count(*) from public.wallet_observations where event_id = 'expanded-notification-event'),
   1::bigint,
