@@ -43,7 +43,10 @@ describe('Suya hardening guards', () => {
     expect(listener).not.toContain('service_role');
     expect(listener).not.toContain('putString(EVENTS_KEY, next.toString())');
     expect(source('android/app/src/main/java/com/suya/app/SuyaWalletSyncJobService.java')).toMatch(/jobFinished/);
-    expect(source('android/app/src/main/AndroidManifest.xml')).toMatch(/RECEIVE_BOOT_COMPLETED/);
+    const manifest = source('android/app/src/main/AndroidManifest.xml');
+    expect(manifest).toMatch(/RECEIVE_BOOT_COMPLETED/);
+    expect(gradle).toMatch(/suyaWalletObserverEnabled = suyaAndroidAppId == 'com\.suya\.rider'/);
+    expect(manifest).toMatch(/android:enabled="\$\{suyaWalletObserverEnabled\}"/);
   });
 
   it('ships defensive headers with every static Pages bundle', () => {
