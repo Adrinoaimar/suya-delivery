@@ -1,6 +1,6 @@
 begin;
 
-select plan(80);
+select plan(85);
 
 select has_function(
   'public', 'refresh_payment_intent', array['uuid', 'text', 'text'],
@@ -540,12 +540,16 @@ select lives_ok(
   $$ select public.set_wallet_observation_code('a6600000-0000-0000-0000-000000000003', 'ABCD1234') $$,
   'caja completa el código visible en la constancia'
 );
+reset role;
 update public.payment_attempts
 set payer_code_digest = encode(extensions.digest('abcd1234', 'sha256'), 'hex')
 where order_id = 'a6300000-0000-0000-0000-000000000005';
 update public.payment_attempts
 set payer_code_digest = encode(extensions.digest('wxyz1234', 'sha256'), 'hex')
 where order_id = 'a6300000-0000-0000-0000-000000000006';
+set local request.jwt.claims =
+  '{"sub":"a6000000-0000-0000-0000-000000000003","role":"authenticated"}';
+set local role authenticated;
 select is(
   (select count(*) from public.list_wallet_payment_candidates('a6600000-0000-0000-0000-000000000003')),
   1::bigint,
