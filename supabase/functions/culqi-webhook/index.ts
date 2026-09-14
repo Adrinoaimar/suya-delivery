@@ -10,6 +10,22 @@ function serviceHeaders(serviceRoleKey: string): HeadersInit {
   return { apikey: serviceRoleKey, Authorization: `Bearer ${serviceRoleKey}`, 'Content-Type': 'application/json' };
 }
 
+async function updateAttempt(
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  attemptId: string,
+  patch: Record<string, unknown>,
+): Promise<boolean> {
+  const response = await fetch(`${supabaseUrl}/rest/v1/payment_attempts?id=eq.${encodeURIComponent(attemptId)}&status=eq.pending`, {
+    method: 'PATCH',
+    headers: { ...serviceHeaders(serviceRoleKey), Prefer: 'return=minimal' },
+    body: JSON.stringify({ ...patch, updated_at: new Date().toISOString() }),
+  });
+  if (response.ok) return true;
+  console.error('Payment attempt webhook update failed', response.status, (await response.text()).slice(0, 240));
+  return false;
+}
+
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const culqiSecretKey = Deno.env.get('CULQI_SECRET_KEY');
@@ -52,24 +68,27 @@ Deno.serve(async (request) => {
   const attempt = attempts[0];
   if (!attempt?.id) return json({ received: true });
   if (Math.round(Number(attempt.amount) * 100) !== Number(providerOrder.amount)) {
-    await fetch(`${supabaseUrl}/rest/v1/payment_attempts?id=eq.${attempt.id}&status=eq.pending`, {
-      method: 'PATCH', headers: { ...serviceHeaders(serviceRoleKey), Prefer: 'return=minimal' },
-      body: JSON.stringify({ status: 'failed', failure_code: 'culqi_amount_mismatch' }),
+    const updated = await updateAttempt(supabaseUrl, serviceRoleKey, attempt.id, {
+      status: 'failed',
+      failure_code: 'culqi_amount_mismatch',
     });
+    if (!updated) return json({ error: 'No se pudo registrar la inconsistencia de monto.' }, 502);
     return json({ error: 'Monto Culqi inconsistente.' }, 422);
   }
 
   const state = text(providerOrder.state).toLowerCase();
   if (state === 'paid') {
-    await fetch(`${supabaseUrl}/rest/v1/payment_attempts?id=eq.${attempt.id}&status=eq.pending`, {
-      method: 'PATCH', headers: { ...serviceHeaders(serviceRoleKey), Prefer: 'return=minimal' },
-      body: JSON.stringify({ status: 'authorized' }),
+    const updated = await updateAttempt(supabaseUrl, serviceRoleKey, attempt.id, {
+      status: 'authorized',
+      failure_code: null,
     });
+    if (!updated) return json({ error: 'No se pudo registrar la autorización Culqi.' }, 502);
   } else if (['expired', 'deleted', 'failed'].includes(state)) {
-    await fetch(`${supabaseUrl}/rest/v1/payment_attempts?id=eq.${attempt.id}&status=eq.pending`, {
-      method: 'PATCH', headers: { ...serviceHeaders(serviceRoleKey), Prefer: 'return=minimal' },
-      body: JSON.stringify({ status: 'failed', failure_code: `culqi_order_${state}` }),
+    const updated = await updateAttempt(supabaseUrl, serviceRoleKey, attempt.id, {
+      status: 'failed',
+      failure_code: `culqi_order_${state}`,
     });
+    if (!updated) return json({ error: 'No se pudo registrar el estado final de Culqi.' }, 502);
   }
   return json({ received: true });
 });
