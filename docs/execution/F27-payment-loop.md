@@ -1,6 +1,6 @@
 # F27 · Loop de pruebas de pago
 
-Estado del código: commit `f6c1df6` (fija la cuenta de restaurante antes de las cargas secundarias en Mesas/QR y Catálogo, además de separar el título de billetera y el nombre del remitente en web y Android sobre el flujo de `9682706`; estabiliza y enriquece notificaciones expandidas sobre `f890b34`, captura el remitente en el formato «te envió» y conserva la preselección temprana de cuenta implementada en `762d7e0`; identificación Android sobre `53cb470`; funcionalidad de pagos en `66d808f` y `a35faa6`); CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
+Estado del código: commit `cbd0725` (blinda con regresiones la preselección temprana de restaurante en Mesas/QR y Catálogo, implementada en `f6c1df6`; además separa el título de billetera y el nombre del remitente en web y Android sobre el flujo de `9682706`; estabiliza y enriquece notificaciones expandidas sobre `f890b34`, captura el remitente en el formato «te envió» y conserva la preselección temprana de cuenta implementada en `762d7e0`; identificación Android sobre `53cb470`; funcionalidad de pagos en `66d808f` y `a35faa6`); CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
 
 Último checkpoint: el QR de billeteras de Culqi usa la opción `billetera` del Custom Checkout (la opción `yape` corresponde al flujo de token/código de aprobación); queda bloqueado mientras espera `order.status.changed`. La pantalla se actualiza por polling y solo libera preparación cuando el servidor marca `authorized`. El flujo manual distingue pagos iguales con fingerprint/código completo; Back Office añade una pista visual de coincidencia entre remitente y cliente, sin autorizar por sí sola; y la observación Android sigue siendo evidencia no autorizante.
 
@@ -22,7 +22,7 @@ La reserva de creación también cubre doble toque en `Continuar con pago`: una 
 En Dispositivos de pagos, la primera cuenta visible se fija apenas llega el catálogo; las cargas lentas de observaciones o dispositivos ya no dejan el selector sin restaurante.
 Si el cliente cierra el modal de Culqi sin completar el pago, la pantalla libera el estado de apertura y permite reintentar; durante el cargo por token permanece bloqueada hasta la respuesta del backend. Si el token es rechazado, refresca el intento cerrado desde el servidor antes de permitir otro pago; si ese refresh falla, invalida localmente la referencia y obliga a crear otra, evitando reutilizar una referencia `pending` local.
 
-CI Android `34914688460` recompiló Rider, Back Office y Caja para `f6c1df6`; los seis checks del PR #36 quedaron verdes, las regresiones nativas pasaron y las tres APK pasaron `unzip -tqq`. Los hashes y rutas exactas están en `docs/STATE.md` y en el checkpoint `F27.19` de este archivo.
+CI Android `34915589843` recompiló Rider, Back Office y Caja para `cbd0725`; los seis checks del PR #36 quedaron verdes, las regresiones nativas y las nuevas pruebas de selección temprana pasaron, y las tres APK pasaron `unzip -tqq`. Los hashes y rutas exactas están en `docs/STATE.md` y en el checkpoint `F27.20` de este archivo.
 
 ## Checkpoint F27.16 · APKs del último rebuild `f4b6b3a`
 
@@ -53,6 +53,14 @@ CI Android `34914688460` recompiló Rider, Back Office y Caja para `f6c1df6`; lo
 - Back Office: `output/apks/f6c1df6/Suya-Backoffice-debug-09cca4f632203e9915d8d818c6c2d285d9a90a0b/Suya-Backoffice-debug.apk`; SHA-256 `610d772868c46444c197af3007fd2197b30954b831e21aa997ca29d59883f9e6`.
 - Caja / Wallet Observer: `output/apks/f6c1df6/Suya-Wallet-Observer-debug-09cca4f632203e9915d8d818c6c2d285d9a90a0b/Suya-Wallet-Observer-debug.apk`; SHA-256 `16cb732dd55580d36e7993986a9fc6a94484542e917ce041ba1d677d3b7a64e3`.
 - Android ejecutó sus pruebas nativas; las tres APK son debug, no release firmadas, y pasaron `unzip -tqq`.
+
+## Checkpoint F27.20 · APKs con regresiones de selección `cbd0725`
+
+- La suite de operaciones cubre que Mesas/QR y Catálogo muestren la primera cuenta antes de que finalicen las cargas secundarias.
+- Rider: `output/apks/cbd0725/Suya-Rider-debug-90a6918eb12aa5e611d6bb9a2ca280edcc0cf740/Suya-Rider-debug.apk`; SHA-256 `2bdb2abc9ae50207d0013c6ebd7d7155c510108ada6f7e56109f6f89e4f21241`.
+- Back Office: `output/apks/cbd0725/Suya-Backoffice-debug-90a6918eb12aa5e611d6bb9a2ca280edcc0cf740/Suya-Backoffice-debug.apk`; SHA-256 `0c9850f58f40e054ab3838adc039b926aa63e85e31ce03bae4e22bd2eaec27f2`.
+- Caja / Wallet Observer: `output/apks/cbd0725/Suya-Wallet-Observer-debug-90a6918eb12aa5e611d6bb9a2ca280edcc0cf740/Suya-Wallet-Observer-debug.apk`; SHA-256 `61afd3e42fa90f24b73aea4f7fc63ffeb35cf1ad98e9c27684bfe5dff8c9304e`.
+- CI Android ejecutó las pruebas nativas; las tres APK son debug, no release firmadas, y pasaron `unzip -tqq`.
 
 El listener mantiene un identificador estable cuando una billetera actualiza una misma notificación desde una vista corta a una expandida. La cola local cifra el evento, completa campos faltantes y vuelve a sincronizarlo; la RPC solo enriquece observaciones abiertas y preserva las verificadas.
 
