@@ -275,6 +275,14 @@ producción.
 - Caja/Wallet Observer: `output/apks/9682706/Suya-Wallet-Observer-debug-970b945517b8fee9769f052ae1707884947c87fa/Suya-Wallet-Observer-debug.apk`; SHA-256 `e2c47471d440063fe5daaeb5feef80cd2634808026b498a9ddc36d9f0dacd86e`.
 - Las tres pasaron `unzip -tqq` y siguen siendo debug, no release-signed. Producción aún requiere credenciales/configuración real, migraciones/Edge Functions, webhook, publicación, firma release y dos pagos físicos iguales de S/30.
 
+## Checkpoint F27.18: fix de remitente y APKs más recientes `1c36124` (2026-09-14)
+
+- `1c36124` separa el título de la billetera del cuerpo de la notificación; web y Android ya extraen `Ana María Torres` sin mezclar el título `Yape`. CI PR #36 quedó 6/6 verde; Android run `34913390490` ejecutó 3 pruebas nativas y recompiló los tres roles.
+- Rider: `output/apks/1c36124/Suya-Rider-debug-10dc7ae26a80a27d0b9b82ccc61d23144145eef9/Suya-Rider-debug.apk`; SHA-256 `88c2733acfc0fcc0bf0018f5cf3ec3d47ad25b3fc420fc79c06fadab3d2668aa`.
+- Back Office: `output/apks/1c36124/Suya-Backoffice-debug-10dc7ae26a80a27d0b9b82ccc61d23144145eef9/Suya-Backoffice-debug.apk`; SHA-256 `f8577dacc638cffbc988b92d8b0a6ddd7a2700d266049212f0ef597868ef0bfd`.
+- Caja/Wallet Observer: `output/apks/1c36124/Suya-Wallet-Observer-debug-10dc7ae26a80a27d0b9b82ccc61d23144145eef9/Suya-Wallet-Observer-debug.apk`; SHA-256 `349b577dd93528e530eeac73ac0ae28709571dc5e5e3b920ea7c91a191fd5a9a`.
+- Las tres pasaron `unzip -tqq` y siguen siendo APK debug, no release-signed. Producción todavía requiere credenciales/configuración real, despliegue de migraciones/Edge Functions, webhook, publicación, firma release y dos pagos físicos iguales de S/30.
+
 ## Reglas de continuidad
 
 - Git, pruebas y este archivo son estado canónico.
