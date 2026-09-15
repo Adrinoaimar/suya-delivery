@@ -17,7 +17,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 | HEAD inicial | `5a6a36f fix(backoffice): keep restaurant context for multi-store staff` |
 | Node / Vite | Node `22.23.2`; Vite `8.2.1` |
 | Pruebas antes de esta ejecución | 62 archivos / 271 pruebas |
-| Estado actual | Implementación y tests locales guardados en commits `1b5aa39`, `e22ddce`, `4a3472e`, `7da4899`, `6e927f4`, `feefba9`, `a0cf53f` y `d8fc9d0`; `output/` preexistente conservado sin versionar |
+| Estado actual | Implementación y tests locales guardados hasta `9e33530`; `output/` preexistente conservado sin versionar |
 | Prohibiciones respetadas | Sin pagos reales, producción, migraciones remotas, contratación, publicación o borrado destructivo |
 
 ## Cambios implementados en este checkpoint
@@ -88,9 +88,9 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - `npm run build`: pasa.
 - `npm run security:secrets`: pasa; 890 archivos sin patrones de secreto.
 - Build/aislamiento de bundles customer, rider y backoffice con configuración local sintética: pasa.
-- Smoke visual/a11y web: customer y Rider a 390×844 sin overflow; barras inferiores no filtran texto; keyboard traversal customer con 16 controles nombrados/visibles y 0 sin nombre; cookies y scripts de tracking: vacíos.
+- Smoke visual/a11y web: customer, Rider y Backoffice pasan **12/12** en 360×800, 390×844, tablet y desktop sin overflow; barras inferiores no filtran texto; keyboard traversal customer con 16 controles nombrados/visibles y 0 sin nombre; cookies y scripts de tracking: vacíos.
 - Bundle customer compilado: recuperación guest E2E sintética pasa (`#access` se consume y el token queda en sesión); los errores observados son solicitudes a Postgres local no disponible.
-- `npm run test:e2e` con previews de los tres bundles levantados: pasa **9/9 combinaciones** (customer/Rider/Back Office en mobile/tablet/desktop), con HTTP 200, ruta/encabezado esperado, sin overflow, controles nombrados y sin `pageerror`.
+- `npm run test:e2e` con previews de los tres bundles levantados: pasa **12/12 combinaciones** (customer/Rider/Back Office en 360×800, 390×844, tablet y desktop), con HTTP 200, ruta/encabezado esperado, sin overflow, controles nombrados y sin `pageerror`.
 - `npm run verify:payments`: rechazado por configuración productiva ausente; correcto para este entorno sin despliegue.
 - Android: `bash android/gradlew test --no-daemon` pasa 4/4 pruebas unitarias y `assembleDebug` pasa para Rider, Backoffice y Wallet Observer; advertencia existente de API deprecada en `YapeNotificationListenerService.java`, sin fallo de compilación.
 - PostgreSQL temporal 17.6.1 con esquema mínimo oficial de Auth/Storage equivalente: instalación limpia de **53 migraciones**, `seed.sql` y **24/24 archivos pgTAP** pasan; incluye los casos de checkout atómico, receptor exacto, colisión de código, renovación, cancelación, coordenadas e idempotencia guest. Es evidencia independiente del port-forward, no reemplaza la ejecución oficial de `supabase db lint/test`.
@@ -102,7 +102,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 ## Bloqueos reproducibles
 
 1. `npm run db:lint` no conecta a `127.0.0.1:54322`; `npm run db:start` tampoco puede conectar al socket Docker normal. Se probó un daemon rootless temporal con `vfs`, cgroups desactivados y seccomp/AppArmor aislados: la red `none` no permite aliases, `host` rechaza aliases y la red rootless con `slirp4netns` sí crea `bridge`, pero el contenedor Postgres queda saludable sin publicar el puerto hacia el host; la CLI termina con `LegacyDbConnectError` (timeout/conexión terminada) y limpia el contenedor. No se modificó el sistema ni el código para ocultarlo. La suite SQL sí fue validada de forma independiente en PostgreSQL temporal; queda pendiente repetirla mediante el flujo oficial de Supabase cuando exista daemon/puerto normal.
-2. La toolchain Android se preparó temporalmente en el entorno y permite test/build debug; todavía no hay dispositivo Android físico para instalación, teclado, insets, TalkBack, offline/reinicio y visuales nativos.
+2. La toolchain Android se preparó temporalmente en el entorno y permite test/build debug; `adb devices` no muestra dispositivos y el SDK temporal no tiene emulator/system image disponible (el catálogo remoto tampoco descargó). Sigue pendiente instalación, teclado, insets, TalkBack, offline/reinicio y visuales nativos.
 3. No se dispone de firma release ni autorización para pagos reales; la firma debug no habilita distribución ni prueba financiera.
 
 ## Siguiente acción exacta

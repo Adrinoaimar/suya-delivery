@@ -7,6 +7,7 @@ const targets = [
   { app: 'backoffice', url: process.env.SMOKE_BACKOFFICE_URL ?? 'http://127.0.0.1:4175/orders', heading: 'Acceso de operaciones', path: '/login' },
 ];
 const viewports = [
+  { width: 360, height: 800, name: 'narrow-mobile' },
   { width: 390, height: 844, name: 'mobile' },
   { width: 768, height: 1024, name: 'tablet' },
   { width: 1440, height: 900, name: 'desktop' },
