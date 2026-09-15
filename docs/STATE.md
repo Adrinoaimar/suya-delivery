@@ -283,6 +283,14 @@ producción.
 - Caja/Wallet Observer: `output/apks/1c36124/Suya-Wallet-Observer-debug-10dc7ae26a80a27d0b9b82ccc61d23144145eef9/Suya-Wallet-Observer-debug.apk`; SHA-256 `349b577dd93528e530eeac73ac0ae28709571dc5e5e3b920ea7c91a191fd5a9a`.
 - Las tres pasaron `unzip -tqq` y siguen siendo APK debug, no release-signed. Producción todavía requiere credenciales/configuración real, despliegue de migraciones/Edge Functions, webhook, publicación, firma release y dos pagos físicos iguales de S/30.
 
+## Checkpoint F27.19: preselección temprana y APKs más recientes `f6c1df6` (2026-09-14)
+
+- Mesas/QR y Catálogo fijan la primera cuenta visible antes de terminar las cargas secundarias. CI PR #36 quedó 6/6 verde; Android run `34914688460` recompiló los tres roles.
+- Rider: `output/apks/f6c1df6/Suya-Rider-debug-09cca4f632203e9915d8d818c6c2d285d9a90a0b/Suya-Rider-debug.apk`; SHA-256 `a2ca7900fecb738db0dfa2df86b607c756234706f6448e55824fca3a6bc960f5`.
+- Back Office: `output/apks/f6c1df6/Suya-Backoffice-debug-09cca4f632203e9915d8d818c6c2d285d9a90a0b/Suya-Backoffice-debug.apk`; SHA-256 `610d772868c46444c197af3007fd2197b30954b831e21aa997ca29d59883f9e6`.
+- Caja/Wallet Observer: `output/apks/f6c1df6/Suya-Wallet-Observer-debug-09cca4f632203e9915d8d818c6c2d285d9a90a0b/Suya-Wallet-Observer-debug.apk`; SHA-256 `16cb732dd55580d36e7993986a9fc6a94484542e917ce041ba1d677d3b7a64e3`.
+- Las tres pasaron `unzip -tqq` y siguen siendo APK debug, no release-signed. Producción aún requiere credenciales/configuración real, migraciones/Edge Functions, webhook, publicación, firma release y dos pagos físicos iguales de S/30.
+
 ## Reglas de continuidad
 
 - Git, pruebas y este archivo son estado canónico.
