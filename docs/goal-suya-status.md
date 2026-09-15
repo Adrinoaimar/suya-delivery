@@ -17,7 +17,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 | HEAD inicial | `5a6a36f fix(backoffice): keep restaurant context for multi-store staff` |
 | Node / Vite | Node `22.23.2`; Vite `8.2.1` |
 | Pruebas antes de esta ejecución | 62 archivos / 271 pruebas |
-| Estado actual | Implementación y tests locales guardados en commits `1b5aa39`, `e22ddce`, `4a3472e`, `7da4899` y `6e927f4`; `output/` preexistente conservado sin versionar |
+| Estado actual | Implementación y tests locales guardados en commits `1b5aa39`, `e22ddce`, `4a3472e`, `7da4899`, `6e927f4` y `feefba9`; `output/` preexistente conservado sin versionar |
 | Prohibiciones respetadas | Sin pagos reales, producción, migraciones remotas, contratación, publicación o borrado destructivo |
 
 ## Cambios implementados en este checkpoint
@@ -67,7 +67,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | U-10 | En verificación | Navegación por teclado sobre bundle customer: 16 destinos con nombre y visibles; controles sin nombre: 0 | axe/contraste/TalkBack, fuente ampliada y validación nativa |
 | A-01 | En verificación | Rutas wallet atómicas; helper v2 calcula huella con canal/método/oferta/mesa/datos y rechaza conflicto; cliente reutiliza request y token guest | Ejecutar SQL/pgTAP y E2E real tras pérdida de respuesta/concurrencia |
 | A-02 | En verificación | Contratos distintos para delivery, menú y mesa; GPS ya no se exige universalmente y coordenadas entran en la creación | DB limpia + E2E por modalidad |
-| A-03 | En verificación | Test y bundle customer real: token sintético de 64 caracteres se conserva en sesión, `location.hash` queda vacío después de cargar; nuevo test 12/12 cubre reintento guest con token estable | E2E con recarga, enlace en otro contexto y pérdida de respuesta sin duplicar pedido |
+| A-03 | En verificación | Test y bundle customer real: token sintético de 64 caracteres se conserva en sesión, `location.hash` queda vacío después de cargar; tests focales 19/19 cubren reintento guest y refresco de pago con token estable | E2E con recarga, enlace en otro contexto y pérdida de respuesta sin duplicar pedido |
 | A-04 | Verificado local | `analytics.ts` no carga script, no persiste UTM ni emite eventos; tests y build pasan | Confirmar red/`Set-Cookie` en E2E |
 | A-05 | En verificación | Native Supabase no persiste refresh token en Web Storage; token observador usa Keystore | Compilar Android y probar cierre/reinicio; evaluar secure storage de sesión |
 | A-06 | Verificado local | `.range(0,49)` y sin N+1 de códigos; test de servicio pasa | Confirmar paginación/índice en DB |
@@ -80,8 +80,8 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 
 - `npm run typecheck`: pasa.
 - `npm run lint`: pasa sin warnings.
-- `npm test -- --run`: **63 archivos / 280 pruebas pasan** tras integrar la recuperación de invitado, la huella de idempotencia y la protección de overlays.
-- Pruebas focalizadas de acceso invitado/order/layout: 12/12 pasan.
+- `npm test -- --run`: **63 archivos / 281 pruebas pasan** tras integrar la recuperación de invitado, la huella de idempotencia y la protección de overlays.
+- Pruebas focalizadas de acceso invitado/order/payment/layout: 19/19 pasan.
 - `tests/backoffice-layout.test.tsx`: 1/1 pasa tras compactar navegación móvil.
 - `npm run build`: pasa.
 - `npm run security:secrets`: pasa; 890 archivos sin patrones de secreto.
