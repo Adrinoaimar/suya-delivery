@@ -41,6 +41,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - Android `versionCode 5`, `versionName 1.4`; se desbloqueó temporalmente la toolchain local y se generaron APKs debug separados de Rider, Backoffice y Wallet Observer.
 - Caja por restaurante y turno: `cash_register_sessions`/`cash_register_entries`, apertura, cobro, ajustes y cierre idempotentes; el saldo esperado se calcula en servidor y el arqueo exige explicación cuando hay diferencia.
 - Pedidos delivery en efectivo y mesas con pago en efectivo quedan vinculados al turno; el reintento de mesa reutiliza `payment_request_id` y no duplica el movimiento.
+- La ruta de cierre manual de mesas quedó limitada a `cash` en el contrato TypeScript y en la RPC; métodos digitales no pueden marcar una mesa como pagada sin su autorización propia.
 
 ## Matriz de hallazgos
 
@@ -86,7 +87,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - `npm run lint`: pasa sin warnings.
 - `npm test -- --run`: **65 archivos / 289 pruebas pasan** tras integrar la caja auditable, el cobro de mesas y la regresión de cambio rápido de restaurante.
 - Pruebas focalizadas de acceso invitado/order/payment/layout: 19/19 pasan.
-- `tests/backoffice-layout.test.tsx`, `tests/cash-register-page.test.tsx` y `tests/supabase-cash-register.test.ts`: **9/9** pasan; la carga obsoleta no puede reemplazar la cuenta seleccionada.
+- `tests/backoffice-layout.test.tsx`, `tests/cash-register-page.test.tsx` y `tests/supabase-cash-register.test.ts`: **10/10** pasan; la carga obsoleta no puede reemplazar la cuenta seleccionada.
 - `npm run build`: pasa.
 - `npm run security:secrets`: pasa; 906 archivos sin patrones de secreto.
 - Build/aislamiento de bundles customer, rider y backoffice con configuración local sintética: pasa.
