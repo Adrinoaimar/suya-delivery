@@ -8,7 +8,7 @@ select plan(22);
 select has_function(
   'public',
   'create_cash_order',
-  array['uuid', 'jsonb', 'text', 'text', 'text', 'uuid'],
+  array['uuid', 'jsonb', 'text', 'text', 'text', 'uuid', 'text', 'double precision', 'double precision'],
   'create_cash_order existe'
 );
 
@@ -23,7 +23,7 @@ select ok(
   (
     select prosecdef and proconfig = array['search_path=""']::text[]
     from pg_catalog.pg_proc
-    where oid = 'public.create_cash_order(uuid,jsonb,text,text,text,uuid)'::pg_catalog.regprocedure
+    where oid = 'public.create_cash_order(uuid,jsonb,text,text,text,uuid,text,double precision,double precision)'::pg_catalog.regprocedure
   ),
   'create_cash_order usa SECURITY DEFINER con search_path vacío'
 );
@@ -40,12 +40,12 @@ select ok(
 select ok(
   pg_catalog.has_function_privilege(
     'authenticated',
-    'public.create_cash_order(uuid,jsonb,text,text,text,uuid)',
+    'public.create_cash_order(uuid,jsonb,text,text,text,uuid,text,double precision,double precision)',
     'EXECUTE'
   )
   and not pg_catalog.has_function_privilege(
     'anon',
-    'public.create_cash_order(uuid,jsonb,text,text,text,uuid)',
+    'public.create_cash_order(uuid,jsonb,text,text,text,uuid,text,double precision,double precision)',
     'EXECUTE'
   ),
   'solo authenticated puede crear pedidos mediante RPC'

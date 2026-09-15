@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   consumeGuestOrderTokenFromHash,
+  createGuestOrderAccessToken,
   guestOrderAccessFragment,
+  isGuestOrderAccessToken,
   readGuestOrderToken,
   saveGuestOrderToken,
 } from '@/lib/services/guestOrderAccess';
@@ -40,5 +42,11 @@ describe('acceso recuperable de pedido invitado', () => {
     window.history.replaceState({}, '', `/pedido/${orderId}#access=${'a'.repeat(64)}!`);
     expect(consumeGuestOrderTokenFromHash(orderId, window.location.hash)).toBeNull();
     expect(window.location.hash).toBe('');
+  });
+
+  it('genera una credencial recuperable de alta entropía', () => {
+    const generated = createGuestOrderAccessToken();
+    expect(generated).toMatch(/^[a-f0-9]{64}$/);
+    expect(isGuestOrderAccessToken(generated)).toBe(true);
   });
 });

@@ -17,7 +17,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 | HEAD inicial | `5a6a36f fix(backoffice): keep restaurant context for multi-store staff` |
 | Node / Vite | Node `22.23.2`; Vite `8.2.1` |
 | Pruebas antes de esta ejecución | 62 archivos / 271 pruebas |
-| Estado actual | Implementación y tests locales guardados en commits `1b5aa39`, `e22ddce` y `4a3472e`; `output/` preexistente conservado sin versionar |
+| Estado actual | Implementación y tests locales guardados en commits `1b5aa39`, `e22ddce`, `4a3472e` y `7da4899`; la corrección guest/idempotencia de este checkpoint queda pendiente de commit; `output/` preexistente conservado sin versionar |
 | Prohibiciones respetadas | Sin pagos reales, producción, migraciones remotas, contratación, publicación o borrado destructivo |
 
 ## Cambios implementados en este checkpoint
@@ -33,7 +33,8 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - Modal, BottomSheet y ExpandableSheet ahora son superficies blancas sólidas para impedir filtrado de Leaflet; regresión focal `motion.test.tsx` pasa 4/4.
 - Checkout no bloquea por GPS: conserva dirección escrita y usa coordenadas solo si están disponibles.
 - Cambio de pedido resetea estados de `PaymentInstructions` y `GuestOrderPage` para evitar respuestas obsoletas.
-- Recuperación de invitado: el token de alta entropía puede viajar una sola vez en el fragmento URL, se guarda en sesión y se retira del historial; nunca se usa el código corto como autorización.
+- Recuperación de invitado: el token de alta entropía puede viajar una sola vez en el fragmento URL, se guarda en sesión y se retira del historial; además se preasigna antes del RPC y permite repetir el mismo payload sin duplicar ni perder acceso; nunca se usa el código corto como autorización.
+- Migración `20260915100000_guest_idempotency_recovery.sql`: huella server-side del payload, token guest recuperable, coordenadas dentro de la creación atómica y contratos SQL actualizados; añade prueba pgTAP para conflicto, permisos y firmas.
 - Analytics/UTM convertido en no-op estricto; la sesión nativa no persiste refresh token en Web Storage.
 - Android `versionCode 4`, `versionName 1.3`; aún sin APK nuevo porque el entorno no tiene Java.
 
@@ -64,9 +65,9 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | U-08 | En verificación | Reset por `order.id`, respuestas obsoletas y estados separados | E2E navegando entre dos pedidos |
 | U-09 | En verificación | Capturas web customer/Rider a 390×844; `scrollWidth === viewport` y barras inferiores opacas para no filtrar texto | Capturas sobre APK final a 360×800, mapa normal/expandido, leyendas/atribución y estados largos |
 | U-10 | En verificación | Navegación por teclado sobre bundle customer: 16 destinos con nombre y visibles; controles sin nombre: 0 | axe/contraste/TalkBack, fuente ampliada y validación nativa |
-| A-01 | En verificación | Rutas wallet atómicas; lista cliente y tests de payload actualizados | Resolver y probar idempotencia guest tras pérdida de respuesta |
-| A-02 | En verificación | Contratos distintos para delivery, menú y mesa; GPS ya no se exige universalmente | DB limpia + E2E por modalidad |
-| A-03 | En verificación | Test y bundle customer real: token sintético de 64 caracteres se conserva en sesión, `location.hash` queda vacío después de cargar y el servidor sigue validando el token | E2E con recarga, enlace en otro contexto y pérdida de respuesta sin duplicar pedido |
+| A-01 | En verificación | Rutas wallet atómicas; helper v2 calcula huella con canal/método/oferta/mesa/datos y rechaza conflicto; cliente reutiliza request y token guest | Ejecutar SQL/pgTAP y E2E real tras pérdida de respuesta/concurrencia |
+| A-02 | En verificación | Contratos distintos para delivery, menú y mesa; GPS ya no se exige universalmente y coordenadas entran en la creación | DB limpia + E2E por modalidad |
+| A-03 | En verificación | Test y bundle customer real: token sintético de 64 caracteres se conserva en sesión, `location.hash` queda vacío después de cargar; nuevo test 12/12 cubre reintento guest con token estable | E2E con recarga, enlace en otro contexto y pérdida de respuesta sin duplicar pedido |
 | A-04 | Verificado local | `analytics.ts` no carga script, no persiste UTM ni emite eventos; tests y build pasan | Confirmar red/`Set-Cookie` en E2E |
 | A-05 | En verificación | Native Supabase no persiste refresh token en Web Storage; token observador usa Keystore | Compilar Android y probar cierre/reinicio; evaluar secure storage de sesión |
 | A-06 | Verificado local | `.range(0,49)` y sin N+1 de códigos; test de servicio pasa | Confirmar paginación/índice en DB |
@@ -79,15 +80,15 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 
 - `npm run typecheck`: pasa.
 - `npm run lint`: pasa sin warnings.
-- `npm test -- --run`: **63 archivos / 278 pruebas pasan** tras integrar la recuperación de invitado y la protección de overlays.
-- Pruebas focalizadas de acceso invitado/order/layout: 11/11 pasan.
+- `npm test -- --run`: **63 archivos / 280 pruebas pasan** tras integrar la recuperación de invitado, la huella de idempotencia y la protección de overlays.
+- Pruebas focalizadas de acceso invitado/order/layout: 12/12 pasan.
 - `tests/backoffice-layout.test.tsx`: 1/1 pasa tras compactar navegación móvil.
 - `npm run build`: pasa.
 - `npm run security:secrets`: pasa; 890 archivos sin patrones de secreto.
 - Build/aislamiento de bundles customer, rider y backoffice con configuración local sintética: pasa.
 - Smoke visual/a11y web: customer y Rider a 390×844 sin overflow; barras inferiores no filtran texto; keyboard traversal customer con 16 controles nombrados/visibles y 0 sin nombre; cookies y scripts de tracking: vacíos.
 - Bundle customer compilado: recuperación guest E2E sintética pasa (`#access` se consume y el token queda en sesión); los errores observados son solicitudes a Postgres local no disponible.
-- `npm run test:e2e`: pasa **9/9 combinaciones** (customer/Rider/Back Office en mobile/tablet/desktop), con HTTP 200, ruta/encabezado esperado, sin overflow, controles nombrados y sin `pageerror`.
+- `npm run test:e2e` con previews de los tres bundles levantados: pasa **9/9 combinaciones** (customer/Rider/Back Office en mobile/tablet/desktop), con HTTP 200, ruta/encabezado esperado, sin overflow, controles nombrados y sin `pageerror`.
 - `npm run verify:payments`: rechazado por configuración productiva ausente; correcto para este entorno sin despliegue.
 
 ## Bloqueos reproducibles

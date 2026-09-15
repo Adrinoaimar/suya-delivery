@@ -6,10 +6,10 @@ select has_function('public', 'create_delivery_order_with_payment',
   array['uuid', 'jsonb', 'text', 'text', 'text', 'uuid', 'text', 'text', 'double precision', 'double precision'],
   'checkout delivery wallet atómico existe');
 select has_function('public', 'create_menu_order_with_payment',
-  array['uuid', 'jsonb', 'text', 'text', 'text', 'text', 'uuid', 'text', 'text', 'double precision', 'double precision'],
+  array['uuid', 'jsonb', 'text', 'text', 'text', 'text', 'uuid', 'text', 'text', 'double precision', 'double precision', 'text'],
   'checkout menu wallet atómico existe');
 select has_function('public', 'create_table_order_with_payment',
-  array['uuid', 'jsonb', 'text', 'text', 'text', 'text', 'uuid', 'uuid', 'uuid', 'text', 'text'],
+  array['uuid', 'jsonb', 'text', 'text', 'text', 'text', 'uuid', 'uuid', 'uuid', 'text', 'text', 'text'],
   'checkout mesa wallet atómico existe');
 select has_function('public', 'create_wallet_observer_device_for_account',
   array['uuid', 'uuid', 'text'], 'dispositivo ligado a cuenta receptora existe');
@@ -26,9 +26,9 @@ select ok((select exists (select 1 from information_schema.columns
 select ok((select exists (select 1 from pg_indexes
   where schemaname = 'public' and indexname = 'payment_attempts_observed_wallet_uidx')),
   'una observación no puede autorizar dos intentos');
-select ok((select pg_get_functiondef('public.create_menu_order_with_payment(uuid,jsonb,text,text,text,text,uuid,text,text,double precision,double precision)'::regprocedure)
+select ok((select pg_get_functiondef('public.create_menu_order_with_payment(uuid,jsonb,text,text,text,text,uuid,text,text,double precision,double precision,text)'::regprocedure)
   like '%create_payment_intent%'), 'menu atómico crea el intento dentro de su RPC');
-select ok((select pg_get_functiondef('public.create_menu_order_with_payment(uuid,jsonb,text,text,text,text,uuid,text,text,double precision,double precision)'::regprocedure)
+select ok((select pg_get_functiondef('public.create_menu_order_with_payment(uuid,jsonb,text,text,text,text,uuid,text,text,double precision,double precision,text)'::regprocedure)
   like '%apply_app_offer%'), 'menu atómico aplica la oferta antes del cobro');
 select ok((select pg_get_functiondef('public.get_payment_intent(uuid,text)'::regprocedure)
   like '%v_attempt.receiver_account_id%'), 'consulta de pago conserva la cuenta receptora');

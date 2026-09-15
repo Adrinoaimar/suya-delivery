@@ -10,7 +10,12 @@ import type {
   RiderOperationsService,
 } from './types';
 import { SupabasePaymentService } from './SupabasePaymentService';
-import { readGuestOrderToken, saveGuestOrderToken } from './guestOrderAccess';
+import {
+  createGuestOrderAccessToken,
+  isGuestOrderAccessToken,
+  readGuestOrderToken,
+  saveGuestOrderToken,
+} from './guestOrderAccess';
 
 interface OrderItemRow {
   id: string;
@@ -292,6 +297,12 @@ function first<T>(value: T | T[] | null): T | null {
 function fingerprint(input: CreateOrderInput): string {
   return JSON.stringify({
     storeId: input.storeId,
+    origin: input.origin ?? 'delivery',
+    paymentMethod: input.paymentMethod,
+    tableId: input.tableId ?? null,
+    tableSessionId: input.tableSessionId ?? null,
+    offerCode: input.offerCode?.trim().toUpperCase() ?? null,
+    customerName: input.customer.name.trim(),
     phone: input.customer.phone.trim(),
     address: input.customer.address.trim(),
     reference: input.customer.reference.trim(),
@@ -305,22 +316,45 @@ function fingerprint(input: CreateOrderInput): string {
   });
 }
 
-function requestIdFor(input: CreateOrderInput): string {
+interface PendingOrderRequest {
+  signature?: string;
+  requestId?: string;
+  guestAccessToken?: string;
+}
+
+function requestIdFor(
+  input: CreateOrderInput,
+  needsGuestAccess: boolean,
+): { requestId: string; guestAccessToken: string | null } {
   const signature = fingerprint(input);
   try {
-    const saved = JSON.parse(sessionStorage.getItem(PENDING_REQUEST_KEY) ?? 'null') as {
-      signature?: string;
-      requestId?: string;
-    } | null;
-    if (saved?.signature === signature && typeof saved.requestId === 'string') {
-      return saved.requestId;
+    const saved = JSON.parse(sessionStorage.getItem(PENDING_REQUEST_KEY) ?? 'null') as
+      | PendingOrderRequest
+      | null;
+    const savedGuestAccessToken = isGuestOrderAccessToken(saved?.guestAccessToken)
+      ? saved.guestAccessToken
+      : null;
+    if (
+      saved?.signature === signature &&
+      typeof saved.requestId === 'string' &&
+      (!needsGuestAccess || savedGuestAccessToken)
+    ) {
+      return { requestId: saved.requestId, guestAccessToken: savedGuestAccessToken };
     }
   } catch {
     // Entrada dañada: se reemplaza con una solicitud nueva.
   }
   const requestId = crypto.randomUUID();
-  sessionStorage.setItem(PENDING_REQUEST_KEY, JSON.stringify({ signature, requestId }));
-  return requestId;
+  const guestAccessToken = needsGuestAccess ? createGuestOrderAccessToken() : null;
+  try {
+    sessionStorage.setItem(
+      PENDING_REQUEST_KEY,
+      JSON.stringify({ signature, requestId, guestAccessToken }),
+    );
+  } catch {
+    // El token sigue vivo durante este intento; sin almacenamiento no hay recuperación tras un cierre.
+  }
+  return { requestId, guestAccessToken };
 }
 
 function clearRequest(requestId: string): void {
@@ -419,7 +453,8 @@ export class SupabaseOrderServiceImpl
       if (profileError) throw new Error(profileError.message);
     }
 
-    const requestId = requestIdFor(input);
+    const needsGuestAccess = !user && publicMenuChannel;
+    const { requestId, guestAccessToken } = requestIdFor(input, needsGuestAccess);
     const walletCheckout = input.paymentMethod === 'yape' || input.paymentMethod === 'lemon';
     const rpcName = walletCheckout
       ? input.tableId
@@ -449,15 +484,16 @@ export class SupabaseOrderServiceImpl
         ? { p_table_id: input.tableId, p_table_session_id: input.tableSessionId ?? null }
         : {}),
       ...(input.offerCode ? { p_offer_code: input.offerCode.trim().toUpperCase() } : {}),
+      ...(guestAccessToken ? { p_guest_access_token: guestAccessToken } : {}),
+      ...(!input.tableId
+        ? {
+            p_delivery_latitude: input.deliveryPosition?.lat ?? null,
+            p_delivery_longitude: input.deliveryPosition?.lng ?? null,
+          }
+        : {}),
       ...(walletCheckout
         ? {
             p_method: input.paymentMethod,
-            ...(input.tableId
-              ? {}
-              : {
-                  p_delivery_latitude: input.deliveryPosition?.lat ?? null,
-                  p_delivery_longitude: input.deliveryPosition?.lng ?? null,
-                }),
           }
         : {}),
     };
@@ -467,32 +503,9 @@ export class SupabaseOrderServiceImpl
       data as ({ order_id: string } & OrderCodes & { guest_access_token?: string | null })[] | null,
     );
     if (!result) throw new Error('Supabase no devolvió el pedido creado.');
-    saveGuestOrderToken(result.order_id, result.guest_access_token);
-    const accessToken = result.guest_access_token ?? readGuestOrderToken(result.order_id);
-    if (!walletCheckout && input.deliveryPosition && accessToken) {
-      const { data: positioned, error: positionError } = await this.client.rpc(
-        'set_guest_order_delivery_coordinates',
-        {
-          p_order_id: result.order_id,
-          p_access_token: accessToken,
-          p_latitude: input.deliveryPosition.lat,
-          p_longitude: input.deliveryPosition.lng,
-        },
-      );
-      if (positionError) throw new Error(positionError.message);
-      if (positioned !== true) throw new Error('No pudimos confirmar el punto de entrega.');
-    } else if (!walletCheckout && input.deliveryPosition) {
-      const { data: positioned, error: positionError } = await this.client.rpc(
-        'set_order_delivery_coordinates',
-        {
-          target_order: result.order_id,
-          latitude: input.deliveryPosition.lat,
-          longitude: input.deliveryPosition.lng,
-        },
-      );
-      if (positionError) throw new Error(positionError.message);
-      if (positioned !== true) throw new Error('No pudimos confirmar el punto de entrega.');
-    }
+    saveGuestOrderToken(result.order_id, result.guest_access_token ?? guestAccessToken);
+    const accessToken =
+      result.guest_access_token ?? guestAccessToken ?? readGuestOrderToken(result.order_id);
     const paymentIntent =
       input.paymentMethod === 'cash'
         ? null
