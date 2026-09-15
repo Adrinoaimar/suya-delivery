@@ -59,7 +59,7 @@ async function updateAttempt(
     body: JSON.stringify({ ...patch, updated_at: new Date().toISOString() }),
   });
   if (response.ok) return true;
-  console.error('Payment attempt webhook update failed', response.status, (await response.text()).slice(0, 240));
+  console.error('Payment attempt webhook update failed', response.status);
   return false;
 }
 

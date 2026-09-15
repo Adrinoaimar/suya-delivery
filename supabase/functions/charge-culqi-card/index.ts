@@ -157,7 +157,7 @@ Deno.serve(async (request) => {
     body: JSON.stringify(chargeBody),
   });
   if (!chargeResponse.ok) {
-    console.error(`Culqi ${body.method} charge failed`, chargeResponse.status, (await chargeResponse.text()).slice(0, 300));
+    console.error(`Culqi ${body.method} charge failed`, chargeResponse.status);
     await fetch(`${supabaseUrl}/rest/v1/rpc/fail_culqi_payment_claim`, {
       method: 'POST',
       headers: { apikey: anonKey, Authorization: rpcAuthorization, 'Content-Type': 'application/json' },

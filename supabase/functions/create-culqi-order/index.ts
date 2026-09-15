@@ -271,7 +271,7 @@ Deno.serve(async (request) => {
     }),
   });
   if (!culqiResponse.ok) {
-    console.error('Culqi order creation failed', culqiResponse.status, (await culqiResponse.text()).slice(0, 300));
+    console.error('Culqi order creation failed', culqiResponse.status);
     await fetch(`${supabaseUrl}/rest/v1/payment_attempts?id=eq.${text(intent.attempt_id)}&status=eq.pending&gateway_order_claim_digest=eq.${claimDigest}`, {
       method: 'PATCH',
       headers: { ...serviceHeaders(serviceRoleKey), Prefer: 'return=minimal' },
@@ -311,7 +311,7 @@ Deno.serve(async (request) => {
     }),
   });
   if (!updateResponse.ok) {
-    console.error('Payment attempt provider reference update failed', updateResponse.status, (await updateResponse.text()).slice(0, 240));
+    console.error('Payment attempt provider reference update failed', updateResponse.status);
     return json({ error: 'No se pudo vincular la orden Culqi al pedido.' }, 502, origin);
   }
   const linkedRows = await updateResponse.json().catch(() => []);

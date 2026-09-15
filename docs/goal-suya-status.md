@@ -81,17 +81,17 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | A-07 | En verificación | Migración nueva forward-only y test pgTAP añadido | Instalación limpia, actualización y rollback restaurable |
 | A-08 | En verificación | APKs debug Rider/Backoffice/Wallet Observer generadas con versionCode 5/versionName 1.4; hashes registrados abajo | Capturas, instalación/actualización y firma release |
 | A-09 | En verificación | RPC account-aware, revocación por `active`, token hash y auditoría existente | SQL/RLS/concurrencia en DB local |
-| A-10 | En verificación | Navegador sin cookies ni tracking; pedido invitado no se guarda completo en Web Storage; controles sin nombre: 0 | Confirmar red/Set-Cookie y minimización en E2E con backend, más revisión final de logs, GPS, teléfonos, direcciones y permisos |
+| A-10 | En verificación | Navegador sin cookies ni tracking; pedido invitado no se guarda completo en Web Storage; controles sin nombre: 0; Edge Functions ya no registran cuerpos crudos externos (`tests/privacy-logs.test.ts`, 1/1) | Confirmar red/Set-Cookie y minimización en E2E con backend, más revisión final de logs, GPS, teléfonos, direcciones y permisos |
 
 ## Verificaciones ejecutadas
 
 - `npm run typecheck`: pasa.
 - `npm run lint`: pasa sin warnings.
-- `npm test -- --run`: **67 archivos / 294 pruebas pasan** tras añadir la regresión de configuración de sesión nativa/web junto con privacidad del pedido invitado, reset de intento, caja auditable, cobro de mesas y cambio rápido de restaurante.
+- `npm test -- --run`: **68 archivos / 295 pruebas pasan** tras añadir las regresiones de privacidad de logs y configuración de sesión nativa/web junto con privacidad del pedido invitado, reset de intento, caja auditable, cobro de mesas y cambio rápido de restaurante.
 - Pruebas focalizadas de acceso invitado/order/payment/layout: 19/19 pasan.
 - `tests/backoffice-layout.test.tsx`, `tests/cash-register-page.test.tsx`, `tests/supabase-cash-register.test.ts` y privacidad invitado: **12/12** pasan; la carga obsoleta no reemplaza la cuenta y el pedido completo no queda en Web Storage.
 - `npm run build`: pasa.
-- `npm run security:secrets`: pasa; 908 archivos sin patrones de secreto.
+- `npm run security:secrets`: pasa; 909 archivos sin patrones de secreto.
 - Build/aislamiento de bundles customer, rider y backoffice con configuración local sintética: pasa.
 - Smoke visual/a11y web: customer, Rider y Backoffice pasan **12/12** en 360×800, 390×844, tablet y desktop sin overflow; barras inferiores no filtran texto; keyboard traversal customer con 16 controles nombrados/visibles y 0 sin nombre; cookies y scripts de tracking: vacíos.
 - Evidencia gráfica web final a 390×844, capturada después del loader: `output/evidence/goal-20260915/customer-390x844.png`, `rider-390x844.png` y `backoffice-390x844.png`; las tres respuestas fueron HTTP 200, sin errores de página, cookies, tracking ni overflow. La evidencia nativa sobre APK sigue pendiente.
@@ -99,7 +99,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - `npm run test:e2e` con previews de los tres bundles levantados: pasa **12/12 combinaciones** (customer/Rider/Back Office en 360×800, 390×844, tablet y desktop), con HTTP 200, ruta/encabezado esperado, sin overflow, controles nombrados y sin `pageerror`.
 - La primera revalidación posterior al reset devolvió 12 timeouts porque el preview se lanzó sin `--outDir` y respondió 404; se descartó como fallo del harness. Repetido con un preview separado por bundle (`npx vite preview --outDir dist/customer`, `dist/rider` y `dist/backoffice`, todos con `--strictPort`), el smoke pasa **12/12** y los tres previews responden 200.
 - Revalidación posterior a la integración de caja (2026-09-15): `npm run build:apps` con configuración pública sintética volvió a compilar los tres bundles y `npm run test:e2e` volvió a pasar **12/12**; los previews se levantaron desde `dist/customer`, `dist/rider` y `dist/backoffice` y respondieron 200 en sus rutas SPA.
-- Revalidación posterior a la minimización de privacidad, reset de intentos y contrato de sesión (2026-09-15): suite completa **67 archivos / 294 pruebas**, typecheck, lint, escaneo de secretos (**908 archivos**), bundles aislados, smoke web **12/12** y `npm run build:mobile:roles` pasan; el APK no incorpora la caché completa del pedido invitado porque esa ruta pertenece al bundle customer web, pero las tres variantes Android se reconstruyeron y validaron.
+- Revalidación posterior a la minimización de privacidad, reset de intentos, contrato de sesión y saneamiento de logs (2026-09-15): suite completa **68 archivos / 295 pruebas**, typecheck, lint, escaneo de secretos (**909 archivos**), bundles aislados, smoke web **12/12** y `npm run build:mobile:roles` pasan; el APK no incorpora la caché completa del pedido invitado porque esa ruta pertenece al bundle customer web, pero las tres variantes Android se reconstruyeron y validaron.
 - `npm run verify:payments`: rechazado por configuración productiva ausente; correcto para este entorno sin despliegue.
 - `npm run build:apps` con configuración pública sintética y `VITE_CULQI_GATEWAY_ENABLED=false`: pasa; customer, Rider y Backoffice quedan aislados.
 - `npm run verify:apps`: pasa y confirma bundles customer, rider y backoffice aislados. `npm run verify:cloudflare` y `npm run verify:production` rechazan correctamente el entorno sin variables/orígenes de publicación; no se intentó desplegar.

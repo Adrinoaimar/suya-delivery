@@ -105,8 +105,7 @@ Deno.serve(async (request) => {
     }),
   });
   if (!inviteResponse.ok) {
-    const detail = await inviteResponse.text();
-    console.error('Supabase invite failed', inviteResponse.status, detail.slice(0, 300));
+    console.error('Supabase invite failed', inviteResponse.status);
     return json({ error: 'Supabase rechazó la invitación.' }, inviteResponse.status === 422 ? 409 : 502, origin);
   }
 
@@ -118,7 +117,7 @@ Deno.serve(async (request) => {
     body: JSON.stringify({ account_status: 'invited', invited_at: new Date().toISOString() }),
   });
   if (!updateResponse.ok) {
-    console.error('Registry status update failed', updateResponse.status, (await updateResponse.text()).slice(0, 300));
+    console.error('Registry status update failed', updateResponse.status);
     return json({ error: 'Invitación enviada, pero estado no actualizado.' }, 502, origin);
   }
   return json({ ok: true, status: 'invited' }, 200, origin);
