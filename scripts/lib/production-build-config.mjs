@@ -21,8 +21,20 @@ export function inspectProductionBuildConfig(env = process.env) {
   if (!isSafeSupabasePublishableKey(publishableKey)) {
     failures.push('VITE_SUPABASE_PUBLISHABLE_KEY pública válida');
   }
+  if (isPublicRoutingEndpoint(env.VITE_ROUTING_URL)) {
+    failures.push('VITE_ROUTING_URL no puede usar el router OSRM público');
+  }
 
   return { actualProjectRef, failures, ok: failures.length === 0 };
+}
+
+function isPublicRoutingEndpoint(value) {
+  if (!value?.trim()) return false;
+  try {
+    return new URL(value).hostname.toLowerCase() === 'router.project-osrm.org';
+  } catch {
+    return false;
+  }
 }
 
 export function assertProductionBuildConfig(env = process.env) {

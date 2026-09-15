@@ -1,7 +1,9 @@
 import type { LatLng } from '@/types';
 import { distanceKm } from '@/utils/geo';
 
-export const DEFAULT_ROUTING_URL = 'https://router.project-osrm.org';
+export const ROUTING_UNAVAILABLE_MESSAGE =
+  'La guía vial requiere un endpoint privado o autorizado de Suya.';
+const UNSAFE_PUBLIC_ROUTING_HOST = 'router.project-osrm.org';
 
 export type RouteDirection =
   | 'arrive'
@@ -203,7 +205,7 @@ function routeSummary(route: JsonObject): RouteAlternative | null {
   };
 }
 
-/** Convierte y valida la respuesta de OSRM sin confiar en el payload remoto. */
+/** Convierte y valida la respuesta de un motor compatible sin confiar en el payload remoto. */
 export function parseOsrmRoute(value: unknown): RoutePlan {
   const payload = object(value);
   if (payload?.code !== 'Ok' || !Array.isArray(payload.routes) || payload.routes.length === 0) {
@@ -226,12 +228,36 @@ export function parseOsrmRoute(value: unknown): RoutePlan {
   };
 }
 
+/**
+ * El endpoint de rutas es opcional: el cliente no debe enviar GPS preciso a un router público.
+ * Se admite una ruta same-origin (`/api/routing`) o un endpoint HTTPS gestionado/autorizado.
+ */
+export function routingEndpoint(): string | null {
+  const configured = import.meta.env.VITE_ROUTING_URL?.trim();
+  if (!configured) return null;
+  if (configured.startsWith('/')) return configured.replace(/\/+$/, '');
+  try {
+    const parsed = new URL(configured);
+    if (parsed.protocol !== 'https:' || parsed.hostname.toLowerCase() === UNSAFE_PUBLIC_ROUTING_HOST) {
+      return null;
+    }
+    return configured.replace(/\/+$/, '');
+  } catch {
+    return null;
+  }
+}
+
+export function isRoutingConfigured(): boolean {
+  return routingEndpoint() !== null;
+}
+
 export async function fetchDrivingRoute(
   start: LatLng,
   end: LatLng,
   signal?: AbortSignal,
 ): Promise<RoutePlan> {
-  const baseUrl = (import.meta.env.VITE_ROUTING_URL || DEFAULT_ROUTING_URL).replace(/\/+$/, '');
+  const baseUrl = routingEndpoint();
+  if (!baseUrl) throw new Error(ROUTING_UNAVAILABLE_MESSAGE);
   const url = `${baseUrl}/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&steps=true&geometries=geojson&alternatives=true`;
   const response = await fetch(url, {
     headers: { Accept: 'application/json' },

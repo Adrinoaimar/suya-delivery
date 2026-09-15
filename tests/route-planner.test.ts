@@ -1,7 +1,52 @@
-import { describe, expect, it } from 'vitest';
-import { parseOsrmRoute, selectNextRouteInstruction } from '@/lib/routePlanner';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  fetchDrivingRoute,
+  isRoutingConfigured,
+  parseOsrmRoute,
+  ROUTING_UNAVAILABLE_MESSAGE,
+  selectNextRouteInstruction,
+} from '@/lib/routePlanner';
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
+});
 
 describe('planificador vial OSRM', () => {
+  it('no envía coordenadas a un router público cuando no hay endpoint privado', async () => {
+    vi.stubEnv('VITE_ROUTING_URL', 'https://router.project-osrm.org');
+    const request = vi.spyOn(globalThis, 'fetch');
+
+    expect(isRoutingConfigured()).toBe(false);
+    await expect(
+      fetchDrivingRoute({ lat: -4.9, lng: -80.69 }, { lat: -4.91, lng: -80.68 }),
+    ).rejects.toThrow(ROUTING_UNAVAILABLE_MESSAGE);
+    expect(request).not.toHaveBeenCalled();
+  });
+
+  it('usa solo un endpoint HTTPS autorizado cuando se configura', async () => {
+    vi.stubEnv('VITE_ROUTING_URL', 'https://routing.suya.test/');
+    const request = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({
+        code: 'Ok',
+        routes: [{
+          distance: 100,
+          duration: 40,
+          geometry: { coordinates: [[-80.69, -4.9], [-80.68, -4.91]] },
+          legs: [],
+        }],
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }),
+    );
+
+    await fetchDrivingRoute({ lat: -4.9, lng: -80.69 }, { lat: -4.91, lng: -80.68 });
+
+    expect(request).toHaveBeenCalledWith(
+      expect.stringContaining('https://routing.suya.test/route/v1/driving/-80.69,-4.9;-80.68,-4.91'),
+      expect.objectContaining({ headers: { Accept: 'application/json' } }),
+    );
+  });
+
   it('valida la geometría y convierte las maniobras a guía en español', () => {
     const plan = parseOsrmRoute({
       code: 'Ok',

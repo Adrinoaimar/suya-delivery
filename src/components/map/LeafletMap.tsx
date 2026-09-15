@@ -22,6 +22,7 @@ import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import {
   fetchDrivingRoute,
+  isRoutingConfigured,
   selectNextRouteInstruction,
   type RouteDirection,
   type RouteInstruction,
@@ -71,7 +72,9 @@ export default function LeafletMap({
   const previousNavigationPositionRef = useRef<LatLng | null>(null);
   const [tileError, setTileError] = useState(false);
   const [routePlan, setRoutePlan] = useState<RoutePlan | null>(null);
-  const [routeStatus, setRouteStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [routeStatus, setRouteStatus] = useState<
+    'idle' | 'loading' | 'ready' | 'error' | 'unavailable'
+  >('idle');
   const [nextInstruction, setNextInstruction] = useState<RouteInstruction | null>(null);
   const [mapExpanded, setMapExpanded] = useState(false);
   const riderLat = rider?.lat;
@@ -230,8 +233,8 @@ export default function LeafletMap({
     }
   }, [destinationLabel, destinationLat, destinationLng, originLabel, originLat, originLng]);
 
-  // El mapa muestra calles reales cuando es posible. En Rider se recalcula cada 50 m
-  // para que el camino siga al GPS sin generar una petición por cada lectura.
+  // El mapa muestra calles reales cuando es posible. El motor vial es opt-in y privado/autorizado;
+  // sin él, el trazo local conserva orientación sin enviar el GPS preciso a un tercero.
   useEffect(() => {
     const map = mapRef.current;
     const layer = routeLayerRef.current;
@@ -275,6 +278,11 @@ export default function LeafletMap({
     }
 
     if (!routingStart || !routingEnd || distanceKm(routingStart, routingEnd) < 0.01) {
+      return undefined;
+    }
+
+    if (!isRoutingConfigured()) {
+      setRouteStatus('unavailable');
       return undefined;
     }
 
@@ -563,7 +571,7 @@ export default function LeafletMap({
             </div>
           ) : routeStatus === 'loading' ? (
             <p className="text-sm font-semibold text-suya-carbon">Calculando ruta vial…</p>
-          ) : routeStatus === 'error' ? (
+          ) : routeStatus === 'error' || routeStatus === 'unavailable' ? (
             <p className="text-sm font-semibold text-suya-carbon">
               Guía vial no disponible. Sigue el trazo y la dirección de entrega.
             </p>
@@ -571,7 +579,9 @@ export default function LeafletMap({
             <p className="text-sm font-semibold text-suya-carbon">Esperando una posición GPS…</p>
           )}
           <p className="mt-2 text-[10px] font-medium text-suya-muted">
-            Ruta vial · OSRM + OpenStreetMap
+            {isRoutingConfigured()
+              ? 'Ruta vial · endpoint autorizado'
+              : 'Trazo de referencia · sin motor vial externo'}
           </p>
         </div>
       )}
