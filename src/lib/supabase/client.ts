@@ -23,7 +23,10 @@ export const isSupabaseConfigured = Boolean(
 export const supabase = isSupabaseConfigured
   ? createClient(url!, publishableKey!, {
       auth: {
-        persistSession: true,
+        // En Android no persistimos el refresh token en Web Storage. El APK no
+        // incorpora un adaptador seguro; pedir una nueva sesión es preferible a
+        // dejar una credencial reutilizable en almacenamiento no cifrado.
+        persistSession: !Capacitor.isNativePlatform(),
         autoRefreshToken: true,
         detectSessionInUrl: !Capacitor.isNativePlatform(),
         flowType: 'pkce',

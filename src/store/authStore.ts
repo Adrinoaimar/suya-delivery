@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { authService } from '@/lib/auth/SupabaseAuthService';
 import type { AuthCredentials, AuthIdentity, ProfileUpdate, SignUpInput } from '@/lib/auth/types';
+import { useBackofficeContextStore } from '@/store/backofficeContextStore';
 
 type AuthStatus = 'idle' | 'loading' | 'anonymous' | 'authenticated' | 'error';
 let authRevision = 0;
@@ -111,6 +112,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   async signOut() {
     authRevision += 1;
     await authService.signOut();
+    useBackofficeContextStore.getState().reset();
     set({ identity: null, status: 'anonymous', error: null });
   },
 

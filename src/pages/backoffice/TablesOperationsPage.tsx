@@ -15,6 +15,7 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { Button } from '@/components/common/Button';
 import { notificationService, storeService, tableService } from '@/lib/services';
 import { useAuthStore } from '@/store/authStore';
+import { useBackofficeContextStore } from '@/store/backofficeContextStore';
 import { formatPrice } from '@/utils/format';
 import type { Store } from '@/types';
 import type { TableSummary } from '@/lib/services';
@@ -28,7 +29,8 @@ export default function TablesOperationsPage() {
   const isPlatformAdmin = identity?.access.includes('platform_admin') ?? false;
   const [stores, setStores] = useState<Store[]>([]);
   const [tables, setTables] = useState<TableSummary[]>([]);
-  const [restaurantId, setRestaurantId] = useState('');
+  const restaurantId = useBackofficeContextStore((state) => state.activeRestaurantId);
+  const setRestaurantId = useBackofficeContextStore((state) => state.setActiveRestaurantId);
   const [tableNumber, setTableNumber] = useState('');
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
@@ -53,9 +55,11 @@ export default function TablesOperationsPage() {
       const visibleStores = allStores.filter(
         (store) => isPlatformAdmin || restaurantIds.includes(store.id),
       );
+      const contextRestaurantId = useBackofficeContextStore.getState().activeRestaurantId;
       const nextRestaurantId =
-        preferredRestaurantId && visibleStores.some((store) => store.id === preferredRestaurantId)
-          ? preferredRestaurantId
+        (preferredRestaurantId || contextRestaurantId) &&
+        visibleStores.some((store) => store.id === (preferredRestaurantId || contextRestaurantId))
+          ? preferredRestaurantId || contextRestaurantId
           : (visibleStores[0]?.id ?? '');
       const scopedIds = visibleStores.map((store) => store.id);
       // La selección no debe depender de que termine la carga de mesas: el operador
@@ -75,7 +79,7 @@ export default function TablesOperationsPage() {
     } finally {
       if (requestId === loadRequestRef.current) setLoading(false);
     }
-  }, [isPlatformAdmin, restaurantIds]);
+  }, [isPlatformAdmin, restaurantIds, setRestaurantId]);
   useEffect(() => {
     void load();
   }, [load]);

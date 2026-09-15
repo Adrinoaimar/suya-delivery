@@ -6,6 +6,7 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { Input, Textarea } from '@/components/common/Input';
 import { notificationService, offerService, storeService } from '@/lib/services';
 import { useAuthStore } from '@/store/authStore';
+import { useBackofficeContextStore } from '@/store/backofficeContextStore';
 import { formatPrice } from '@/utils/format';
 import type { AppOffer } from '@/types';
 import type { Store } from '@/types';
@@ -53,6 +54,7 @@ export default function OffersPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const loadRequestRef = useRef(0);
+  const setActiveRestaurantId = useBackofficeContextStore((state) => state.setActiveRestaurantId);
 
   const load = useCallback(async () => {
     const requestId = ++loadRequestRef.current;
@@ -69,19 +71,25 @@ export default function OffersPage() {
       );
       setOffers(rows);
       setStores(visibleStores);
+      const contextRestaurantId = useBackofficeContextStore.getState().activeRestaurantId;
       setForm((current) => ({
         ...current,
-        restaurantId: visibleStores.some((store) => store.id === current.restaurantId)
-          ? current.restaurantId
+        restaurantId: visibleStores.some(
+          (store) => store.id === contextRestaurantId || store.id === current.restaurantId,
+        )
+          ? contextRestaurantId || current.restaurantId
           : visibleStores[0]?.id ?? '',
       }));
+      const nextRestaurantId =
+        visibleStores.find((store) => store.id === contextRestaurantId)?.id ?? visibleStores[0]?.id ?? '';
+      setActiveRestaurantId(nextRestaurantId);
     } catch (cause) {
       if (requestId !== loadRequestRef.current) return;
       setError(cause instanceof Error ? cause.message : 'No se pudieron cargar las ofertas.');
     } finally {
       if (requestId === loadRequestRef.current) setLoading(false);
     }
-  }, [isPlatformAdmin, restaurantIds]);
+  }, [isPlatformAdmin, restaurantIds, setActiveRestaurantId]);
 
   useEffect(() => {
     void load();
@@ -214,7 +222,10 @@ export default function OffersPage() {
             <select
               className="h-12 rounded-btn border border-suya-mist bg-white px-3.5"
               value={form.restaurantId}
-              onChange={(event) => update('restaurantId', event.target.value)}
+              onChange={(event) => {
+                update('restaurantId', event.target.value);
+                setActiveRestaurantId(event.target.value);
+              }}
             >
               <option value="">{isPlatformAdmin ? 'Todos los restaurantes' : 'Selecciona…'}</option>
               {stores.map((store) => (

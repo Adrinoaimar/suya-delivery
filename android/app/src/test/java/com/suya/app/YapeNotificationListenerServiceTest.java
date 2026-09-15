@@ -7,6 +7,12 @@ import org.junit.Test;
 public class YapeNotificationListenerServiceTest {
 
     @Test
+    public void parsesFourDigitThousandsAmountWithoutTruncatingIt() {
+        assertEquals(Long.valueOf(100000), YapeNotificationListenerService.normalizeAmount("1000.00"));
+        assertEquals(Long.valueOf(100000), YapeNotificationListenerService.normalizeAmount("1,000.00"));
+    }
+
+    @Test
     public void extractsSenderAfterWalletTitle() {
         assertEquals(
                 "Ana María Torres",

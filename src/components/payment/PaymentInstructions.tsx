@@ -48,6 +48,21 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   const gatewayTokenBusyRef = useRef(false);
 
   useEffect(() => {
+    // Este componente vive en rutas que pueden cambiar de pedido sin desmontarse.
+    // Nunca arrastres intento, constancia ni estados de checkout del pedido anterior.
+    setIntent(null);
+    setLoading(true);
+    setError(null);
+    setEvidenceCode('');
+    setSubmittingEvidence(false);
+    setEvidenceSaved(false);
+    setGatewayBusy(false);
+    setGatewayAwaitingWebhook(false);
+    setManualBusy(false);
+    gatewayTokenBusyRef.current = false;
+  }, [order.id]);
+
+  useEffect(() => {
     if (order.paymentMethod === 'cash' || order.paymentIntent) return;
     let active = true;
     setLoading(true);

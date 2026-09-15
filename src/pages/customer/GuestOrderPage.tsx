@@ -7,7 +7,7 @@ import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
 import { OrderCodes } from '@/components/order/OrderCodes';
 import { PaymentInstructions } from '@/components/payment/PaymentInstructions';
-import { orderService } from '@/lib/services';
+import { consumeGuestOrderTokenFromHash, orderService } from '@/lib/services';
 import { useOrderStore } from '@/store/orderStore';
 import { formatDateTime, formatPrice, orderStatusLabel } from '@/utils/format';
 import type { Order } from '@/types';
@@ -39,9 +39,14 @@ export default function GuestOrderPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (order || !id) return;
-    let active = true;
+    if (!id) return;
+    // El router puede reutilizar la instancia al cambiar /pedido/:id.
+    // El estado anterior nunca debe bloquear la carga del nuevo comprobante.
+    setOrder((current) => (current?.id === id ? current : null));
+    setError(null);
     setLoading(true);
+    consumeGuestOrderTokenFromHash(id, location.hash);
+    let active = true;
     void orderService
       .get(id)
       .then((value) => {
@@ -58,7 +63,7 @@ export default function GuestOrderPage() {
     return () => {
       active = false;
     };
-  }, [id, order]);
+  }, [id, location.hash]);
 
   useEffect(() => {
     if (!order) return;

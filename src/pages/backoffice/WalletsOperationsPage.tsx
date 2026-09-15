@@ -12,6 +12,7 @@ import {
   walletObserverService,
 } from '@/lib/services';
 import { useAuthStore } from '@/store/authStore';
+import { useBackofficeContextStore } from '@/store/backofficeContextStore';
 import { formatDateTime, formatPrice } from '@/utils/format';
 import type { Store } from '@/types';
 import type {
@@ -71,7 +72,8 @@ export default function WalletsOperationsPage() {
   const [stores, setStores] = useState<Store[]>([]);
   const [devices, setDevices] = useState<WalletObserverDevice[]>([]);
   const [observations, setObservations] = useState<WalletObservation[]>([]);
-  const [restaurantId, setRestaurantId] = useState('');
+  const restaurantId = useBackofficeContextStore((state) => state.activeRestaurantId);
+  const setRestaurantId = useBackofficeContextStore((state) => state.setActiveRestaurantId);
   const [label, setLabel] = useState('Caja principal');
   const [newDevice, setNewDevice] = useState<CreatedWalletObserverDevice | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,6 +91,7 @@ export default function WalletsOperationsPage() {
   const [accountLabel, setAccountLabel] = useState('Cuenta principal');
   const [qrPayload, setQrPayload] = useState('');
   const [accountActive, setAccountActive] = useState(false);
+  const accountProviderRef = useRef(accountProvider);
   const loadRequestRef = useRef(0);
   const observationRequestRef = useRef(0);
   const candidateRequestRef = useRef(0);
@@ -155,7 +158,7 @@ export default function WalletsOperationsPage() {
     } finally {
       if (requestId === loadRequestRef.current) setLoading(false);
     }
-  }, [isPlatformAdmin, restaurantIds]);
+  }, [isPlatformAdmin, restaurantIds, setRestaurantId]);
 
   useEffect(() => {
     void load();
@@ -196,8 +199,9 @@ export default function WalletsOperationsPage() {
         if (!active) return;
         setPaymentAccounts(accounts);
         const selected =
-          accounts.find((account) => account.provider === accountProvider) ?? accounts[0];
+          accounts.find((account) => account.provider === accountProviderRef.current) ?? accounts[0];
         if (selected) {
+          accountProviderRef.current = selected.provider;
           setAccountProvider(selected.provider);
           setAccountLabel(selected.accountLabel);
           setQrPayload(selected.qrPayload ?? '');
@@ -210,7 +214,7 @@ export default function WalletsOperationsPage() {
     return () => {
       active = false;
     };
-  }, [activeRestaurantId, accountProvider]);
+  }, [activeRestaurantId]);
 
   const storeNames = useMemo(
     () => new Map(stores.map((store) => [store.id, store.name])),
@@ -225,9 +229,23 @@ export default function WalletsOperationsPage() {
       );
       return;
     }
+    const receiverAccount = paymentAccounts.find(
+      (account) => account.provider === accountProvider && account.active,
+    );
+    if (!receiverAccount) {
+      notificationService.notify(
+        'Configura y activa primero la cuenta receptora de esta billetera.',
+        'warning',
+      );
+      return;
+    }
     setBusy(true);
     try {
-      const created = await walletObserverService.createDevice(activeRestaurantId, label);
+      const created = await walletObserverService.createDevice(
+        activeRestaurantId,
+        label,
+        receiverAccount.id,
+      );
       setDevices((current) => [created, ...current]);
       setNewDevice(created);
       notificationService.notify(
@@ -326,6 +344,7 @@ export default function WalletsOperationsPage() {
 
   const selectAccountProvider = (provider: 'yape' | 'lemon') => {
     const selected = paymentAccounts.find((account) => account.provider === provider);
+    accountProviderRef.current = provider;
     setAccountProvider(provider);
     setAccountLabel(selected?.accountLabel ?? 'Cuenta principal');
     setQrPayload(selected?.qrPayload ?? '');

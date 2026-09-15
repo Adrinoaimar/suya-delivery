@@ -145,8 +145,12 @@ export const walletObserverService: WalletObserverService = {
   async listDevices(restaurantIds) {
     return (await resolveWalletObserverService()).listDevices(restaurantIds);
   },
-  async createDevice(restaurantId, label) {
-    return (await resolveWalletObserverService()).createDevice(restaurantId, label);
+  async createDevice(restaurantId, label, receiverAccountId) {
+    return (await resolveWalletObserverService()).createDevice(
+      restaurantId,
+      label,
+      receiverAccountId,
+    );
   },
   async listObservations(restaurantIds) {
     return (await resolveWalletObserverService()).listObservations(restaurantIds);
@@ -469,3 +473,9 @@ export const locationService = Capacitor.isNativePlatform()
   ? CapacitorLocationService
   : BrowserLocationService;
 export * from './types';
+export {
+  consumeGuestOrderTokenFromHash,
+  guestOrderAccessFragment,
+  readGuestOrderToken,
+  saveGuestOrderToken,
+} from './guestOrderAccess';

@@ -31,6 +31,31 @@ describe('parseYapeNotification', () => {
     expect(result).toMatchObject({ amountCents: 125000, code: '987654321' });
   });
 
+  it('does not truncate an ungrouped four-digit amount', () => {
+    const result = parseYapeNotification({
+      packageName: 'com.bcp.yape.app',
+      title: 'Yape recibido',
+      text: 'Recibiste S/ 1000.00',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({ amountCents: 100000, currency: 'PEN' });
+  });
+
+  it('uses the stable notification key to separate same-time equal payments', () => {
+    const input = {
+      packageName: 'com.bcp.yape.app',
+      title: 'Yape recibido',
+      text: 'Recibiste S/ 30.00',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    };
+
+    const first = parseYapeNotification({ ...input, notificationKey: 'notification-1' });
+    const second = parseYapeNotification({ ...input, notificationKey: 'notification-2' });
+
+    expect(first?.fingerprint).not.toBe(second?.fingerprint);
+  });
+
   it('captures the visible sender when the wallet notification includes it', () => {
     const result = parseYapeNotification({
       packageName: 'com.bcp.innovacxion.yapeapp',

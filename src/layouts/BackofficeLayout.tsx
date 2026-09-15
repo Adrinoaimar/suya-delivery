@@ -3,6 +3,7 @@ import {
   ClipboardList,
   LayoutDashboard,
   LogOut,
+  MoreHorizontal,
   Settings,
   Store,
   Table2,
@@ -10,8 +11,9 @@ import {
   Users,
   Wallet,
 } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { Drawer } from '@/components/common/Drawer';
 import { LogoMark } from '@/components/common/Logo';
 import { cn } from '@/lib/cn';
 import { useAuthStore } from '@/store/authStore';
@@ -38,10 +40,14 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
     { to: `${prefix}/restaurants`, label: 'Restaurantes', icon: Building2, platformAdminOnly: true },
     { to: `${prefix}/settings`, label: 'Configuración', icon: Settings },
   ].filter((item) => !item.platformAdminOnly || isPlatformAdmin);
+  const mobileNavigation = navigation.filter((item) =>
+    ['Resumen', 'Pedidos', 'Mesas y QR', 'Dispositivos de pagos'].includes(item.label),
+  );
+  const mobileMoreNavigation = navigation.filter((item) => !mobileNavigation.includes(item));
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // En escritorio la navegación es vertical y puede necesitar desplazarse al cambiar de sección.
-  // En móvil todas las secciones caben en una cuadrícula: así ningún texto queda cortado por un
-  // scroll horizontal automático.
+  // En móvil se muestran los accesos frecuentes y el resto vive en un drawer compacto.
   useEffect(() => {
     const isDesktop =
       typeof window.matchMedia !== 'function' || window.matchMedia('(min-width: 1024px)').matches;
@@ -65,7 +71,7 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
         </div>
         <nav
           ref={navigationRef}
-          className="-mx-1 mt-4 grid grid-cols-3 gap-1 px-1 lg:mx-0 lg:mt-5 lg:min-h-0 lg:flex lg:flex-col lg:gap-1 lg:overflow-y-auto lg:px-0"
+          className="mt-5 hidden min-h-0 flex-col gap-1 overflow-y-auto lg:flex"
           aria-label="Operaciones"
         >
           {navigation.map((item) => (
@@ -84,6 +90,33 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
               {item.label}
             </NavLink>
           ))}
+        </nav>
+        <nav className="mt-4 grid grid-cols-5 gap-1 lg:hidden" aria-label="Operaciones móviles">
+          {mobileNavigation.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) =>
+                cn(
+                  'flex min-h-14 flex-col items-center justify-center gap-1 rounded-btn px-1 py-2 text-center text-[10px] font-medium leading-tight',
+                  isActive ? 'bg-suya-lime text-suya-carbon' : 'text-white/75 hover:bg-white/10',
+                )
+              }
+            >
+              <item.icon className="h-[18px] w-[18px]" aria-hidden="true" />
+              {item.label}
+            </NavLink>
+          ))}
+          <button
+            type="button"
+            className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-btn px-1 py-2 text-center text-[10px] font-medium leading-tight text-white/75 hover:bg-white/10"
+            onClick={() => setMobileMenuOpen(true)}
+            aria-haspopup="dialog"
+          >
+            <MoreHorizontal className="h-[18px] w-[18px]" aria-hidden="true" />
+            Más
+          </button>
         </nav>
       </aside>
       <div className="min-w-0">
@@ -105,6 +138,31 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
           <Outlet />
         </main>
       </div>
+      <Drawer
+        open={mobileMenuOpen}
+        onClose={() => setMobileMenuOpen(false)}
+        title="Menú de operaciones"
+      >
+        <nav aria-label="Más operaciones" className="grid gap-1">
+          {mobileMoreNavigation.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              onClick={() => setMobileMenuOpen(false)}
+              className={({ isActive }) =>
+                cn(
+                  'flex min-h-12 items-center gap-3 rounded-btn px-3 text-sm font-semibold',
+                  isActive ? 'bg-suya-lime text-suya-carbon' : 'text-suya-carbon hover:bg-suya-mist',
+                )
+              }
+            >
+              <item.icon className="h-5 w-5" aria-hidden="true" />
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+      </Drawer>
     </div>
   );
 }

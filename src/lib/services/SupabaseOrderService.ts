@@ -10,6 +10,7 @@ import type {
   RiderOperationsService,
 } from './types';
 import { SupabasePaymentService } from './SupabasePaymentService';
+import { readGuestOrderToken, saveGuestOrderToken } from './guestOrderAccess';
 
 interface OrderItemRow {
   id: string;
@@ -124,29 +125,11 @@ const ORDER_SELECT = `
   payment_attempts(id, order_id, provider, provider_reference, method, status, amount, checkout_reference, expires_at, gateway_qr_payload, created_at)
 `;
 const PENDING_REQUEST_KEY = 'suya.pending-cash-order';
-const GUEST_TOKEN_PREFIX = 'suya.guest-order-token:';
 
 function isMissingSession(error: { message?: string } | null | undefined): boolean {
   return Boolean(
     error?.message && /auth session missing|session not found|jwt/i.test(error.message),
   );
-}
-
-function saveGuestToken(orderId: string, token: string | null | undefined): void {
-  if (!token) return;
-  try {
-    sessionStorage.setItem(`${GUEST_TOKEN_PREFIX}${orderId}`, token);
-  } catch {
-    /* storage unavailable */
-  }
-}
-
-function guestToken(orderId: string): string | null {
-  try {
-    return sessionStorage.getItem(`${GUEST_TOKEN_PREFIX}${orderId}`);
-  } catch {
-    return null;
-  }
 }
 
 function requireClient(): SupabaseClient {
@@ -388,19 +371,20 @@ export class SupabaseOrderServiceImpl
   }
 
   async list(): Promise<Order[]> {
-    const [{ data: userData, error: userError }, { data, error }] = await Promise.all([
+    const [{ error: userError }, { data, error }] = await Promise.all([
       this.client.auth.getUser(),
-      this.client.from('orders').select(ORDER_SELECT).order('created_at', { ascending: false }),
+      this.client
+        .from('orders')
+        .select(ORDER_SELECT)
+        .order('created_at', { ascending: false })
+        .range(0, 49),
     ]);
     if (userError && !isMissingSession(userError)) throw new Error(userError.message);
     if (error) throw new Error(error.message);
-    const userId = userData.user?.id;
     const rows = (data ?? []) as unknown as OrderRow[];
-    return Promise.all(
-      rows.map(async (row) =>
-        mapOrder(row, userId === row.customer_id ? await this.codes(row.id) : undefined),
-      ),
-    );
+    // La lista no necesita secretos/códigos y no debe disparar una RPC por fila.
+    // Los códigos se recuperan únicamente en el detalle del pedido autenticado.
+    return rows.map((row) => mapOrder(row));
   }
 
   async get(id: string): Promise<Order | undefined> {
@@ -408,7 +392,7 @@ export class SupabaseOrderServiceImpl
     if (userError && !isMissingSession(userError)) throw new Error(userError.message);
     const row = await this.row(id);
     if (!row) {
-      const guest = await this.guestRow(id, guestToken(id) ?? '');
+      const guest = await this.guestRow(id, readGuestOrderToken(id) ?? '');
       if (!guest) return undefined;
       return mapGuestOrder(guest, await this.payments.getIntent(guest.order_id));
     }
@@ -436,11 +420,18 @@ export class SupabaseOrderServiceImpl
     }
 
     const requestId = requestIdFor(input);
-    const rpcName = input.tableId
-      ? 'create_table_cash_order_with_customer'
-      : input.origin === 'suya_menu'
-        ? 'create_menu_order_with_customer'
-        : 'create_cash_order';
+    const walletCheckout = input.paymentMethod === 'yape' || input.paymentMethod === 'lemon';
+    const rpcName = walletCheckout
+      ? input.tableId
+        ? 'create_table_order_with_payment'
+        : input.origin === 'suya_menu'
+          ? 'create_menu_order_with_payment'
+          : 'create_delivery_order_with_payment'
+      : input.tableId
+        ? 'create_table_cash_order_with_customer'
+        : input.origin === 'suya_menu'
+          ? 'create_menu_order_with_customer'
+          : 'create_cash_order';
     const rpcPayload: Record<string, unknown> = {
       p_restaurant_id: input.storeId,
       p_items: input.items.map((item) => ({
@@ -458,6 +449,17 @@ export class SupabaseOrderServiceImpl
         ? { p_table_id: input.tableId, p_table_session_id: input.tableSessionId ?? null }
         : {}),
       ...(input.offerCode ? { p_offer_code: input.offerCode.trim().toUpperCase() } : {}),
+      ...(walletCheckout
+        ? {
+            p_method: input.paymentMethod,
+            ...(input.tableId
+              ? {}
+              : {
+                  p_delivery_latitude: input.deliveryPosition?.lat ?? null,
+                  p_delivery_longitude: input.deliveryPosition?.lng ?? null,
+                }),
+          }
+        : {}),
     };
     const { data, error } = await this.client.rpc(rpcName, rpcPayload);
     if (error) throw new Error(error.message);
@@ -465,9 +467,9 @@ export class SupabaseOrderServiceImpl
       data as ({ order_id: string } & OrderCodes & { guest_access_token?: string | null })[] | null,
     );
     if (!result) throw new Error('Supabase no devolvió el pedido creado.');
-    saveGuestToken(result.order_id, result.guest_access_token);
-    const accessToken = result.guest_access_token ?? guestToken(result.order_id);
-    if (input.deliveryPosition && accessToken) {
+    saveGuestOrderToken(result.order_id, result.guest_access_token);
+    const accessToken = result.guest_access_token ?? readGuestOrderToken(result.order_id);
+    if (!walletCheckout && input.deliveryPosition && accessToken) {
       const { data: positioned, error: positionError } = await this.client.rpc(
         'set_guest_order_delivery_coordinates',
         {
@@ -479,7 +481,7 @@ export class SupabaseOrderServiceImpl
       );
       if (positionError) throw new Error(positionError.message);
       if (positioned !== true) throw new Error('No pudimos confirmar el punto de entrega.');
-    } else if (input.deliveryPosition) {
+    } else if (!walletCheckout && input.deliveryPosition) {
       const { data: positioned, error: positionError } = await this.client.rpc(
         'set_order_delivery_coordinates',
         {
@@ -490,12 +492,12 @@ export class SupabaseOrderServiceImpl
       );
       if (positionError) throw new Error(positionError.message);
       if (positioned !== true) throw new Error('No pudimos confirmar el punto de entrega.');
-    } else if (!input.tableId) {
-      throw new Error('No pudimos confirmar el punto de entrega.');
     }
     const paymentIntent =
       input.paymentMethod === 'cash'
         ? null
+        : walletCheckout
+          ? await this.payments.getIntent(result.order_id, accessToken)
         : await this.payments.createIntent(
             result.order_id,
             input.paymentMethod,

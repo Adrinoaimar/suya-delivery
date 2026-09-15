@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
 import type { PaymentIntent, PaymentIntentStatus, PaymentMethod } from '@/types';
 import type { PaymentResult, PaymentService } from './types';
+import { readGuestOrderToken } from './guestOrderAccess';
 
 interface PaymentIntentRow {
   attempt_id?: unknown;
@@ -68,12 +69,7 @@ function firstRow(data: unknown): PaymentIntentRow | null {
 }
 
 function guestToken(orderId: string, supplied?: string | null): string | null {
-  if (supplied !== undefined) return supplied;
-  try {
-    return sessionStorage.getItem(`suya.guest-order-token:${orderId}`);
-  } catch {
-    return null;
-  }
+  return supplied === undefined ? readGuestOrderToken(orderId) : supplied;
 }
 
 export class SupabasePaymentService implements PaymentService {

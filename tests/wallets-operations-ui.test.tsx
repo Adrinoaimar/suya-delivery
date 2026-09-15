@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => ({
   listDevices: vi.fn(),
   listObservations: vi.fn(),
   listPaymentAccounts: vi.fn(),
+  createDevice: vi.fn(),
   listPaymentCandidates: vi.fn(),
   notify: vi.fn(),
 }));
@@ -22,7 +23,7 @@ vi.mock('@/lib/services', async (importOriginal) => ({
     listDevices: mocks.listDevices,
     listObservations: mocks.listObservations,
     listPaymentAccounts: mocks.listPaymentAccounts,
-    createDevice: vi.fn(),
+    createDevice: mocks.createDevice,
     listPaymentCandidates: mocks.listPaymentCandidates,
     setObservationCode: vi.fn(),
     verifyObservation: vi.fn(),
@@ -124,6 +125,41 @@ describe('WalletsOperationsPage', () => {
     );
 
     resolveObservations([]);
+  });
+
+  it('crea el dispositivo ligado a la cuenta receptora activa', async () => {
+    mocks.listPaymentAccounts.mockResolvedValue([
+      {
+        id: 'account-yape',
+        restaurantId: restaurant.id,
+        provider: 'yape',
+        accountLabel: 'Caja Yape',
+        qrPayload: null,
+        active: true,
+      },
+    ]);
+    mocks.createDevice.mockResolvedValue({
+      id: 'device-1',
+      restaurantId: restaurant.id,
+      label: 'Caja principal',
+      active: true,
+      lastSeenAt: null,
+      deviceToken: 'a'.repeat(64),
+    });
+    render(<WalletsOperationsPage />);
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: 'Cuenta de restaurante' })).toHaveValue(
+        restaurant.id,
+      ),
+    );
+    await act(async () => {
+      screen.getByRole('button', { name: 'Crear dispositivo' }).click();
+    });
+    expect(mocks.createDevice).toHaveBeenCalledWith(
+      restaurant.id,
+      'Caja principal',
+      'account-yape',
+    );
   });
 
   it('bloquea verificar cuando el sufijo coincide con varios pedidos', async () => {

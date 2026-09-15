@@ -6,6 +6,7 @@ import { notifyCatalogInvalidated } from '@/lib/catalogSync';
 import { notificationService, storeService } from '@/lib/services';
 import type { MenuSettings } from '@/lib/services';
 import { useAuthStore } from '@/store/authStore';
+import { useBackofficeContextStore } from '@/store/backofficeContextStore';
 import type { Product, Store } from '@/types';
 import { assetUrl } from '@/utils/asset';
 import { menuSlugFromName } from '@/utils/format';
@@ -34,7 +35,8 @@ export default function CatalogPage() {
   const [stores, setStores] = useState<Store[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [settings, setSettings] = useState<Record<string, MenuSettings>>({});
-  const [selectedRestaurantId, setSelectedRestaurantId] = useState('');
+  const selectedRestaurantId = useBackofficeContextStore((state) => state.activeRestaurantId);
+  const setSelectedRestaurantId = useBackofficeContextStore((state) => state.setActiveRestaurantId);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -59,9 +61,11 @@ export default function CatalogPage() {
       const visible = allStores.filter(
         (store) => isPlatformAdmin || restaurantIds.includes(store.id),
       );
+      const contextRestaurantId = useBackofficeContextStore.getState().activeRestaurantId;
       const nextRestaurantId =
-        preferredRestaurantId && visible.some((store) => store.id === preferredRestaurantId)
-          ? preferredRestaurantId
+        (preferredRestaurantId || contextRestaurantId) &&
+        visible.some((store) => store.id === (preferredRestaurantId || contextRestaurantId))
+          ? preferredRestaurantId || contextRestaurantId
           : (visible[0]?.id ?? '');
       // Fijar la cuenta antes de productos y configuración evita un selector vacío
       // durante una carga lenta de datos secundarios.
@@ -95,7 +99,7 @@ export default function CatalogPage() {
     } finally {
       if (requestId === loadRequestRef.current) setLoading(false);
     }
-  }, [isPlatformAdmin, restaurantIds]);
+  }, [isPlatformAdmin, restaurantIds, setSelectedRestaurantId]);
 
   useEffect(() => {
     void load();

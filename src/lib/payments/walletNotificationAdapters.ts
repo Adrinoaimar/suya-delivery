@@ -9,6 +9,8 @@ export interface WalletNotificationInput {
   infoText?: string;
   summaryText?: string;
   packageName?: string;
+  /** Stable local notification identifier; it is hashed into the fingerprint. */
+  notificationKey?: string;
   postedAt?: string;
 }
 
@@ -75,8 +77,8 @@ export const DEFAULT_WALLET_NOTIFICATION_ADAPTERS: readonly WalletNotificationAd
   MERCADO_PAGO_NOTIFICATION_ADAPTER,
 ];
 
-const MONEY_PATTERN = /(s\/?|s\.|pen|ars|usd|us\$|\$)\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?)/gi;
-const CODE_PATTERN = /(?:c[oó]digo(?:\s+(?:de\s+)?(?:seguridad|operaci[oó]n|aprobaci[oó]n))?|operaci[oó]n|referencia|reference|ref\.?|id(?:\s+de)?\s+(?:transferencia|operaci[oó]n))\b\s*[:#-]?\s*([a-z0-9-]{3,20})/i;
+const MONEY_PATTERN = /(?<![\p{L}\d])(?:s\/?|s\.|pen|ars|usd|us\$|\$)\s*((?:\d{1,3}(?:[.,]\d{3})+|\d+)(?:[.,]\d{2})?)(?!\d)/giu;
+const CODE_PATTERN = /(?:c[oó]digo(?:\s+(?:de\s+)?(?:seguridad|operaci[oó]n|aprobaci[oó]n))?|operaci[oó]n|referencia|reference|ref\.?|id(?:\s+de)?\s+(?:transferencia|operaci[oó]n))\b\s*[:#-]?\s*([a-z0-9-]{3,64})/i;
 const SENDER_PATTERN = /(?:^|\b)(?:de|from|remitente|sender)\s*[:#-]?\s*(?!(?:seguridad|operaci[oó]n|transferencia|pago|payment|referencia|reference)\b)([\p{L}][\p{L}'-]*(?:\s+[\p{L}][\p{L}'-]*){0,4})(?=\s*(?:[.,;:·|]|$|\b(?:te\b|envi[oó]|sent\b|por\b|monto\b|amount\b|operaci[oó]n\b|c[oó]digo\b|ref(?:erencia)?\b|s\/?|pen\b|usd\b|ars\b)))|(?:^|\b)([\p{L}][\p{L}'-]*(?:\s+[\p{L}][\p{L}'-]*){0,4})(?=\s+te\s+(?:envi[oó](?=\s|$)|sent\b))/iu;
 
 function normalizeAmount(value: string): number | null {
@@ -158,15 +160,18 @@ export function parseWalletNotification(
   MONEY_PATTERN.lastIndex = 0;
   const amountMatch = MONEY_PATTERN.exec(text);
   if (!amountMatch) return null;
-  const amountCents = normalizeAmount(amountMatch[2]);
-  const currency = currencyForPrefix(amountMatch[1]);
+  const amountCents = normalizeAmount(amountMatch[1]);
+  const currency = currencyForPrefix(
+    amountMatch[0].slice(0, amountMatch[0].length - amountMatch[1].length).trim(),
+  );
   if (amountCents === null || !adapter.currencies.includes(currency)) return null;
 
   const codeMatch = text.match(CODE_PATTERN);
   const observedAt = input.postedAt ?? new Date().toISOString();
   // Wallets may expand one notification later with the operation code. Keep
   // the fingerprint stable so that enrichment updates the same observation.
-  const stable = `${adapter.source}|${input.packageName}|${observedAt}|${amountCents}|${currency}`;
+  const notificationKey = input.notificationKey?.trim().slice(0, 256) || observedAt;
+  const stable = `${adapter.source}|${input.packageName}|${notificationKey}|${observedAt}|${amountCents}|${currency}`;
 
   return {
     provider: adapter.provider,

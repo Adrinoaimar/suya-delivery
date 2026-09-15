@@ -148,13 +148,23 @@ export class SupabaseWalletObserverService implements WalletObserverService {
     return responses.flat().map((row) => mapDevice(row));
   }
 
-  async createDevice(restaurantId: string, label: string): Promise<CreatedWalletObserverDevice> {
+  async createDevice(
+    restaurantId: string,
+    label: string,
+    receiverAccountId?: string | null,
+  ): Promise<CreatedWalletObserverDevice> {
     if (!restaurantId) throw new Error('Selecciona un restaurante.');
     if (!label.trim()) throw new Error('Escribe un nombre para el dispositivo.');
-    const { data, error } = await this.client.rpc('create_wallet_observer_device', {
-      p_restaurant_id: restaurantId,
-      p_label: label.trim(),
-    });
+    const rpcName = receiverAccountId
+      ? 'create_wallet_observer_device_for_account'
+      : 'create_wallet_observer_device';
+    const { data, error } = await this.client.rpc(rpcName, receiverAccountId
+      ? {
+          p_restaurant_id: restaurantId,
+          p_receiver_account_id: receiverAccountId,
+          p_label: label.trim(),
+        }
+      : { p_restaurant_id: restaurantId, p_label: label.trim() });
     if (error) throw error;
     const row = Array.isArray(data) ? data[0] : data;
     return mapCreatedDevice({

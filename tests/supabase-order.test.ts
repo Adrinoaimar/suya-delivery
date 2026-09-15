@@ -67,7 +67,9 @@ function createFakeClient(options: FakeClientOptions = {}) {
   );
   const from = vi.fn(() => ({
     select: vi.fn(() => ({
-      order: vi.fn(async () => options.listResult ?? { data: [], error: null }),
+      order: vi.fn(() => ({
+        range: vi.fn(async () => options.listResult ?? { data: [], error: null }),
+      })),
       eq: vi.fn(() => ({
         maybeSingle: vi.fn(async () =>
           typeof options.rowResult === 'function'
@@ -130,7 +132,7 @@ beforeEach(() => {
 });
 
 describe('SupabaseOrderServiceImpl', () => {
-  it('mapea filas del servidor y pide códigos solo para pedidos del cliente autenticado', async () => {
+  it('mapea filas del servidor sin una RPC de códigos por cada pedido', async () => {
     const ownRow = buildRow();
     const otherRow = buildRow({
       id: '20000000-0000-4000-8000-000000000002',
@@ -142,16 +144,11 @@ describe('SupabaseOrderServiceImpl', () => {
     const { client, rpc } = createFakeClient({
       userId: 'customer-1',
       listResult: { data: [ownRow, otherRow], error: null },
-      rpc: async (name, args) => {
-        expect(name).toBe('get_order_codes');
-        expect(args).toEqual({ target_order: ownRow.id });
-        return { data: [{ delivery_code: '1234', cancel_code: '5678' }], error: null };
-      },
     });
 
     const orders = await new SupabaseOrderServiceImpl(client).list();
 
-    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc).not.toHaveBeenCalled();
     expect(orders[0]).toMatchObject({
       id: ownRow.id,
       storeName: 'El Buen Sabor',
@@ -159,8 +156,8 @@ describe('SupabaseOrderServiceImpl', () => {
       deliveryFee: 4,
       discount: 1,
       total: 28,
-      deliveryCode: '1234',
-      cancelCode: '5678',
+      deliveryCode: '',
+      cancelCode: '',
       history: [
         { status: 'confirmed', at: '2026-08-20T15:00:00.000Z' },
         { status: 'preparing', at: '2026-08-20T15:05:00.000Z' },
@@ -232,13 +229,12 @@ describe('SupabaseOrderServiceImpl', () => {
     expect(sessionStorage.getItem('suya.pending-cash-order')).toBeNull();
   });
 
-  it('crea intento Yape después de crear la orden y conserva el monto server-side', async () => {
+  it('crea pedido e intento Yape mediante el checkout atómico y conserva el monto server-side', async () => {
     const { client, rpc } = createFakeClient({
       userId: 'customer-1',
       rowResult: { data: buildRow({ payment_method: 'yape' }), error: null },
       rpc: async (name) => {
-        if (name === 'set_order_delivery_coordinates') return { data: true, error: null };
-        if (name === 'refresh_payment_intent') {
+        if (name === 'get_payment_intent') {
           return {
             data: [
               {
@@ -257,7 +253,7 @@ describe('SupabaseOrderServiceImpl', () => {
             error: null,
           };
         }
-        expect(name).toBe('create_cash_order');
+        expect(name).toBe('create_delivery_order_with_payment');
         return {
           data: [{ order_id: buildRow().id, delivery_code: '1234', cancel_code: '5678' }],
           error: null,
@@ -267,9 +263,26 @@ describe('SupabaseOrderServiceImpl', () => {
 
     const order = await new SupabaseOrderServiceImpl(client).create(createInput('yape'));
 
-    expect(rpc).toHaveBeenCalledWith('refresh_payment_intent', {
-      p_order_id: buildRow().id,
+    expect(rpc).toHaveBeenNthCalledWith(1, 'create_delivery_order_with_payment', {
+      p_restaurant_id: 'restaurant-1',
+      p_items: [
+        {
+          product_id: 'product-1',
+          quantity: 2,
+          extra_ids: ['extra-1'],
+          note: 'Sin cebolla',
+        },
+      ],
+      p_customer_phone: '987654321',
+      p_delivery_address: 'Av. Principal 123',
+      p_delivery_reference: 'Puerta verde',
+      p_request_id: expect.any(String),
       p_method: 'yape',
+      p_delivery_latitude: -4.8941,
+      p_delivery_longitude: -80.6899,
+    });
+    expect(rpc).toHaveBeenNthCalledWith(2, 'get_payment_intent', {
+      p_order_id: buildRow().id,
       p_guest_access_token: null,
     });
     expect(order).toMatchObject({

@@ -55,6 +55,8 @@ public final class SuyaWalletObserverPlugin extends Plugin {
         result.put("configured", YapeNotificationListenerService.isDeviceConfigured(getContext()));
         result.put("notificationAccess", hasNotificationAccess(getContext()));
         result.put("role", BuildConfig.SUYA_SUPABASE_URL.isEmpty() ? "unconfigured" : "ready");
+        result.put("pendingEvents", YapeNotificationListenerService.pendingEventCount(getContext()));
+        result.put("queueFull", YapeNotificationListenerService.isQueueFull(getContext()));
         return result;
     }
 

@@ -20,7 +20,12 @@ import { Input, Textarea } from '@/components/common/Input';
 import { Skeleton } from '@/components/common/Skeleton';
 import { track } from '@/lib/analytics';
 import { FREE_DELIVERY_THRESHOLD } from '@/lib/commerce';
-import { locationService, notificationService, offerService } from '@/lib/services';
+import {
+  guestOrderAccessFragment,
+  locationService,
+  notificationService,
+  offerService,
+} from '@/lib/services';
 import { useCatalogStore } from '@/store/catalogStore';
 import { cartTotals, useCartStore } from '@/store/cartStore';
 import { useOrderStore } from '@/store/orderStore';
@@ -217,8 +222,6 @@ export default function CheckoutPage() {
 
     if (isDeliveryOrder && form.address.trim().length < 6)
       next.address = 'Indica la dirección de entrega.';
-    if (isDeliveryOrder && !deliveryPosition)
-      next.location = 'Confirma el punto de entrega con GPS.';
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -294,7 +297,7 @@ export default function CheckoutPage() {
               : 'Pedido desde Suya Menús',
           reference: form.reference.trim(),
         },
-        deliveryPosition: isDeliveryOrder ? deliveryPosition! : null,
+        deliveryPosition: isDeliveryOrder ? deliveryPosition : null,
         paymentMethod: method,
         tableId: tableContext?.tableId,
         tableSessionId,
@@ -314,6 +317,9 @@ export default function CheckoutPage() {
         ? orderOrigin === 'suya_menu' && menuSlug
           ? `/menu/${menuSlug}/pedido/${order.id}`
           : `/pedido/${order.id}`
+        : null;
+      const publicOrderUrl = publicOrderPath
+        ? `${publicOrderPath}${guestOrderAccessFragment(order.id)}`
         : null;
       clearCart();
       sessionStorage.removeItem('suya.tableContext');
@@ -339,7 +345,7 @@ export default function CheckoutPage() {
           : `Pedido creado. Paga ${formatPrice(order.total)} con ${paymentLabel(method)} y espera la verificación.`,
         'success',
       );
-      navigate(publicOrderPath ?? `/orders/${order.id}/track`, {
+      navigate(publicOrderUrl ?? `/orders/${order.id}/track`, {
         replace: true,
         state: publicOrderPath ? { guestOrder: order } : undefined,
       });
@@ -502,7 +508,7 @@ export default function CheckoutPage() {
                   <p className="mt-2 text-xs text-[#6B7076]">
                     {deliveryPosition
                       ? `Punto confirmado: ${deliveryPosition.lat.toFixed(5)}, ${deliveryPosition.lng.toFixed(5)}`
-                      : 'Solo se solicita al tocar el botón. No enviamos tu dirección a geocodificadores públicos.'}
+                      : 'Opcional: confirma el punto exacto o continúa con la dirección escrita. No enviamos tu dirección a geocodificadores públicos.'}
                   </p>
                   {errors.location && (
                     <p className="mt-1 text-xs text-red-700" role="alert">

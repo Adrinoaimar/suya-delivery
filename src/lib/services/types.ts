@@ -193,7 +193,11 @@ export interface RestaurantPaymentAccount {
 
 export interface WalletObserverService {
   listDevices(restaurantIds: string[]): Promise<WalletObserverDevice[]>;
-  createDevice(restaurantId: string, label: string): Promise<CreatedWalletObserverDevice>;
+  createDevice(
+    restaurantId: string,
+    label: string,
+    receiverAccountId?: string | null,
+  ): Promise<CreatedWalletObserverDevice>;
   listObservations(restaurantIds: string[]): Promise<WalletObservation[]>;
   listPaymentCandidates(observationId: string): Promise<WalletPaymentCandidate[]>;
   setObservationCode(observationId: string, code: string): Promise<boolean>;

@@ -22,8 +22,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Fuerza el retorno al bundle nativo al actualizar una instalación que
         // pudiera tener pendiente el OTA incorrecto de Suya Cliente.
-        versionCode 3
-        versionName "1.2"
+        versionCode 4
+        versionName "1.3"
         buildConfigField "String", "SUYA_SUPABASE_URL", "\"${suyaSupabaseUrl}\""
         buildConfigField "String", "SUYA_SUPABASE_PUBLISHABLE_KEY", "\"${suyaSupabasePublishableKey}\""
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

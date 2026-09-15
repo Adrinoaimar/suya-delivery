@@ -18,6 +18,7 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { notificationService, restaurantRiderService, storeService } from '@/lib/services';
 import { useAuthStore } from '@/store/authStore';
+import { useBackofficeContextStore } from '@/store/backofficeContextStore';
 import type { RestaurantRider } from '@/lib/services';
 import type { Store } from '@/types';
 
@@ -65,7 +66,8 @@ export default function RidersOperationsPage() {
   const restaurantIds = useMemo(() => identity?.restaurantIds ?? [], [identity?.restaurantIds]);
   const isPlatformAdmin = identity?.access.includes('platform_admin') ?? false;
   const [stores, setStores] = useState<Store[]>([]);
-  const [restaurantId, setRestaurantId] = useState('');
+  const restaurantId = useBackofficeContextStore((state) => state.activeRestaurantId);
+  const setRestaurantId = useBackofficeContextStore((state) => state.setActiveRestaurantId);
   const [riders, setRiders] = useState<RestaurantRider[]>([]);
   const [form, setForm] = useState<FormState>(emptyForm);
   const [loading, setLoading] = useState(true);
@@ -84,9 +86,11 @@ export default function RidersOperationsPage() {
         const visibleStores = allStores.filter(
           (store) => isPlatformAdmin || restaurantIds.includes(store.id),
         );
+        const contextRestaurantId = useBackofficeContextStore.getState().activeRestaurantId;
         const nextRestaurantId =
-          preferredRestaurantId && visibleStores.some((store) => store.id === preferredRestaurantId)
-            ? preferredRestaurantId
+          (preferredRestaurantId || contextRestaurantId) &&
+          visibleStores.some((store) => store.id === (preferredRestaurantId || contextRestaurantId))
+            ? preferredRestaurantId || contextRestaurantId
             : (visibleStores[0]?.id ?? '');
         const nextRiders = nextRestaurantId
           ? await restaurantRiderService.list(nextRestaurantId)
@@ -102,7 +106,7 @@ export default function RidersOperationsPage() {
         if (requestId === loadRequestRef.current) setLoading(false);
       }
     },
-    [isPlatformAdmin, restaurantIds],
+    [isPlatformAdmin, restaurantIds, setRestaurantId],
   );
 
   useEffect(() => {

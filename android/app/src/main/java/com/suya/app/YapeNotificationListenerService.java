@@ -58,13 +58,16 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     private static final String PREFS = "suya_yape_lab";
     private static final String EVENTS_KEY = "observed_events";
     private static final String DEVICE_TOKEN_KEY = "device_token";
+    private static final String DEVICE_BINDING_KEY = "device_binding_id";
+    private static final String QUEUE_FULL_KEY = "queue_full";
     private static final String KEY_ALIAS = "suya_yape_observed_events";
     private static final String KEYSTORE = "AndroidKeyStore";
     private static final int SYNC_JOB_ID = 170914;
-    private static final int MAX_EVENTS = 100;
+    private static final int MAX_EVENTS = 500;
+    private static final Object QUEUE_LOCK = new Object();
     private static final ExecutorService SYNC_EXECUTOR = Executors.newSingleThreadExecutor();
-    private static final Pattern MONEY_PATTERN = Pattern.compile("(S\\/?|S\\.|PEN|ARS|USD|US\\$|\\$)\\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern CODE_PATTERN = Pattern.compile("(?:c[oó]digo(?:\\s+(?:de\\s+)?(?:seguridad|operaci[oó]n|aprobaci[oó]n))?|operaci[oó]n|referencia|reference|ref\\.?|id(?:\\s+de)?\\s+(?:transferencia|operaci[oó]n))\\b\\s*[:#-]?\\s*([a-z0-9-]{3,20})", Pattern.CASE_INSENSITIVE);
+    private static final Pattern MONEY_PATTERN = Pattern.compile("(?<![\\p{L}\\d])(?:S\\/?|S\\.|PEN|ARS|USD|US\\$|\\$)\\s*((?:\\d{1,3}(?:[.,]\\d{3})+|\\d+)(?:[.,]\\d{2})?)(?!\\d)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern CODE_PATTERN = Pattern.compile("(?:c[oó]digo(?:\\s+(?:de\\s+)?(?:seguridad|operaci[oó]n|aprobaci[oó]n))?|operaci[oó]n|referencia|reference|ref\\.?|id(?:\\s+de)?\\s+(?:transferencia|operaci[oó]n))\\b\\s*[:#-]?\\s*([a-z0-9-]{3,64})", Pattern.CASE_INSENSITIVE);
     private static final Pattern SENDER_PATTERN = Pattern.compile("(?:^|\\b)(?:de|from|remitente|sender)\\s*[:#-]?\\s*(?!(?:seguridad|operaci[oó]n|transferencia|pago|payment|referencia|reference)\\b)([\\p{L}][\\p{L}'-]*(?:\\s+[\\p{L}][\\p{L}'-]*){0,4})(?=\\s*(?:[.,;:·|]|$|\\b(?:te\\b|envi[oó]|sent\\b|por\\b|monto\\b|amount\\b|operaci[oó]n\\b|c[oó]digo\\b|ref(?:erencia)?\\b|S\\/?|PEN\\b|USD\\b|ARS\\b)))|(?:^|\\b)([\\p{L}][\\p{L}'-]*(?:\\s+[\\p{L}][\\p{L}'-]*){0,4})(?=\\s+te\\s+(?:envi[oó](?=\\s|$)|sent\\b))", Pattern.CASE_INSENSITIVE);
     private static final WalletAdapter[] ADAPTERS = new WalletAdapter[]{
             new WalletAdapter("yape", "yape_notification",
@@ -88,6 +91,10 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     @Override
     public void onNotificationPosted(StatusBarNotification statusBarNotification) {
         if (statusBarNotification == null) return;
+        String bindingId = currentBindingId(this);
+        // No se capturan notificaciones antes de que el operador vincule el
+        // dispositivo a una cuenta receptora concreta.
+        if (bindingId == null) return;
         WalletAdapter adapter = findAdapter(statusBarNotification.getPackageName());
         if (adapter == null) return;
         Notification notification = statusBarNotification.getNotification();
@@ -99,7 +106,9 @@ public final class YapeNotificationListenerService extends NotificationListenerS
 
         Matcher amountMatcher = MONEY_PATTERN.matcher(combined);
         if (!amountMatcher.find()) return;
-        Money money = parseMoney(amountMatcher.group(1), amountMatcher.group(2));
+        String rawAmount = amountMatcher.group(1);
+        String prefix = amountMatcher.group().substring(0, amountMatcher.group().length() - rawAmount.length()).trim();
+        Money money = parseMoney(prefix, rawAmount);
         if (money == null || !adapter.currencies.contains(money.currency)) return;
 
         Matcher codeMatcher = CODE_PATTERN.matcher(combined);
@@ -116,11 +125,12 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         // commonly post a truncated notification and then expand the same
         // notification with the code. The stable event lets the backend and
         // local queue enrich one observation instead of creating a duplicate.
-        String eventId = sha256(adapter.source + "|" + statusBarNotification.getPackageName() + "|" + notificationKey + "|" + postTime + "|" + money.amountCents + "|" + money.currency);
+        String eventId = sha256(bindingId + "|" + adapter.source + "|" + statusBarNotification.getPackageName() + "|" + notificationKey + "|" + postTime + "|" + money.amountCents + "|" + money.currency);
 
         JSONObject event = new JSONObject();
         try {
             event.put("eventId", eventId);
+            event.put("bindingId", bindingId);
             event.put("provider", adapter.provider);
             event.put("source", adapter.source);
             event.put("verification", "unverified");
@@ -191,7 +201,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     }
 
     @Nullable
-    private static Money parseMoney(String prefix, String rawAmount) {
+    static Money parseMoney(String prefix, String rawAmount) {
         Long amountCents = normalizeAmount(rawAmount);
         if (amountCents == null || amountCents <= 0) return null;
         String normalized = prefix.toUpperCase(Locale.US);
@@ -205,7 +215,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     }
 
     @Nullable
-    private static Long normalizeAmount(String raw) {
+    static Long normalizeAmount(String raw) {
         String compact = raw.replace(" ", "");
         int comma = compact.lastIndexOf(',');
         int dot = compact.lastIndexOf('.');
@@ -221,6 +231,12 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     }
 
     private void appendEvent(JSONObject event) {
+        synchronized (QUEUE_LOCK) {
+            appendEventLocked(event);
+        }
+    }
+
+    private void appendEventLocked(JSONObject event) {
         SharedPreferences preferences = getSharedPreferences(PREFS, MODE_PRIVATE);
         JSONArray current;
         try {
@@ -248,11 +264,21 @@ public final class YapeNotificationListenerService extends NotificationListenerS
             }
             return;
         }
+        int pendingCount = 0;
+        for (int index = 0; index < current.length(); index++) {
+            JSONObject existing = current.optJSONObject(index);
+            if (existing != null && !existing.optBoolean("synced", false)) pendingCount++;
+        }
+        // La cola nunca sustituye evidencia pendiente por historia sincronizada.
+        // Si está llena, se conserva todo y el estado queda visible para la capa nativa.
+        if (pendingCount >= MAX_EVENTS) {
+            preferences.edit().putBoolean(QUEUE_FULL_KEY, true).apply();
+            return;
+        }
         JSONArray next = new JSONArray();
         next.put(event);
-        // Keep unsent evidence ahead of already-synced history when the local
-        // bounded queue is full. Losing old UI history is safer than dropping
-        // a payment observation that still needs reconciliation.
+        // Primero se preserva toda la evidencia no enviada; la historia sincronizada
+        // es la única parte descartable cuando la cola total alcanza el límite.
         for (int pass = 0; pass < 2 && next.length() < MAX_EVENTS; pass++) {
             for (int index = 0; index < current.length() && next.length() < MAX_EVENTS; index++) {
                 JSONObject existing = current.optJSONObject(index);
@@ -283,10 +309,15 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         if (context == null || token == null || token.trim().length() < 48) return false;
         String encrypted = encryptValue(token.trim());
         if (encrypted == null) return false;
-        context.getSharedPreferences(PREFS, MODE_PRIVATE)
-                .edit()
-                .putString(DEVICE_TOKEN_KEY, encrypted)
-                .apply();
+        String bindingId = sha256(token.trim());
+        synchronized (QUEUE_LOCK) {
+            context.getSharedPreferences(PREFS, MODE_PRIVATE)
+                    .edit()
+                    .putString(DEVICE_TOKEN_KEY, encrypted)
+                    .putString(DEVICE_BINDING_KEY, bindingId)
+                    .remove(QUEUE_FULL_KEY)
+                    .apply();
+        }
         scheduleSyncJob(context);
         syncPendingEvents(context);
         return true;
@@ -294,7 +325,12 @@ public final class YapeNotificationListenerService extends NotificationListenerS
 
     public static void clearDeviceToken(Context context) {
         if (context == null) return;
-        context.getSharedPreferences(PREFS, MODE_PRIVATE).edit().remove(DEVICE_TOKEN_KEY).apply();
+        synchronized (QUEUE_LOCK) {
+            // La cola se conserva cifrada; al rotar token, los eventos quedan
+            // ligados al binding anterior y jamás se envían al nuevo restaurante.
+            context.getSharedPreferences(PREFS, MODE_PRIVATE)
+                    .edit().remove(DEVICE_TOKEN_KEY).remove(DEVICE_BINDING_KEY).apply();
+        }
         cancelSyncJob(context);
     }
 
@@ -302,6 +338,37 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         if (context == null) return false;
         String stored = context.getSharedPreferences(PREFS, MODE_PRIVATE).getString(DEVICE_TOKEN_KEY, null);
         return stored != null && decryptValue(stored) != null;
+    }
+
+    static int pendingEventCount(Context context) {
+        if (context == null) return 0;
+        synchronized (QUEUE_LOCK) {
+            String stored = context.getSharedPreferences(PREFS, MODE_PRIVATE).getString(EVENTS_KEY, null);
+            try {
+                JSONArray events = new JSONArray(decryptEvents(stored));
+                int count = 0;
+                for (int index = 0; index < events.length(); index++) {
+                    JSONObject event = events.optJSONObject(index);
+                    if (event != null && !event.optBoolean("synced", false)) count++;
+                }
+                return count;
+            } catch (JSONException ignored) {
+                return 0;
+            }
+        }
+    }
+
+    static boolean isQueueFull(Context context) {
+        return context != null && context.getSharedPreferences(PREFS, MODE_PRIVATE)
+                .getBoolean(QUEUE_FULL_KEY, false);
+    }
+
+    @Nullable
+    private static String currentBindingId(Context context) {
+        if (context == null) return null;
+        String binding = context.getSharedPreferences(PREFS, MODE_PRIVATE)
+                .getString(DEVICE_BINDING_KEY, null);
+        return TextUtils.isEmpty(binding) ? null : binding;
     }
 
     /** Retries only unsent, encrypted local observations; notifications never authorize payments. */
@@ -335,10 +402,17 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     }
 
     private static void syncPendingEventsBlocking(Context context) {
+        synchronized (QUEUE_LOCK) {
+            syncPendingEventsBlockingLocked(context);
+        }
+    }
+
+    private static void syncPendingEventsBlockingLocked(Context context) {
         SharedPreferences preferences = context.getSharedPreferences(PREFS, MODE_PRIVATE);
         String encryptedToken = preferences.getString(DEVICE_TOKEN_KEY, null);
         String token = encryptedToken == null ? null : decryptValue(encryptedToken);
-        if (token == null || BuildConfig.SUYA_SUPABASE_URL.isEmpty() || BuildConfig.SUYA_SUPABASE_PUBLISHABLE_KEY.isEmpty()) return;
+        String bindingId = currentBindingId(context);
+        if (token == null || bindingId == null || BuildConfig.SUYA_SUPABASE_URL.isEmpty() || BuildConfig.SUYA_SUPABASE_PUBLISHABLE_KEY.isEmpty()) return;
 
         JSONArray current;
         try {
@@ -350,7 +424,8 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         boolean changed = false;
         for (int index = 0; index < current.length(); index++) {
             JSONObject event = current.optJSONObject(index);
-            if (event == null || event.optBoolean("synced", false)) continue;
+            if (event == null || event.optBoolean("synced", false)
+                    || !bindingId.equals(event.optString("bindingId", null))) continue;
             if (!uploadEvent(token, event)) break;
             try {
                 event.put("synced", true);
