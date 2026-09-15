@@ -19,7 +19,8 @@ describe('actualizaciones nativas por rol', () => {
     expect(apkBuilder).toContain('VITE_MOBILE_ROLE: target.build');
     expect(appBuilder).toContain("const mobileRole = app === 'mobile' ? 'unified' : app;");
     expect(appBuilder).toContain("'import.meta.env.VITE_MOBILE_ROLE'");
-    expect(androidBuild).toContain('versionCode 4');
+    expect(androidBuild).toContain('versionCode 5');
+    expect(androidBuild).toContain('versionName "1.4"');
     expect(iosProject).toContain('CURRENT_PROJECT_VERSION = 2;');
   });
 });

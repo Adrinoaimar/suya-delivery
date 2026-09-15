@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Banknote, ClipboardCheck, Plus, RefreshCw, Scale } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
@@ -45,44 +45,50 @@ export default function CashRegisterPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const loadRequestRef = useRef(0);
   const activeRestaurantId = contextRestaurantId || (isPlatformAdmin ? '' : restaurantIds[0] ?? '');
   const canSelectRestaurant = isPlatformAdmin || restaurantIds.length > 1;
 
   const load = useCallback(async (preferredRestaurantId = '') => {
-    const allStores = await storeService.listStores();
-    const visibleStores = allStores.filter(
-      (store) => isPlatformAdmin || restaurantIds.includes(store.id),
-    );
-    const currentContext = useBackofficeContextStore.getState().activeRestaurantId;
-    const nextRestaurantId =
-      (preferredRestaurantId || currentContext) &&
-      visibleStores.some((store) => store.id === (preferredRestaurantId || currentContext))
-        ? preferredRestaurantId || currentContext
+    const requestId = ++loadRequestRef.current;
+    setLoading(true);
+    setError(null);
+    try {
+      const allStores = await storeService.listStores();
+      const visibleStores = allStores.filter(
+        (store) => isPlatformAdmin || restaurantIds.includes(store.id),
+      );
+      const currentContext = useBackofficeContextStore.getState().activeRestaurantId;
+      const requestedRestaurantId = preferredRestaurantId || currentContext;
+      const nextRestaurantId = requestedRestaurantId &&
+        visibleStores.some((store) => store.id === requestedRestaurantId)
+        ? requestedRestaurantId
         : visibleStores[0]?.id ?? '';
-    setStores(visibleStores);
-    setContextRestaurantId(nextRestaurantId);
-    const restaurantScope = visibleStores.map((store) => store.id);
-    const [rows, tableRows] = await Promise.all([
-      cashRegisterService.list(restaurantScope),
-      tableService.list(restaurantScope),
-    ]);
-    setSessions(rows);
-    setTables(tableRows);
+      if (requestId !== loadRequestRef.current) return;
+
+      // Fijar la cuenta antes de las consultas secundarias evita mostrar un
+      // selector vacío y mantiene el alcance visible durante una respuesta lenta.
+      setStores(visibleStores);
+      setContextRestaurantId(nextRestaurantId);
+      const restaurantScope = visibleStores.map((store) => store.id);
+      const [rows, tableRows] = await Promise.all([
+        cashRegisterService.list(restaurantScope),
+        tableService.list(restaurantScope),
+      ]);
+      if (requestId !== loadRequestRef.current) return;
+      setSessions(rows);
+      setTables(tableRows);
+    } catch (cause) {
+      if (requestId !== loadRequestRef.current) return;
+      setError(cause instanceof Error ? cause.message : 'No pudimos cargar la caja.');
+    } finally {
+      if (requestId === loadRequestRef.current) setLoading(false);
+    }
   }, [isPlatformAdmin, restaurantIds, setContextRestaurantId]);
 
   useEffect(() => {
-    let active = true;
-    setLoading(true);
-    setError(null);
-    void load(contextRestaurantId)
-      .catch((cause) => {
-        if (active) setError(cause instanceof Error ? cause.message : 'No pudimos cargar la caja.');
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => { active = false; };
-  }, [contextRestaurantId, load]);
+    void load();
+  }, [load]);
 
   const currentSession = useMemo(
     () => sessions.find(

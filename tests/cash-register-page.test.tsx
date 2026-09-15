@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CashRegisterPage from '@/pages/backoffice/CashRegisterPage';
 import { useAuthStore } from '@/store/authStore';
+import { useBackofficeContextStore } from '@/store/backofficeContextStore';
 import { useOrderStore } from '@/store/orderStore';
 import type { AuthIdentity } from '@/lib/auth/types';
 import type { CashRegisterSession } from '@/lib/services';
@@ -50,6 +51,16 @@ const identity: AuthIdentity = {
   defaultAddress: '', defaultReference: '', access: ['restaurant_staff'], restaurantIds: [restaurant.id],
 };
 
+const secondRestaurant: Store = { ...restaurant, id: 'restaurant-2', name: 'Andá Paya' };
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((nextResolve) => {
+    resolve = nextResolve;
+  });
+  return { promise, resolve };
+}
+
 const openSession: CashRegisterSession = {
   id: 'session-1', restaurantId: restaurant.id, status: 'open', openingFloat: 20,
   expectedCash: 20, declaredCash: null, difference: null, openedAt: '2026-09-15T10:00:00.000Z',
@@ -68,6 +79,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.stubGlobal('crypto', { randomUUID: vi.fn(() => '00000000-0000-4000-8000-000000000001') });
   useAuthStore.setState({ status: 'authenticated', identity, error: null });
+  useBackofficeContextStore.setState({ activeRestaurantId: '' });
   useOrderStore.setState({ orders: [order], status: 'ready', error: null });
   mocks.listStores.mockResolvedValue([restaurant]);
   mocks.listCash.mockResolvedValue([]);
@@ -82,6 +94,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals();
   useAuthStore.setState({ status: 'idle', identity: null, error: null });
+  useBackofficeContextStore.setState({ activeRestaurantId: '' });
   useOrderStore.setState({ orders: [], status: 'idle', error: null });
 });
 
@@ -127,5 +140,33 @@ describe('CashRegisterPage', () => {
     await waitFor(() => expect(mocks.payTable).toHaveBeenCalledWith(
       'table-session-1', 25, 'cash', '00000000-0000-4000-8000-000000000001',
     ));
+  });
+
+  it('conserva la cuenta más reciente cuando una carga anterior termina tarde', async () => {
+    const firstCash = deferred<CashRegisterSession[]>();
+    const secondCash = deferred<CashRegisterSession[]>();
+    const firstTables = deferred<never[]>();
+    const secondTables = deferred<never[]>();
+    const secondSession = { ...openSession, id: 'session-2', restaurantId: secondRestaurant.id };
+    useAuthStore.setState({ identity: { ...identity, restaurantIds: [restaurant.id, secondRestaurant.id] } });
+    mocks.listStores.mockResolvedValue([restaurant, secondRestaurant]);
+    let cashCall = 0;
+    let tableCall = 0;
+    mocks.listCash.mockImplementation(() => [firstCash, secondCash][cashCall++].promise);
+    mocks.listTables.mockImplementation(() => [firstTables, secondTables][tableCall++].promise);
+
+    render(<CashRegisterPage />);
+    const selector = await screen.findByLabelText('Cuenta de restaurante');
+    fireEvent.change(selector, { target: { value: secondRestaurant.id } });
+    await waitFor(() => expect(mocks.listCash).toHaveBeenCalledTimes(2));
+
+    secondCash.resolve([secondSession]);
+    secondTables.resolve([]);
+    expect(await screen.findByText('Turno abierto')).toBeInTheDocument();
+
+    firstCash.resolve([openSession]);
+    firstTables.resolve([]);
+    await waitFor(() => expect(screen.getByRole('heading', { name: secondRestaurant.name })).toBeInTheDocument());
+    expect(screen.getByText('Turno abierto')).toBeInTheDocument();
   });
 });
