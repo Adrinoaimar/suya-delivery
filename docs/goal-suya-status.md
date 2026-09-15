@@ -17,7 +17,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 | HEAD inicial | `5a6a36f fix(backoffice): keep restaurant context for multi-store staff` |
 | Node / Vite | Node `22.23.2`; Vite `8.2.1` |
 | Pruebas antes de esta ejecución | 63 archivos / 281 pruebas |
-| Estado actual | Implementación de caja, protección contra cargas obsoletas, cierre manual cash-only, contraste nativo y minimización de pedido invitado guardados en este checkpoint; `output/` conservado sin versionar |
+| Estado actual | Implementación de caja, protección contra cargas obsoletas, cierre manual cash-only, contraste nativo, minimización de pedido invitado y reset de intentos de pago guardados en este checkpoint; `output/` conservado sin versionar |
 | Prohibiciones respetadas | Sin pagos reales, producción, migraciones remotas, contratación, publicación o borrado destructivo |
 
 ## Cambios implementados en este checkpoint
@@ -61,7 +61,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | P-08 | En verificación | Adaptadores por paquete y palabras; caso Yape probado | Matriz Android real por versión de billetera |
 | P-09 | En verificación | Código normalizado hasta 64; sufijo solo pista y código completo requerido para colisión | Ejecutar SQL y Android; confirmar límites de proveedor |
 | P-10 | En verificación | Renovación conserva cuenta histórica y rechaza cuenta desactivada | Ejecutar migración y caso de vencimiento |
-| P-11 | En verificación | Textos y estados de pago conservan evidencia separada; reset por pedido | Revisión sobre APK final |
+| P-11 | En verificación | Textos de pago no prometen unicidad por código/hash ni exponen detalles internos; evidencia separada y reset por pedido/intento | Revisión sobre APK final |
 | U-01 | En verificación | Drawer opaco, `isolate`, portal `z-[1100]`; test/build web pasan | Captura sobre APK final con mapa normal/expandido |
 | U-02 | Verificado local | Navegación móvil compacta + drawer “Más”; `backoffice-layout.test.tsx` pasa | Confirmar en Android final |
 | U-03 | En verificación | Store global en cinco módulos; pruebas focalizadas de contexto pasan | Cambiar dos restaurantes con respuestas lentas y probar permisos |
@@ -69,7 +69,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | U-05 | En verificación | `MainActivity` fija barras y contraste; `:app:test` pasa y los tres APK compilan; el CSS conserva safe-area | Confirmar en Android 15/16 real, teclado, cutout y navegación gestual |
 | U-06 | En verificación | GPS opcional y dirección escrita permitida; servidor valida coordenadas cuando llegan | E2E delivery/recojo/mesa y cobertura |
 | U-07 | En verificación | Carga por `id` siempre reinicia estado; pago se actualiza por intento | E2E offline/retorno a app/última actualización |
-| U-08 | En verificación | Reset por `order.id`, respuestas obsoletas y estados separados | E2E navegando entre dos pedidos |
+| U-08 | En verificación | Reset por `order.id` e `attemptId`, respuestas obsoletas y estados separados; regresión focal pasa | E2E navegando entre dos pedidos |
 | U-09 | En verificación | Capturas web customer/Rider a 390×844; `scrollWidth === viewport` y barras inferiores opacas para no filtrar texto | Capturas sobre APK final a 360×800, mapa normal/expandido, leyendas/atribución y estados largos |
 | U-10 | En verificación | Navegación por teclado sobre bundle customer: 16 destinos con nombre y visibles; controles sin nombre: 0 | axe/contraste/TalkBack, fuente ampliada y validación nativa |
 | A-01 | En verificación | Rutas wallet atómicas; helper v2 calcula huella con canal/método/oferta/mesa/datos y rechaza conflicto; cliente reutiliza request y token guest | Ejecutar SQL/pgTAP y E2E real tras pérdida de respuesta/concurrencia |
@@ -87,7 +87,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 
 - `npm run typecheck`: pasa.
 - `npm run lint`: pasa sin warnings.
-- `npm test -- --run`: **66 archivos / 291 pruebas pasan** tras añadir la regresión de privacidad del pedido invitado junto con la caja auditable, el cobro de mesas y la regresión de cambio rápido de restaurante.
+- `npm test -- --run`: **66 archivos / 292 pruebas pasan** tras añadir las regresiones de privacidad del pedido invitado y reset de intento junto con la caja auditable, el cobro de mesas y la regresión de cambio rápido de restaurante.
 - Pruebas focalizadas de acceso invitado/order/payment/layout: 19/19 pasan.
 - `tests/backoffice-layout.test.tsx`, `tests/cash-register-page.test.tsx`, `tests/supabase-cash-register.test.ts` y privacidad invitado: **12/12** pasan; la carga obsoleta no reemplaza la cuenta y el pedido completo no queda en Web Storage.
 - `npm run build`: pasa.
@@ -98,10 +98,11 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Bundle customer compilado: recuperación guest E2E sintética pasa (`#access` se consume y el token queda en sesión); los errores observados son solicitudes a Postgres local no disponible.
 - `npm run test:e2e` con previews de los tres bundles levantados: pasa **12/12 combinaciones** (customer/Rider/Back Office en 360×800, 390×844, tablet y desktop), con HTTP 200, ruta/encabezado esperado, sin overflow, controles nombrados y sin `pageerror`.
 - Revalidación posterior a la integración de caja (2026-09-15): `npm run build:apps` con configuración pública sintética volvió a compilar los tres bundles y `npm run test:e2e` volvió a pasar **12/12**; los previews se levantaron desde `dist/customer`, `dist/rider` y `dist/backoffice` y respondieron 200 en sus rutas SPA.
+- Revalidación posterior a la minimización de privacidad y reset de intentos (2026-09-15): suite completa **66 archivos / 292 pruebas**, typecheck, lint, escaneo de secretos, bundles aislados, smoke web **12/12** y `npm run build:mobile:roles` pasan; el APK no incorpora la caché completa del pedido invitado porque esa ruta pertenece al bundle customer web, pero las tres variantes Android se reconstruyeron y validaron.
 - `npm run verify:payments`: rechazado por configuración productiva ausente; correcto para este entorno sin despliegue.
 - `npm run build:apps` con configuración pública sintética y `VITE_CULQI_GATEWAY_ENABLED=false`: pasa; customer, Rider y Backoffice quedan aislados.
 - Android: `bash android/gradlew test --no-daemon` pasa 4/4 pruebas unitarias y `assembleDebug` pasa para Rider, Backoffice y Wallet Observer; el ajuste nativo de barras compila; advertencia existente de API deprecada en `YapeNotificationListenerService.java`, sin fallo de compilación.
-- Reconstrucción final posterior al ajuste nativo: `npm run build:mobile:roles` volvió a compilar y empaquetar Rider, Backoffice y Wallet Observer con `versionName 1.4`/`versionCode 5`; `unzip -tqq` y `apksigner verify` v2 pasan en las tres APK.
+- Reconstrucción final posterior al ajuste nativo y a la revisión de privacidad: `npm run build:mobile:roles` volvió a compilar y empaquetar Rider, Backoffice y Wallet Observer con `versionName 1.4`/`versionCode 5`; `unzip -tqq` y `apksigner verify` v2 pasan en las tres APK.
 - PostgreSQL temporal 17.6.1 con esquema mínimo oficial de Auth/Storage equivalente: instalación limpia de **53 migraciones**, `seed.sql` y **24/24 archivos pgTAP** pasan; la migración de caja (`20260915130000`) es la número 54 y queda pendiente de repetir en el flujo oficial. Es evidencia independiente del port-forward, no reemplaza `supabase db lint/test`.
 - APK Rider debug: `output/android/Suya-Rider-debug.apk`, 25,370,777 bytes, SHA-256 `01215fc06cb8c979d72ae7f104e08063484d301df6041d9259954b1698e0543e`, paquete `com.suya.rider`, `versionName 1.4`, `versionCode 5`.
 - APK Backoffice debug: `output/android/Suya-Backoffice-debug.apk`, 25,238,752 bytes, SHA-256 `41d1ae128b5ff3f796e60fd3531b608209c94ce9c0aa7e7cac13228f28ea7537`, paquete `com.suya.backoffice`, `versionName 1.4`, `versionCode 5`.

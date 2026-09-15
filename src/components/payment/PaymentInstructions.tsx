@@ -48,8 +48,8 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   const gatewayTokenBusyRef = useRef(false);
 
   useEffect(() => {
-    // Este componente vive en rutas que pueden cambiar de pedido sin desmontarse.
-    // Nunca arrastres intento, constancia ni estados de checkout del pedido anterior.
+    // Este componente vive en rutas que pueden cambiar de pedido o de intento sin desmontarse.
+    // Nunca arrastres intento, constancia ni estados de checkout del contexto anterior.
     setIntent(null);
     setLoading(true);
     setError(null);
@@ -60,7 +60,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
     setGatewayAwaitingWebhook(false);
     setManualBusy(false);
     gatewayTokenBusyRef.current = false;
-  }, [order.id]);
+  }, [order.id, order.paymentIntent?.attemptId]);
 
   useEffect(() => {
     if (order.paymentMethod === 'cash' || order.paymentIntent) return;
@@ -265,7 +265,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
           setGatewayBusy(false);
           setGatewayAwaitingWebhook(true);
           notificationService.notify(
-            'Pago enviado. Culqi confirmará el monto mediante webhook; esta pantalla se actualizará sola.',
+            'Pago enviado. El servidor actualizará esta pantalla cuando valide el pago.',
             'success',
           );
         },
@@ -324,9 +324,9 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
                 <QrCode className="h-5 w-5" aria-hidden="true" />
               </span>
               <div>
-                <p className="font-semibold text-suya-carbon">Checkout seguro de Culqi</p>
+                <p className="font-semibold text-suya-carbon">Pago electrónico seguro</p>
                 <p className="mt-1 text-sm text-suya-muted">
-                  Genera un QR de billetera (Yape) o captura tarjeta con el monto exacto de este pedido.
+                  Abre el canal autorizado para pagar el monto exacto de este pedido.
                 </p>
               </div>
             </div>
@@ -355,7 +355,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
             </div>
           )}
           <p className="mt-3 text-xs text-suya-muted">
-            Referencia Culqi: <span className="font-mono">{intent.providerReference ?? 'pendiente'}</span>
+            Referencia de pago: <span className="font-mono">{intent.providerReference ?? 'pendiente'}</span>
           </p>
         </div>
       ) : intent.qrPayload ? (
@@ -424,9 +424,9 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
           <p className="mt-1 text-xs text-suya-muted">
             Después de pagar, escribe el código de seguridad u operación que aparece en tu
             constancia. En Yape suele ser el código de seguridad de 3 dígitos; si la constancia
-            muestra un código de operación, copia el valor completo. Suya guarda un hash no
-            reversible y solo muestra los últimos cuatro caracteres; así un pago de S/30 no se
-            confunde con otro pago de S/30.
+            muestra un código de operación, copia el valor completo. Este dato solo ayuda a caja
+            a revisar el movimiento: por sí solo no confirma que el abono llegó ni identifica de
+            forma única un pago.
           </p>
           <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
             <label className="min-w-0 flex-1 text-xs font-semibold text-suya-carbon">
@@ -470,7 +470,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-suya-green" aria-hidden="true" />
         <p>
           {intent.provider === 'culqi'
-            ? 'Culqi confirma el pago por webhook. Suya conserva la referencia del pedido y no libera por una notificación local.'
+            ? 'El servidor confirma el pago. Suya conserva la referencia del pedido y no libera por una notificación local.'
             : 'La notificación del celular de caja solo es evidencia. El restaurante debe verificar monto, billetera, hora y referencia antes de liberar el pedido.'}
         </p>
       </div>

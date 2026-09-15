@@ -214,10 +214,10 @@ export default function CheckoutPage() {
     if (needsGatewayEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
       next.email = 'Escribe un correo válido para abrir el checkout seguro.';
     if (culqiGatewayEnabled && (method === 'yape' || method === 'card') && total < 6) {
-      next.payment = 'Culqi requiere un pago mínimo de S/ 6.00 para este checkout.';
+      next.payment = 'El pago electrónico requiere un mínimo de S/ 6.00.';
     }
     if (culqiGatewayEnabled && method === 'yape' && total > 500) {
-      next.payment = 'El QR Yape de Culqi admite hasta S/ 500.00 por orden.';
+      next.payment = 'El pago con Yape admite hasta S/ 500.00 por orden.';
     }
 
     if (isDeliveryOrder && form.address.trim().length < 6)
@@ -576,7 +576,7 @@ export default function CheckoutPage() {
                 {
                   value: 'yape' as const,
                   label: 'Yape',
-                  description: culqiGatewayEnabled ? 'QR exacto por Culqi' : 'QR + código de constancia',
+                  description: culqiGatewayEnabled ? 'QR de pago' : 'QR + constancia',
                   icon: QrCode,
                   disabled: false,
                 },
@@ -590,7 +590,7 @@ export default function CheckoutPage() {
                 {
                   value: 'card' as const,
                   label: 'Tarjeta',
-                  description: culqiGatewayEnabled ? 'Checkout seguro' : 'Configura Culqi',
+                  description: culqiGatewayEnabled ? 'Pago seguro' : 'No disponible',
                   icon: CreditCard,
                   disabled: !culqiGatewayEnabled,
                 },
@@ -634,8 +634,8 @@ export default function CheckoutPage() {
             ) : (
               <p className="mt-3 rounded-btn bg-suya-sun-soft px-3 py-2 text-xs text-[#5E511F]">
                 {culqiGatewayEnabled && (method === 'yape' || method === 'card')
-                  ? 'Al confirmar se crea una orden Culqi con monto exacto. El checkout muestra Yape o tarjeta y el webhook actualiza el estado.'
-                  : 'Al confirmar se crea una referencia única y el servidor calcula el monto. Luego verás el QR del negocio o las instrucciones para pagar; conserva el código de la constancia porque caja lo usa para distinguir pagos iguales.'}
+                  ? 'Al confirmar se crea un intento con monto exacto. El canal autorizado procesa el pago y el servidor actualiza su estado.'
+                  : 'Al confirmar se crea una referencia única y el servidor calcula el monto. Luego verás el QR del negocio o las instrucciones para pagar; conserva la constancia porque ayuda a caja a revisar pagos parecidos.'}
               </p>
             )}
             {errors.payment && (

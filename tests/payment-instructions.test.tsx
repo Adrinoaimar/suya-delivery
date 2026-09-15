@@ -70,6 +70,32 @@ describe('PaymentInstructions', () => {
     expect(screen.getByText('Pago verificado')).toBeInTheDocument();
   });
 
+  it('limpia la constancia al cambiar el intento del mismo pedido', async () => {
+    mocks.submitEvidence.mockResolvedValueOnce(true);
+    const { rerender } = render(<PaymentInstructions order={order(pendingIntent)} />);
+
+    fireEvent.change(screen.getByLabelText('Código de constancia'), { target: { value: '384' } });
+    await act(async () => {
+      screen.getByRole('button', { name: 'Vincular código' }).click();
+    });
+    expect(await screen.findByRole('button', { name: 'Cambiar código' })).toBeInTheDocument();
+
+    rerender(
+      <PaymentInstructions
+        order={order({
+          ...pendingIntent,
+          attemptId: 'attempt-2',
+          checkoutReference: 'SUYA-EF56GH78',
+        })}
+      />,
+    );
+
+    await waitFor(() => expect(screen.getByLabelText('Código de constancia')).toHaveValue(''));
+    expect(screen.getByRole('button', { name: 'Vincular código' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: 'Cambiar código' })).not.toBeInTheDocument();
+    expect(screen.getByText('SUYA-EF56GH78')).toBeInTheDocument();
+  });
+
   it('permite corregir el código de la constancia mientras sigue pendiente', async () => {
     mocks.submitEvidence.mockResolvedValueOnce(true);
     render(<PaymentInstructions order={order(pendingIntent)} />);
@@ -122,9 +148,10 @@ describe('PaymentInstructions', () => {
 
     expect(screen.getByRole('button', { name: 'Esperando confirmación…' })).toBeDisabled();
     expect(mocks.notify).toHaveBeenCalledWith(
-      'Pago enviado. Culqi confirmará el monto mediante webhook; esta pantalla se actualizará sola.',
+      'Pago enviado. El servidor actualizará esta pantalla cuando valide el pago.',
       'success',
     );
+    expect(screen.queryByText(/Culqi|webhook/i)).not.toBeInTheDocument();
   });
 
   it('no deja el botón bloqueado si el usuario cierra el checkout sin completar el pago', async () => {

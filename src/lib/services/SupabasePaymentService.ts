@@ -120,7 +120,7 @@ export class SupabasePaymentService implements PaymentService {
       return mapIntent(row);
     }
     if (method === 'card') {
-      throw new Error('Tarjeta requiere configurar Culqi en esta aplicación.');
+      throw new Error('El pago con tarjeta no está habilitado en esta aplicación.');
     }
     const { data, error } = await this.client.rpc('refresh_payment_intent', {
       p_order_id: orderId,
