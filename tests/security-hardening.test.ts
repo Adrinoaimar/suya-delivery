@@ -61,6 +61,8 @@ describe('Suya hardening guards', () => {
     expect(headers).toMatch(/X-Content-Type-Options: nosniff/);
     expect(headers).toMatch(/script-src[^\n]*https:\/\/js\.culqi\.com/);
     expect(headers).toMatch(/connect-src[^\n]*https:\/\/checkoutview\.culqi\.com/);
+    expect(headers).toMatch(/connect-src[^\n]*https:\/\/suyadelivery\.com/);
+    expect(headers).not.toMatch(/googletagmanager|google-analytics|region1\.google-analytics/iu);
     expect(headers).toMatch(/frame-src https:\/\/checkoutview\.culqi\.com/);
   });
 });
