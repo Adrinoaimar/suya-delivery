@@ -68,6 +68,12 @@ export default function CatalogPage() {
         : restaurantIds.length === 1
           ? restaurantIds[0]
           : '';
+      // Fijar la cuenta antes de productos y configuración evita un selector vacío
+      // durante una carga lenta de datos secundarios.
+      if (requestId === loadRequestRef.current) {
+        setStores(visible);
+        if (isPlatformAdmin) setSelectedRestaurantId(nextRestaurantId);
+      }
       const scoped = visible.filter((store) => store.id === nextRestaurantId);
       const [rows, menuRows] = await Promise.all([
         Promise.all(scoped.map((store) => storeService.listProducts(store.id))),

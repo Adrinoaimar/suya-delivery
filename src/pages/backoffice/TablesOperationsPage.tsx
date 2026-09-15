@@ -57,6 +57,18 @@ export default function TablesOperationsPage() {
         (store) => isPlatformAdmin || restaurantIds.includes(store.id),
       );
       const scopedIds = isPlatformAdmin ? visibleStores.map((store) => store.id) : restaurantIds;
+      // La selección no debe depender de que termine la carga de mesas: el operador
+      // necesita saber qué cuenta está viendo mientras llegan los datos secundarios.
+      if (requestId === loadRequestRef.current) {
+        setStores(visibleStores);
+        if (isPlatformAdmin)
+          setRestaurantId((current) =>
+            current && visibleStores.some((store) => store.id === current)
+              ? current
+              : visibleStores[0]?.id || '',
+          );
+        else setRestaurantId(restaurantIds.length === 1 ? restaurantIds[0] : '');
+      }
       const rows = await tableService.list(scopedIds);
       if (requestId !== loadRequestRef.current) return;
       setStores(visibleStores);
