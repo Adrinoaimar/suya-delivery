@@ -1,6 +1,6 @@
 # F27 · Loop de pruebas de pago
 
-Estado del código: commit `f4b6b3a` (rebuild de documentación sobre `c1c1626`; estabiliza y enriquece notificaciones expandidas sobre `f890b34`, captura el remitente en el formato «te envió» y conserva la preselección temprana de cuenta implementada en `762d7e0`; identificación Android sobre `53cb470`; funcionalidad de pagos en `66d808f` y `a35faa6`); CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
+Estado del código: commit `9682706` (checkpoint documental sobre `f4b6b3a`; estabiliza y enriquece notificaciones expandidas sobre `f890b34`, captura el remitente en el formato «te envió» y conserva la preselección temprana de cuenta implementada en `762d7e0`; identificación Android sobre `53cb470`; funcionalidad de pagos en `66d808f` y `a35faa6`); CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
 
 Último checkpoint: el QR de billeteras de Culqi usa la opción `billetera` del Custom Checkout (la opción `yape` corresponde al flujo de token/código de aprobación); queda bloqueado mientras espera `order.status.changed`. La pantalla se actualiza por polling y solo libera preparación cuando el servidor marca `authorized`. El flujo manual distingue pagos iguales con fingerprint/código completo; Back Office añade una pista visual de coincidencia entre remitente y cliente, sin autorizar por sí sola; y la observación Android sigue siendo evidencia no autorizante.
 
@@ -22,7 +22,7 @@ La reserva de creación también cubre doble toque en `Continuar con pago`: una 
 En Dispositivos de pagos, la primera cuenta visible se fija apenas llega el catálogo; las cargas lentas de observaciones o dispositivos ya no dejan el selector sin restaurante.
 Si el cliente cierra el modal de Culqi sin completar el pago, la pantalla libera el estado de apertura y permite reintentar; durante el cargo por token permanece bloqueada hasta la respuesta del backend. Si el token es rechazado, refresca el intento cerrado desde el servidor antes de permitir otro pago; si ese refresh falla, invalida localmente la referencia y obliga a crear otra, evitando reutilizar una referencia `pending` local.
 
-CI Android `34910434713` recompiló Rider, Back Office y Caja para `f4b6b3a`; los seis checks del PR #36 quedaron verdes y las tres APK pasaron `unzip -tqq`. Los hashes y rutas exactas están en `docs/STATE.md` y en el checkpoint `F27.16` de este archivo.
+CI Android `34911517744` recompiló Rider, Back Office y Caja para `9682706`; los seis checks del PR #36 quedaron verdes y las tres APK pasaron `unzip -tqq`. Los hashes y rutas exactas están en `docs/STATE.md` y en el checkpoint `F27.17` de este archivo.
 
 ## Checkpoint F27.16 · APKs del último rebuild `f4b6b3a`
 
@@ -30,6 +30,13 @@ CI Android `34910434713` recompiló Rider, Back Office y Caja para `f4b6b3a`; lo
 - Back Office: `output/apks/f4b6b3a/Suya-Backoffice-debug-e1a03e56d95cfceb93a52be0cc0895b715c0b851/Suya-Backoffice-debug.apk`; SHA-256 `761c07949558149e644b9b80fee7c0807292aa57b271ee2e576ab397e434931d`.
 - Caja / Wallet Observer: `output/apks/f4b6b3a/Suya-Wallet-Observer-debug-e1a03e56d95cfceb93a52be0cc0895b715c0b851/Suya-Wallet-Observer-debug.apk`; SHA-256 `6dde33a2bda596889f49ab1e705352a4c630285c39d884c346ee9fb766060a66`.
 - Son APKs debug para pruebas, no builds release firmados. Las tres pasaron `unzip -tqq`; la compilación Android proviene del run `34910434713`.
+
+## Checkpoint F27.17 · APKs del último rebuild `9682706`
+
+- Rider: `output/apks/9682706/Suya-Rider-debug-970b945517b8fee9769f052ae1707884947c87fa/Suya-Rider-debug.apk`; SHA-256 `beaf447ca45c5063e1e54dd32c309bc4c96f8b4895644480a8e6946e90e424e2`.
+- Back Office: `output/apks/9682706/Suya-Backoffice-debug-970b945517b8fee9769f052ae1707884947c87fa/Suya-Backoffice-debug.apk`; SHA-256 `271616a7f5cd6cd3a915b98c680c9ebf2faf7fddf784782329b7d13b906035a2`.
+- Caja / Wallet Observer: `output/apks/9682706/Suya-Wallet-Observer-debug-970b945517b8fee9769f052ae1707884947c87fa/Suya-Wallet-Observer-debug.apk`; SHA-256 `e2c47471d440063fe5daaeb5feef80cd2634808026b498a9ddc36d9f0dacd86e`.
+- Son APKs debug para pruebas, no builds release firmados. Las tres pasaron `unzip -tqq`; la compilación Android proviene del run `34911517744`.
 
 El listener mantiene un identificador estable cuando una billetera actualiza una misma notificación desde una vista corta a una expandida. La cola local cifra el evento, completa campos faltantes y vuelve a sincronizarlo; la RPC solo enriquece observaciones abiertas y preserva las verificadas.
 

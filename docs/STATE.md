@@ -267,6 +267,14 @@ producción.
 - Caja/Wallet Observer: `output/apks/c1c1626/Suya-Wallet-Observer-debug-36fa6a9e956522117c8e49b5454b59c05dd7b7d3/Suya-Wallet-Observer-debug.apk`; SHA-256 `9a378db501e5ebade67c26e826d3a95c9c652133decfaff45004c67ee2bd25ee`.
 - Las tres pasaron `unzip -tqq` y siguen siendo debug, no release-signed. Producción requiere configuración real, migraciones/Edge Functions, webhook, publicación, firma release y dos pagos físicos iguales de S/30.
 
+## Checkpoint F27.17: rebuild final del loop de pagos `9682706` (2026-09-14)
+
+- El checkpoint documental `9682706` conserva el código funcional de `f4b6b3a`; CI PR #36 quedó 6/6 verde. Android run `34911517744` recompiló los tres roles.
+- Rider: `output/apks/9682706/Suya-Rider-debug-970b945517b8fee9769f052ae1707884947c87fa/Suya-Rider-debug.apk`; SHA-256 `beaf447ca45c5063e1e54dd32c309bc4c96f8b4895644480a8e6946e90e424e2`.
+- Back Office: `output/apks/9682706/Suya-Backoffice-debug-970b945517b8fee9769f052ae1707884947c87fa/Suya-Backoffice-debug.apk`; SHA-256 `271616a7f5cd6cd3a915b98c680c9ebf2faf7fddf784782329b7d13b906035a2`.
+- Caja/Wallet Observer: `output/apks/9682706/Suya-Wallet-Observer-debug-970b945517b8fee9769f052ae1707884947c87fa/Suya-Wallet-Observer-debug.apk`; SHA-256 `e2c47471d440063fe5daaeb5feef80cd2634808026b498a9ddc36d9f0dacd86e`.
+- Las tres pasaron `unzip -tqq` y siguen siendo debug, no release-signed. Producción aún requiere credenciales/configuración real, migraciones/Edge Functions, webhook, publicación, firma release y dos pagos físicos iguales de S/30.
+
 ## Reglas de continuidad
 
 - Git, pruebas y este archivo son estado canónico.
