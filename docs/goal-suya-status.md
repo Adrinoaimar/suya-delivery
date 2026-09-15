@@ -91,9 +91,9 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - `npm run test:e2e` con previews de los tres bundles levantados: pasa **9/9 combinaciones** (customer/Rider/Back Office en mobile/tablet/desktop), con HTTP 200, ruta/encabezado esperado, sin overflow, controles nombrados y sin `pageerror`.
 - `npm run verify:payments`: rechazado por configuración productiva ausente; correcto para este entorno sin despliegue.
 - Android: `bash android/gradlew test --no-daemon` pasa 4/4 pruebas unitarias y `assembleDebug` pasa para Rider y Backoffice; advertencia existente de API deprecada en `YapeNotificationListenerService.java`, sin fallo de compilación.
-- APK Rider debug: `output/apks/goal-20260915/Suya-Rider-debug.apk`, 25,370,737 bytes, SHA-256 `c36675e5a65e509076d9864136c7f0d78278e53889f3e6a444ab939347a93036`, paquete `com.suya.rider`, etiqueta `Suya Repartidor`.
-- APK Backoffice debug: `output/apks/goal-20260915/Suya-Backoffice-debug.apk`, 25,234,524 bytes, SHA-256 `85d4ecd182758d641c5a065a0f28a81fc77fe45eb73b417ba95dafd4aa9b53fc`, paquete `com.suya.backoffice`, etiqueta `Suya Backoffice`.
-- APK Wallet Observer debug: `output/apks/goal-20260915/Suya-Wallet-Observer-debug.apk`, 25,191,916 bytes, SHA-256 `a7839304c5c4bb0479880f079b4e608dd9c2cb6281ce95e11dac265a19c2c8ac`, paquete `com.suya.walletobserver`, etiqueta `Suya`.
+- APK Rider debug: `output/apks/goal-20260915/Suya-Rider-debug.apk`, 25,370,737 bytes, SHA-256 `c36675e5a65e509076d9864136c7f0d78278e53889f3e6a444ab939347a93036`, paquete `com.suya.rider`, etiqueta `Suya Repartidor`, árbol fuente `d8fc9d0`.
+- APK Backoffice debug: `output/apks/goal-20260915/Suya-Backoffice-debug.apk`, 25,234,524 bytes, SHA-256 `85d4ecd182758d641c5a065a0f28a81fc77fe45eb73b417ba95dafd4aa9b53fc`, paquete `com.suya.backoffice`, etiqueta `Suya Backoffice`, árbol fuente `d8fc9d0`.
+- APK Wallet Observer debug: `output/apks/goal-20260915/Suya-Wallet-Observer-debug.apk`, 25,191,916 bytes, SHA-256 `a7839304c5c4bb0479880f079b4e608dd9c2cb6281ce95e11dac265a19c2c8ac`, paquete `com.suya.walletobserver`, etiqueta `Suya`, árbol fuente `d8fc9d0`.
 - Los tres APK son debug, están firmados con la clave debug del entorno y no son entregables de producción.
 
 ## Bloqueos reproducibles
