@@ -15,4 +15,12 @@ describe('webhook Culqi', () => {
     expect(webhook).toContain("updated_at: new Date().toISOString()");
     expect(webhook).toContain("failure_code: null");
   });
+
+  it('exige autenticación Basic antes de procesar eventos', () => {
+    expect(webhook).toContain("Deno.env.get('CULQI_WEBHOOK_USERNAME')");
+    expect(webhook).toContain("Deno.env.get('CULQI_WEBHOOK_PASSWORD')");
+    expect(webhook).toContain("request.headers.get('authorization')");
+    expect(webhook).toContain("'WWW-Authenticate': 'Basic realm=\"suya-culqi-webhook\"'");
+    expect(webhook).toContain('if (!hasValidBasicAuth(request, webhookUsername, webhookPassword)) return unauthorized();');
+  });
 });

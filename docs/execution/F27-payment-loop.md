@@ -7,10 +7,10 @@ Estado del código: commit `cbd0725` (blinda con regresiones la preselección te
 ## Preparación única
 
 1. Ejecutar `npm run verify:payments` con las variables públicas reales. El procedimiento completo está en [F27.6 · Preflight de pagos](F27.6-payment-preflight.md); `--deployment` añade la comprobación de secretos y `--network` solo hace solicitudes `OPTIONS`.
-2. Desde `main`, ejecutar el workflow manual `Desplegar Edge Functions Supabase`. Su preflight exige `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `CULQI_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY` y `ALLOWED_ORIGINS`; aplica migraciones y configura los secretos antes de desplegar las Edge Functions.
-3. Mantener en GitHub/Supabase únicamente secretos de prueba hasta completar la validación: `CULQI_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY` y `ALLOWED_ORIGINS`.
+2. Desde `main`, ejecutar el workflow manual `Desplegar Edge Functions Supabase`. Su preflight exige `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `CULQI_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CULQI_WEBHOOK_USERNAME`, `CULQI_WEBHOOK_PASSWORD` y `ALLOWED_ORIGINS`; aplica migraciones y configura los secretos antes de desplegar las Edge Functions.
+3. Mantener en GitHub/Supabase únicamente secretos de prueba hasta completar la validación: `CULQI_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CULQI_WEBHOOK_USERNAME`, `CULQI_WEBHOOK_PASSWORD` y `ALLOWED_ORIGINS`.
 4. Configurar el frontend con `VITE_CULQI_GATEWAY_ENABLED=true` y la llave pública `pk_test_...`; nunca colocar una `sk_...` en web o APK. El cliente usa Culqi Custom Checkout (`https://js.culqi.com/checkout-js`).
-5. Registrar el webhook Culqi `order.status.changed` apuntando a `culqi-webhook` y comprobar que responde por HTTPS.
+5. Registrar el webhook Culqi `order.status.changed` apuntando a `culqi-webhook`, activar su autenticación Basic con el mismo usuario/contraseña y comprobar que responde por HTTPS.
 6. En Back Office, seleccionar el restaurante correcto, guardar las cuentas Yape/Lemon y crear un dispositivo de caja. Abrir la APK dedicada Suya en el teléfono receptor, pegar el token y activar allí el acceso de notificaciones Android de forma explícita.
 
 El observador conserva eventos cifrados si pierde red y reintenta en segundo plano cada 15 minutos como máximo. Back Office actualiza las observaciones visibles cada 15 segundos. La observación conserva la hora de publicación original para no ampliar artificialmente la ventana de coincidencia.

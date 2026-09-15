@@ -53,6 +53,8 @@ if (deployment) {
   required('SUPABASE_DB_PASSWORD');
   const culqiSecretKey = required('CULQI_SECRET_KEY');
   required('SUPABASE_SERVICE_ROLE_KEY');
+  required('CULQI_WEBHOOK_USERNAME');
+  required('CULQI_WEBHOOK_PASSWORD');
   if (!/^sk_(?:test|live)_[A-Za-z0-9_-]+$/.test(culqiSecretKey)) {
     fail('CULQI_SECRET_KEY debe ser una clave sk_test_ o sk_live_.');
   }

@@ -17,6 +17,8 @@ jobs:
       CULQI_SECRET_KEY: ${{ secrets.CULQI_SECRET_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
+      CULQI_WEBHOOK_USERNAME: ${{ secrets.CULQI_WEBHOOK_USERNAME }}
+      CULQI_WEBHOOK_PASSWORD: ${{ secrets.CULQI_WEBHOOK_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - name: Validar credenciales y orígenes de producción
@@ -28,6 +30,8 @@ jobs:
           test -n "$CULQI_SECRET_KEY"
           test -n "$SUPABASE_SERVICE_ROLE_KEY"
           test -n "$ALLOWED_ORIGINS"
+          test -n "$CULQI_WEBHOOK_USERNAME"
+          test -n "$CULQI_WEBHOOK_PASSWORD"
           for origin in \
             https://suyadelivery.com \
             https://rider.suyadelivery.com \
@@ -57,6 +61,8 @@ jobs:
             printf 'CULQI_SECRET_KEY=%s\n' "$CULQI_SECRET_KEY"
             printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SUPABASE_SERVICE_ROLE_KEY"
             printf 'ALLOWED_ORIGINS=%s\n' "$ALLOWED_ORIGINS"
+            printf 'CULQI_WEBHOOK_USERNAME=%s\n' "$CULQI_WEBHOOK_USERNAME"
+            printf 'CULQI_WEBHOOK_PASSWORD=%s\n' "$CULQI_WEBHOOK_PASSWORD"
           } > "$secret_file"
           trap 'rm -f "$secret_file"' EXIT
           supabase secrets set \

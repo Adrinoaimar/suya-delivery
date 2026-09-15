@@ -1,5 +1,42 @@
-function json(body: Record<string, unknown>, status = 200): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+function json(body: Record<string, unknown>, status = 200, extraHeaders: HeadersInit = {}): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'Content-Type': 'application/json', ...extraHeaders },
+  });
+}
+
+function unauthorized(): Response {
+  return json(
+    { error: 'Autenticación del webhook requerida.' },
+    401,
+    { 'WWW-Authenticate': 'Basic realm="suya-culqi-webhook"' },
+  );
+}
+
+function safeEqual(left: string, right: string): boolean {
+  const length = Math.max(left.length, right.length);
+  let mismatch = left.length ^ right.length;
+  for (let index = 0; index < length; index += 1) {
+    const leftCode = index < left.length ? left.charCodeAt(index) : 0;
+    const rightCode = index < right.length ? right.charCodeAt(index) : 0;
+    mismatch |= leftCode ^ rightCode;
+  }
+  return mismatch === 0;
+}
+
+function hasValidBasicAuth(request: Request, username: string, password: string): boolean {
+  const header = request.headers.get('authorization') ?? '';
+  if (!/^Basic\s+/i.test(header)) return false;
+  let decoded: string;
+  try {
+    decoded = atob(header.replace(/^Basic\s+/i, '').trim());
+  } catch {
+    return false;
+  }
+  const separator = decoded.indexOf(':');
+  if (separator < 0) return false;
+  return safeEqual(decoded.slice(0, separator), username)
+    && safeEqual(decoded.slice(separator + 1), password);
 }
 
 function text(value: unknown, fallback = ''): string {
@@ -29,10 +66,15 @@ async function updateAttempt(
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const culqiSecretKey = Deno.env.get('CULQI_SECRET_KEY');
+const webhookUsername = Deno.env.get('CULQI_WEBHOOK_USERNAME');
+const webhookPassword = Deno.env.get('CULQI_WEBHOOK_PASSWORD');
 
 Deno.serve(async (request) => {
   if (request.method !== 'POST') return json({ error: 'Método no permitido.' }, 405);
-  if (!supabaseUrl || !serviceRoleKey || !culqiSecretKey) return json({ error: 'Webhook no configurado.' }, 503);
+  if (!supabaseUrl || !serviceRoleKey || !culqiSecretKey || !webhookUsername || !webhookPassword) {
+    return json({ error: 'Webhook no configurado.' }, 503);
+  }
+  if (!hasValidBasicAuth(request, webhookUsername, webhookPassword)) return unauthorized();
 
   let event: { type?: unknown; data?: unknown };
   try { event = await request.json(); } catch { return json({ error: 'JSON inválido.' }, 400); }

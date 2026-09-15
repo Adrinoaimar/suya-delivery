@@ -48,12 +48,12 @@ El flujo opcional Culqi crea la orden desde `create-culqi-payment-intent`, usand
 
 La integración usa `https://js.culqi.com/checkout-js`, con configuración de monto, orden, correo y método permitido por pedido. Se evita Checkout v4 porque Culqi indica que dejará de estar disponible.
 
-`culqi-webhook` recibe `order.status.changed`, consulta nuevamente la orden con `CULQI_SECRET_KEY`, valida estado, monto y moneda, y actualiza el intento de forma idempotente. No se autoriza por callback del navegador.
+`culqi-webhook` recibe `order.status.changed` con autenticación Basic configurada en CulqiPanel, consulta nuevamente la orden con `CULQI_SECRET_KEY`, valida estado, monto y moneda, y actualiza el intento de forma idempotente. No se autoriza por callback del navegador.
 
 Activación requiere:
 
 - `VITE_CULQI_GATEWAY_ENABLED=true` y `VITE_CULQI_PUBLIC_KEY` en el build web/mobile.
-- Secretos Supabase: `CULQI_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY` disponible en Edge Functions y `ALLOWED_ORIGINS` con los tres dominios.
+- Secretos Supabase: `CULQI_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CULQI_WEBHOOK_USERNAME`, `CULQI_WEBHOOK_PASSWORD` disponibles en Edge Functions y `ALLOWED_ORIGINS` con los tres dominios.
 - En CulqiPanel, webhook `https://<project-ref>.supabase.co/functions/v1/culqi-webhook` con evento `order.status.changed`.
 - Probar primero con llaves `pk_test_`/`sk_test_`; cambiar a live solo después de validar monto, estado y conciliación.
 

@@ -11,6 +11,12 @@ const baseEnv = {
   VITE_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_test_key_1234567890',
   VITE_CULQI_GATEWAY_ENABLED: 'true',
   VITE_CULQI_PUBLIC_KEY: 'pk_test_public_key_1234567890',
+  SUPABASE_ACCESS_TOKEN: 'sbp_test_access_token',
+  SUPABASE_DB_PASSWORD: 'synthetic-db-password',
+  CULQI_SECRET_KEY: 'sk_test_secret_key_1234567890',
+  SUPABASE_SERVICE_ROLE_KEY: 'synthetic-service-role-key',
+  CULQI_WEBHOOK_USERNAME: 'suya-webhook-test',
+  CULQI_WEBHOOK_PASSWORD: 'synthetic-webhook-password',
   ALLOWED_ORIGINS:
     'https://suyadelivery.com,https://rider.suyadelivery.com,https://panel.suyadelivery.com',
 };
@@ -40,5 +46,19 @@ describe('verify-payment-readiness', () => {
         encoding: 'utf8',
       }),
     ).toThrow(/VITE_MAP_PROVIDER/);
+  });
+
+  it('exige credenciales del webhook en el preflight de despliegue', () => {
+    const output = execFileSync(process.execPath, [script, '--deployment'], {
+      env: baseEnv,
+      encoding: 'utf8',
+    });
+    expect(output).toContain('no se ejecutaron cargos');
+    expect(() =>
+      execFileSync(process.execPath, [script, '--deployment'], {
+        env: { ...baseEnv, CULQI_WEBHOOK_PASSWORD: '' },
+        encoding: 'utf8',
+      }),
+    ).toThrow(/CULQI_WEBHOOK_PASSWORD/);
   });
 });
