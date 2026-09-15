@@ -17,7 +17,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 | HEAD inicial | `5a6a36f fix(backoffice): keep restaurant context for multi-store staff` |
 | Node / Vite | Node `22.23.2`; Vite `8.2.1` |
 | Pruebas antes de esta ejecución | 62 archivos / 271 pruebas |
-| Estado actual | Implementación y tests locales guardados en commits `1b5aa39` y `e22ddce`; `output/` preexistente conservado sin versionar |
+| Estado actual | Implementación y tests locales guardados en commits `1b5aa39`, `e22ddce` y `4a3472e`; `output/` preexistente conservado sin versionar |
 | Prohibiciones respetadas | Sin pagos reales, producción, migraciones remotas, contratación, publicación o borrado destructivo |
 
 ## Cambios implementados en este checkpoint
@@ -30,6 +30,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - Contexto de restaurante global en Catálogo, Ofertas, Mesas, Repartidores y Dispositivos de pagos; alta de dispositivo exige cuenta receptora activa.
 - Drawer opaco/isolate contra filtración visual de Leaflet; backoffice móvil con cuatro accesos frecuentes y menú “Más”.
 - Navegaciones inferiores customer/Rider con superficies opacas: el contenido que pasa por debajo ya no se filtra a través del vidrio.
+- Modal, BottomSheet y ExpandableSheet ahora son superficies blancas sólidas para impedir filtrado de Leaflet; regresión focal `motion.test.tsx` pasa 4/4.
 - Checkout no bloquea por GPS: conserva dirección escrita y usa coordenadas solo si están disponibles.
 - Cambio de pedido resetea estados de `PaymentInstructions` y `GuestOrderPage` para evitar respuestas obsoletas.
 - Recuperación de invitado: el token de alta entropía puede viajar una sola vez en el fragmento URL, se guarda en sesión y se retira del historial; nunca se usa el código corto como autorización.
@@ -78,7 +79,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 
 - `npm run typecheck`: pasa.
 - `npm run lint`: pasa sin warnings.
-- `npm test -- --run`: **63 archivos / 277 pruebas pasan** tras integrar la recuperación de invitado.
+- `npm test -- --run`: **63 archivos / 278 pruebas pasan** tras integrar la recuperación de invitado y la protección de overlays.
 - Pruebas focalizadas de acceso invitado/order/layout: 11/11 pasan.
 - `tests/backoffice-layout.test.tsx`: 1/1 pasa tras compactar navegación móvil.
 - `npm run build`: pasa.

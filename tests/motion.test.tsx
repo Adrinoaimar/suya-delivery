@@ -2,7 +2,9 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AppShell } from '@/app/AppShell';
+import { BottomSheet, ExpandableSheet } from '@/components/common/BottomSheet';
 import { Drawer } from '@/components/common/Drawer';
+import { Modal } from '@/components/common/Modal';
 import { useUserStore } from '@/store/userStore';
 
 afterEach(() => {
@@ -45,5 +47,30 @@ describe('movimiento accesible', () => {
     const dialog = screen.getByRole('dialog', { name: 'Navegación' });
     expect(dialog).toHaveClass(expectedClass, 'suya-drawer-panel');
     expect(dialog.parentElement).toHaveClass('z-[1100]');
+  });
+
+  it('mantiene opacas las superficies que pueden cubrir un mapa', () => {
+    render(
+      <>
+        <Modal open onClose={vi.fn()} title="Detalle">
+          Contenido
+        </Modal>
+        <BottomSheet open onClose={vi.fn()} title="Acciones">
+          Contenido
+        </BottomSheet>
+        <ExpandableSheet
+          title="Seguimiento"
+          expanded
+          onToggle={vi.fn()}
+          summary="Pedido en camino"
+        >
+          Contenido
+        </ExpandableSheet>
+      </>,
+    );
+
+    expect(screen.getByRole('dialog', { name: 'Detalle' })).toHaveClass('bg-white');
+    expect(screen.getByRole('dialog', { name: 'Acciones' })).toHaveClass('bg-white');
+    expect(screen.getByRole('region', { name: 'Seguimiento' })).toHaveClass('bg-white');
   });
 });
