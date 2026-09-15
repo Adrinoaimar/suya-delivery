@@ -1,6 +1,6 @@
 # F27 · Loop de pruebas de pago
 
-Estado del código: commit `db277e2` (exige autenticación Basic en el webhook Culqi y blinda con regresiones la preselección temprana de restaurante en Mesas/QR y Catálogo, implementada en `f6c1df6`; además separa el título de billetera y el nombre del remitente en web y Android sobre el flujo de `9682706`; estabiliza y enriquece notificaciones expandidas sobre `f890b34`, captura el remitente en el formato «te envió» y conserva la preselección temprana de cuenta implementada en `762d7e0`; identificación Android sobre `53cb470`; funcionalidad de pagos en `66d808f` y `a35faa6`); CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
+Estado del código: commit `82e2531` (habilita en CSP el Custom Checkout de Culqi y conserva la autenticación Basic del webhook sobre `db277e2`; además blinda con regresiones la preselección temprana de restaurante en Mesas/QR y Catálogo, implementada en `f6c1df6`; separa el título de billetera y el nombre del remitente en web y Android sobre el flujo de `9682706`; estabiliza y enriquece notificaciones expandidas sobre `f890b34`, captura el remitente en el formato «te envió» y conserva la preselección temprana de cuenta implementada en `762d7e0`; identificación Android sobre `53cb470`; funcionalidad de pagos en `66d808f` y `a35faa6`); CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
 
 Último checkpoint: el QR de billeteras de Culqi usa la opción `billetera` del Custom Checkout (la opción `yape` corresponde al flujo de token/código de aprobación); queda bloqueado mientras espera `order.status.changed`. La pantalla se actualiza por polling y solo libera preparación cuando el servidor marca `authorized`. El flujo manual distingue pagos iguales con fingerprint/código completo; Back Office añade una pista visual de coincidencia entre remitente y cliente, sin autorizar por sí sola; y la observación Android sigue siendo evidencia no autorizante.
 
@@ -75,6 +75,20 @@ CI Android `34915589843` recompiló Rider, Back Office y Caja para `cbd0725`; lo
 - Back Office: `output/apks/db277e2/Suya-Backoffice-debug-eccfccde11a8160ddc9f8ced3fd13201cf275fc3/Suya-Backoffice-debug.apk`; SHA-256 `ed0f390ca31154430ca658fcac1cf8e0287e144d4bc6a2667def253d029e3d2b`.
 - Caja / Wallet Observer: `output/apks/db277e2/Suya-Wallet-Observer-debug-eccfccde11a8160ddc9f8ced3fd13201cf275fc3/Suya-Wallet-Observer-debug.apk`; SHA-256 `ec81301e55abdfbc942e8e24e5f1ce559750b09e11943e6c6ec6dfd9f1312e7e`.
 - Las tres son APK debug, no release firmadas, y pasaron `unzip -tqq`.
+
+## Checkpoint F27.23 · CSP para Custom Checkout `82e2531`
+
+- `public/_headers` permite únicamente los dominios de Culqi necesarios para cargar el script, conectar el checkout y mostrar su iframe: `js.culqi.com` y `checkoutview.culqi.com`.
+- Regresión focal: 8 pruebas pasan (`security-hardening` y `culqiCheckout`); lint, typecheck y `git diff --check` también pasan.
+- Los seis checks CI del PR #36 quedaron verdes: `browser`, `browser-e2e`, `build`, `debug`, `simulator` y `test`.
+
+## Checkpoint F27.24 · APKs más recientes `82e2531`
+
+- Android run `34921570922` terminó en `success`; las tres APK pasaron `unzip -tqq`.
+- Rider: `output/apks/82e2531/Suya-Rider-debug-82758779fc567fc1242eb3e4782ab8845798310a/Suya-Rider-debug.apk`; SHA-256 `cd9f21a76fe9125b4a2d569db08107aca8c5619ac91709900742252ec2360e9f`.
+- Back Office: `output/apks/82e2531/Suya-Backoffice-debug-82758779fc567fc1242eb3e4782ab8845798310a/Suya-Backoffice-debug.apk`; SHA-256 `a5e003f91d6b4d0dc3957a8589e22ec9aba9adb0cb4673a6795f3ba266e56e68`.
+- Caja / Wallet Observer: `output/apks/82e2531/Suya-Wallet-Observer-debug-82758779fc567fc1242eb3e4782ab8845798310a/Suya-Wallet-Observer-debug.apk`; SHA-256 `1bb34bd4590594e224b8df0a0579e99c93540dbb907fc98b899b42b41d143ba1`.
+- Son APKs debug para pruebas, no release firmadas. La versión Android sigue en `versionCode 3`, `versionName 1.2`.
 
 El listener mantiene un identificador estable cuando una billetera actualiza una misma notificación desde una vista corta a una expandida. La cola local cifra el evento, completa campos faltantes y vuelve a sincronizarlo; la RPC solo enriquece observaciones abiertas y preserva las verificadas.
 

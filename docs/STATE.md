@@ -344,6 +344,19 @@ verificables en CI; un artefacto instalable exige firma Apple externa.
 - Caja/Wallet Observer: `output/apks/db277e2/Suya-Wallet-Observer-debug-eccfccde11a8160ddc9f8ced3fd13201cf275fc3/Suya-Wallet-Observer-debug.apk`; SHA-256 `ec81301e55abdfbc942e8e24e5f1ce559750b09e11943e6c6ec6dfd9f1312e7e`.
 - Las tres pasaron `unzip -tqq` y siguen siendo APK debug, no release-signed. La autorización productiva aún requiere secretos, migraciones/funciones, webhook configurado, publicación y dos pagos físicos iguales de S/30.
 
+## Checkpoint F27.23: CSP para Custom Checkout `82e2531` (2026-09-14)
+
+- `public/_headers` permite los dominios Culqi necesarios para el Custom Checkout: `js.culqi.com` en scripts y `checkoutview.culqi.com` en conexiones/iframe.
+- Regresión focal: 8 pruebas pasan; lint, typecheck y `git diff --check` también pasan. Los seis checks CI del PR #36 quedaron verdes.
+
+## Checkpoint F27.24: APKs más recientes `82e2531` (2026-09-14)
+
+- Android run `34921570922` terminó en `success`; las tres APK pasaron `unzip -tqq`.
+- Rider: `output/apks/82e2531/Suya-Rider-debug-82758779fc567fc1242eb3e4782ab8845798310a/Suya-Rider-debug.apk`; SHA-256 `cd9f21a76fe9125b4a2d569db08107aca8c5619ac91709900742252ec2360e9f`.
+- Back Office: `output/apks/82e2531/Suya-Backoffice-debug-82758779fc567fc1242eb3e4782ab8845798310a/Suya-Backoffice-debug.apk`; SHA-256 `a5e003f91d6b4d0dc3957a8589e22ec9aba9adb0cb4673a6795f3ba266e56e68`.
+- Caja/Wallet Observer: `output/apks/82e2531/Suya-Wallet-Observer-debug-82758779fc567fc1242eb3e4782ab8845798310a/Suya-Wallet-Observer-debug.apk`; SHA-256 `1bb34bd4590594e224b8df0a0579e99c93540dbb907fc98b899b42b41d143ba1`.
+- Siguen siendo APK debug para pruebas; versión Android: `versionCode 3`, `versionName 1.2`. Producción aún requiere configuración/despliegue real y pagos físicos de validación.
+
 
 
 
