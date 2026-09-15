@@ -90,7 +90,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Bundle customer compilado: recuperación guest E2E sintética pasa (`#access` se consume y el token queda en sesión); los errores observados son solicitudes a Postgres local no disponible.
 - `npm run test:e2e` con previews de los tres bundles levantados: pasa **9/9 combinaciones** (customer/Rider/Back Office en mobile/tablet/desktop), con HTTP 200, ruta/encabezado esperado, sin overflow, controles nombrados y sin `pageerror`.
 - `npm run verify:payments`: rechazado por configuración productiva ausente; correcto para este entorno sin despliegue.
-- Android: `bash android/gradlew test --no-daemon` pasa 4/4 pruebas unitarias y `assembleDebug` pasa para Rider y Backoffice; advertencia existente de API deprecada en `YapeNotificationListenerService.java`, sin fallo de compilación.
+- Android: `bash android/gradlew test --no-daemon` pasa 4/4 pruebas unitarias y `assembleDebug` pasa para Rider, Backoffice y Wallet Observer; advertencia existente de API deprecada en `YapeNotificationListenerService.java`, sin fallo de compilación.
 - APK Rider debug: `output/apks/goal-20260915/Suya-Rider-debug.apk`, 25,370,737 bytes, SHA-256 `c36675e5a65e509076d9864136c7f0d78278e53889f3e6a444ab939347a93036`, paquete `com.suya.rider`, etiqueta `Suya Repartidor`, árbol fuente `d8fc9d0`.
 - APK Backoffice debug: `output/apks/goal-20260915/Suya-Backoffice-debug.apk`, 25,234,524 bytes, SHA-256 `85d4ecd182758d641c5a065a0f28a81fc77fe45eb73b417ba95dafd4aa9b53fc`, paquete `com.suya.backoffice`, etiqueta `Suya Backoffice`, árbol fuente `d8fc9d0`.
 - APK Wallet Observer debug: `output/apks/goal-20260915/Suya-Wallet-Observer-debug.apk`, 25,191,916 bytes, SHA-256 `a7839304c5c4bb0479880f079b4e608dd9c2cb6281ce95e11dac265a19c2c8ac`, paquete `com.suya.walletobserver`, etiqueta `Suya`, árbol fuente `d8fc9d0`.
@@ -98,13 +98,13 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 
 ## Bloqueos reproducibles
 
-1. `npm run db:lint` no conecta a `127.0.0.1:54322`; `npm run db:start` tampoco puede conectar al socket de Docker. Por eso los SQL son cambios preparados, no SQL aprobados.
+1. `npm run db:lint` no conecta a `127.0.0.1:54322`; `npm run db:start` tampoco puede conectar al socket Docker normal. Se probó un daemon rootless temporal con `vfs`, cgroups desactivados y seccomp/AppArmor aislados: la red `none` no permite aliases, `host` rechaza aliases y la red rootless con `slirp4netns` sí crea `bridge`, pero el contenedor Postgres queda saludable sin publicar el puerto hacia el host; la CLI termina con `LegacyDbConnectError` (timeout/conexión terminada) y limpia el contenedor. No se modificó el sistema ni el código para ocultarlo. Por eso los SQL son cambios preparados, no SQL aprobados.
 2. La toolchain Android se preparó temporalmente en el entorno y permite test/build debug; todavía no hay dispositivo Android físico para instalación, teclado, insets, TalkBack, offline/reinicio y visuales nativos.
 3. No se dispone de firma release ni autorización para pagos reales; la firma debug no habilita distribución ni prueba financiera.
 
 ## Siguiente acción exacta
 
-1. Al estar disponible Docker, ejecutar `npm run db:start`, `npm run db:lint` y `npm run db:test`; corregir sintaxis/RLS/concurrencia y actualizar esta matriz.
+1. Con Docker Desktop/daemon normal disponible, ejecutar `npm run db:start`, `npm run db:lint` y `npm run db:test`; corregir sintaxis/RLS/concurrencia y actualizar esta matriz. El experimento rootless temporal ya no debe repetirse salvo que cambie el runtime o la publicación de puertos.
 2. Completar A-03, U-09, U-10 y A-10 con E2E business de recuperación, visuales, accesibilidad y privacidad; completar E2E de las cuatro modalidades cuando el backend local esté disponible.
 3. Completar capturas/instalación/actualización y pruebas físicas cuando haya dispositivo; conservar los hashes debug como evidencia de prueba, no como release.
 4. Repetir suite global, build, aislamiento, seguridad y matriz completa. Solo entonces evaluar G10–G12; no marcar el goal completo mientras queden bloqueos o casillas obligatorias.
