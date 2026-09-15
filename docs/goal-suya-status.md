@@ -17,7 +17,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 | HEAD inicial | `5a6a36f fix(backoffice): keep restaurant context for multi-store staff` |
 | Node / Vite | Node `22.23.2`; Vite `8.2.1` |
 | Pruebas antes de esta ejecución | 63 archivos / 281 pruebas |
-| Estado actual | Implementación de caja, protección contra cargas obsoletas y cierre manual cash-only guardados en `d0c672d`; `output/` conservado sin versionar |
+| Estado actual | Implementación de caja, protección contra cargas obsoletas, cierre manual cash-only y contraste nativo de barras guardados en este checkpoint; `output/` conservado sin versionar |
 | Prohibiciones respetadas | Sin pagos reales, producción, migraciones remotas, contratación, publicación o borrado destructivo |
 
 ## Cambios implementados en este checkpoint
@@ -42,6 +42,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - Caja por restaurante y turno: `cash_register_sessions`/`cash_register_entries`, apertura, cobro, ajustes y cierre idempotentes; el saldo esperado se calcula en servidor y el arqueo exige explicación cuando hay diferencia.
 - Pedidos delivery en efectivo y mesas con pago en efectivo quedan vinculados al turno; el reintento de mesa reutiliza `payment_request_id` y no duplica el movimiento.
 - La ruta de cierre manual de mesas quedó limitada a `cash` en el contrato TypeScript y en la RPC; métodos digitales no pueden marcar una mesa como pagada sin su autorización propia.
+- `MainActivity` fija el color y el contraste claro de las barras de estado/navegación después del splash; reduce el riesgo de iconos claros sobre fondos pálidos en Android con `targetSdk 36`, sin superponer ni redimensionar el layout web.
 
 ## Matriz de hallazgos
 
@@ -64,7 +65,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | U-02 | Verificado local | Navegación móvil compacta + drawer “Más”; `backoffice-layout.test.tsx` pasa | Confirmar en Android final |
 | U-03 | En verificación | Store global en cinco módulos; pruebas focalizadas de contexto pasan | Cambiar dos restaurantes con respuestas lentas y probar permisos |
 | U-04 | En verificación | Selector de cuenta no recarga en loop; binding exige cuenta activa | Probar Yape→Lemon en dispositivo con DB real |
-| U-05 | Bloqueado | Código de insets existente; sin compilación/dispositivo nativo disponible | Java + Android 15/16 + teclado |
+| U-05 | En verificación | `MainActivity` fija barras y contraste; `:app:test` pasa y los tres APK compilan; el CSS conserva safe-area | Confirmar en Android 15/16 real, teclado, cutout y navegación gestual |
 | U-06 | En verificación | GPS opcional y dirección escrita permitida; servidor valida coordenadas cuando llegan | E2E delivery/recojo/mesa y cobertura |
 | U-07 | En verificación | Carga por `id` siempre reinicia estado; pago se actualiza por intento | E2E offline/retorno a app/última actualización |
 | U-08 | En verificación | Reset por `order.id`, respuestas obsoletas y estados separados | E2E navegando entre dos pedidos |
@@ -98,12 +99,12 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Revalidación posterior a la integración de caja (2026-09-15): `npm run build:apps` con configuración pública sintética volvió a compilar los tres bundles y `npm run test:e2e` volvió a pasar **12/12**; los previews se levantaron desde `dist/customer`, `dist/rider` y `dist/backoffice` y respondieron 200 en sus rutas SPA.
 - `npm run verify:payments`: rechazado por configuración productiva ausente; correcto para este entorno sin despliegue.
 - `npm run build:apps` con configuración pública sintética y `VITE_CULQI_GATEWAY_ENABLED=false`: pasa; customer, Rider y Backoffice quedan aislados.
-- Android: `bash android/gradlew test --no-daemon` pasa 4/4 pruebas unitarias y `assembleDebug` pasa para Rider, Backoffice y Wallet Observer; advertencia existente de API deprecada en `YapeNotificationListenerService.java`, sin fallo de compilación.
-- Reconstrucción final posterior a `0263ec7`: `npm run build:mobile:roles` volvió a compilar y empaquetar Rider, Backoffice y Wallet Observer con la corrección de cargas obsoletas; `unzip -tqq` y `apksigner verify` v2 pasan en las tres APK.
+- Android: `bash android/gradlew test --no-daemon` pasa 4/4 pruebas unitarias y `assembleDebug` pasa para Rider, Backoffice y Wallet Observer; el ajuste nativo de barras compila; advertencia existente de API deprecada en `YapeNotificationListenerService.java`, sin fallo de compilación.
+- Reconstrucción final posterior al ajuste nativo: `npm run build:mobile:roles` volvió a compilar y empaquetar Rider, Backoffice y Wallet Observer con `versionName 1.4`/`versionCode 5`; `unzip -tqq` y `apksigner verify` v2 pasan en las tres APK.
 - PostgreSQL temporal 17.6.1 con esquema mínimo oficial de Auth/Storage equivalente: instalación limpia de **53 migraciones**, `seed.sql` y **24/24 archivos pgTAP** pasan; la migración de caja (`20260915130000`) es la número 54 y queda pendiente de repetir en el flujo oficial. Es evidencia independiente del port-forward, no reemplaza `supabase db lint/test`.
-- APK Rider debug: `output/android/Suya-Rider-debug.apk`, 25,370,777 bytes, SHA-256 `378d4a29414eab3f2f6db6eb28f065e741bcab3b0ceea29cda18dc187266ce5d`, paquete `com.suya.rider`, `versionName 1.4`, `versionCode 5`.
-- APK Backoffice debug: `output/android/Suya-Backoffice-debug.apk`, 25,238,752 bytes, SHA-256 `d501b61e43c1467a6dd8ac3860cf25ca8ade64df0358462260b9147670a5660c`, paquete `com.suya.backoffice`, `versionName 1.4`, `versionCode 5`.
-- APK Wallet Observer debug: `output/android/Suya-Wallet-Observer-debug.apk`, 25,191,916 bytes, SHA-256 `9e7d449d700798cb3b0d1bc14dd0f9bfb3e4c3a6a89b484982aa57a09b65f710`, paquete `com.suya.walletobserver`, `versionName 1.4`, `versionCode 5`.
+- APK Rider debug: `output/android/Suya-Rider-debug.apk`, 25,370,777 bytes, SHA-256 `01215fc06cb8c979d72ae7f104e08063484d301df6041d9259954b1698e0543e`, paquete `com.suya.rider`, `versionName 1.4`, `versionCode 5`.
+- APK Backoffice debug: `output/android/Suya-Backoffice-debug.apk`, 25,238,752 bytes, SHA-256 `41d1ae128b5ff3f796e60fd3531b608209c94ce9c0aa7e7cac13228f28ea7537`, paquete `com.suya.backoffice`, `versionName 1.4`, `versionCode 5`.
+- APK Wallet Observer debug: `output/android/Suya-Wallet-Observer-debug.apk`, 25,191,916 bytes, SHA-256 `be290da1d483440c6623fba966792dbd5b67d7bd33cad71d3d7045ce65202af0`, paquete `com.suya.walletobserver`, `versionName 1.4`, `versionCode 5`.
 - Las tres APK pasan `unzip -tqq` y `apksigner verify` con APK Signature Scheme v2; están firmadas con la clave debug del entorno y no son entregables de producción.
 
 ## Bloqueos reproducibles
