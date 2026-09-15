@@ -357,6 +357,19 @@ verificables en CI; un artefacto instalable exige firma Apple externa.
 - Caja/Wallet Observer: `output/apks/82e2531/Suya-Wallet-Observer-debug-82758779fc567fc1242eb3e4782ab8845798310a/Suya-Wallet-Observer-debug.apk`; SHA-256 `1bb34bd4590594e224b8df0a0579e99c93540dbb907fc98b899b42b41d143ba1`.
 - Siguen siendo APK debug para pruebas; versión Android: `versionCode 3`, `versionName 1.2`. Producción aún requiere configuración/despliegue real y pagos físicos de validación.
 
+## Checkpoint F27.25: protección contra callback duplicado `a4fd10b` (2026-09-14)
+
+- `PaymentInstructions` ignora un segundo callback de token mientras el primer cargo Culqi sigue en curso; la regresión cubre dos callbacks y confirma un solo `chargeCard`.
+- Suite local: 62 archivos y 268 pruebas pasan; lint, typecheck y `git diff --check` también pasan.
+
+## Checkpoint F27.26: APKs del fix anti doble-cobro `a4fd10b` (2026-09-14)
+
+- Android run `34923193574` terminó en `success`; las tres APK pasaron `unzip -tqq`.
+- Rider: `output/apks/a4fd10b/Suya-Rider-debug-a4fd10b5d5f700b4fd8eafe64fed40601f5cb6bb/Suya-Rider-debug.apk`; SHA-256 `0cfe990fb6be57c0943dae2114f9db81fa453f6cb1f6bf5399e96b36e0ccd6e8`.
+- Back Office: `output/apks/a4fd10b/Suya-Backoffice-debug-a4fd10b5d5f700b4fd8eafe64fed40601f5cb6bb/Suya-Backoffice-debug.apk`; SHA-256 `91221ab7df09e20f4d4d171d35e095ea6f9097ee01f153c70f150d404c565a78`.
+- Caja/Wallet Observer: `output/apks/a4fd10b/Suya-Wallet-Observer-debug-a4fd10b5d5f700b4fd8eafe64fed40601f5cb6bb/Suya-Wallet-Observer-debug.apk`; SHA-256 `9ba2886dd7512ce8fdd6a165b8f5602af5d3cb3fd650d460a240b16369fb3edc`.
+- Siguen siendo APK debug; versión Android: `versionCode 3`, `versionName 1.2`. Producción aún requiere configuración/despliegue real y pagos físicos de validación.
+
 
 
 

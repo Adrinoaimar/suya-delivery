@@ -1,6 +1,6 @@
 # F27 · Loop de pruebas de pago
 
-Estado del código: commit `82e2531` (habilita en CSP el Custom Checkout de Culqi y conserva la autenticación Basic del webhook sobre `db277e2`; además blinda con regresiones la preselección temprana de restaurante en Mesas/QR y Catálogo, implementada en `f6c1df6`; separa el título de billetera y el nombre del remitente en web y Android sobre el flujo de `9682706`; estabiliza y enriquece notificaciones expandidas sobre `f890b34`, captura el remitente en el formato «te envió» y conserva la preselección temprana de cuenta implementada en `762d7e0`; identificación Android sobre `53cb470`; funcionalidad de pagos en `66d808f` y `a35faa6`); CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
+Estado del código: commit `a4fd10b` (ignora callbacks duplicados de token para impedir dos cargos desde un mismo checkout; habilita en CSP el Custom Checkout de Culqi y conserva la autenticación Basic del webhook sobre `db277e2`; además blinda con regresiones la preselección temprana de restaurante en Mesas/QR y Catálogo, implementada en `f6c1df6`; separa el título de billetera y el nombre del remitente en web y Android sobre el flujo de `9682706`; estabiliza y enriquece notificaciones expandidas sobre `f890b34`, captura el remitente en el formato «te envió» y conserva la preselección temprana de cuenta implementada en `762d7e0`; identificación Android sobre `53cb470`; funcionalidad de pagos en `66d808f` y `a35faa6`); CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
 
 Último checkpoint: el QR de billeteras de Culqi usa la opción `billetera` del Custom Checkout (la opción `yape` corresponde al flujo de token/código de aprobación); queda bloqueado mientras espera `order.status.changed`. La pantalla se actualiza por polling y solo libera preparación cuando el servidor marca `authorized`. El flujo manual distingue pagos iguales con fingerprint/código completo; Back Office añade una pista visual de coincidencia entre remitente y cliente, sin autorizar por sí sola; y la observación Android sigue siendo evidencia no autorizante.
 
@@ -88,6 +88,19 @@ CI Android `34915589843` recompiló Rider, Back Office y Caja para `cbd0725`; lo
 - Rider: `output/apks/82e2531/Suya-Rider-debug-82758779fc567fc1242eb3e4782ab8845798310a/Suya-Rider-debug.apk`; SHA-256 `cd9f21a76fe9125b4a2d569db08107aca8c5619ac91709900742252ec2360e9f`.
 - Back Office: `output/apks/82e2531/Suya-Backoffice-debug-82758779fc567fc1242eb3e4782ab8845798310a/Suya-Backoffice-debug.apk`; SHA-256 `a5e003f91d6b4d0dc3957a8589e22ec9aba9adb0cb4673a6795f3ba266e56e68`.
 - Caja / Wallet Observer: `output/apks/82e2531/Suya-Wallet-Observer-debug-82758779fc567fc1242eb3e4782ab8845798310a/Suya-Wallet-Observer-debug.apk`; SHA-256 `1bb34bd4590594e224b8df0a0579e99c93540dbb907fc98b899b42b41d143ba1`.
+- Son APKs debug para pruebas, no release firmadas. La versión Android sigue en `versionCode 3`, `versionName 1.2`.
+
+## Checkpoint F27.25 · Protección contra callback duplicado `a4fd10b`
+
+- `PaymentInstructions` ignora un segundo callback de token mientras el primer cargo Culqi sigue en curso; la regresión cubre dos callbacks consecutivos y confirma un solo `chargeCard`.
+- Suite local completa: 62 archivos y 268 pruebas pasan; lint, typecheck y `git diff --check` también pasan.
+
+## Checkpoint F27.26 · APKs del fix anti doble-cobro `a4fd10b`
+
+- Android run `34923193574` terminó en `success`; las tres APK pasaron `unzip -tqq`.
+- Rider: `output/apks/a4fd10b/Suya-Rider-debug-a4fd10b5d5f700b4fd8eafe64fed40601f5cb6bb/Suya-Rider-debug.apk`; SHA-256 `0cfe990fb6be57c0943dae2114f9db81fa453f6cb1f6bf5399e96b36e0ccd6e8`.
+- Back Office: `output/apks/a4fd10b/Suya-Backoffice-debug-a4fd10b5d5f700b4fd8eafe64fed40601f5cb6bb/Suya-Backoffice-debug.apk`; SHA-256 `91221ab7df09e20f4d4d171d35e095ea6f9097ee01f153c70f150d404c565a78`.
+- Caja / Wallet Observer: `output/apks/a4fd10b/Suya-Wallet-Observer-debug-a4fd10b5d5f700b4fd8eafe64fed40601f5cb6bb/Suya-Wallet-Observer-debug.apk`; SHA-256 `9ba2886dd7512ce8fdd6a165b8f5602af5d3cb3fd650d460a240b16369fb3edc`.
 - Son APKs debug para pruebas, no release firmadas. La versión Android sigue en `versionCode 3`, `versionName 1.2`.
 
 El listener mantiene un identificador estable cuando una billetera actualiza una misma notificación desde una vista corta a una expandida. La cola local cifra el evento, completa campos faltantes y vuelve a sincronizarlo; la RPC solo enriquece observaciones abiertas y preserva las verificadas.
