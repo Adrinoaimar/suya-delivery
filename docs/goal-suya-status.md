@@ -86,6 +86,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Build/aislamiento de bundles customer, rider y backoffice con configuración local sintética: pasa.
 - Smoke visual/a11y web: customer y Rider a 390×844 sin overflow; barras inferiores no filtran texto; keyboard traversal customer con 16 controles nombrados/visibles y 0 sin nombre; cookies y scripts de tracking: vacíos.
 - Bundle customer compilado: recuperación guest E2E sintética pasa (`#access` se consume y el token queda en sesión); los errores observados son solicitudes a Postgres local no disponible.
+- `npm run test:e2e`: pasa **9/9 combinaciones** (customer/Rider/Back Office en mobile/tablet/desktop), con HTTP 200, ruta/encabezado esperado, sin overflow, controles nombrados y sin `pageerror`.
 - `npm run verify:payments`: rechazado por configuración productiva ausente; correcto para este entorno sin despliegue.
 
 ## Bloqueos reproducibles
@@ -97,6 +98,6 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 ## Siguiente acción exacta
 
 1. Al estar disponible Docker, ejecutar `npm run db:start`, `npm run db:lint` y `npm run db:test`; corregir sintaxis/RLS/concurrencia y actualizar esta matriz.
-2. Completar A-03, U-09, U-10 y A-10 con E2E de recuperación, visuales, accesibilidad y privacidad; completar E2E de las cuatro modalidades.
+2. Completar A-03, U-09, U-10 y A-10 con E2E business de recuperación, visuales, accesibilidad y privacidad; completar E2E de las cuatro modalidades cuando el backend local esté disponible.
 3. Con Java disponible, ejecutar tests/build Android por `rider`, `backoffice` y `walletobserver`; calcular SHA-256, identificar commit/rol/versión y revisar APK real.
 4. Repetir suite global, build, aislamiento, seguridad y matriz completa. Solo entonces evaluar G10–G12; no marcar el goal completo mientras queden bloqueos o casillas obligatorias.
