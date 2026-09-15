@@ -330,6 +330,12 @@ La auditoría F18 queda documentada en `docs/execution/F18.md`. La activación d
 La máquina Windows no puede producir un `.ipa`. El proyecto Xcode y el build de simulador son
 verificables en CI; un artefacto instalable exige firma Apple externa.
 
+## Checkpoint F27.21: autenticación del webhook y suite completa `db277e2` (2026-09-14)
+
+- `culqi-webhook` exige `Authorization: Basic` con `CULQI_WEBHOOK_USERNAME` y `CULQI_WEBHOOK_PASSWORD`, comparación constante y respuesta `401` para eventos no autenticados. El workflow y el preflight bloquean el despliegue si faltan esos secretos.
+- Suite local completa: 62 archivos y 267 pruebas pasan; lint y typecheck también pasan.
+- Este cambio solo afecta Edge Functions, workflow y pruebas; las APK verificadas más recientes siguen siendo las del checkpoint F27.20 (`cbd0725`).
+
 
 
 

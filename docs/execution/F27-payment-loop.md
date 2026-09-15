@@ -1,6 +1,6 @@
 # F27 · Loop de pruebas de pago
 
-Estado del código: commit `cbd0725` (blinda con regresiones la preselección temprana de restaurante en Mesas/QR y Catálogo, implementada en `f6c1df6`; además separa el título de billetera y el nombre del remitente en web y Android sobre el flujo de `9682706`; estabiliza y enriquece notificaciones expandidas sobre `f890b34`, captura el remitente en el formato «te envió» y conserva la preselección temprana de cuenta implementada en `762d7e0`; identificación Android sobre `53cb470`; funcionalidad de pagos en `66d808f` y `a35faa6`); CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
+Estado del código: commit `db277e2` (exige autenticación Basic en el webhook Culqi y blinda con regresiones la preselección temprana de restaurante en Mesas/QR y Catálogo, implementada en `f6c1df6`; además separa el título de billetera y el nombre del remitente en web y Android sobre el flujo de `9682706`; estabiliza y enriquece notificaciones expandidas sobre `f890b34`, captura el remitente en el formato «te envió» y conserva la preselección temprana de cuenta implementada en `762d7e0`; identificación Android sobre `53cb470`; funcionalidad de pagos en `66d808f` y `a35faa6`); CI valida base de datos, frontend, E2E, Android e iOS. Este documento no contiene llaves ni datos de clientes.
 
 Último checkpoint: el QR de billeteras de Culqi usa la opción `billetera` del Custom Checkout (la opción `yape` corresponde al flujo de token/código de aprobación); queda bloqueado mientras espera `order.status.changed`. La pantalla se actualiza por polling y solo libera preparación cuando el servidor marca `authorized`. El flujo manual distingue pagos iguales con fingerprint/código completo; Back Office añade una pista visual de coincidencia entre remitente y cliente, sin autorizar por sí sola; y la observación Android sigue siendo evidencia no autorizante.
 
@@ -61,6 +61,12 @@ CI Android `34915589843` recompiló Rider, Back Office y Caja para `cbd0725`; lo
 - Back Office: `output/apks/cbd0725/Suya-Backoffice-debug-90a6918eb12aa5e611d6bb9a2ca280edcc0cf740/Suya-Backoffice-debug.apk`; SHA-256 `0c9850f58f40e054ab3838adc039b926aa63e85e31ce03bae4e22bd2eaec27f2`.
 - Caja / Wallet Observer: `output/apks/cbd0725/Suya-Wallet-Observer-debug-90a6918eb12aa5e611d6bb9a2ca280edcc0cf740/Suya-Wallet-Observer-debug.apk`; SHA-256 `61afd3e42fa90f24b73aea4f7fc63ffeb35cf1ad98e9c27684bfe5dff8c9304e`.
 - CI Android ejecutó las pruebas nativas; las tres APK son debug, no release firmadas, y pasaron `unzip -tqq`.
+
+## Checkpoint F27.21 · Autenticación del webhook y suite completa `db277e2`
+
+- `culqi-webhook` exige `Authorization: Basic` con `CULQI_WEBHOOK_USERNAME` y `CULQI_WEBHOOK_PASSWORD`, comparación constante y respuesta `401` si el evento no está autenticado. El workflow y el preflight exigen ambos secretos antes de desplegar.
+- Suite local completa: 62 archivos y 267 pruebas pasan; lint, typecheck y `git diff --check` también pasan.
+- El cambio no modifica el frontend ni las APK; las APK verificadas más recientes siguen siendo las del checkpoint F27.20 (`cbd0725`).
 
 El listener mantiene un identificador estable cuando una billetera actualiza una misma notificación desde una vista corta a una expandida. La cola local cifra el evento, completa campos faltantes y vuelve a sincronizarlo; la RPC solo enriquece observaciones abiertas y preserva las verificadas.
 
