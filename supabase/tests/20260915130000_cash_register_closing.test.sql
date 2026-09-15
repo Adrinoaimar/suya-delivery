@@ -1,5 +1,5 @@
 begin;
-select plan(32);
+select plan(33);
 
 select has_table('public', 'cash_register_sessions', 'existe turno de caja');
 select has_table('public', 'cash_register_entries', 'existe libro de caja');
@@ -165,6 +165,14 @@ select is(
   'pedido queda vinculado al turno'
 );
 
+select throws_ok(
+  $$ select * from public.register_table_payment(
+    'c3b00000-0000-0000-0000-000000000001', 10, 'yape',
+    'c3c00000-0000-0000-0000-000000000000'
+  ) $$,
+  'P0001', 'only cash table payments can be registered in the cash register',
+  'caja rechaza cerrar mesa con método digital no autorizado'
+);
 select lives_ok(
   $$ select * from public.register_table_payment(
     'c3b00000-0000-0000-0000-000000000001', 10, 'cash',

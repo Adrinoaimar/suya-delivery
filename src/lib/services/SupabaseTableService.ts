@@ -1,5 +1,4 @@
 import { supabase } from '@/lib/supabase/client';
-import type { PaymentMethod } from '@/types';
 import type {
   TablePaymentResult,
   TableQrResolution,
@@ -73,7 +72,7 @@ export class SupabaseTableService implements TableService {
   async pay(
     sessionId: string,
     received: number,
-    method: PaymentMethod,
+    method: 'cash',
     requestId: string,
   ): Promise<TablePaymentResult> {
     if (!supabase) throw new Error('Supabase no está configurado.');

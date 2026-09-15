@@ -372,6 +372,9 @@ begin
     end if;
     raise exception 'session is already closed';
   end if;
+  if p_method <> 'cash'::public.payment_method then
+    raise exception 'only cash table payments can be registered in the cash register';
+  end if;
   if s.status not in ('open', 'payment_pending') then
     raise exception 'session is already closed';
   end if;

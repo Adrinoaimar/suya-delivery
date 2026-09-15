@@ -139,7 +139,7 @@ export interface TableService {
   pay(
     sessionId: string,
     received: number,
-    method: PaymentMethod,
+    method: 'cash',
     requestId: string,
   ): Promise<TablePaymentResult>;
   list(restaurantIds: string[]): Promise<TableSummary[]>;
