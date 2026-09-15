@@ -48,6 +48,18 @@ describe('SupabasePaymentService', () => {
     });
   });
 
+  it('recupera el token guest de la sesión al refrescar sin argumento explícito', async () => {
+    const client = fakeClient({ data: [intentRow], error: null });
+    sessionStorage.setItem('suya.guest-order-token:order-1', 'a'.repeat(64));
+
+    await new SupabasePaymentService(client).getIntent('order-1');
+
+    expect(client.rpc).toHaveBeenCalledWith('get_payment_intent', {
+      p_order_id: 'order-1',
+      p_guest_access_token: 'a'.repeat(64),
+    });
+  });
+
   it('envía token Culqi al backend y no maneja datos de tarjeta en Suya', async () => {
     const invoke = vi.fn(async () => ({
       data: { status: 'authorized', providerReference: 'chr_test_12345678' },
