@@ -48,6 +48,8 @@ El flujo opcional Culqi crea la orden desde `create-culqi-payment-intent`, usand
 
 La integración usa `https://js.culqi.com/checkout-js`, con configuración de monto, orden, correo y método permitido por pedido. Se evita Checkout v4 porque Culqi indica que dejará de estar disponible.
 
+El CSP de Pages permite únicamente el script de `js.culqi.com` y el frame/conexión de `checkoutview.culqi.com`, necesarios para que el checkout seguro funcione sin abrir otros orígenes.
+
 `culqi-webhook` recibe `order.status.changed` con autenticación Basic configurada en CulqiPanel, consulta nuevamente la orden con `CULQI_SECRET_KEY`, valida estado, monto y moneda, y actualiza el intento de forma idempotente. No se autoriza por callback del navegador.
 
 Activación requiere:

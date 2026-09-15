@@ -56,7 +56,11 @@ describe('Suya hardening guards', () => {
   });
 
   it('ships defensive headers with every static Pages bundle', () => {
-    expect(source('public/_headers')).toMatch(/frame-ancestors 'none'/);
-    expect(source('public/_headers')).toMatch(/X-Content-Type-Options: nosniff/);
+    const headers = source('public/_headers');
+    expect(headers).toMatch(/frame-ancestors 'none'/);
+    expect(headers).toMatch(/X-Content-Type-Options: nosniff/);
+    expect(headers).toMatch(/script-src[^\n]*https:\/\/js\.culqi\.com/);
+    expect(headers).toMatch(/connect-src[^\n]*https:\/\/checkoutview\.culqi\.com/);
+    expect(headers).toMatch(/frame-src https:\/\/checkoutview\.culqi\.com/);
   });
 });
