@@ -17,7 +17,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 | HEAD inicial | `5a6a36f fix(backoffice): keep restaurant context for multi-store staff` |
 | Node / Vite | Node `22.23.2`; Vite `8.2.1` |
 | Pruebas antes de esta ejecución | 62 archivos / 271 pruebas |
-| Estado actual | Implementación y tests locales guardados en commits `1b5aa39`, `e22ddce`, `4a3472e` y `7da4899`; la corrección guest/idempotencia de este checkpoint queda pendiente de commit; `output/` preexistente conservado sin versionar |
+| Estado actual | Implementación y tests locales guardados en commits `1b5aa39`, `e22ddce`, `4a3472e`, `7da4899` y `6e927f4`; `output/` preexistente conservado sin versionar |
 | Prohibiciones respetadas | Sin pagos reales, producción, migraciones remotas, contratación, publicación o borrado destructivo |
 
 ## Cambios implementados en este checkpoint
