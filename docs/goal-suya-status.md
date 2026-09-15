@@ -29,6 +29,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - Lista de pedidos acotada a 50 filas sin RPC de códigos por tarjeta; códigos solo en detalle autorizado.
 - Contexto de restaurante global en Catálogo, Ofertas, Mesas, Repartidores y Dispositivos de pagos; alta de dispositivo exige cuenta receptora activa.
 - Drawer opaco/isolate contra filtración visual de Leaflet; backoffice móvil con cuatro accesos frecuentes y menú “Más”.
+- Navegaciones inferiores customer/Rider con superficies opacas: el contenido que pasa por debajo ya no se filtra a través del vidrio.
 - Checkout no bloquea por GPS: conserva dirección escrita y usa coordenadas solo si están disponibles.
 - Cambio de pedido resetea estados de `PaymentInstructions` y `GuestOrderPage` para evitar respuestas obsoletas.
 - Recuperación de invitado: el token de alta entropía puede viajar una sola vez en el fragmento URL, se guarda en sesión y se retira del historial; nunca se usa el código corto como autorización.
@@ -60,18 +61,18 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | U-06 | En verificación | GPS opcional y dirección escrita permitida; servidor valida coordenadas cuando llegan | E2E delivery/recojo/mesa y cobertura |
 | U-07 | En verificación | Carga por `id` siempre reinicia estado; pago se actualiza por intento | E2E offline/retorno a app/última actualización |
 | U-08 | En verificación | Reset por `order.id`, respuestas obsoletas y estados separados | E2E navegando entre dos pedidos |
-| U-09 | Pendiente | No se ha hecho medición de anchos/leyendas en cada estado | Revisión visual 360×800, mapa y atribución |
-| U-10 | Pendiente | Controles principales conservan tamaños mínimos; no hay auditoría completa TalkBack/contraste | axe/teclado/TalkBack y fuente ampliada |
+| U-09 | En verificación | Capturas web customer/Rider a 390×844; `scrollWidth === viewport` y barras inferiores opacas para no filtrar texto | Capturas sobre APK final a 360×800, mapa normal/expandido, leyendas/atribución y estados largos |
+| U-10 | En verificación | Navegación por teclado sobre bundle customer: 16 destinos con nombre y visibles; controles sin nombre: 0 | axe/contraste/TalkBack, fuente ampliada y validación nativa |
 | A-01 | En verificación | Rutas wallet atómicas; lista cliente y tests de payload actualizados | Resolver y probar idempotencia guest tras pérdida de respuesta |
 | A-02 | En verificación | Contratos distintos para delivery, menú y mesa; GPS ya no se exige universalmente | DB limpia + E2E por modalidad |
-| A-03 | En verificación | Token guest se conserva en sesión y puede recuperarse una vez desde `#access=...`; el fragmento se elimina con `history.replaceState` y el servidor sigue validando el token | E2E en navegador/dispositivo, recarga, enlace en otro contexto y pérdida de respuesta sin duplicar pedido |
+| A-03 | En verificación | Test y bundle customer real: token sintético de 64 caracteres se conserva en sesión, `location.hash` queda vacío después de cargar y el servidor sigue validando el token | E2E con recarga, enlace en otro contexto y pérdida de respuesta sin duplicar pedido |
 | A-04 | Verificado local | `analytics.ts` no carga script, no persiste UTM ni emite eventos; tests y build pasan | Confirmar red/`Set-Cookie` en E2E |
 | A-05 | En verificación | Native Supabase no persiste refresh token en Web Storage; token observador usa Keystore | Compilar Android y probar cierre/reinicio; evaluar secure storage de sesión |
 | A-06 | Verificado local | `.range(0,49)` y sin N+1 de códigos; test de servicio pasa | Confirmar paginación/índice en DB |
 | A-07 | En verificación | Migración nueva forward-only y test pgTAP añadido | Instalación limpia, actualización y rollback restaurable |
 | A-08 | Bloqueado | `versionCode 4`/`1.3` preparado; APK nueva no compilable sin Java | Build por rol, SHA-256, firma y captura |
 | A-09 | En verificación | RPC account-aware, revocación por `active`, token hash y auditoría existente | SQL/RLS/concurrencia en DB local |
-| A-10 | Pendiente | Analytics retirado; minimización parcial en observador | Revisión completa de logs, GPS, teléfonos, direcciones y permisos |
+| A-10 | En verificación | Navegador sin cookies y sin scripts de tracking; controles sin nombre: 0 | Revisión completa de logs, GPS, teléfonos, direcciones y permisos |
 
 ## Verificaciones ejecutadas
 
@@ -83,6 +84,8 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - `npm run build`: pasa.
 - `npm run security:secrets`: pasa; 890 archivos sin patrones de secreto.
 - Build/aislamiento de bundles customer, rider y backoffice con configuración local sintética: pasa.
+- Smoke visual/a11y web: customer y Rider a 390×844 sin overflow; barras inferiores no filtran texto; keyboard traversal customer con 16 controles nombrados/visibles y 0 sin nombre; cookies y scripts de tracking: vacíos.
+- Bundle customer compilado: recuperación guest E2E sintética pasa (`#access` se consume y el token queda en sesión); los errores observados son solicitudes a Postgres local no disponible.
 - `npm run verify:payments`: rechazado por configuración productiva ausente; correcto para este entorno sin despliegue.
 
 ## Bloqueos reproducibles
