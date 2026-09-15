@@ -17,7 +17,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 | HEAD inicial | `5a6a36f fix(backoffice): keep restaurant context for multi-store staff` |
 | Node / Vite | Node `22.23.2`; Vite `8.2.1` |
 | Pruebas antes de esta ejecución | 62 archivos / 271 pruebas |
-| Estado actual | Implementación y tests locales guardados en commits `1b5aa39`, `e22ddce`, `4a3472e`, `7da4899`, `6e927f4` y `feefba9`; `output/` preexistente conservado sin versionar |
+| Estado actual | Implementación y tests locales guardados en commits `1b5aa39`, `e22ddce`, `4a3472e`, `7da4899`, `6e927f4`, `feefba9`, `a0cf53f` y `d8fc9d0`; `output/` preexistente conservado sin versionar |
 | Prohibiciones respetadas | Sin pagos reales, producción, migraciones remotas, contratación, publicación o borrado destructivo |
 
 ## Cambios implementados en este checkpoint
@@ -36,7 +36,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - Recuperación de invitado: el token de alta entropía puede viajar una sola vez en el fragmento URL, se guarda en sesión y se retira del historial; además se preasigna antes del RPC y permite repetir el mismo payload sin duplicar ni perder acceso; nunca se usa el código corto como autorización.
 - Migración `20260915100000_guest_idempotency_recovery.sql`: huella server-side del payload, token guest recuperable, coordenadas dentro de la creación atómica y contratos SQL actualizados; añade prueba pgTAP para conflicto, permisos y firmas.
 - Analytics/UTM convertido en no-op estricto; la sesión nativa no persiste refresh token en Web Storage.
-- Android `versionCode 4`, `versionName 1.3`; aún sin APK nuevo porque el entorno no tiene Java.
+- Android `versionCode 4`, `versionName 1.3`; se desbloqueó temporalmente la toolchain local y se generaron APKs debug separados de Rider, Backoffice y Wallet Observer.
 
 ## Matriz de hallazgos
 
@@ -48,7 +48,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | P-02 | En verificación | `eventId` estable por binding/notificación y conflicto de observación único en migración | Prueba SQL/nativa en dos dispositivos y evento tardío |
 | P-03 | En verificación | `receiver_account_id` en intento/dispositivo/observación y QR por cuenta exacta | Instalar migración y probar cambio de cuenta |
 | P-04 | En verificación | RPC atómico para los tres canales; oferta y pago dentro de la transacción | Test de rollback y actualización limpia en DB local |
-| P-05 | En verificación | Parser TS y test de `S/ 1000.00`; parser Java actualizado | Ejecutar pruebas Android con Java |
+| P-05 | En verificación | Parser TS y test de `S/ 1000.00`; parser Java actualizado; pruebas unitarias Android 4/4 pasan | Matriz Android real por versión de billetera |
 | P-06 | En verificación | Binding guardado, cola separa eventos por binding y re-vinculación no reenvía | Prueba Android de rotación/revocación |
 | P-07 | En verificación | Lock de cola, 500 pendientes, reintentos y estado `queueFull` implementados | Prueba Android offline/reinicio/concurrencia |
 | P-08 | En verificación | Adaptadores por paquete y palabras; caso Yape probado | Matriz Android real por versión de billetera |
@@ -72,7 +72,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | A-05 | En verificación | Native Supabase no persiste refresh token en Web Storage; token observador usa Keystore | Compilar Android y probar cierre/reinicio; evaluar secure storage de sesión |
 | A-06 | Verificado local | `.range(0,49)` y sin N+1 de códigos; test de servicio pasa | Confirmar paginación/índice en DB |
 | A-07 | En verificación | Migración nueva forward-only y test pgTAP añadido | Instalación limpia, actualización y rollback restaurable |
-| A-08 | Bloqueado | `versionCode 4`/`1.3` preparado; APK nueva no compilable sin Java | Build por rol, SHA-256, firma y captura |
+| A-08 | En verificación | APKs debug Rider/Backoffice/Wallet Observer generadas con versionCode 4/versionName 1.3; hashes registrados abajo | Capturas, instalación/actualización y firma release |
 | A-09 | En verificación | RPC account-aware, revocación por `active`, token hash y auditoría existente | SQL/RLS/concurrencia en DB local |
 | A-10 | En verificación | Navegador sin cookies y sin scripts de tracking; controles sin nombre: 0 | Revisión completa de logs, GPS, teléfonos, direcciones y permisos |
 
@@ -90,16 +90,21 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Bundle customer compilado: recuperación guest E2E sintética pasa (`#access` se consume y el token queda en sesión); los errores observados son solicitudes a Postgres local no disponible.
 - `npm run test:e2e` con previews de los tres bundles levantados: pasa **9/9 combinaciones** (customer/Rider/Back Office en mobile/tablet/desktop), con HTTP 200, ruta/encabezado esperado, sin overflow, controles nombrados y sin `pageerror`.
 - `npm run verify:payments`: rechazado por configuración productiva ausente; correcto para este entorno sin despliegue.
+- Android: `bash android/gradlew test --no-daemon` pasa 4/4 pruebas unitarias y `assembleDebug` pasa para Rider y Backoffice; advertencia existente de API deprecada en `YapeNotificationListenerService.java`, sin fallo de compilación.
+- APK Rider debug: `output/apks/goal-20260915/Suya-Rider-debug.apk`, 25,370,737 bytes, SHA-256 `c36675e5a65e509076d9864136c7f0d78278e53889f3e6a444ab939347a93036`, paquete `com.suya.rider`, etiqueta `Suya Repartidor`.
+- APK Backoffice debug: `output/apks/goal-20260915/Suya-Backoffice-debug.apk`, 25,234,524 bytes, SHA-256 `85d4ecd182758d641c5a065a0f28a81fc77fe45eb73b417ba95dafd4aa9b53fc`, paquete `com.suya.backoffice`, etiqueta `Suya Backoffice`.
+- APK Wallet Observer debug: `output/apks/goal-20260915/Suya-Wallet-Observer-debug.apk`, 25,191,916 bytes, SHA-256 `a7839304c5c4bb0479880f079b4e608dd9c2cb6281ce95e11dac265a19c2c8ac`, paquete `com.suya.walletobserver`, etiqueta `Suya`.
+- Los tres APK son debug, están firmados con la clave debug del entorno y no son entregables de producción.
 
 ## Bloqueos reproducibles
 
 1. `npm run db:lint` no conecta a `127.0.0.1:54322`; `npm run db:start` tampoco puede conectar al socket de Docker. Por eso los SQL son cambios preparados, no SQL aprobados.
-2. `bash android/gradlew test --no-daemon` no puede ejecutarse: no existe `java` ni `JAVA_HOME`. No se afirma APK final ni prueba Android.
-3. No se dispone en este checkpoint de dispositivo Android físico, firma release ni autorización para pagos reales.
+2. La toolchain Android se preparó temporalmente en el entorno y permite test/build debug; todavía no hay dispositivo Android físico para instalación, teclado, insets, TalkBack, offline/reinicio y visuales nativos.
+3. No se dispone de firma release ni autorización para pagos reales; la firma debug no habilita distribución ni prueba financiera.
 
 ## Siguiente acción exacta
 
 1. Al estar disponible Docker, ejecutar `npm run db:start`, `npm run db:lint` y `npm run db:test`; corregir sintaxis/RLS/concurrencia y actualizar esta matriz.
 2. Completar A-03, U-09, U-10 y A-10 con E2E business de recuperación, visuales, accesibilidad y privacidad; completar E2E de las cuatro modalidades cuando el backend local esté disponible.
-3. Con Java disponible, ejecutar tests/build Android por `rider`, `backoffice` y `walletobserver`; calcular SHA-256, identificar commit/rol/versión y revisar APK real.
+3. Completar capturas/instalación/actualización y pruebas físicas cuando haya dispositivo; conservar los hashes debug como evidencia de prueba, no como release.
 4. Repetir suite global, build, aislamiento, seguridad y matriz completa. Solo entonces evaluar G10–G12; no marcar el goal completo mientras queden bloqueos o casillas obligatorias.
