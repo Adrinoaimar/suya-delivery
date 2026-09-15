@@ -17,7 +17,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 | HEAD inicial | `5a6a36f fix(backoffice): keep restaurant context for multi-store staff` |
 | Node / Vite | Node `22.23.2`; Vite `8.2.1` |
 | Pruebas antes de esta ejecución | 63 archivos / 281 pruebas |
-| Estado actual | Implementación de caja, protección contra cargas obsoletas, cierre manual cash-only y contraste nativo de barras guardados en este checkpoint; `output/` conservado sin versionar |
+| Estado actual | Implementación de caja, protección contra cargas obsoletas, cierre manual cash-only, contraste nativo y minimización de pedido invitado guardados en este checkpoint; `output/` conservado sin versionar |
 | Prohibiciones respetadas | Sin pagos reales, producción, migraciones remotas, contratación, publicación o borrado destructivo |
 
 ## Cambios implementados en este checkpoint
@@ -34,6 +34,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - Checkout no bloquea por GPS: conserva dirección escrita y usa coordenadas solo si están disponibles.
 - Cambio de pedido resetea estados de `PaymentInstructions` y `GuestOrderPage` para evitar respuestas obsoletas.
 - Recuperación de invitado: el token de alta entropía puede viajar una sola vez en el fragmento URL, se guarda en sesión y se retira del historial; además se preasigna antes del RPC y permite repetir el mismo payload sin duplicar ni perder acceso; nunca se usa el código corto como autorización.
+- La pantalla de pedido invitado ya no persiste el objeto completo en `sessionStorage`: teléfono, dirección, códigos y referencia de pago no quedan en la caché local; la recarga recupera por token y RPC server-side.
 - Migración `20260915100000_guest_idempotency_recovery.sql`: huella server-side del payload, token guest recuperable, coordenadas dentro de la creación atómica y contratos SQL actualizados; añade prueba pgTAP para conflicto, permisos y firmas.
 - Migración `20260915110000_internal_order_mutation_context.sql`: las RPC `SECURITY DEFINER` habilitan capacidades transaccionales locales para coordenadas, verificación y cancelación; los clientes siguen sin `UPDATE` directo.
 - Migración `20260915120000_payment_intent_refresh_qualification.sql`: renovación de wallet califica `status`/`expires_at` para evitar ambigüedad con parámetros de salida; los fixtures SQL exigen receptor exacto y diferencian limpieza administrativa de acciones cliente.
@@ -80,17 +81,17 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | A-07 | En verificación | Migración nueva forward-only y test pgTAP añadido | Instalación limpia, actualización y rollback restaurable |
 | A-08 | En verificación | APKs debug Rider/Backoffice/Wallet Observer generadas con versionCode 5/versionName 1.4; hashes registrados abajo | Capturas, instalación/actualización y firma release |
 | A-09 | En verificación | RPC account-aware, revocación por `active`, token hash y auditoría existente | SQL/RLS/concurrencia en DB local |
-| A-10 | En verificación | Navegador sin cookies y sin scripts de tracking; controles sin nombre: 0 | Revisión completa de logs, GPS, teléfonos, direcciones y permisos |
+| A-10 | En verificación | Navegador sin cookies ni tracking; pedido invitado no se guarda completo en Web Storage; controles sin nombre: 0 | Confirmar red/Set-Cookie y minimización en E2E con backend, más revisión final de logs, GPS, teléfonos, direcciones y permisos |
 
 ## Verificaciones ejecutadas
 
 - `npm run typecheck`: pasa.
 - `npm run lint`: pasa sin warnings.
-- `npm test -- --run`: **65 archivos / 289 pruebas pasan** tras integrar la caja auditable, el cobro de mesas y la regresión de cambio rápido de restaurante.
+- `npm test -- --run`: **66 archivos / 291 pruebas pasan** tras añadir la regresión de privacidad del pedido invitado junto con la caja auditable, el cobro de mesas y la regresión de cambio rápido de restaurante.
 - Pruebas focalizadas de acceso invitado/order/payment/layout: 19/19 pasan.
-- `tests/backoffice-layout.test.tsx`, `tests/cash-register-page.test.tsx` y `tests/supabase-cash-register.test.ts`: **10/10** pasan; la carga obsoleta no puede reemplazar la cuenta seleccionada.
+- `tests/backoffice-layout.test.tsx`, `tests/cash-register-page.test.tsx`, `tests/supabase-cash-register.test.ts` y privacidad invitado: **12/12** pasan; la carga obsoleta no reemplaza la cuenta y el pedido completo no queda en Web Storage.
 - `npm run build`: pasa.
-- `npm run security:secrets`: pasa; 906 archivos sin patrones de secreto.
+- `npm run security:secrets`: pasa; 907 archivos sin patrones de secreto.
 - Build/aislamiento de bundles customer, rider y backoffice con configuración local sintética: pasa.
 - Smoke visual/a11y web: customer, Rider y Backoffice pasan **12/12** en 360×800, 390×844, tablet y desktop sin overflow; barras inferiores no filtran texto; keyboard traversal customer con 16 controles nombrados/visibles y 0 sin nombre; cookies y scripts de tracking: vacíos.
 - Evidencia gráfica web final a 390×844, capturada después del loader: `output/evidence/goal-20260915/customer-390x844.png`, `rider-390x844.png` y `backoffice-390x844.png`; las tres respuestas fueron HTTP 200, sin errores de página, cookies, tracking ni overflow. La evidencia nativa sobre APK sigue pendiente.

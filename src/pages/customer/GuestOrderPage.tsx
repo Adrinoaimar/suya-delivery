@@ -16,24 +16,13 @@ interface GuestOrderLocationState {
   guestOrder?: Order;
 }
 
-function savedGuestOrder(id: string): Order | null {
-  try {
-    const value: unknown = JSON.parse(sessionStorage.getItem('suya.guestOrder') ?? 'null');
-    if (!value || typeof value !== 'object') return null;
-    const order = value as Order;
-    return order.id === id ? order : null;
-  } catch {
-    return null;
-  }
-}
-
 /** Public receipt for menu/QR orders. No customer session required. */
 export default function GuestOrderPage() {
   const { id = '', slug = '' } = useParams();
   const location = useLocation();
   const cached = useOrderStore((state) => state.getOrder(id));
   const [order, setOrder] = useState<Order | null>(
-    (location.state as GuestOrderLocationState | null)?.guestOrder ?? cached ?? savedGuestOrder(id),
+    (location.state as GuestOrderLocationState | null)?.guestOrder ?? cached ?? null,
   );
   const [loading, setLoading] = useState(!order);
   const [error, setError] = useState<string | null>(null);
@@ -64,15 +53,6 @@ export default function GuestOrderPage() {
       active = false;
     };
   }, [id, location.hash]);
-
-  useEffect(() => {
-    if (!order) return;
-    try {
-      sessionStorage.setItem('suya.guestOrder', JSON.stringify(order));
-    } catch {
-      /* storage unavailable */
-    }
-  }, [order]);
 
   function refresh(): void {
     setOrder(null);

@@ -330,13 +330,6 @@ export default function CheckoutPage() {
           /* storage unavailable */
         }
       }
-      if (publicOrderPath) {
-        try {
-          sessionStorage.setItem('suya.guestOrder', JSON.stringify(order));
-        } catch {
-          /* storage unavailable */
-        }
-      }
       notificationService.notify(
         method === 'cash'
           ? isMenuOrder
