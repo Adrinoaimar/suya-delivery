@@ -68,6 +68,14 @@ CI Android `34915589843` recompiló Rider, Back Office y Caja para `cbd0725`; lo
 - Suite local completa: 62 archivos y 267 pruebas pasan; lint, typecheck y `git diff --check` también pasan.
 - El cambio no modifica el frontend ni las APK; las APK verificadas más recientes siguen siendo las del checkpoint F27.20 (`cbd0725`).
 
+## Checkpoint F27.22 · APKs del rebuild autenticado `db277e2`
+
+- El run Android `34916878043` terminó verde; los seis jobs CI asociados al commit (`browser`, `browser-e2e`, `build`, `debug`, `simulator` y `test`) terminaron en `success`.
+- Rider: `output/apks/db277e2/Suya-Rider-debug-eccfccde11a8160ddc9f8ced3fd13201cf275fc3/Suya-Rider-debug.apk`; SHA-256 `d28259644b9e001507ef83d989f8de3f2c860d145036b482847107bd120f6554`.
+- Back Office: `output/apks/db277e2/Suya-Backoffice-debug-eccfccde11a8160ddc9f8ced3fd13201cf275fc3/Suya-Backoffice-debug.apk`; SHA-256 `ed0f390ca31154430ca658fcac1cf8e0287e144d4bc6a2667def253d029e3d2b`.
+- Caja / Wallet Observer: `output/apks/db277e2/Suya-Wallet-Observer-debug-eccfccde11a8160ddc9f8ced3fd13201cf275fc3/Suya-Wallet-Observer-debug.apk`; SHA-256 `ec81301e55abdfbc942e8e24e5f1ce559750b09e11943e6c6ec6dfd9f1312e7e`.
+- Las tres son APK debug, no release firmadas, y pasaron `unzip -tqq`.
+
 El listener mantiene un identificador estable cuando una billetera actualiza una misma notificación desde una vista corta a una expandida. La cola local cifra el evento, completa campos faltantes y vuelve a sincronizarlo; la RPC solo enriquece observaciones abiertas y preserva las verificadas.
 
 ## Caso 1 · Dos Yape de S/30

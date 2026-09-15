@@ -336,6 +336,14 @@ verificables en CI; un artefacto instalable exige firma Apple externa.
 - Suite local completa: 62 archivos y 267 pruebas pasan; lint y typecheck también pasan.
 - Este cambio solo afecta Edge Functions, workflow y pruebas; las APK verificadas más recientes siguen siendo las del checkpoint F27.20 (`cbd0725`).
 
+## Checkpoint F27.22: APKs del rebuild autenticado `db277e2` (2026-09-14)
+
+- Android run `34916878043` terminó en `success`; los seis jobs CI asociados (`browser`, `browser-e2e`, `build`, `debug`, `simulator` y `test`) también terminaron en `success`.
+- Rider: `output/apks/db277e2/Suya-Rider-debug-eccfccde11a8160ddc9f8ced3fd13201cf275fc3/Suya-Rider-debug.apk`; SHA-256 `d28259644b9e001507ef83d989f8de3f2c860d145036b482847107bd120f6554`.
+- Back Office: `output/apks/db277e2/Suya-Backoffice-debug-eccfccde11a8160ddc9f8ced3fd13201cf275fc3/Suya-Backoffice-debug.apk`; SHA-256 `ed0f390ca31154430ca658fcac1cf8e0287e144d4bc6a2667def253d029e3d2b`.
+- Caja/Wallet Observer: `output/apks/db277e2/Suya-Wallet-Observer-debug-eccfccde11a8160ddc9f8ced3fd13201cf275fc3/Suya-Wallet-Observer-debug.apk`; SHA-256 `ec81301e55abdfbc942e8e24e5f1ce559750b09e11943e6c6ec6dfd9f1312e7e`.
+- Las tres pasaron `unzip -tqq` y siguen siendo APK debug, no release-signed. La autorización productiva aún requiere secretos, migraciones/funciones, webhook configurado, publicación y dos pagos físicos iguales de S/30.
+
 
 
 
