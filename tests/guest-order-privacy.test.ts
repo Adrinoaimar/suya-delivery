@@ -18,6 +18,19 @@ describe('privacidad de pedidos invitados', () => {
     expect(sources).not.toContain("sessionStorage.getItem('suya.guestOrder'");
   });
 
+  it('solo conserva el correo cuando el checkout opcional lo necesita', () => {
+    expect(checkoutSource).toContain('if (needsGatewayEmail && form.email.trim())');
+  });
+
+  it('no guarda el payload de idempotencia con datos personales en claro', () => {
+    const orderServiceSource = readFileSync(
+      resolve(process.cwd(), 'src/lib/services/SupabaseOrderService.ts'),
+      'utf8',
+    );
+    expect(orderServiceSource).toContain("subtle.digest(\n      'SHA-256'");
+    expect(orderServiceSource).not.toContain('JSON.stringify({ signature, requestId, guestAccessToken })');
+  });
+
   it('mantiene la recuperación mediante token y servidor', () => {
     expect(guestOrderSource).toContain('consumeGuestOrderTokenFromHash');
     expect(guestOrderSource).toMatch(/orderService\s*\.get\(id\)/);

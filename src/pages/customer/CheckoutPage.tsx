@@ -323,7 +323,7 @@ export default function CheckoutPage() {
         : null;
       clearCart();
       sessionStorage.removeItem('suya.tableContext');
-      if (form.email.trim()) {
+      if (needsGatewayEmail && form.email.trim()) {
         try {
           sessionStorage.setItem(`suya.payment-email:${order.id}`, form.email.trim().toLowerCase());
         } catch {

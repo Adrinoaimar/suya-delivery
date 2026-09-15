@@ -299,7 +299,7 @@ function first<T>(value: T | T[] | null): T | null {
   return Array.isArray(value) ? (value[0] ?? null) : value;
 }
 
-function fingerprint(input: CreateOrderInput): string {
+function fingerprintPayload(input: CreateOrderInput): string {
   return JSON.stringify({
     storeId: input.storeId,
     origin: input.origin ?? 'delivery',
@@ -321,17 +321,32 @@ function fingerprint(input: CreateOrderInput): string {
   });
 }
 
+async function fingerprintDigest(input: CreateOrderInput): Promise<string | null> {
+  const subtle = globalThis.crypto?.subtle;
+  if (!subtle) return null;
+  try {
+    const digest = await subtle.digest(
+      'SHA-256',
+      new TextEncoder().encode(fingerprintPayload(input)),
+    );
+    return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+  } catch {
+    // No persistimos el payload si la plataforma no expone Web Crypto.
+    return null;
+  }
+}
+
 interface PendingOrderRequest {
   signature?: string;
   requestId?: string;
   guestAccessToken?: string;
 }
 
-function requestIdFor(
+async function requestIdFor(
   input: CreateOrderInput,
   needsGuestAccess: boolean,
-): { requestId: string; guestAccessToken: string | null } {
-  const signature = fingerprint(input);
+): Promise<{ requestId: string; guestAccessToken: string | null }> {
+  const signature = await fingerprintDigest(input);
   try {
     const saved = JSON.parse(sessionStorage.getItem(PENDING_REQUEST_KEY) ?? 'null') as
       | PendingOrderRequest
@@ -340,6 +355,7 @@ function requestIdFor(
       ? saved.guestAccessToken
       : null;
     if (
+      signature &&
       saved?.signature === signature &&
       typeof saved.requestId === 'string' &&
       (!needsGuestAccess || savedGuestAccessToken)
@@ -354,7 +370,7 @@ function requestIdFor(
   try {
     sessionStorage.setItem(
       PENDING_REQUEST_KEY,
-      JSON.stringify({ signature, requestId, guestAccessToken }),
+      JSON.stringify({ ...(signature ? { signature } : {}), requestId, guestAccessToken }),
     );
   } catch {
     // El token sigue vivo durante este intento; sin almacenamiento no hay recuperación tras un cierre.
@@ -459,7 +475,7 @@ export class SupabaseOrderServiceImpl
     }
 
     const needsGuestAccess = !user && publicMenuChannel;
-    const { requestId, guestAccessToken } = requestIdFor(input, needsGuestAccess);
+    const { requestId, guestAccessToken } = await requestIdFor(input, needsGuestAccess);
     const walletCheckout = input.paymentMethod === 'yape' || input.paymentMethod === 'lemon';
     const rpcName = walletCheckout
       ? input.tableId

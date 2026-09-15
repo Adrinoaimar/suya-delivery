@@ -301,6 +301,10 @@ describe('SupabaseOrderServiceImpl', () => {
     };
     expect(pending.requestId).toBe(requestId);
     expect(pending.guestAccessToken).toMatch(/^[a-f0-9]{64}$/);
+    expect(pending).toMatchObject({ signature: expect.stringMatching(/^[a-f0-9]{64}$/) });
+    expect(JSON.stringify(pending)).not.toContain('Nombre solo local');
+    expect(JSON.stringify(pending)).not.toContain('Av. Principal 123');
+    expect(JSON.stringify(pending)).not.toContain('Puerta verde');
 
     const order = await service.create(input);
     const createCalls = rpc.mock.calls.filter(([name]) => name === 'create_menu_order_with_payment');
