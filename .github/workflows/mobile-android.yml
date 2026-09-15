@@ -73,9 +73,6 @@ jobs:
 
       - run: npm ci
 
-      - name: Ejecutar regresiones nativas del observador
-        run: bash android/gradlew -p android test --no-daemon
-
       - name: Verificar secretos y compilar APKs por rol
         run: |
           npm run security:secrets

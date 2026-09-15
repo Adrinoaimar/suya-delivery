@@ -50,6 +50,8 @@ function run(command, args, env) {
 await rm(outputRoot, { recursive: true, force: true });
 await mkdir(outputRoot, { recursive: true });
 
+let nativeTestsRan = false;
+
 for (const name of requested) {
   const target = targets[name];
   const targetEnv = {
@@ -65,6 +67,11 @@ for (const name of requested) {
   console.log(`\n==> Construyendo APK ${target.appName}`);
   run(npmCommand, ['run', `build:${target.build}`], targetEnv);
   run(npxCommand, ['--no-install', 'cap', 'sync', 'android'], targetEnv);
+  if (!nativeTestsRan) {
+    console.log('==> Ejecutando regresiones nativas del observador');
+    run('bash', ['android/gradlew', '-p', 'android', 'test', '--no-daemon'], targetEnv);
+    nativeTestsRan = true;
+  }
   run('bash', ['android/gradlew', '-p', 'android', 'assembleDebug', '--no-daemon'], targetEnv);
 
   const apk = path.join(repoRoot, 'android', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk');
