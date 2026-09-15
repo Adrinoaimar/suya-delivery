@@ -370,6 +370,12 @@ verificables en CI; un artefacto instalable exige firma Apple externa.
 - Caja/Wallet Observer: `output/apks/a4fd10b/Suya-Wallet-Observer-debug-a4fd10b5d5f700b4fd8eafe64fed40601f5cb6bb/Suya-Wallet-Observer-debug.apk`; SHA-256 `9ba2886dd7512ce8fdd6a165b8f5602af5d3cb3fd650d460a240b16369fb3edc`.
 - Siguen siendo APK debug; versión Android: `versionCode 3`, `versionName 1.2`. Producción aún requiere configuración/despliegue real y pagos físicos de validación.
 
+## Checkpoint F27.27: validación multiplataforma del árbol `a4fd10b` (2026-09-14)
+
+- E2E web, base de datos/RLS e iOS terminaron en `success` para el árbol con el fix: runs `34923044731`, `34923044705` y `34923044700`.
+- Runs posteriores sobre el checkpoint documental `fd2cd67` (sin cambios de código) repitieron la cobertura y quedaron verdes: `34924109652`, `34924108958` y `34924108804`.
+- No hay `adb` ni emulador local; sigue pendiente smoke visual físico y configuración productiva de pagos.
+
 
 
 

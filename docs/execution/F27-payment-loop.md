@@ -90,6 +90,12 @@ CI Android `34915589843` recompiló Rider, Back Office y Caja para `cbd0725`; lo
 - Caja / Wallet Observer: `output/apks/82e2531/Suya-Wallet-Observer-debug-82758779fc567fc1242eb3e4782ab8845798310a/Suya-Wallet-Observer-debug.apk`; SHA-256 `1bb34bd4590594e224b8df0a0579e99c93540dbb907fc98b899b42b41d143ba1`.
 - Son APKs debug para pruebas, no release firmadas. La versión Android sigue en `versionCode 3`, `versionName 1.2`.
 
+## Checkpoint F27.27 · Validación multiplataforma del árbol `a4fd10b`
+
+- En el árbol con el fix anti doble-cobro, la validación remota de E2E web, base de datos/RLS e iOS terminó en `success`: runs `34923044731`, `34923044705` y `34923044700`.
+- Los runs posteriores sobre el checkpoint documental `fd2cd67` (sin cambios de código) repitieron la misma cobertura: E2E `34924109652`, base de datos `34924108958` e iOS `34924108804`, todos verdes.
+- No hay `adb` ni emulador local disponible; queda pendiente el smoke visual en dispositivo físico y la configuración productiva de pagos.
+
 ## Checkpoint F27.25 · Protección contra callback duplicado `a4fd10b`
 
 - `PaymentInstructions` ignora un segundo callback de token mientras el primer cargo Culqi sigue en curso; la regresión cubre dos callbacks consecutivos y confirma un solo `chargeCard`.
