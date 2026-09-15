@@ -13,6 +13,7 @@ describe('parseYapeNotification', () => {
     expect(result).toMatchObject({
       amountCents: 2550,
       currency: 'PEN',
+      senderName: null,
       code: '482',
       verification: 'unverified',
     });
@@ -28,6 +29,56 @@ describe('parseYapeNotification', () => {
     });
 
     expect(result).toMatchObject({ amountCents: 125000, code: '987654321' });
+  });
+
+  it('captures the visible sender when the wallet notification includes it', () => {
+    const result = parseYapeNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Yape',
+      text: 'Recibiste S/ 30.00 de Ana María Torres',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({ amountCents: 3000, senderName: 'Ana María Torres' });
+  });
+
+  it('captures the sender when Yape places the name before the verb', () => {
+    const result = parseYapeNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Ana María Torres',
+      text: 'te envió S/ 30.00',
+      infoText: 'Yape',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({ amountCents: 3000, senderName: 'Ana María Torres' });
+  });
+
+  it('captures sender labels with punctuation without swallowing the operation code', () => {
+    const result = parseYapeNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Yape',
+      text: 'Recibiste S/ 30.00. De: Ana María Torres. Código de operación: 482901',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({
+      amountCents: 3000,
+      senderName: 'Ana María Torres',
+      code: '482901',
+    });
+  });
+
+  it('reads an identifier placed in a secondary notification field', () => {
+    const result = parseYapeNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Yape recibido',
+      text: 'Recibiste S/ 30.00',
+      subText: 'Código de operación: 842911',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({ amountCents: 3000, code: '842911' });
   });
 
   it('ignores other apps and messages without a monetary amount', () => {

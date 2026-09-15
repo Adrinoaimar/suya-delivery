@@ -46,6 +46,10 @@ await ensureUser(email, 'Cliente E2E Suya');
 await ensureUser(adminEmail, 'Operaciones E2E Suya', { role: 'platform_admin' });
 const rider = await ensureUser(riderEmail, 'Repartidor E2E Suya');
 const restaurantOwner = await ensureUser(restaurantEmail, 'Propietario E2E Suya');
+if (!/^[0-9a-f-]{36}$/iu.test(rider.id)) {
+  throw new Error('Fixture E2E rechazado: Auth devolvió un UUID de repartidor inválido.');
+}
+const riderId = rider.id;
 if (!/^[0-9a-f-]{36}$/iu.test(restaurantOwner.id)) {
   throw new Error('Fixture E2E rechazado: Auth devolvió un UUID de propietario inválido.');
 }
@@ -73,6 +77,23 @@ try {
       on conflict (restaurant_id, user_id)
       do update set role = excluded.role, active = excluded.active;
 
+      insert into public.rider_profiles (user_id, status, verified_at, phone, vehicle_type, vehicle_plate)
+      values ('${riderId}'::uuid, 'available'::public.rider_status, now(), '900000000', 'moto', 'E2E001')
+      on conflict (user_id)
+      do update set
+        status = excluded.status,
+        verified_at = coalesce(public.rider_profiles.verified_at, excluded.verified_at),
+        phone = excluded.phone,
+        vehicle_type = excluded.vehicle_type,
+        vehicle_plate = excluded.vehicle_plate;
+
+      insert into public.restaurant_riders (restaurant_id, rider_id, created_by)
+      select id, '${riderId}'::uuid, '${ownerId}'::uuid
+      from public.restaurants
+      where slug = 'anda-paya'
+      on conflict (restaurant_id, rider_id)
+      do update set active = true;
+
       update public.restaurant_account_registry
       set contact_name = 'Propietario E2E Suya',
           contact_email = '${ownerEmail}',
@@ -85,7 +106,15 @@ try {
       select count(*)
       from public.restaurant_members rm
       join public.restaurants r on r.id = rm.restaurant_id
-      where r.slug = 'anda-paya' and rm.user_id = '${ownerId}'::uuid and rm.role = 'owner' and rm.active;
+      where r.slug = 'anda-paya'
+        and rm.user_id = '${ownerId}'::uuid
+        and rm.role = 'owner'
+        and rm.active
+        and exists (
+          select 1
+          from public.restaurant_riders rr
+          where rr.restaurant_id = r.id and rr.rider_id = '${riderId}'::uuid and rr.active
+        );
     `,
   ], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   if (verification.trim().split(/\s+/u).at(-1) !== '1') {

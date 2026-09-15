@@ -32,8 +32,8 @@ describe('gestión de cuentas de restaurantes', () => {
     render(<RestaurantAccountsPage />);
 
     expect(await screen.findByRole('heading', { name: 'Cuentas de restaurantes' })).toBeInTheDocument();
-    expect(screen.getByText('Donde Joel')).toBeInTheDocument();
-    expect(screen.getByText('Andá Paya')).toBeInTheDocument();
+    expect(await screen.findByText('Donde Joel')).toBeInTheDocument();
+    expect(await screen.findByText('Andá Paya')).toBeInTheDocument();
     expect(screen.getByDisplayValue('owner@example.test')).toBeDisabled();
     expect(screen.getByDisplayValue('Propietario')).toBeDisabled();
   });

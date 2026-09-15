@@ -42,6 +42,8 @@ describe('movimiento accesible', () => {
       </Drawer>,
     );
 
-    expect(screen.getByRole('dialog', { name: 'Navegación' })).toHaveClass(expectedClass);
+    const dialog = screen.getByRole('dialog', { name: 'Navegación' });
+    expect(dialog).toHaveClass(expectedClass, 'suya-drawer-panel');
+    expect(dialog.parentElement).toHaveClass('z-[1100]');
   });
 });

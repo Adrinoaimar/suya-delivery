@@ -1,5 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { notificationService, safetyOperationsService } from '@/lib/services';
+import {
+  notificationService,
+  riderOperationsService,
+  safetyOperationsService,
+} from '@/lib/services';
 import { useRiderStore } from '@/store/riderStore';
 import { useTrackingStore } from '@/store/trackingStore';
 import { selectActiveOrder, useOrderStore } from '@/store/orderStore';
@@ -21,7 +25,9 @@ export function useRiderTrackingRunner(): void {
   const lastPublishedRef = useRef(0);
 
   // Un rider asignado pasa a `busy`; el GPS debe seguir activo durante el viaje.
-  const tripInProgress = Boolean(activeOrder && ['picked_up', 'on_the_way'].includes(activeOrder.status));
+  const tripInProgress = Boolean(
+    activeOrder && ['picked_up', 'on_the_way'].includes(activeOrder.status),
+  );
   const enabled = available || tripInProgress;
   const { reading, error, permission, active } = useGeolocation(enabled);
 
@@ -30,8 +36,13 @@ export function useRiderTrackingRunner(): void {
   }, [reading, error, permission, active, setSnapshot]);
 
   useEffect(() => {
-    if (!reading || reading.simulated || !activeOrder ||
-        !['picked_up', 'on_the_way'].includes(activeOrder.status)) return;
+    if (
+      !reading ||
+      reading.simulated ||
+      !activeOrder ||
+      !['picked_up', 'on_the_way'].includes(activeOrder.status)
+    )
+      return;
     if (reading.timestamp - lastPublishedRef.current < 8_000) return;
     lastPublishedRef.current = reading.timestamp;
     void safetyOperationsService.publishLocation(activeOrder.id, reading).catch(() => {
@@ -42,6 +53,12 @@ export function useRiderTrackingRunner(): void {
   useEffect(() => {
     if (!available || !error) return;
     setAvailable(false);
+    void riderOperationsService.setAvailability(false).catch(() => {
+      notificationService.notify(
+        'No pudimos retirar tu disponibilidad del servidor. Revisa tu conexión.',
+        'danger',
+      );
+    });
     notificationService.notify(
       'Sin ubicación no puedes estar disponible. Activa el GPS y su permiso.',
       'danger',

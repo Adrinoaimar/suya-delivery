@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
-import type { CartItem, Order, OrderStatus, ProductExtra } from '@/types';
+import type { CartItem, Order, OrderStatus, PaymentIntent, PaymentIntentStatus, PaymentMethod, ProductExtra } from '@/types';
 import type {
   AvailableRider,
   CodeResult,
@@ -9,6 +9,7 @@ import type {
   OrderService,
   RiderOperationsService,
 } from './types';
+import { SupabasePaymentService } from './SupabasePaymentService';
 
 interface OrderItemRow {
   id: string;
@@ -23,6 +24,20 @@ interface OrderItemRow {
 
 interface OrderEventRow {
   status: OrderStatus;
+  created_at: string;
+}
+
+interface PaymentAttemptRow {
+  id: string;
+  order_id: string;
+  provider: string;
+  provider_reference: string | null;
+  method: PaymentMethod;
+  status: PaymentIntentStatus;
+  amount: number | string;
+  checkout_reference: string;
+  expires_at: string;
+  gateway_qr_payload?: string | null;
   created_at: string;
 }
 
@@ -49,10 +64,12 @@ interface OrderRow {
   delivery_longitude: number | null;
   estimated_minutes: number;
   created_at: string;
-  restaurants: { name: string; latitude: number | null; longitude: number | null } |
-    { name: string; latitude: number | null; longitude: number | null }[];
+  restaurants:
+    | { name: string; latitude: number | null; longitude: number | null }
+    | { name: string; latitude: number | null; longitude: number | null }[];
   order_items: OrderItemRow[];
   order_events: OrderEventRow[];
+  payment_attempts?: PaymentAttemptRow[];
 }
 
 interface OrderCodes {
@@ -77,6 +94,7 @@ interface GuestOrderRow {
   restaurant_id: string;
   origin: 'menu' | 'table_qr';
   status: OrderStatus;
+  payment_method: Order['paymentMethod'];
   table_id: string | null;
   customer_name: string;
   customer_phone: string;
@@ -102,22 +120,33 @@ const ORDER_SELECT = `
   delivery_latitude, delivery_longitude,
   restaurants!inner(name, latitude, longitude),
   order_items(id, product_id, product_name, unit_price, quantity, extras, note, image_url),
-  order_events(status, created_at)
+  order_events(status, created_at),
+  payment_attempts(id, order_id, provider, provider_reference, method, status, amount, checkout_reference, expires_at, gateway_qr_payload, created_at)
 `;
 const PENDING_REQUEST_KEY = 'suya.pending-cash-order';
 const GUEST_TOKEN_PREFIX = 'suya.guest-order-token:';
 
 function isMissingSession(error: { message?: string } | null | undefined): boolean {
-  return Boolean(error?.message && /auth session missing|session not found|jwt/i.test(error.message));
+  return Boolean(
+    error?.message && /auth session missing|session not found|jwt/i.test(error.message),
+  );
 }
 
 function saveGuestToken(orderId: string, token: string | null | undefined): void {
   if (!token) return;
-  try { sessionStorage.setItem(`${GUEST_TOKEN_PREFIX}${orderId}`, token); } catch { /* storage unavailable */ }
+  try {
+    sessionStorage.setItem(`${GUEST_TOKEN_PREFIX}${orderId}`, token);
+  } catch {
+    /* storage unavailable */
+  }
 }
 
 function guestToken(orderId: string): string | null {
-  try { return sessionStorage.getItem(`${GUEST_TOKEN_PREFIX}${orderId}`); } catch { return null; }
+  try {
+    return sessionStorage.getItem(`${GUEST_TOKEN_PREFIX}${orderId}`);
+  } catch {
+    return null;
+  }
 }
 
 function requireClient(): SupabaseClient {
@@ -129,6 +158,24 @@ function amount(value: number | string): number {
   const parsed = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(parsed)) throw new Error('Supabase devolvió un monto de pedido inválido.');
   return parsed;
+}
+
+function paymentIntentFromAttempts(rows: PaymentAttemptRow[] | undefined): PaymentIntent | null {
+  const row = [...(rows ?? [])].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+  if (!row) return null;
+  return {
+    attemptId: row.id,
+    orderId: row.order_id,
+    method: row.method,
+    status: row.status,
+    amount: amount(row.amount),
+    currency: 'PEN',
+    checkoutReference: row.checkout_reference,
+    expiresAt: row.expires_at,
+    provider: row.provider,
+    providerReference: row.provider_reference,
+    qrPayload: row.gateway_qr_payload ?? null,
+  };
 }
 
 function extras(value: unknown): ProductExtra[] {
@@ -181,7 +228,8 @@ function mapOrder(row: OrderRow, codes?: OrderCodes): Order {
     total: amount(row.total),
     createdAt: row.created_at,
     status: row.status,
-    origin: row.origin === 'menu' ? 'suya_menu' : row.origin === 'table_qr' ? 'table_qr' : 'delivery',
+    origin:
+      row.origin === 'menu' ? 'suya_menu' : row.origin === 'table_qr' ? 'table_qr' : 'delivery',
     tableId: row.table_id ?? null,
     history,
     customer: {
@@ -201,10 +249,11 @@ function mapOrder(row: OrderRow, codes?: OrderCodes): Order {
     deliveryCode: codes?.delivery_code ?? '',
     cancelCode: codes?.cancel_code ?? '',
     cancellationReason: row.cancellation_reason,
+    paymentIntent: paymentIntentFromAttempts(row.payment_attempts),
   };
 }
 
-function mapGuestOrder(row: GuestOrderRow): Order {
+function mapGuestOrder(row: GuestOrderRow, paymentIntent: PaymentIntent | null = null): Order {
   const items: CartItem[] = (row.items ?? []).map((item) => ({
     lineId: item.id,
     productId: item.product_id ?? item.id,
@@ -243,12 +292,13 @@ function mapGuestOrder(row: GuestOrderRow): Order {
     },
     deliveryPosition: null,
     storePosition: null,
-    paymentMethod: 'cash',
+    paymentMethod: row.payment_method,
     riderId: null,
     etaMinutes: row.estimated_minutes,
     deliveryCode: row.delivery_code,
     cancelCode: row.cancel_code,
     cancellationReason: row.cancellation_reason,
+    paymentIntent,
   };
 }
 
@@ -302,17 +352,20 @@ function clearRequest(requestId: string): void {
 }
 
 export class SupabaseOrderServiceImpl
-  implements OrderService, DispatchService, RiderOperationsService {
+  implements OrderService, DispatchService, RiderOperationsService
+{
   private readonly client: SupabaseClient;
+  private readonly payments: SupabasePaymentService;
 
   constructor(client: SupabaseClient = requireClient()) {
     this.client = client;
+    this.payments = new SupabasePaymentService(client);
   }
 
   private async codes(orderId: string): Promise<OrderCodes | undefined> {
     const { data, error } = await this.client.rpc('get_order_codes', { target_order: orderId });
     if (error) throw new Error(error.message);
-    return (first(data as OrderCodes[] | OrderCodes | null) ?? undefined);
+    return first(data as OrderCodes[] | OrderCodes | null) ?? undefined;
   }
 
   private async row(id: string): Promise<OrderRow | undefined> {
@@ -343,9 +396,11 @@ export class SupabaseOrderServiceImpl
     if (error) throw new Error(error.message);
     const userId = userData.user?.id;
     const rows = (data ?? []) as unknown as OrderRow[];
-    return Promise.all(rows.map(async (row) =>
-      mapOrder(row, userId === row.customer_id ? await this.codes(row.id) : undefined),
-    ));
+    return Promise.all(
+      rows.map(async (row) =>
+        mapOrder(row, userId === row.customer_id ? await this.codes(row.id) : undefined),
+      ),
+    );
   }
 
   async get(id: string): Promise<Order | undefined> {
@@ -354,16 +409,14 @@ export class SupabaseOrderServiceImpl
     const row = await this.row(id);
     if (!row) {
       const guest = await this.guestRow(id, guestToken(id) ?? '');
-      return guest ? mapGuestOrder(guest) : undefined;
+      if (!guest) return undefined;
+      return mapGuestOrder(guest, await this.payments.getIntent(guest.order_id));
     }
     const codes = userData.user?.id === row.customer_id ? await this.codes(row.id) : undefined;
-    return mapOrder(row, codes);
+    return { ...mapOrder(row, codes), paymentIntent: await this.payments.getIntent(row.id) };
   }
 
   async create(input: CreateOrderInput): Promise<Order> {
-    if (input.paymentMethod !== 'cash') {
-      throw new Error('Solo el pago en efectivo está habilitado actualmente.');
-    }
     const { data: userData, error: userError } = await this.client.auth.getUser();
     if (userError && !isMissingSession(userError)) throw new Error(userError.message);
     const user = userData.user ?? null;
@@ -401,12 +454,16 @@ export class SupabaseOrderServiceImpl
       p_delivery_reference: input.customer.reference,
       p_request_id: requestId,
       ...(publicMenuChannel ? { p_customer_name: input.customer.name } : {}),
-      ...(input.tableId ? { p_table_id: input.tableId, p_table_session_id: input.tableSessionId ?? null } : {}),
+      ...(input.tableId
+        ? { p_table_id: input.tableId, p_table_session_id: input.tableSessionId ?? null }
+        : {}),
       ...(input.offerCode ? { p_offer_code: input.offerCode.trim().toUpperCase() } : {}),
     };
     const { data, error } = await this.client.rpc(rpcName, rpcPayload);
     if (error) throw new Error(error.message);
-    const result = first(data as ({ order_id: string } & OrderCodes & { guest_access_token?: string | null })[] | null);
+    const result = first(
+      data as ({ order_id: string } & OrderCodes & { guest_access_token?: string | null })[] | null,
+    );
     if (!result) throw new Error('Supabase no devolvió el pedido creado.');
     saveGuestToken(result.order_id, result.guest_access_token);
     const accessToken = result.guest_access_token ?? guestToken(result.order_id);
@@ -436,16 +493,25 @@ export class SupabaseOrderServiceImpl
     } else if (!input.tableId) {
       throw new Error('No pudimos confirmar el punto de entrega.');
     }
+    const paymentIntent =
+      input.paymentMethod === 'cash'
+        ? null
+        : await this.payments.createIntent(
+            result.order_id,
+            input.paymentMethod,
+            accessToken,
+            input.customer.email,
+          );
     if (accessToken) {
       const guest = await this.guestRow(result.order_id, accessToken);
       if (!guest) throw new Error('El pedido fue creado, pero no pudo recuperarse. Reintenta.');
       clearRequest(requestId);
-      return mapGuestOrder(guest);
+      return mapGuestOrder(guest, paymentIntent);
     }
     const row = await this.row(result.order_id);
     if (!row) throw new Error('El pedido fue creado, pero no pudo recuperarse. Reintenta.');
     clearRequest(requestId);
-    return mapOrder(row, result);
+    return { ...mapOrder(row, result), paymentIntent };
   }
 
   async createMenuOrder(input: CreateOrderInput): Promise<Order> {
@@ -499,7 +565,10 @@ export class SupabaseOrderServiceImpl
   }
 
   async cancelByRider(id: string, reason: string): Promise<boolean> {
-    const { data, error } = await this.client.rpc('cancel_order_by_rider', { target_order: id, reason });
+    const { data, error } = await this.client.rpc('cancel_order_by_rider', {
+      target_order: id,
+      reason,
+    });
     if (error) throw new Error(error.message);
     return data === true;
   }
@@ -508,8 +577,11 @@ export class SupabaseOrderServiceImpl
     const channel = this.client
       .channel(`orders-${crypto.randomUUID()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, listener)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payment_attempts' }, listener)
       .subscribe();
-    return () => { void this.client.removeChannel(channel); };
+    return () => {
+      void this.client.removeChannel(channel);
+    };
   }
 
   async listAvailableRiders(restaurantId: string): Promise<AvailableRider[]> {

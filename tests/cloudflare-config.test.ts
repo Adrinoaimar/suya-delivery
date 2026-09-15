@@ -42,6 +42,14 @@ const validEnv = {
   VITE_BACKOFFICE_APP_URL: 'https://suya-backoffice.pages.dev',
 };
 
+const validDeploymentEnv = {
+  ...validEnv,
+  CLOUDFLARE_ACCOUNT_ID: 'account-id',
+  CLOUDFLARE_API_TOKEN: 'token',
+  VITE_CULQI_GATEWAY_ENABLED: 'true',
+  VITE_CULQI_PUBLIC_KEY: 'pk_test_suya_public_key',
+};
+
 function run(args: string[] = [], env: NodeJS.ProcessEnv = validEnv) {
   return new Promise<{ status: number | null; stdout: string; stderr: string }>(
     (resolve, reject) => {
@@ -111,6 +119,21 @@ describe('configuración Cloudflare productiva', () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('CLOUDFLARE_ACCOUNT_ID');
     expect(result.stderr).toContain('CLOUDFLARE_API_TOKEN');
+  });
+
+  it('exige Culqi habilitado y una clave pública válida antes de publicar', async () => {
+    const result = await run(['--deployment'], validEnv);
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('VITE_CULQI_GATEWAY_ENABLED');
+    expect(result.stderr).toContain('VITE_CULQI_PUBLIC_KEY');
+
+    const invalidKey = await run(['--deployment'], {
+      ...validDeploymentEnv,
+      VITE_CULQI_PUBLIC_KEY: 'sk_test_never_in_frontend',
+    });
+    expect(invalidKey.status).toBe(1);
+    expect(invalidKey.stderr).toContain('clave pública pk_test_ o pk_live_');
+    expect(invalidKey.stderr).not.toContain('sk_test_never_in_frontend');
   });
 
   it('confirma que los tres proyectos existan antes de publicar', async () => {

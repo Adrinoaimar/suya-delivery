@@ -21,7 +21,7 @@ export function Drawer({ open, onClose, title, side = 'left', children }: Drawer
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0 z-[1100]">
       <button
         type="button"
         aria-label="Cerrar"
@@ -36,7 +36,7 @@ export function Drawer({ open, onClose, title, side = 'left', children }: Drawer
         aria-labelledby={titleId}
         tabIndex={-1}
         className={cn(
-          'suya-elevated absolute inset-y-0 flex w-[84%] max-w-xs flex-col shadow-soft',
+          'suya-drawer-panel absolute inset-y-0 flex w-[84%] max-w-xs flex-col shadow-soft',
           side === 'left' ? 'left-0 animate-drawer-left' : 'right-0 animate-drawer-right',
         )}
       >

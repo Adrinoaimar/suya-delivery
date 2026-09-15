@@ -6,10 +6,13 @@ import { AppShell } from '@/app/AppShell';
 import { AuthBootstrap } from '@/app/AuthBootstrap';
 import { CatalogBootstrap } from '@/app/CatalogBootstrap';
 import { syncMobileLiveUpdate } from '@/lib/liveUpdate';
+import { removeStaleCustomerServiceWorker } from '@/lib/serviceWorker';
 import '@/styles/index.css';
 
 interface MountOptions {
   Bootstrap?: ComponentType;
+  /** Skips auth/session work for native utility surfaces with their own pairing flow. */
+  bootstrapAuth?: boolean;
   /** Starts the customer catalog while the intro is still visible. */
   preloadCatalog?: boolean;
   registerServiceWorker?: boolean;
@@ -24,7 +27,7 @@ export function mountApp(Routes: ComponentType, options: MountOptions = {}): voi
     <StrictMode>
       <BrowserRouter basename={basename}>
         <AppShell>
-          <AuthBootstrap />
+          {options.bootstrapAuth !== false && <AuthBootstrap />}
           {options.preloadCatalog && <CatalogBootstrap />}
           {options.Bootstrap && <options.Bootstrap />}
           <Routes />
@@ -34,6 +37,15 @@ export function mountApp(Routes: ComponentType, options: MountOptions = {}): voi
   );
 
   void syncMobileLiveUpdate();
+
+  const mobileRole = import.meta.env.VITE_MOBILE_ROLE?.trim();
+  if (
+    import.meta.env.PROD &&
+    !options.registerServiceWorker &&
+    (mobileRole === 'rider' || mobileRole === 'backoffice')
+  ) {
+    removeStaleCustomerServiceWorker();
+  }
 
   if (options.registerServiceWorker && import.meta.env.PROD && 'serviceWorker' in navigator) {
     window.addEventListener('load', () => {

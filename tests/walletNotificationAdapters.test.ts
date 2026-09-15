@@ -36,6 +36,33 @@ describe('wallet notification adapters', () => {
     expect(result?.verification).toBe('unverified');
   });
 
+  it('captures an English sender label and keeps the reference separate', () => {
+    const result = parseWalletNotification({
+      packageName: 'com.applemoncash',
+      title: 'Lemon received',
+      text: 'You received S/ 20.00 from Juan Pérez. Reference: LM-123',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({
+      provider: 'lemon',
+      amountCents: 2000,
+      senderName: 'Juan Pérez',
+      code: 'LM-123',
+    });
+  });
+
+  it('keeps the wallet title separate from a sender before the verb', () => {
+    const result = parseWalletNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Yape',
+      text: 'Ana María Torres te envió S/ 30.00',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({ provider: 'yape', amountCents: 3000, senderName: 'Ana María Torres' });
+  });
+
   it('rejects unverified package IDs even when message says Lemon', () => {
     expect(
       parseWalletNotification({ packageName: 'com.example.lemon', text: 'Lemon recibiste S/ 10.00' }),
@@ -62,6 +89,24 @@ describe('wallet notification adapters', () => {
 
     expect(result).toMatchObject({ provider: 'mercado_pago', amountCents: 2250, currency: 'PEN', code: 'MP-123' });
     expect(result?.verification).toBe('unverified');
+  });
+
+  it('keeps the same fingerprint when the wallet later expands the notification with a code', () => {
+    const first = parseWalletNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Yape recibido',
+      text: 'Recibiste S/ 30.00',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+    const expanded = parseWalletNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Yape recibido',
+      text: 'Recibiste S/ 30.00. Código de operación: 842911',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(expanded?.code).toBe('842911');
+    expect(expanded?.fingerprint).toBe(first?.fingerprint);
   });
 
   it('supports future wallets only through explicit package allowlist', () => {

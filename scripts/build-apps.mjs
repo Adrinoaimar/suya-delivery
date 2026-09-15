@@ -6,7 +6,7 @@ import path from 'node:path';
 import { assertProductionBuildConfig } from './lib/production-build-config.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const supportedApps = ['customer', 'rider', 'backoffice', 'mobile'];
+const supportedApps = ['customer', 'rider', 'backoffice', 'walletobserver', 'mobile'];
 const webApps = ['customer', 'rider', 'backoffice'];
 const requested = process.argv[2] ? [process.argv[2]] : webApps;
 
@@ -21,6 +21,8 @@ for (const app of requested) {
     throw new Error(`Aplicación desconocida: ${app}. Usa ${supportedApps.join(', ')}.`);
   }
 
+  const mobileRole = app === 'mobile' ? 'unified' : app;
+
   await build({
     root: path.join(repoRoot, 'apps', app),
     base: process.env.VITE_BASE ?? '/',
@@ -31,6 +33,9 @@ for (const app of requested) {
       alias: {
         '@': path.join(repoRoot, 'src'),
       },
+    },
+    define: {
+      'import.meta.env.VITE_MOBILE_ROLE': JSON.stringify(mobileRole),
     },
     build: {
       outDir: path.join(repoRoot, 'dist', app),

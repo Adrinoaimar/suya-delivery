@@ -15,10 +15,11 @@ import type { Product, ProductExtra } from '@/types';
 interface ProductSheetProps {
   product: Product | null;
   onClose: () => void;
+  onAdded?: () => void;
 }
 
 /** Detalle del producto: cantidad, extras, instrucciones y agregar al carrito. */
-export function ProductSheet({ product, onClose }: ProductSheetProps) {
+export function ProductSheet({ product, onClose, onAdded }: ProductSheetProps) {
   const addItem = useCartStore((state) => state.addItem);
   const [quantity, setQuantity] = useState(1);
   const [extras, setExtras] = useState<ProductExtra[]>([]);
@@ -59,6 +60,7 @@ export function ProductSheet({ product, onClose }: ProductSheetProps) {
       quantity,
       value: total,
     });
+    onAdded?.();
     onClose();
   }
 

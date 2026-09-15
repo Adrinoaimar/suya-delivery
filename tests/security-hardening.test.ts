@@ -34,11 +34,33 @@ describe('Suya hardening guards', () => {
     expect(gradle).toMatch(/minifyEnabled true/);
     expect(gradle).toMatch(/shrinkResources true/);
     expect(listener).toMatch(/AES\/GCM\/NoPadding/);
+    expect(listener).toMatch(/ingest_wallet_observation/);
+    expect(listener).toMatch(/configureDeviceToken/);
+    expect(listener).toMatch(/getPostTime\(\)/);
+    expect(listener).toMatch(/getKey\(\)/);
+    expect(listener).toMatch(/EXTRA_SUB_TEXT/);
+    expect(listener).toMatch(/EXTRA_INFO_TEXT/);
+    expect(listener).toMatch(/EXTRA_SUMMARY_TEXT/);
+    expect(listener).toMatch(/The stable event/);
+    expect(listener).toMatch(/mergeEvidenceField/);
+    expect(listener).toMatch(/scheduleSyncJob/);
+    expect(listener).toMatch(/pass < 2/);
+    expect(listener).toMatch(/optBoolean\("synced", false\)/);
+    expect(listener).not.toContain('service_role');
     expect(listener).not.toContain('putString(EVENTS_KEY, next.toString())');
+    expect(source('android/app/src/main/java/com/suya/app/SuyaWalletSyncJobService.java')).toMatch(/jobFinished/);
+    const manifest = source('android/app/src/main/AndroidManifest.xml');
+    expect(manifest).toMatch(/RECEIVE_BOOT_COMPLETED/);
+    expect(gradle).toMatch(/suyaWalletObserverEnabled = suyaAndroidAppId == 'com\.suya\.walletobserver'/);
+    expect(manifest).toMatch(/android:enabled="\$\{suyaWalletObserverEnabled\}"/);
   });
 
   it('ships defensive headers with every static Pages bundle', () => {
-    expect(source('public/_headers')).toMatch(/frame-ancestors 'none'/);
-    expect(source('public/_headers')).toMatch(/X-Content-Type-Options: nosniff/);
+    const headers = source('public/_headers');
+    expect(headers).toMatch(/frame-ancestors 'none'/);
+    expect(headers).toMatch(/X-Content-Type-Options: nosniff/);
+    expect(headers).toMatch(/script-src[^\n]*https:\/\/js\.culqi\.com/);
+    expect(headers).toMatch(/connect-src[^\n]*https:\/\/checkoutview\.culqi\.com/);
+    expect(headers).toMatch(/frame-src https:\/\/checkoutview\.culqi\.com/);
   });
 });

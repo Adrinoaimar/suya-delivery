@@ -5,6 +5,9 @@ export interface WalletNotificationInput {
   title?: string;
   text?: string;
   bigText?: string;
+  subText?: string;
+  infoText?: string;
+  summaryText?: string;
   packageName?: string;
   postedAt?: string;
 }
@@ -15,6 +18,7 @@ export interface WalletObservedPayment {
   verification: 'unverified';
   amountCents: number;
   currency: WalletCurrency;
+  senderName: string | null;
   code: string | null;
   observedAt: string;
   fingerprint: string;
@@ -73,6 +77,7 @@ export const DEFAULT_WALLET_NOTIFICATION_ADAPTERS: readonly WalletNotificationAd
 
 const MONEY_PATTERN = /(s\/?|s\.|pen|ars|usd|us\$|\$)\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?)/gi;
 const CODE_PATTERN = /(?:c[oó]digo(?:\s+(?:de\s+)?(?:seguridad|operaci[oó]n|aprobaci[oó]n))?|operaci[oó]n|referencia|reference|ref\.?|id(?:\s+de)?\s+(?:transferencia|operaci[oó]n))\b\s*[:#-]?\s*([a-z0-9-]{3,20})/i;
+const SENDER_PATTERN = /(?:^|\b)(?:de|from|remitente|sender)\s*[:#-]?\s*(?!(?:seguridad|operaci[oó]n|transferencia|pago|payment|referencia|reference)\b)([\p{L}][\p{L}'-]*(?:\s+[\p{L}][\p{L}'-]*){0,4})(?=\s*(?:[.,;:·|]|$|\b(?:te\b|envi[oó]|sent\b|por\b|monto\b|amount\b|operaci[oó]n\b|c[oó]digo\b|ref(?:erencia)?\b|s\/?|pen\b|usd\b|ars\b)))|(?:^|\b)([\p{L}][\p{L}'-]*(?:\s+[\p{L}][\p{L}'-]*){0,4})(?=\s+te\s+(?:envi[oó](?=\s|$)|sent\b))/iu;
 
 function normalizeAmount(value: string): number | null {
   const compact = value.replace(/\s/g, '');
@@ -103,7 +108,25 @@ function fingerprint(prefix: string, value: string): string {
 }
 
 function combinedText(input: WalletNotificationInput): string {
-  return [input.title, input.text, input.bigText].filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+  return [input.title, input.text, input.bigText, input.subText, input.infoText, input.summaryText]
+    .filter(Boolean)
+    .join(' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function senderName(text: string): string | null {
+  const match = text.match(SENDER_PATTERN);
+  const value = (match?.[1] ?? match?.[2])?.replace(/\s+/g, ' ').trim() ?? '';
+  return value.length >= 2 && value.length <= 120 ? value : null;
+}
+
+function senderNameFromFields(input: WalletNotificationInput, text: string): string | null {
+  for (const field of [input.text, input.bigText, input.subText, input.infoText, input.summaryText, input.title]) {
+    const candidate = field ? senderName(field.replace(/\s+/g, ' ').trim()) : null;
+    if (candidate) return candidate;
+  }
+  return senderName(text);
 }
 
 function matchesAdapter(input: WalletNotificationInput, adapter: WalletNotificationAdapter, text: string): boolean {
@@ -141,7 +164,9 @@ export function parseWalletNotification(
 
   const codeMatch = text.match(CODE_PATTERN);
   const observedAt = input.postedAt ?? new Date().toISOString();
-  const stable = `${adapter.source}|${input.packageName}|${observedAt}|${amountCents}|${currency}|${codeMatch?.[1] ?? ''}`;
+  // Wallets may expand one notification later with the operation code. Keep
+  // the fingerprint stable so that enrichment updates the same observation.
+  const stable = `${adapter.source}|${input.packageName}|${observedAt}|${amountCents}|${currency}`;
 
   return {
     provider: adapter.provider,
@@ -149,6 +174,7 @@ export function parseWalletNotification(
     verification: 'unverified',
     amountCents,
     currency,
+    senderName: senderNameFromFields(input, text),
     code: codeMatch?.[1] ?? null,
     observedAt,
     fingerprint: fingerprint(adapter.provider, stable),

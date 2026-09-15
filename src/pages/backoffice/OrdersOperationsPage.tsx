@@ -8,7 +8,7 @@ import { Input } from '@/components/common/Input';
 import { dispatchService, notificationService } from '@/lib/services';
 import type { AvailableRider } from '@/lib/services';
 import { useOrderStore } from '@/store/orderStore';
-import { formatPrice, orderStatusLabel } from '@/utils/format';
+import { formatPrice, orderStatusLabel, paymentLabel } from '@/utils/format';
 
 export default function OrdersOperationsPage() {
   const orders = useOrderStore((state) => state.orders);
@@ -150,6 +150,12 @@ export default function OrdersOperationsPage() {
         const assignable = order.status === 'confirmed' || order.status === 'preparing';
         const isCompleted = order.status === 'delivered' || order.status === 'cancelled';
         const itemCount = order.items.reduce((total, item) => total + item.quantity, 0);
+        const paymentPending = order.paymentMethod !== 'cash' && order.paymentIntent?.status !== 'authorized';
+        const paymentStatus = order.paymentMethod === 'cash'
+          ? 'Efectivo'
+          : order.paymentIntent?.status === 'authorized'
+            ? 'Pago verificado'
+            : 'Pago pendiente';
         return (
           <Card key={order.id} className="space-y-3">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -160,6 +166,12 @@ export default function OrdersOperationsPage() {
                 </span>
                 <p className="text-sm text-[#68716C]">
                   {order.customer.name} · {order.customer.address}
+                </p>
+                <p className={`mt-1 text-xs font-semibold ${paymentPending ? 'text-[#8A6100]' : 'text-suya-green-dark'}`}>
+                  Pago: {paymentLabel(order.paymentMethod)} · {paymentStatus}
+                  {order.paymentIntent?.providerReference && (
+                    <span className="ml-1 font-mono">· {order.paymentIntent.providerReference.slice(-8)}</span>
+                  )}
                 </p>
               </div>
               <div className="text-right">
@@ -219,7 +231,7 @@ export default function OrdersOperationsPage() {
                     ))}
                   </select>
                 </label>
-                {order.status === 'confirmed' && (
+                {order.status === 'confirmed' && !paymentPending && (
                   <Button
                     className="self-end"
                     disabled={busyOrder === order.id}
@@ -228,6 +240,11 @@ export default function OrdersOperationsPage() {
                     <UtensilsCrossed className="h-4 w-4" aria-hidden="true" />
                     Iniciar preparación
                   </Button>
+                )}
+                {order.status === 'confirmed' && paymentPending && (
+                  <p className="self-end rounded-btn bg-suya-sun-soft px-3 py-2 text-xs font-semibold text-[#6B5100]">
+                    Verifica el pago antes de preparar.
+                  </p>
                 )}
               </div>
             )}

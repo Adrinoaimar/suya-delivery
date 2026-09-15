@@ -1,7 +1,12 @@
 package com.suya.app;
 
 import android.app.Notification;
+import android.app.job.JobInfo;
+import android.app.job.JobScheduler;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.text.TextUtils;
@@ -14,6 +19,9 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.KeyStore;
@@ -25,6 +33,8 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,20 +47,25 @@ import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
 
 /**
- * Experimental, local-only wallet notification observer.
+ * Experimental, opt-in wallet notification observer.
  *
- * This service deliberately never marks an order as paid and never sends data
- * to Suya. A notification can be forged or delayed; only an authenticated
- * provider webhook may confirm a payment in production.
+ * This service deliberately never marks an order as paid. Before a device token
+ * is configured, observations remain encrypted locally. After explicit setup,
+ * only minimized evidence is sent to the wallet observation RPC. A notification
+ * can be forged or delayed; it never authorizes a payment by itself.
  */
 public final class YapeNotificationListenerService extends NotificationListenerService {
     private static final String PREFS = "suya_yape_lab";
     private static final String EVENTS_KEY = "observed_events";
+    private static final String DEVICE_TOKEN_KEY = "device_token";
     private static final String KEY_ALIAS = "suya_yape_observed_events";
     private static final String KEYSTORE = "AndroidKeyStore";
+    private static final int SYNC_JOB_ID = 170914;
     private static final int MAX_EVENTS = 100;
+    private static final ExecutorService SYNC_EXECUTOR = Executors.newSingleThreadExecutor();
     private static final Pattern MONEY_PATTERN = Pattern.compile("(S\\/?|S\\.|PEN|ARS|USD|US\\$|\\$)\\s*([0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})?)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CODE_PATTERN = Pattern.compile("(?:c[oó]digo(?:\\s+(?:de\\s+)?(?:seguridad|operaci[oó]n|aprobaci[oó]n))?|operaci[oó]n|referencia|reference|ref\\.?|id(?:\\s+de)?\\s+(?:transferencia|operaci[oó]n))\\b\\s*[:#-]?\\s*([a-z0-9-]{3,20})", Pattern.CASE_INSENSITIVE);
+    private static final Pattern SENDER_PATTERN = Pattern.compile("(?:^|\\b)(?:de|from|remitente|sender)\\s*[:#-]?\\s*(?!(?:seguridad|operaci[oó]n|transferencia|pago|payment|referencia|reference)\\b)([\\p{L}][\\p{L}'-]*(?:\\s+[\\p{L}][\\p{L}'-]*){0,4})(?=\\s*(?:[.,;:·|]|$|\\b(?:te\\b|envi[oó]|sent\\b|por\\b|monto\\b|amount\\b|operaci[oó]n\\b|c[oó]digo\\b|ref(?:erencia)?\\b|S\\/?|PEN\\b|USD\\b|ARS\\b)))|(?:^|\\b)([\\p{L}][\\p{L}'-]*(?:\\s+[\\p{L}][\\p{L}'-]*){0,4})(?=\\s+te\\s+(?:envi[oó](?=\\s|$)|sent\\b))", Pattern.CASE_INSENSITIVE);
     private static final WalletAdapter[] ADAPTERS = new WalletAdapter[]{
             new WalletAdapter("yape", "yape_notification",
                     new String[]{"com.bcp.innovacxion.yapeapp", "com.bcp.yape.app"},
@@ -78,10 +93,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         Notification notification = statusBarNotification.getNotification();
         if (notification == null || notification.extras == null) return;
 
-        String title = notification.extras.getString(Notification.EXTRA_TITLE, "");
-        String text = notification.extras.getCharSequence(Notification.EXTRA_TEXT, "").toString();
-        String bigText = notification.extras.getCharSequence(Notification.EXTRA_BIG_TEXT, "").toString();
-        String combined = TextUtils.join(" ", new String[]{title, text, bigText}).replaceAll("\\s+", " ").trim();
+        String combined = combinedNotificationText(notification.extras);
         String lower = combined.toLowerCase(new Locale("es", "PE"));
         if (combined.isEmpty() || !adapter.matchesText(lower)) return;
 
@@ -92,8 +104,19 @@ public final class YapeNotificationListenerService extends NotificationListenerS
 
         Matcher codeMatcher = CODE_PATTERN.matcher(combined);
         String code = codeMatcher.find() ? codeMatcher.group(1) : null;
-        String observedAt = isoNow();
-        String eventId = sha256(adapter.source + "|" + statusBarNotification.getPackageName() + "|" + statusBarNotification.getPostTime() + "|" + money.amountCents + "|" + money.currency + "|" + (code == null ? "" : code));
+        String senderName = extractSenderNameFromFields(notificationTextFields(notification.extras), combined);
+        long postTime = statusBarNotification.getPostTime();
+        String observedAt = isoAt(postTime);
+        String notificationKey = statusBarNotification.getKey();
+        if (TextUtils.isEmpty(notificationKey)) {
+            notificationKey = statusBarNotification.getPackageName() + "|" + statusBarNotification.getId() + "|" + statusBarNotification.getTag();
+        }
+        // The notification key stays local and is only included in the digest.
+        // Do not include notification content or the operation code: wallets
+        // commonly post a truncated notification and then expand the same
+        // notification with the code. The stable event lets the backend and
+        // local queue enrich one observation instead of creating a duplicate.
+        String eventId = sha256(adapter.source + "|" + statusBarNotification.getPackageName() + "|" + notificationKey + "|" + postTime + "|" + money.amountCents + "|" + money.currency);
 
         JSONObject event = new JSONObject();
         try {
@@ -104,11 +127,59 @@ public final class YapeNotificationListenerService extends NotificationListenerS
             event.put("amountCents", money.amountCents);
             event.put("currency", money.currency);
             event.put("code", code == null ? JSONObject.NULL : code);
+            event.put("senderName", senderName == null ? JSONObject.NULL : senderName);
+            event.put("synced", false);
             event.put("observedAt", observedAt);
         } catch (JSONException ignored) {
             return;
         }
         appendEvent(event);
+        syncPendingEvents(this);
+    }
+
+    private static String combinedNotificationText(Bundle extras) {
+        StringBuilder result = new StringBuilder();
+        for (String value : notificationTextFields(extras)) {
+            if (value == null || value.trim().isEmpty()) continue;
+            if (result.length() > 0) result.append(' ');
+            result.append(value);
+        }
+        return result.toString().replaceAll("\\s+", " ").trim();
+    }
+
+    private static String[] notificationTextFields(Bundle extras) {
+        String[] keys = new String[]{
+                Notification.EXTRA_TITLE,
+                Notification.EXTRA_TEXT,
+                Notification.EXTRA_BIG_TEXT,
+                Notification.EXTRA_SUB_TEXT,
+                Notification.EXTRA_INFO_TEXT,
+                Notification.EXTRA_SUMMARY_TEXT
+        };
+        String[] values = new String[keys.length];
+        for (int index = 0; index < keys.length; index++) {
+            CharSequence value = extras.getCharSequence(keys[index]);
+            values[index] = value == null ? null : value.toString();
+        }
+        return values;
+    }
+
+    static String extractSenderNameFromFields(String[] fields, String combined) {
+        for (String field : fields) {
+            if (field == null || field.trim().isEmpty()) continue;
+            String candidate = extractSenderName(field.replaceAll("\\s+", " ").trim());
+            if (candidate != null) return candidate;
+        }
+        return extractSenderName(combined);
+    }
+
+    static String extractSenderName(String combined) {
+        Matcher matcher = SENDER_PATTERN.matcher(combined);
+        if (!matcher.find()) return null;
+        String value = matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
+        if (value == null) return null;
+        String normalized = value.replaceAll("\\s+", " ").trim();
+        return normalized.length() >= 2 && normalized.length() <= 120 ? normalized : null;
     }
 
     @Nullable
@@ -159,16 +230,202 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         }
         String eventId = event.optString("eventId");
         for (int index = 0; index < current.length(); index++) {
-            if (eventId.equals(current.optJSONObject(index).optString("eventId"))) return;
+            JSONObject existing = current.optJSONObject(index);
+            if (!eventId.equals(existing == null ? null : existing.optString("eventId"))) continue;
+            try {
+                boolean enriched = mergeEvidenceField(existing, event, "code")
+                        | mergeEvidenceField(existing, event, "senderName");
+                if (enriched) {
+                    // A previously uploaded event must be retried so the RPC
+                    // can fill the missing identity fields server-side.
+                    existing.put("synced", false);
+                    current.put(index, existing);
+                    String encrypted = encryptEvents(current.toString());
+                    if (encrypted != null) preferences.edit().putString(EVENTS_KEY, encrypted).apply();
+                }
+            } catch (JSONException ignored) {
+                // Keep the original encrypted event if enrichment fails.
+            }
+            return;
         }
         JSONArray next = new JSONArray();
         next.put(event);
-        for (int index = 0; index < current.length() && next.length() < MAX_EVENTS; index++) {
-            next.put(current.opt(index));
+        // Keep unsent evidence ahead of already-synced history when the local
+        // bounded queue is full. Losing old UI history is safer than dropping
+        // a payment observation that still needs reconciliation.
+        for (int pass = 0; pass < 2 && next.length() < MAX_EVENTS; pass++) {
+            for (int index = 0; index < current.length() && next.length() < MAX_EVENTS; index++) {
+                JSONObject existing = current.optJSONObject(index);
+                if (existing == null || eventId.equals(existing.optString("eventId"))) continue;
+                boolean synced = existing.optBoolean("synced", false);
+                if ((pass == 0 && synced) || (pass == 1 && !synced)) continue;
+                next.put(existing);
+            }
         }
         String encrypted = encryptEvents(next.toString());
         // Never fall back to plaintext if Android Keystore is unavailable.
         if (encrypted != null) preferences.edit().putString(EVENTS_KEY, encrypted).apply();
+    }
+
+    private static boolean mergeEvidenceField(JSONObject existing, JSONObject incoming, String key) throws JSONException {
+        Object incomingValue = incoming.opt(key);
+        if (incomingValue == null || incomingValue == JSONObject.NULL
+                || TextUtils.isEmpty(incomingValue.toString().trim())) return false;
+        Object existingValue = existing.opt(key);
+        if (existingValue != null && existingValue != JSONObject.NULL
+                && !TextUtils.isEmpty(existingValue.toString().trim())) return false;
+        existing.put(key, incomingValue);
+        return true;
+    }
+
+    /** Stores the observer token encrypted and starts a best-effort background sync. */
+    public static boolean configureDeviceToken(Context context, String token) {
+        if (context == null || token == null || token.trim().length() < 48) return false;
+        String encrypted = encryptValue(token.trim());
+        if (encrypted == null) return false;
+        context.getSharedPreferences(PREFS, MODE_PRIVATE)
+                .edit()
+                .putString(DEVICE_TOKEN_KEY, encrypted)
+                .apply();
+        scheduleSyncJob(context);
+        syncPendingEvents(context);
+        return true;
+    }
+
+    public static void clearDeviceToken(Context context) {
+        if (context == null) return;
+        context.getSharedPreferences(PREFS, MODE_PRIVATE).edit().remove(DEVICE_TOKEN_KEY).apply();
+        cancelSyncJob(context);
+    }
+
+    public static boolean isDeviceConfigured(Context context) {
+        if (context == null) return false;
+        String stored = context.getSharedPreferences(PREFS, MODE_PRIVATE).getString(DEVICE_TOKEN_KEY, null);
+        return stored != null && decryptValue(stored) != null;
+    }
+
+    /** Retries only unsent, encrypted local observations; notifications never authorize payments. */
+    public static void syncPendingEvents(Context context) {
+        if (context == null) return;
+        final Context appContext = context.getApplicationContext();
+        SYNC_EXECUTOR.execute(() -> syncPendingEventsBlocking(appContext));
+    }
+
+    static void syncPendingEventsBlockingForJob(Context context) {
+        syncPendingEventsBlocking(context.getApplicationContext());
+    }
+
+    private static void scheduleSyncJob(Context context) {
+        JobScheduler scheduler = (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        if (scheduler == null) return;
+        JobInfo job = new JobInfo.Builder(
+                SYNC_JOB_ID,
+                new ComponentName(context, SuyaWalletSyncJobService.class))
+                .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                .setPersisted(true)
+                .setPeriodic(15 * 60 * 1000L)
+                .setBackoffCriteria(30 * 1000L, JobInfo.BACKOFF_POLICY_EXPONENTIAL)
+                .build();
+        scheduler.schedule(job);
+    }
+
+    private static void cancelSyncJob(Context context) {
+        JobScheduler scheduler = (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
+        if (scheduler != null) scheduler.cancel(SYNC_JOB_ID);
+    }
+
+    private static void syncPendingEventsBlocking(Context context) {
+        SharedPreferences preferences = context.getSharedPreferences(PREFS, MODE_PRIVATE);
+        String encryptedToken = preferences.getString(DEVICE_TOKEN_KEY, null);
+        String token = encryptedToken == null ? null : decryptValue(encryptedToken);
+        if (token == null || BuildConfig.SUYA_SUPABASE_URL.isEmpty() || BuildConfig.SUYA_SUPABASE_PUBLISHABLE_KEY.isEmpty()) return;
+
+        JSONArray current;
+        try {
+            current = new JSONArray(decryptEvents(preferences.getString(EVENTS_KEY, null)));
+        } catch (JSONException ignored) {
+            return;
+        }
+
+        boolean changed = false;
+        for (int index = 0; index < current.length(); index++) {
+            JSONObject event = current.optJSONObject(index);
+            if (event == null || event.optBoolean("synced", false)) continue;
+            if (!uploadEvent(token, event)) break;
+            try {
+                event.put("synced", true);
+                current.put(index, event);
+                changed = true;
+            } catch (JSONException ignored) {
+                break;
+            }
+        }
+        if (changed) {
+            String encrypted = encryptEvents(current.toString());
+            if (encrypted != null) preferences.edit().putString(EVENTS_KEY, encrypted).apply();
+        }
+    }
+
+    private static boolean uploadEvent(String token, JSONObject event) {
+        HttpURLConnection connection = null;
+        try {
+            URL endpoint = new URL(BuildConfig.SUYA_SUPABASE_URL.replaceAll("/+$", "") + "/rest/v1/rpc/ingest_wallet_observation");
+            connection = (HttpURLConnection) endpoint.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setConnectTimeout(5_000);
+            connection.setReadTimeout(5_000);
+            connection.setDoOutput(true);
+            connection.setRequestProperty("apikey", BuildConfig.SUYA_SUPABASE_PUBLISHABLE_KEY);
+            connection.setRequestProperty("Authorization", "Bearer " + BuildConfig.SUYA_SUPABASE_PUBLISHABLE_KEY);
+            connection.setRequestProperty("Content-Type", "application/json");
+            JSONObject payload = new JSONObject();
+            payload.put("p_device_token", token);
+            payload.put("p_event_id", event.optString("eventId"));
+            payload.put("p_provider", event.optString("provider"));
+            payload.put("p_sender_name", event.opt("senderName"));
+            payload.put("p_code", event.opt("code"));
+            payload.put("p_amount_cents", event.optLong("amountCents"));
+            payload.put("p_currency", event.optString("currency"));
+            payload.put("p_observed_at", event.optString("observedAt"));
+            try (OutputStream output = connection.getOutputStream()) {
+                output.write(payload.toString().getBytes(StandardCharsets.UTF_8));
+            }
+            int status = connection.getResponseCode();
+            return status >= 200 && status < 300;
+        } catch (Exception ignored) {
+            return false;
+        } finally {
+            if (connection != null) connection.disconnect();
+        }
+    }
+
+    @Nullable
+    private static String decryptValue(@Nullable String stored) {
+        if (stored == null || stored.isEmpty()) return null;
+        try {
+            String[] parts = stored.split(":", 2);
+            if (parts.length != 2) return null;
+            byte[] iv = Base64.decode(parts[0], Base64.NO_WRAP);
+            byte[] ciphertext = Base64.decode(parts[1], Base64.NO_WRAP);
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, getOrCreateKey(), new GCMParameterSpec(128, iv));
+            return new String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8);
+        } catch (GeneralSecurityException | IllegalArgumentException error) {
+            return null;
+        }
+    }
+
+    @Nullable
+    private static String encryptValue(String value) {
+        try {
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey());
+            String iv = Base64.encodeToString(cipher.getIV(), Base64.NO_WRAP);
+            String ciphertext = Base64.encodeToString(cipher.doFinal(value.getBytes(StandardCharsets.UTF_8)), Base64.NO_WRAP);
+            return iv + ":" + ciphertext;
+        } catch (GeneralSecurityException | IllegalArgumentException error) {
+            return null;
+        }
     }
 
     private static String decryptEvents(@Nullable String stored) {
@@ -225,6 +482,16 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
         format.setTimeZone(TimeZone.getTimeZone("UTC"));
         return format.format(new Date());
+    }
+
+    private static String isoAt(long timestamp) {
+        return timestamp > 0 ? isoFormat().format(new Date(timestamp)) : isoNow();
+    }
+
+    private static SimpleDateFormat isoFormat() {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US);
+        format.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return format;
     }
 
     private static String sha256(String value) {

@@ -124,6 +124,10 @@ export function createCatalogInitialState(): Pick<
 
 // Descarta respuestas de búsquedas que el usuario ya reemplazó por un término nuevo.
 let searchToken = 0;
+let storesRequestToken = 0;
+let categoriesRequestToken = 0;
+const storeRequestTokens = new Map<string, number>();
+const productsRequestTokens = new Map<string, number>();
 
 export const useCatalogStore = create<CatalogState>((set, get) => ({
   ...createCatalogInitialState(),
@@ -132,11 +136,14 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
     const status = get().storesStatus;
     if (!force && (status === 'ready' || status === 'loading')) return;
 
+    const requestToken = ++storesRequestToken;
     set({ storesStatus: 'loading', storesError: null });
     try {
       const stores = await withLoadTimeout(storeService.listStores());
+      if (requestToken !== storesRequestToken) return;
       set({ stores, storesStatus: 'ready', storesError: null });
     } catch {
+      if (requestToken !== storesRequestToken) return;
       set({ storesStatus: 'error', storesError: loadErrorMessage(CATALOG_ERROR_MESSAGE) });
     }
   },
@@ -145,12 +152,15 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
     const status = get().storeStatus[id] ?? 'idle';
     if (!force && (status === 'ready' || status === 'loading')) return;
 
+    const requestToken = (storeRequestTokens.get(id) ?? 0) + 1;
+    storeRequestTokens.set(id, requestToken);
     set((state) => ({
       storeStatus: { ...state.storeStatus, [id]: 'loading' },
       storeError: { ...state.storeError, [id]: null },
     }));
     try {
       const store = await withLoadTimeout(storeService.getStore(id));
+      if (storeRequestTokens.get(id) !== requestToken) return;
       set((state) => ({
         stores: store
           ? [...state.stores.filter((entry) => entry.id !== id), store]
@@ -159,6 +169,7 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
         storeError: { ...state.storeError, [id]: null },
       }));
     } catch {
+      if (storeRequestTokens.get(id) !== requestToken) return;
       set((state) => ({
         storeStatus: { ...state.storeStatus, [id]: 'error' },
         storeError: { ...state.storeError, [id]: loadErrorMessage(CATALOG_ERROR_MESSAGE) },
@@ -169,11 +180,14 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
   async loadCategories(force = false) {
     const status = get().categoriesStatus;
     if (!force && (status === 'ready' || status === 'loading')) return;
+    const requestToken = ++categoriesRequestToken;
     set({ categoriesStatus: 'loading', categoriesError: null });
     try {
       const categories = await withLoadTimeout(storeService.listCategories());
+      if (requestToken !== categoriesRequestToken) return;
       set({ categories, categoriesStatus: 'ready', categoriesError: null });
     } catch {
+      if (requestToken !== categoriesRequestToken) return;
       set({ categoriesStatus: 'error', categoriesError: loadErrorMessage(CATALOG_ERROR_MESSAGE) });
     }
   },
@@ -182,17 +196,21 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
     const status = get().productsStatus[storeId] ?? 'idle';
     if (!force && (status === 'ready' || status === 'loading')) return;
 
+    const requestToken = (productsRequestTokens.get(storeId) ?? 0) + 1;
+    productsRequestTokens.set(storeId, requestToken);
     set((state) => ({
       productsStatus: { ...state.productsStatus, [storeId]: 'loading' },
       productsError: { ...state.productsError, [storeId]: null },
     }));
     try {
       const products = await withLoadTimeout(storeService.listProducts(storeId));
+      if (productsRequestTokens.get(storeId) !== requestToken) return;
       set((state) => ({
         productsByStore: { ...state.productsByStore, [storeId]: products },
         productsStatus: { ...state.productsStatus, [storeId]: 'ready' },
       }));
     } catch {
+      if (productsRequestTokens.get(storeId) !== requestToken) return;
       set((state) => ({
         productsStatus: { ...state.productsStatus, [storeId]: 'error' },
         productsError: { ...state.productsError, [storeId]: loadErrorMessage(PRODUCTS_ERROR_MESSAGE) },

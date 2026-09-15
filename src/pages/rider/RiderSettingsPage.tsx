@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Settings } from 'lucide-react';
 import { Toggle } from '@/components/common/Toggle';
+import { notificationService, riderOperationsService } from '@/lib/services';
 import { useRiderStore } from '@/store/riderStore';
 import { useUserStore } from '@/store/userStore';
 import { useAuthStore } from '@/store/authStore';
@@ -10,6 +12,28 @@ export default function RiderSettingsPage() {
   const identity = useAuthStore((state) => state.identity);
   const preferences = useUserStore((state) => state.preferences);
   const setPreferences = useUserStore((state) => state.setPreferences);
+  const [availabilityBusy, setAvailabilityBusy] = useState(false);
+
+  async function changeAvailability(value: boolean): Promise<void> {
+    if (availabilityBusy) return;
+    setAvailabilityBusy(true);
+    try {
+      const nextStatus = await riderOperationsService.setAvailability(value);
+      const nextAvailable = nextStatus === 'available';
+      setAvailable(nextAvailable);
+      notificationService.notify(
+        nextAvailable ? 'Ahora estás disponible' : 'Ya no recibirás pedidos',
+        nextAvailable ? 'success' : 'info',
+      );
+    } catch (error: unknown) {
+      notificationService.notify(
+        error instanceof Error ? error.message : 'No pudimos cambiar tu disponibilidad.',
+        'danger',
+      );
+    } finally {
+      setAvailabilityBusy(false);
+    }
+  }
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-5 lg:px-8 lg:py-8">
@@ -38,9 +62,14 @@ export default function RiderSettingsPage() {
         <h2 className="font-display text-[15px] font-bold">Preferencias</h2>
         <Toggle
           label="Disponible para pedidos"
-          description="Equivale al interruptor del inicio."
+          description={
+            availabilityBusy
+              ? 'Actualizando tu disponibilidad…'
+              : 'Equivale al interruptor del inicio.'
+          }
           checked={available}
-          onChange={setAvailable}
+          disabled={availabilityBusy}
+          onChange={(value) => void changeAvailability(value)}
         />
         <Toggle
           label="Reducir animaciones"
@@ -49,7 +78,6 @@ export default function RiderSettingsPage() {
           onChange={(value) => setPreferences({ reduceMotion: value })}
         />
       </section>
-
     </div>
   );
 }

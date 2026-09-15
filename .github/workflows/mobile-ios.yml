@@ -29,6 +29,8 @@ jobs:
       VITE_CUSTOMER_APP_URL: https://suyadelivery.com
       VITE_RIDER_APP_URL: https://rider.suyadelivery.com
       VITE_BACKOFFICE_APP_URL: https://panel.suyadelivery.com
+      VITE_CULQI_GATEWAY_ENABLED: ${{ secrets.VITE_CULQI_GATEWAY_ENABLED }}
+      VITE_CULQI_PUBLIC_KEY: ${{ secrets.VITE_CULQI_PUBLIC_KEY }}
     steps:
       - uses: actions/checkout@v4
 
@@ -43,6 +45,11 @@ jobs:
         run: |
           npm run security:secrets
           npm run build:mobile
+
+      - name: Limpiar artefactos SwiftPM del runner
+        run: |
+          rm -rf "$HOME/Library/Caches/org.swift.swiftpm/artifacts"
+          rm -rf "$HOME/Library/Developer/Xcode/DerivedData/SourcePackages"
 
       - name: Compilar para simulador sin firma
         run: |

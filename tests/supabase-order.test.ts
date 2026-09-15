@@ -232,15 +232,50 @@ describe('SupabaseOrderServiceImpl', () => {
     expect(sessionStorage.getItem('suya.pending-cash-order')).toBeNull();
   });
 
-  it.each(['yape', 'card'] as const)('rechaza pago %s antes de llamar Supabase', async (method) => {
-    const { client, rpc, from } = createFakeClient();
+  it('crea intento Yape después de crear la orden y conserva el monto server-side', async () => {
+    const { client, rpc } = createFakeClient({
+      userId: 'customer-1',
+      rowResult: { data: buildRow({ payment_method: 'yape' }), error: null },
+      rpc: async (name) => {
+        if (name === 'set_order_delivery_coordinates') return { data: true, error: null };
+        if (name === 'refresh_payment_intent') {
+          return {
+            data: [
+              {
+                attempt_id: 'attempt-1',
+                order_id: buildRow().id,
+                method: 'yape',
+                status: 'pending',
+                amount: '28.00',
+                currency: 'PEN',
+                checkout_reference: 'SUYA-AB12CD34',
+                expires_at: '2026-08-20T15:30:00.000Z',
+                provider: 'wallet_observer',
+                qr_payload: null,
+              },
+            ],
+            error: null,
+          };
+        }
+        expect(name).toBe('create_cash_order');
+        return {
+          data: [{ order_id: buildRow().id, delivery_code: '1234', cancel_code: '5678' }],
+          error: null,
+        };
+      },
+    });
 
-    await expect(new SupabaseOrderServiceImpl(client).create(createInput(method))).rejects.toThrow(
-      'Solo el pago en efectivo está habilitado actualmente.',
-    );
+    const order = await new SupabaseOrderServiceImpl(client).create(createInput('yape'));
 
-    expect(rpc).not.toHaveBeenCalled();
-    expect(from).not.toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledWith('refresh_payment_intent', {
+      p_order_id: buildRow().id,
+      p_method: 'yape',
+      p_guest_access_token: null,
+    });
+    expect(order).toMatchObject({
+      paymentMethod: 'yape',
+      paymentIntent: { amount: 28, checkoutReference: 'SUYA-AB12CD34', status: 'pending' },
+    });
   });
 
   it('clasifica cancelación inexistente, cerrada y con código inválido', async () => {
@@ -307,7 +342,10 @@ describe('SupabaseOrderServiceImpl', () => {
       rpc: async () => ({ data: true, error: null }),
     });
 
-    const order = await new SupabaseOrderServiceImpl(client).updateStatus(buildRow().id, 'picked_up');
+    const order = await new SupabaseOrderServiceImpl(client).updateStatus(
+      buildRow().id,
+      'picked_up',
+    );
 
     expect(rpc).toHaveBeenCalledWith('transition_order', {
       target_order: buildRow().id,
@@ -324,7 +362,9 @@ describe('SupabaseOrderServiceImpl', () => {
         return { data: true, error: null };
       },
     });
-    await expect(new SupabaseOrderServiceImpl(client).cancelByRider(buildRow().id, 'Vehículo averiado')).resolves.toBe(true);
+    await expect(
+      new SupabaseOrderServiceImpl(client).cancelByRider(buildRow().id, 'Vehículo averiado'),
+    ).resolves.toBe(true);
     expect(rpc).toHaveBeenCalledWith('cancel_order_by_rider', {
       target_order: buildRow().id,
       reason: 'Vehículo averiado',

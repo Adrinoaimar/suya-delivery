@@ -35,7 +35,7 @@ export default function RiderSafetyPage() {
       </div>
 
       <Link
-        to="/help"
+        to="/rider/help"
         className="press flex items-center gap-3 rounded-card border border-white/15 bg-white/5 p-4 text-white transition-colors hover:bg-white/10"
       >
         <CircleHelp className="h-5 w-5 text-suya-lime" aria-hidden="true" />

@@ -7,6 +7,7 @@ import {
   createCatalogInitialState,
   useCatalogStore,
 } from '@/store/catalogStore';
+import type { Store } from '@/types';
 
 describe('catálogo asíncrono', () => {
   beforeEach(() => {
@@ -50,6 +51,27 @@ describe('catálogo asíncrono', () => {
     });
 
     await useCatalogStore.getState().loadStores(true);
+    expect(useCatalogStore.getState().storesStatus).toBe('ready');
+  });
+
+  it('descarta una respuesta de negocios que quedó atrasada frente a una recarga', async () => {
+    let releaseFirst!: (stores: Store[]) => void;
+    const first = new Promise<Store[]>((resolve) => {
+      releaseFirst = resolve;
+    });
+    const [original] = await storeService.listStores();
+    const latest = [{ ...original!, id: 'latest-store', name: 'Negocio actualizado' }];
+
+    vi.spyOn(storeService, 'listStores')
+      .mockReturnValueOnce(first)
+      .mockResolvedValueOnce(latest);
+
+    const staleRequest = useCatalogStore.getState().loadStores(true);
+    await useCatalogStore.getState().loadStores(true);
+    releaseFirst([original!]);
+    await staleRequest;
+
+    expect(useCatalogStore.getState().stores).toEqual(latest);
     expect(useCatalogStore.getState().storesStatus).toBe('ready');
   });
 

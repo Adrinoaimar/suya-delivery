@@ -1,6 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MockOrderServiceImpl } from '@/lib/services/MockOrderService';
+import { orderService } from '@/lib/services';
 import { products } from '@/data';
+import { useOrderStore } from '@/store/orderStore';
 import type { CartItem } from '@/types';
 
 function buildItems(): CartItem[] {
@@ -41,6 +43,11 @@ async function createOrder(service: MockOrderServiceImpl) {
 }
 
 describe('contrato de pedidos async', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    useOrderStore.getState().reset();
+  });
+
   it('crea un pedido sin asignar repartidor aleatorio', async () => {
     const service = new MockOrderServiceImpl();
     const order = await service.create({
@@ -147,5 +154,25 @@ describe('contrato de pedidos async', () => {
     expect((await service.get(order.id))?.status).toBe('delivered');
     expect(second.ok).toBe(false);
     expect(second.ok ? null : second.reason).toBe('already_closed');
+  });
+
+  it('descarta una respuesta vieja cuando una actualización más reciente termina primero', async () => {
+    let resolveOld!: (orders: []) => void;
+    const oldResponse = new Promise<[]>((resolve) => {
+      resolveOld = resolve;
+    });
+    const latestOrder = { id: 'latest-order' } as never;
+    vi.spyOn(orderService, 'list')
+      .mockReturnValueOnce(oldResponse)
+      .mockResolvedValueOnce([latestOrder]);
+
+    const oldRefresh = useOrderStore.getState().refresh();
+    const latestRefresh = useOrderStore.getState().refresh();
+    await latestRefresh;
+    resolveOld([]);
+    await oldRefresh;
+
+    expect(useOrderStore.getState().orders).toEqual([latestOrder]);
+    expect(useOrderStore.getState().status).toBe('ready');
   });
 });

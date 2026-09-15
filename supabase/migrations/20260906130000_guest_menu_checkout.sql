@@ -423,13 +423,13 @@ $$;
 create or replace function public.get_guest_order(p_order_id uuid, p_access_token text)
 returns table (
   order_id uuid, code text, restaurant_id uuid, origin text, status public.order_status,
-  table_id uuid, table_session_id uuid, customer_name text, customer_phone text,
+  payment_method public.payment_method, table_id uuid, table_session_id uuid, customer_name text, customer_phone text,
   delivery_address text, delivery_reference text, subtotal numeric, delivery_fee numeric,
   discount numeric, total numeric, estimated_minutes integer, created_at timestamptz,
   cancellation_reason text, delivery_code text, cancel_code text, items jsonb, events jsonb
 )
 language sql stable security definer set search_path = '' as $$
-  select o.id, o.code, o.restaurant_id, o.origin, o.status, o.table_id, o.table_session_id,
+  select o.id, o.code, o.restaurant_id, o.origin, o.status, o.payment_method, o.table_id, o.table_session_id,
     o.customer_name, o.customer_phone, o.delivery_address, o.delivery_reference,
     o.subtotal, o.delivery_fee, o.discount, o.total, o.estimated_minutes, o.created_at,
     o.cancellation_reason, s.delivery_code, s.cancel_code,

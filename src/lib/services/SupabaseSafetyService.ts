@@ -17,6 +17,22 @@ function requireClient(): SupabaseClient {
   return supabase;
 }
 
+function normalizePosition(latitude: unknown, longitude: unknown) {
+  const lat = Number(latitude);
+  const lng = Number(longitude);
+  if (
+    !Number.isFinite(lat) ||
+    !Number.isFinite(lng) ||
+    lat < -90 ||
+    lat > 90 ||
+    lng < -180 ||
+    lng > 180
+  ) {
+    return null;
+  }
+  return { lat, lng };
+}
+
 export class SupabaseSafetyServiceImpl implements SafetyOperationsService {
   private readonly client: SupabaseClient;
 
@@ -26,10 +42,12 @@ export class SupabaseSafetyServiceImpl implements SafetyOperationsService {
 
   async publishLocation(orderId: string, reading: Parameters<SafetyOperationsService['publishLocation']>[1]) {
     if (reading.simulated) return false;
+    const position = normalizePosition(reading.position.lat, reading.position.lng);
+    if (!position) return false;
     const { data, error } = await this.client.rpc('publish_rider_location', {
       target_order: orderId,
-      latitude: reading.position.lat,
-      longitude: reading.position.lng,
+      latitude: position.lat,
+      longitude: position.lng,
       accuracy_meters: reading.accuracy,
     });
     if (error) throw new Error(error.message);
@@ -67,7 +85,21 @@ export class SupabaseSafetyServiceImpl implements SafetyOperationsService {
       .limit(1)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    return data ? { lat: Number(data.latitude), lng: Number(data.longitude) } : null;
+    return data ? normalizePosition(data.latitude, data.longitude) : null;
+  }
+
+  async locationHistory(orderId: string) {
+    const { data, error } = await this.client.from('rider_locations')
+      .select('latitude, longitude')
+      .eq('order_id', orderId)
+      .order('captured_at', { ascending: false })
+      .limit(180);
+    if (error) throw new Error(error.message);
+    if (!Array.isArray(data)) return [];
+    return data.flatMap((reading) => {
+      const position = normalizePosition(reading.latitude, reading.longitude);
+      return position ? [position] : [];
+    }).reverse();
   }
 
   subscribeLocation(orderId: string, listener: (position: { lat: number; lng: number }) => void) {
@@ -75,11 +107,8 @@ export class SupabaseSafetyServiceImpl implements SafetyOperationsService {
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'rider_locations', filter: `order_id=eq.${orderId}`,
       }, (payload) => {
-        const latitude = Number(payload.new.latitude);
-        const longitude = Number(payload.new.longitude);
-        if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
-          listener({ lat: latitude, lng: longitude });
-        }
+        const position = normalizePosition(payload.new.latitude, payload.new.longitude);
+        if (position) listener(position);
       })
       .subscribe();
     return () => { void this.client.removeChannel(channel); };
