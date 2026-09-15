@@ -32,6 +32,8 @@ select ok((select pg_get_functiondef('public.create_menu_order_with_payment(uuid
   like '%apply_app_offer%'), 'menu atómico aplica la oferta antes del cobro');
 select ok((select pg_get_functiondef('public.get_payment_intent(uuid,text)'::regprocedure)
   like '%v_attempt.receiver_account_id%'), 'consulta de pago conserva la cuenta receptora');
+select ok((select pg_get_function_result('public.get_payment_intent(uuid,text)'::regprocedure)
+  like '%provider_reference%'), 'consulta de pago conserva la referencia del proveedor');
 
 insert into auth.users (
   instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
@@ -99,7 +101,9 @@ select throws_ok(
   $$ select public.verify_wallet_payment('b7900000-0000-0000-0000-000000000001', 'b7700000-0000-0000-0000-000000000001') $$,
   'payment identity is ambiguous; full operation code required',
   'la colisión de código completo no se autoriza');
+reset role;
 delete from public.payment_attempts where id = 'b7700000-0000-0000-0000-000000000002';
+set local role authenticated;
 select lives_ok(
   $$ select public.verify_wallet_payment('b7900000-0000-0000-0000-000000000001', 'b7700000-0000-0000-0000-000000000001') $$,
   'una coincidencia única sí se verifica');

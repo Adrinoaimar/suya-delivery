@@ -149,6 +149,7 @@ returns table (
   checkout_reference text,
   expires_at timestamptz,
   provider text,
+  provider_reference text,
   qr_payload text
 )
 language plpgsql
@@ -191,7 +192,7 @@ begin
   end if;
   return query select v_attempt.id, v_attempt.order_id, v_attempt.method, v_attempt.status,
     v_attempt.amount, 'PEN'::text, v_attempt.checkout_reference, v_attempt.expires_at,
-    v_attempt.provider, v_qr_payload;
+    v_attempt.provider, v_attempt.provider_reference, v_qr_payload;
 end;
 $$;
 
@@ -390,8 +391,8 @@ revoke all on function private.require_wallet_account(uuid, text) from public, a
 revoke all on function private.set_checkout_coordinates(uuid, double precision, double precision) from public, anon, authenticated;
 revoke all on function public.create_delivery_order_with_payment(uuid, jsonb, text, text, text, uuid, text, text, double precision, double precision) from public, anon;
 grant execute on function public.create_delivery_order_with_payment(uuid, jsonb, text, text, text, uuid, text, text, double precision, double precision) to authenticated;
-revoke all on function public.create_menu_order_with_payment(uuid, jsonb, text, text, text, uuid, text, text, double precision, double precision, double precision) from public;
-grant execute on function public.create_menu_order_with_payment(uuid, jsonb, text, text, text, uuid, text, text, double precision, double precision, double precision) to anon, authenticated;
+revoke all on function public.create_menu_order_with_payment(uuid, jsonb, text, text, text, text, uuid, text, text, double precision, double precision) from public;
+grant execute on function public.create_menu_order_with_payment(uuid, jsonb, text, text, text, text, uuid, text, text, double precision, double precision) to anon, authenticated;
 revoke all on function public.create_table_order_with_payment(uuid, jsonb, text, text, text, text, uuid, uuid, uuid, text, text) from public;
 grant execute on function public.create_table_order_with_payment(uuid, jsonb, text, text, text, text, uuid, uuid, uuid, text, text) to anon, authenticated;
 

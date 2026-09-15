@@ -328,6 +328,13 @@ values (
 );
 insert into public.restaurant_members (restaurant_id, user_id, role)
 values ('a6200000-0000-0000-0000-000000000001', 'a6000000-0000-0000-0000-000000000003', 'owner');
+insert into public.restaurant_payment_accounts (
+  id, restaurant_id, provider, account_label, qr_payload, active
+) values
+  ('a6250000-0000-0000-0000-000000000001', 'a6200000-0000-0000-0000-000000000001',
+   'yape', 'Caja Yape', 'yape://payment-loop-test', true),
+  ('a6250000-0000-0000-0000-000000000002', 'a6200000-0000-0000-0000-000000000001',
+   'lemon', 'Caja Lemon', 'lemon://payment-loop-test', true);
 insert into public.orders (
   id, code, customer_id, restaurant_id, status, payment_method, subtotal, delivery_fee,
   customer_name, customer_phone, delivery_address, estimated_minutes, idempotency_key
@@ -416,15 +423,17 @@ select lives_ok(
 reset role;
 
 insert into public.wallet_observer_devices (
-  id, restaurant_id, label, token_hash, token_last4
+  id, restaurant_id, receiver_account_id, label, token_hash, token_last4
 ) values (
   'a6500000-0000-0000-0000-000000000001', 'a6200000-0000-0000-0000-000000000001',
+  'a6250000-0000-0000-0000-000000000001',
   'Caja de prueba', extensions.crypt('payment-loop-device-token', extensions.gen_salt('bf')), 'beef'
 );
 insert into public.wallet_observer_devices (
-  id, restaurant_id, label, token_hash, token_last4
+  id, restaurant_id, receiver_account_id, label, token_hash, token_last4
 ) values (
   'a6500000-0000-0000-0000-000000000002', 'a6200000-0000-0000-0000-000000000001',
+  'a6250000-0000-0000-0000-000000000001',
   'Caja de enriquecimiento',
   extensions.crypt('wallet-observer-enrichment-device-token-12345678901234567890', extensions.gen_salt('bf')),
   '7890'
@@ -465,18 +474,18 @@ select is(
 reset role;
 
 insert into public.wallet_observations (
-  id, device_id, restaurant_id, event_id, provider, sender_name, code_digest,
+  id, device_id, restaurant_id, receiver_account_id, event_id, provider, sender_name, code_digest,
   code_fingerprint, code_last4, amount_cents, currency, observed_at
 ) values
   (
     'a6600000-0000-0000-0000-000000000001', 'a6500000-0000-0000-0000-000000000001',
-    'a6200000-0000-0000-0000-000000000001', 'payment-loop-event-1', 'yape', 'Ana Uno',
+    'a6200000-0000-0000-0000-000000000001', 'a6250000-0000-0000-0000-000000000001', 'payment-loop-event-1', 'yape', 'Ana Uno',
     extensions.crypt('111111', extensions.gen_salt('bf')),
     encode(extensions.digest('111111', 'sha256'), 'hex'), '1111', 3000, 'PEN', now()
   ),
   (
     'a6600000-0000-0000-0000-000000000002', 'a6500000-0000-0000-0000-000000000001',
-    'a6200000-0000-0000-0000-000000000001', 'payment-loop-event-2', 'yape', 'Ana Dos',
+    'a6200000-0000-0000-0000-000000000001', 'a6250000-0000-0000-0000-000000000001', 'payment-loop-event-2', 'yape', 'Ana Dos',
     extensions.crypt('222222', extensions.gen_salt('bf')),
     encode(extensions.digest('222222', 'sha256'), 'hex'), '2222', 3000, 'PEN', now()
   );
@@ -566,11 +575,11 @@ where order_id in (
   'a6300000-0000-0000-0000-000000000006'
 );
 insert into public.wallet_observations (
-  id, device_id, restaurant_id, event_id, provider, sender_name, code_digest,
+  id, device_id, restaurant_id, receiver_account_id, event_id, provider, sender_name, code_digest,
   code_fingerprint, code_last4, amount_cents, currency, observed_at
 ) values (
   'a6600000-0000-0000-0000-000000000003', 'a6500000-0000-0000-0000-000000000001',
-  'a6200000-0000-0000-0000-000000000001', 'payment-loop-event-3', 'yape', 'Remitente no identificado',
+  'a6200000-0000-0000-0000-000000000001', 'a6250000-0000-0000-0000-000000000001', 'payment-loop-event-3', 'yape', 'Remitente no identificado',
   null, null, '1234', 3000, 'PEN', now()
 );
 
@@ -642,11 +651,11 @@ update public.payment_attempts
 set created_at = now() + interval '1 minute', payer_code_last4 = '7777', payer_code_digest = null
 where order_id = 'a6300000-0000-0000-0000-000000000007';
 insert into public.wallet_observations (
-  id, device_id, restaurant_id, event_id, provider, sender_name, code_digest,
+  id, device_id, restaurant_id, receiver_account_id, event_id, provider, sender_name, code_digest,
   code_fingerprint, code_last4, amount_cents, currency, observed_at
 ) values (
   'a6600000-0000-0000-0000-000000000004', 'a6500000-0000-0000-0000-000000000001',
-  'a6200000-0000-0000-0000-000000000001', 'payment-loop-event-4', 'yape', 'Remitente futuro',
+  'a6200000-0000-0000-0000-000000000001', 'a6250000-0000-0000-0000-000000000001', 'payment-loop-event-4', 'yape', 'Remitente futuro',
   null, null, '7777', 3000, 'PEN', now()
 );
 set local request.jwt.claims =
@@ -711,11 +720,11 @@ select is(
   'el intento cancelado conserva motivo operativo'
 );
 insert into public.wallet_observations (
-  id, device_id, restaurant_id, event_id, provider, sender_name, code_digest,
+  id, device_id, restaurant_id, receiver_account_id, event_id, provider, sender_name, code_digest,
   code_fingerprint, code_last4, amount_cents, currency, observed_at
 ) values (
   'a6600000-0000-0000-0000-000000000005', 'a6500000-0000-0000-0000-000000000001',
-  'a6200000-0000-0000-0000-000000000001', 'payment-loop-event-5', 'yape', 'Cliente Cancelado',
+  'a6200000-0000-0000-0000-000000000001', 'a6250000-0000-0000-0000-000000000001', 'payment-loop-event-5', 'yape', 'Cliente Cancelado',
   extensions.crypt('333333', extensions.gen_salt('bf')),
   encode(extensions.digest('333333', 'sha256'), 'hex'), '3333', 3000, 'PEN', now()
 );
