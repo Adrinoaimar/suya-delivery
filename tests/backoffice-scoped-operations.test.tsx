@@ -140,6 +140,21 @@ describe('operaciones con alcance de cuenta de restaurante', () => {
     expect(mocks.listTables).toHaveBeenCalledWith([restaurant.id]);
   });
 
+  it('muestra la cuenta fijada antes de que termine la carga de mesas', async () => {
+    let releaseTables!: (value: unknown[]) => void;
+    mocks.listTables.mockImplementationOnce(
+      () => new Promise<unknown[]>((resolve) => {
+        releaseTables = resolve;
+      }),
+    );
+
+    render(<TablesOperationsPage />);
+
+    expect(await screen.findByText('Cuenta fijada')).toBeInTheDocument();
+    expect(screen.getByText(restaurant.name)).toBeInTheDocument();
+    releaseTables([]);
+  });
+
   it('carga los platos y el estado de publicación de la cuenta', async () => {
     render(<CatalogPage />);
 
@@ -147,6 +162,36 @@ describe('operaciones con alcance de cuenta de restaurante', () => {
     expect(screen.getByText(/1 platos disponibles · Publicado/)).toBeInTheDocument();
     expect(mocks.listProducts).toHaveBeenCalledWith(restaurant.id);
     expect(mocks.getMenuSettings).toHaveBeenCalledWith(restaurant.id);
+  });
+
+  it('muestra el restaurante antes de que terminen platos y configuración', async () => {
+    let releaseProducts!: (value: Product[]) => void;
+    let releaseSettings!: (value: unknown) => void;
+    mocks.listProducts.mockImplementationOnce(
+      () => new Promise<Product[]>((resolve) => {
+        releaseProducts = resolve;
+      }),
+    );
+    mocks.getMenuSettings.mockImplementationOnce(
+      () => new Promise<unknown>((resolve) => {
+        releaseSettings = resolve;
+      }),
+    );
+
+    render(<CatalogPage />);
+
+    expect(await screen.findByText(restaurant.name)).toBeInTheDocument();
+    releaseProducts([product]);
+    releaseSettings({
+      restaurantId: restaurant.id,
+      slug: 'donde-joel-menu',
+      published: true,
+      logoUrl: null,
+      heroImageUrl: null,
+      primaryColor: '#0647A9',
+      accentColor: '#FF7A00',
+      fontFamily: 'Inter',
+    });
   });
 
   it('preselecciona el primer restaurante visible para administración', async () => {
