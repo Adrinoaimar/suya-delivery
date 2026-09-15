@@ -47,6 +47,10 @@ for (const viewport of viewports) {
           path: location.pathname,
           overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
           unnamed,
+          cookies: document.cookie,
+          externalScripts: [...document.scripts]
+            .map((script) => script.src)
+            .filter((src) => src && new URL(src, location.href).origin !== location.origin),
         };
       });
       if (!response?.ok()) failures.push(`${target.app}/${viewport.name}: HTTP ${response?.status()}`);
@@ -54,6 +58,8 @@ for (const viewport of viewports) {
       if (state.path !== target.path) failures.push(`${target.app}/${viewport.name}: ruta ${state.path}`);
       if (state.overflow) failures.push(`${target.app}/${viewport.name}: overflow horizontal`);
       if (state.unnamed.length) failures.push(`${target.app}/${viewport.name}: controles sin nombre`);
+      if (state.cookies) failures.push(`${target.app}/${viewport.name}: cookies presentes`);
+      if (state.externalScripts.length) failures.push(`${target.app}/${viewport.name}: scripts externos`);
       if (pageErrors.length) failures.push(`${target.app}/${viewport.name}: pageerror ${pageErrors.join(' | ')}`);
       console.log(`${target.app}/${viewport.name}: HTTP ${response?.status()} h1=${state.heading} path=${state.path}`);
     } catch (error) {
