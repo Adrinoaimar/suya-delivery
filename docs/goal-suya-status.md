@@ -17,7 +17,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 | HEAD inicial | `5a6a36f fix(backoffice): keep restaurant context for multi-store staff` |
 | Node / Vite | Node `22.23.2`; Vite `8.2.1` |
 | Pruebas antes de esta ejecución | 63 archivos / 281 pruebas |
-| Estado actual | Implementación de caja guardada en `3630c81`; `output/` conservado sin versionar |
+| Estado actual | Implementación de caja y protección contra cargas obsoletas guardadas en `0263ec7`; `output/` conservado sin versionar |
 | Prohibiciones respetadas | Sin pagos reales, producción, migraciones remotas, contratación, publicación o borrado destructivo |
 
 ## Cambios implementados en este checkpoint
@@ -84,9 +84,9 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 
 - `npm run typecheck`: pasa.
 - `npm run lint`: pasa sin warnings.
-- `npm test -- --run`: **65 archivos / 288 pruebas pasan** tras integrar la caja auditable y el cobro de mesas.
+- `npm test -- --run`: **65 archivos / 289 pruebas pasan** tras integrar la caja auditable, el cobro de mesas y la regresión de cambio rápido de restaurante.
 - Pruebas focalizadas de acceso invitado/order/payment/layout: 19/19 pasan.
-- `tests/backoffice-layout.test.tsx`, `tests/cash-register-page.test.tsx` y `tests/supabase-cash-register.test.ts`: **8/8** pasan.
+- `tests/backoffice-layout.test.tsx`, `tests/cash-register-page.test.tsx` y `tests/supabase-cash-register.test.ts`: **9/9** pasan; la carga obsoleta no puede reemplazar la cuenta seleccionada.
 - `npm run build`: pasa.
 - `npm run security:secrets`: pasa; 906 archivos sin patrones de secreto.
 - Build/aislamiento de bundles customer, rider y backoffice con configuración local sintética: pasa.
