@@ -1,5 +1,6 @@
 import {
   Building2,
+  Banknote,
   ClipboardList,
   LayoutDashboard,
   LogOut,
@@ -35,13 +36,14 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
     { to: `${prefix}/tables`, label: 'Mesas y QR', icon: Table2 },
     { to: `${prefix}/catalog`, label: 'Catálogo', icon: Store },
     { to: `${prefix}/offers`, label: 'Ofertas', icon: Tag },
+    { to: `${prefix}/cash`, label: 'Caja', icon: Banknote },
     { to: `${prefix}/wallets`, label: 'Dispositivos de pagos', icon: Wallet },
     { to: `${prefix}/riders`, label: 'Repartidores', icon: Users },
     { to: `${prefix}/restaurants`, label: 'Restaurantes', icon: Building2, platformAdminOnly: true },
     { to: `${prefix}/settings`, label: 'Configuración', icon: Settings },
   ].filter((item) => !item.platformAdminOnly || isPlatformAdmin);
   const mobileNavigation = navigation.filter((item) =>
-    ['Resumen', 'Pedidos', 'Mesas y QR', 'Dispositivos de pagos'].includes(item.label),
+    ['Resumen', 'Pedidos', 'Mesas y QR', 'Caja'].includes(item.label),
   );
   const mobileMoreNavigation = navigation.filter((item) => !mobileNavigation.includes(item));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

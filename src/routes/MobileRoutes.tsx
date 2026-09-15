@@ -20,6 +20,7 @@ const TablesOperationsPage = lazy(() => import('@/pages/backoffice/TablesOperati
 const CatalogPage = lazy(() => import('@/pages/backoffice/CatalogPage'));
 const OffersPage = lazy(() => import('@/pages/backoffice/OffersPage'));
 const WalletsOperationsPage = lazy(() => import('@/pages/backoffice/WalletsOperationsPage'));
+const CashRegisterPage = lazy(() => import('@/pages/backoffice/CashRegisterPage'));
 const RidersOperationsPage = lazy(() => import('@/pages/backoffice/RidersOperationsPage'));
 const BackofficePage = lazy(() =>
   import('@/pages/backoffice/BackofficePage').then((module) => ({
@@ -95,6 +96,7 @@ function MobileBackofficeRoutes() {
           <Route path="catalog" element={<CatalogPage />} />
           <Route path="offers" element={<OffersPage />} />
           <Route path="wallets" element={<WalletsOperationsPage />} />
+          <Route path="cash" element={<CashRegisterPage />} />
           <Route path="riders" element={<RidersOperationsPage />} />
           <Route element={<RequireAccess anyOf={['platform_admin']} />}>
             <Route

@@ -68,6 +68,8 @@ interface OrderRow {
   delivery_reference: string;
   delivery_latitude: number | null;
   delivery_longitude: number | null;
+  cash_register_session_id?: string | null;
+  cash_collected_at?: string | null;
   estimated_minutes: number;
   created_at: string;
   restaurants:
@@ -124,6 +126,7 @@ const ORDER_SELECT = `
   subtotal, delivery_fee, discount, total, customer_name, customer_phone,
   delivery_address, delivery_reference, estimated_minutes, created_at,
   delivery_latitude, delivery_longitude,
+  cash_register_session_id, cash_collected_at,
   restaurants!inner(name, latitude, longitude),
   order_items(id, product_id, product_name, unit_price, quantity, extras, note, image_url),
   order_events(status, created_at),
@@ -219,6 +222,8 @@ function mapOrder(row: OrderRow, codes?: OrderCodes): Order {
     origin:
       row.origin === 'menu' ? 'suya_menu' : row.origin === 'table_qr' ? 'table_qr' : 'delivery',
     tableId: row.table_id ?? null,
+    cashRegisterSessionId: row.cash_register_session_id ?? null,
+    cashCollectedAt: row.cash_collected_at ?? null,
     history,
     customer: {
       name: row.customer_name,

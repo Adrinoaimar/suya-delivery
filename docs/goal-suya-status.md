@@ -16,8 +16,8 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 | Rama inicial del checkpoint | `feat/backoffice-restaurant-ops` |
 | HEAD inicial | `5a6a36f fix(backoffice): keep restaurant context for multi-store staff` |
 | Node / Vite | Node `22.23.2`; Vite `8.2.1` |
-| Pruebas antes de esta ejecución | 62 archivos / 271 pruebas |
-| Estado actual | Implementación y tests locales guardados hasta `9e33530`; `output/` preexistente conservado sin versionar |
+| Pruebas antes de esta ejecución | 63 archivos / 281 pruebas |
+| Estado actual | Implementación de caja guardada en `5df4152`; `output/` conservado sin versionar |
 | Prohibiciones respetadas | Sin pagos reales, producción, migraciones remotas, contratación, publicación o borrado destructivo |
 
 ## Cambios implementados en este checkpoint
@@ -38,7 +38,9 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - Migración `20260915110000_internal_order_mutation_context.sql`: las RPC `SECURITY DEFINER` habilitan capacidades transaccionales locales para coordenadas, verificación y cancelación; los clientes siguen sin `UPDATE` directo.
 - Migración `20260915120000_payment_intent_refresh_qualification.sql`: renovación de wallet califica `status`/`expires_at` para evitar ambigüedad con parámetros de salida; los fixtures SQL exigen receptor exacto y diferencian limpieza administrativa de acciones cliente.
 - Analytics/UTM convertido en no-op estricto; la sesión nativa no persiste refresh token en Web Storage.
-- Android `versionCode 4`, `versionName 1.3`; se desbloqueó temporalmente la toolchain local y se generaron APKs debug separados de Rider, Backoffice y Wallet Observer.
+- Android `versionCode 5`, `versionName 1.4`; se desbloqueó temporalmente la toolchain local y se generaron APKs debug separados de Rider, Backoffice y Wallet Observer.
+- Caja por restaurante y turno: `cash_register_sessions`/`cash_register_entries`, apertura, cobro, ajustes y cierre idempotentes; el saldo esperado se calcula en servidor y el arqueo exige explicación cuando hay diferencia.
+- Pedidos delivery en efectivo y mesas con pago en efectivo quedan vinculados al turno; el reintento de mesa reutiliza `payment_request_id` y no duplica el movimiento.
 
 ## Matriz de hallazgos
 
@@ -74,7 +76,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | A-05 | En verificación | Native Supabase no persiste refresh token en Web Storage; token observador usa Keystore | Compilar Android y probar cierre/reinicio; evaluar secure storage de sesión |
 | A-06 | Verificado local | `.range(0,49)` y sin N+1 de códigos; test de servicio pasa | Confirmar paginación/índice en DB |
 | A-07 | En verificación | Migración nueva forward-only y test pgTAP añadido | Instalación limpia, actualización y rollback restaurable |
-| A-08 | En verificación | APKs debug Rider/Backoffice/Wallet Observer generadas con versionCode 4/versionName 1.3; hashes registrados abajo | Capturas, instalación/actualización y firma release |
+| A-08 | En verificación | APKs debug Rider/Backoffice/Wallet Observer generadas con versionCode 5/versionName 1.4; hashes registrados abajo | Capturas, instalación/actualización y firma release |
 | A-09 | En verificación | RPC account-aware, revocación por `active`, token hash y auditoría existente | SQL/RLS/concurrencia en DB local |
 | A-10 | En verificación | Navegador sin cookies y sin scripts de tracking; controles sin nombre: 0 | Revisión completa de logs, GPS, teléfonos, direcciones y permisos |
 
@@ -82,23 +84,24 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 
 - `npm run typecheck`: pasa.
 - `npm run lint`: pasa sin warnings.
-- `npm test -- --run`: **63 archivos / 281 pruebas pasan** tras integrar la recuperación de invitado, la huella de idempotencia y la protección de overlays.
+- `npm test -- --run`: **65 archivos / 288 pruebas pasan** tras integrar la caja auditable y el cobro de mesas.
 - Pruebas focalizadas de acceso invitado/order/payment/layout: 19/19 pasan.
-- `tests/backoffice-layout.test.tsx`: 1/1 pasa tras compactar navegación móvil.
+- `tests/backoffice-layout.test.tsx`, `tests/cash-register-page.test.tsx` y `tests/supabase-cash-register.test.ts`: **8/8** pasan.
 - `npm run build`: pasa.
-- `npm run security:secrets`: pasa; 890 archivos sin patrones de secreto.
+- `npm run security:secrets`: pasa; 906 archivos sin patrones de secreto.
 - Build/aislamiento de bundles customer, rider y backoffice con configuración local sintética: pasa.
 - Smoke visual/a11y web: customer, Rider y Backoffice pasan **12/12** en 360×800, 390×844, tablet y desktop sin overflow; barras inferiores no filtran texto; keyboard traversal customer con 16 controles nombrados/visibles y 0 sin nombre; cookies y scripts de tracking: vacíos.
 - Evidencia gráfica web final a 390×844, capturada después del loader: `output/evidence/goal-20260915/customer-390x844.png`, `rider-390x844.png` y `backoffice-390x844.png`; las tres respuestas fueron HTTP 200, sin errores de página, cookies, tracking ni overflow. La evidencia nativa sobre APK sigue pendiente.
 - Bundle customer compilado: recuperación guest E2E sintética pasa (`#access` se consume y el token queda en sesión); los errores observados son solicitudes a Postgres local no disponible.
 - `npm run test:e2e` con previews de los tres bundles levantados: pasa **12/12 combinaciones** (customer/Rider/Back Office en 360×800, 390×844, tablet y desktop), con HTTP 200, ruta/encabezado esperado, sin overflow, controles nombrados y sin `pageerror`.
 - `npm run verify:payments`: rechazado por configuración productiva ausente; correcto para este entorno sin despliegue.
+- `npm run build:apps` con configuración pública sintética y `VITE_CULQI_GATEWAY_ENABLED=false`: pasa; customer, Rider y Backoffice quedan aislados.
 - Android: `bash android/gradlew test --no-daemon` pasa 4/4 pruebas unitarias y `assembleDebug` pasa para Rider, Backoffice y Wallet Observer; advertencia existente de API deprecada en `YapeNotificationListenerService.java`, sin fallo de compilación.
-- PostgreSQL temporal 17.6.1 con esquema mínimo oficial de Auth/Storage equivalente: instalación limpia de **53 migraciones**, `seed.sql` y **24/24 archivos pgTAP** pasan; incluye los casos de checkout atómico, receptor exacto, colisión de código, renovación, cancelación, coordenadas e idempotencia guest. Es evidencia independiente del port-forward, no reemplaza la ejecución oficial de `supabase db lint/test`.
-- APK Rider debug: `output/apks/goal-20260915/Suya-Rider-debug.apk`, 25,370,737 bytes, SHA-256 `c36675e5a65e509076d9864136c7f0d78278e53889f3e6a444ab939347a93036`, paquete `com.suya.rider`, etiqueta `Suya Repartidor`, árbol fuente `d8fc9d0`.
-- APK Backoffice debug: `output/apks/goal-20260915/Suya-Backoffice-debug.apk`, 25,234,524 bytes, SHA-256 `85d4ecd182758d641c5a065a0f28a81fc77fe45eb73b417ba95dafd4aa9b53fc`, paquete `com.suya.backoffice`, etiqueta `Suya Backoffice`, árbol fuente `d8fc9d0`.
-- APK Wallet Observer debug: `output/apks/goal-20260915/Suya-Wallet-Observer-debug.apk`, 25,191,916 bytes, SHA-256 `a7839304c5c4bb0479880f079b4e608dd9c2cb6281ce95e11dac265a19c2c8ac`, paquete `com.suya.walletobserver`, etiqueta `Suya`, árbol fuente `d8fc9d0`.
-- Los tres APK son debug, están firmados con la clave debug del entorno y no son entregables de producción.
+- PostgreSQL temporal 17.6.1 con esquema mínimo oficial de Auth/Storage equivalente: instalación limpia de **53 migraciones**, `seed.sql` y **24/24 archivos pgTAP** pasan; la migración de caja (`20260915130000`) es la número 54 y queda pendiente de repetir en el flujo oficial. Es evidencia independiente del port-forward, no reemplaza `supabase db lint/test`.
+- APK Rider debug: `output/android/Suya-Rider-debug.apk`, 25,370,777 bytes, SHA-256 `378d4a29414eab3f2f6db6eb28f065e741bcab3b0ceea29cda18dc187266ce5d`, paquete `com.suya.rider`, `versionName 1.4`, `versionCode 5`.
+- APK Backoffice debug: `output/android/Suya-Backoffice-debug.apk`, 25,238,708 bytes, SHA-256 `cd3ef7cc4f07c1d5242b6353cdfe0924cb252defc57c7faf9aeb794868ff0433`, paquete `com.suya.backoffice`, `versionName 1.4`, `versionCode 5`.
+- APK Wallet Observer debug: `output/android/Suya-Wallet-Observer-debug.apk`, 25,191,916 bytes, SHA-256 `9e7d449d700798cb3b0d1bc14dd0f9bfb3e4c3a6a89b484982aa57a09b65f710`, paquete `com.suya.walletobserver`, `versionName 1.4`, `versionCode 5`.
+- Las tres APK pasan `unzip -tqq` y `apksigner verify` con APK Signature Scheme v2; están firmadas con la clave debug del entorno y no son entregables de producción.
 
 ## Bloqueos reproducibles
 

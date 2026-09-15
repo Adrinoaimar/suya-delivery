@@ -40,12 +40,13 @@ describe('navegación del backoffice', () => {
     const mobileNavigation = screen.getByRole('navigation', { name: 'Operaciones móviles' });
     expect(mobileNavigation).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Más' })).toBeInTheDocument();
-    expect(within(mobileNavigation).getByRole('link', { name: 'Dispositivos de pagos' })).toBeInTheDocument();
+    expect(within(mobileNavigation).getByRole('link', { name: 'Caja' })).toBeInTheDocument();
     screen.getByRole('button', { name: 'Más' }).click();
     await waitFor(() =>
       expect(screen.getByRole('navigation', { name: 'Más operaciones' })).toBeInTheDocument(),
     );
     const moreNavigation = screen.getByRole('navigation', { name: 'Más operaciones' });
+    expect(within(moreNavigation).getByRole('link', { name: 'Dispositivos de pagos' })).toBeInTheDocument();
     expect(within(moreNavigation).getByRole('link', { name: 'Repartidores' })).toBeInTheDocument();
     expect(within(moreNavigation).getByRole('link', { name: 'Configuración' })).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: 'Restaurantes' })).not.toBeInTheDocument();

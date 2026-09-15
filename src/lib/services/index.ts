@@ -13,6 +13,7 @@ import { SupabaseStoreServiceImpl } from './SupabaseStoreService';
 import { SupabaseOrderServiceImpl } from './SupabaseOrderService';
 import { SupabaseSafetyServiceImpl } from './SupabaseSafetyService';
 import { SupabaseTableService } from './SupabaseTableService';
+import { SupabaseCashRegisterService } from './SupabaseCashRegisterService';
 import { SupabaseOfferServiceImpl } from './SupabaseOfferService';
 import { SupabaseWalletObserverService } from './SupabaseWalletObserverService';
 import { SupabaseRestaurantAccountService } from './SupabaseRestaurantAccountService';
@@ -34,6 +35,7 @@ import type {
   RestaurantAccountService,
   RestaurantRiderService,
   PaymentService,
+  CashRegisterService,
 } from './types';
 
 let resolvedRestaurantAccountService: Promise<RestaurantAccountService> | null = null;
@@ -229,6 +231,9 @@ function resolveTableService(): Promise<TableService> {
           async open() {
             throw new Error('Las mesas QR requieren Supabase.');
           },
+          async pay() {
+            throw new Error('El cobro de mesas requiere Supabase.');
+          },
           async list() {
             return [];
           },
@@ -255,6 +260,9 @@ export const tableService: TableService = {
   async open(tableId) {
     return (await resolveTableService()).open(tableId);
   },
+  async pay(sessionId, received, method, requestId) {
+    return (await resolveTableService()).pay(sessionId, received, method, requestId);
+  },
   async list(restaurantIds) {
     return (await resolveTableService()).list(restaurantIds);
   },
@@ -266,6 +274,65 @@ export const tableService: TableService = {
   },
   async setActive(tableId, active) {
     return (await resolveTableService()).setActive(tableId, active);
+  },
+};
+
+let resolvedCashRegisterService: Promise<CashRegisterService> | null = null;
+function resolveCashRegisterService(): Promise<CashRegisterService> {
+  if (resolvedCashRegisterService) return resolvedCashRegisterService;
+  resolvedCashRegisterService =
+    import.meta.env.VITE_BACKEND === 'supabase'
+      ? Promise.resolve(new SupabaseCashRegisterService())
+      : Promise.resolve({
+          async list() {
+            return [];
+          },
+          async open() {
+            throw new Error('El cierre de caja requiere Supabase.');
+          },
+          async recordSale() {
+            throw new Error('El cobro de caja requiere Supabase.');
+          },
+          async addAdjustment() {
+            throw new Error('Los ajustes de caja requieren Supabase.');
+          },
+          async close() {
+            throw new Error('El cierre de caja requiere Supabase.');
+          },
+        });
+  return resolvedCashRegisterService;
+}
+
+export const cashRegisterService: CashRegisterService = {
+  async list(restaurantIds) {
+    return (await resolveCashRegisterService()).list(restaurantIds);
+  },
+  async open(restaurantId, openingFloat, requestId) {
+    return (await resolveCashRegisterService()).open(restaurantId, openingFloat, requestId);
+  },
+  async recordSale(sessionId, orderId, received, requestId) {
+    return (await resolveCashRegisterService()).recordSale(
+      sessionId,
+      orderId,
+      received,
+      requestId,
+    );
+  },
+  async addAdjustment(sessionId, amount, note, requestId) {
+    return (await resolveCashRegisterService()).addAdjustment(
+      sessionId,
+      amount,
+      note,
+      requestId,
+    );
+  },
+  async close(sessionId, declaredCash, note, requestId) {
+    return (await resolveCashRegisterService()).close(
+      sessionId,
+      declaredCash,
+      note,
+      requestId,
+    );
   },
 };
 

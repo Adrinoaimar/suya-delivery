@@ -136,6 +136,12 @@ export interface TableService {
   /** Opens/reuses table session after server validates public QR token. */
   openGuest(token: string): Promise<string>;
   open(tableId: string): Promise<string>;
+  pay(
+    sessionId: string,
+    received: number,
+    method: PaymentMethod,
+    requestId: string,
+  ): Promise<TablePaymentResult>;
   list(restaurantIds: string[]): Promise<TableSummary[]>;
   create(restaurantId: string, tableNumber: string): Promise<TableSummary>;
   regenerateQr(tableId: string): Promise<TableSummary>;
@@ -256,6 +262,67 @@ export interface TableSummary {
   total: number;
   qrToken: string;
   active: boolean;
+}
+
+export interface TablePaymentResult {
+  sessionId: string;
+  total: number;
+  received: number;
+  change: number;
+}
+
+export type CashRegisterStatus = 'open' | 'closed';
+
+export interface CashRegisterSession {
+  id: string;
+  restaurantId: string;
+  status: CashRegisterStatus;
+  openingFloat: number;
+  expectedCash: number;
+  declaredCash: number | null;
+  difference: number | null;
+  openedAt: string;
+  closedAt: string | null;
+  entryCount: number;
+}
+
+export interface CashRegisterSale {
+  entryId: string;
+  sessionId: string;
+  orderId: string;
+  amount: number;
+  received: number;
+  change: number;
+}
+
+export interface CashRegisterAdjustment {
+  entryId: string;
+  sessionId: string;
+  amount: number;
+  note: string;
+}
+
+export interface CashRegisterService {
+  list(restaurantIds: string[]): Promise<CashRegisterSession[]>;
+  open(restaurantId: string, openingFloat: number, requestId: string): Promise<CashRegisterSession>;
+  recordSale(
+    sessionId: string,
+    orderId: string,
+    received: number,
+    requestId: string,
+  ): Promise<CashRegisterSale>;
+  addAdjustment(
+    sessionId: string,
+    amount: number,
+    note: string,
+    requestId: string,
+  ): Promise<CashRegisterAdjustment>;
+  close(
+    sessionId: string,
+    declaredCash: number,
+    note: string,
+    requestId: string,
+  ): Promise<CashRegisterSession>;
 }
 
 export type CodeFailure = 'not_found' | 'invalid_code' | 'already_closed' | 'invalid_status';

@@ -212,6 +212,9 @@ export interface Order {
   origin?: 'delivery' | 'suya_menu' | 'table_qr';
   /** Mesa asociada cuando el pedido nació desde un QR de mesa. */
   tableId?: string | null;
+  /** Turno de caja que registró el cobro en efectivo, si ya fue arqueado. */
+  cashRegisterSessionId?: string | null;
+  cashCollectedAt?: string | null;
   /** Intento digital creado por servidor; nunca contiene secretos ni datos de tarjeta. */
   paymentIntent?: PaymentIntent | null;
 }
