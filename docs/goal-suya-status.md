@@ -98,9 +98,10 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - `npm run verify:payments`: rechazado por configuración productiva ausente; correcto para este entorno sin despliegue.
 - `npm run build:apps` con configuración pública sintética y `VITE_CULQI_GATEWAY_ENABLED=false`: pasa; customer, Rider y Backoffice quedan aislados.
 - Android: `bash android/gradlew test --no-daemon` pasa 4/4 pruebas unitarias y `assembleDebug` pasa para Rider, Backoffice y Wallet Observer; advertencia existente de API deprecada en `YapeNotificationListenerService.java`, sin fallo de compilación.
+- Reconstrucción final posterior a `0263ec7`: `npm run build:mobile:roles` volvió a compilar y empaquetar Rider, Backoffice y Wallet Observer con la corrección de cargas obsoletas; `unzip -tqq` y `apksigner verify` v2 pasan en las tres APK.
 - PostgreSQL temporal 17.6.1 con esquema mínimo oficial de Auth/Storage equivalente: instalación limpia de **53 migraciones**, `seed.sql` y **24/24 archivos pgTAP** pasan; la migración de caja (`20260915130000`) es la número 54 y queda pendiente de repetir en el flujo oficial. Es evidencia independiente del port-forward, no reemplaza `supabase db lint/test`.
 - APK Rider debug: `output/android/Suya-Rider-debug.apk`, 25,370,777 bytes, SHA-256 `378d4a29414eab3f2f6db6eb28f065e741bcab3b0ceea29cda18dc187266ce5d`, paquete `com.suya.rider`, `versionName 1.4`, `versionCode 5`.
-- APK Backoffice debug: `output/android/Suya-Backoffice-debug.apk`, 25,238,708 bytes, SHA-256 `cd3ef7cc4f07c1d5242b6353cdfe0924cb252defc57c7faf9aeb794868ff0433`, paquete `com.suya.backoffice`, `versionName 1.4`, `versionCode 5`.
+- APK Backoffice debug: `output/android/Suya-Backoffice-debug.apk`, 25,238,752 bytes, SHA-256 `d501b61e43c1467a6dd8ac3860cf25ca8ade64df0358462260b9147670a5660c`, paquete `com.suya.backoffice`, `versionName 1.4`, `versionCode 5`.
 - APK Wallet Observer debug: `output/android/Suya-Wallet-Observer-debug.apk`, 25,191,916 bytes, SHA-256 `9e7d449d700798cb3b0d1bc14dd0f9bfb3e4c3a6a89b484982aa57a09b65f710`, paquete `com.suya.walletobserver`, `versionName 1.4`, `versionCode 5`.
 - Las tres APK pasan `unzip -tqq` y `apksigner verify` con APK Signature Scheme v2; están firmadas con la clave debug del entorno y no son entregables de producción.
 
