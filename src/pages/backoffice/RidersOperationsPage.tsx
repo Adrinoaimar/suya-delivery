@@ -84,14 +84,10 @@ export default function RidersOperationsPage() {
         const visibleStores = allStores.filter(
           (store) => isPlatformAdmin || restaurantIds.includes(store.id),
         );
-        const nextRestaurantId = isPlatformAdmin
-          ? preferredRestaurantId &&
-            visibleStores.some((store) => store.id === preferredRestaurantId)
+        const nextRestaurantId =
+          preferredRestaurantId && visibleStores.some((store) => store.id === preferredRestaurantId)
             ? preferredRestaurantId
-            : (visibleStores[0]?.id ?? '')
-          : restaurantIds.length === 1
-            ? restaurantIds[0]
-            : '';
+            : (visibleStores[0]?.id ?? '');
         const nextRiders = nextRestaurantId
           ? await restaurantRiderService.list(nextRestaurantId)
           : [];
@@ -120,7 +116,7 @@ export default function RidersOperationsPage() {
   const invite = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!restaurantId) {
-      notificationService.notify('Esta cuenta no tiene un restaurante único asignado.', 'warning');
+      notificationService.notify('Selecciona un restaurante para continuar.', 'warning');
       return;
     }
     setBusy('invite');
@@ -184,13 +180,13 @@ export default function RidersOperationsPage() {
             Invita y habilita repartidores para que la cuenta pueda asignarles pedidos.
           </p>
         </div>
-        <Button variant="secondary" onClick={() => void load()} disabled={loading}>
+        <Button variant="secondary" onClick={() => void load(restaurantId)} disabled={loading}>
           <RefreshCw className="h-4 w-4" />
           Actualizar
         </Button>
       </div>
 
-      {isPlatformAdmin && stores.length > 0 && (
+      {(isPlatformAdmin || restaurantIds.length > 1) && stores.length > 0 && (
         <Card className="border-suya-green/20">
           <label className="text-sm font-semibold">
             Cuenta de restaurante
@@ -216,8 +212,8 @@ export default function RidersOperationsPage() {
       {!loading && !restaurantId && (
         <EmptyState
           icon={<Users className="h-6 w-6" />}
-          title="Esta cuenta necesita un restaurante único"
-          description="La cuenta de restaurante debe estar vinculada a un solo restaurante para poder gestionar sus repartidores."
+          title="No hay un restaurante seleccionado"
+          description="Vincula un restaurante a la cuenta o selecciona una cuenta autorizada para gestionar sus repartidores."
         />
       )}
 

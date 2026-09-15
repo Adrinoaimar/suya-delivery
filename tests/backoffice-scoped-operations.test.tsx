@@ -194,6 +194,55 @@ describe('operaciones con alcance de cuenta de restaurante', () => {
     });
   });
 
+  it('preselecciona la primera cuenta autorizada cuando staff tiene varias sedes', async () => {
+    const secondRestaurant = { ...restaurant, id: 'restaurant-2', name: 'Andá Paya' };
+    useAuthStore.setState({
+      status: 'authenticated',
+      identity: { ...identity, restaurantIds: [restaurant.id, secondRestaurant.id] },
+      error: null,
+    });
+    mocks.listStores.mockResolvedValue([restaurant, secondRestaurant]);
+
+    render(<CatalogPage />);
+
+    const selector = await screen.findByLabelText('Cuenta de restaurante');
+    expect(selector).toHaveValue(restaurant.id);
+    expect(screen.getByRole('heading', { name: restaurant.name })).toBeInTheDocument();
+  });
+
+  it('permite seleccionar una sede staff sin dejar Mesas y QR sin contexto', async () => {
+    const secondRestaurant = { ...restaurant, id: 'restaurant-2', name: 'Andá Paya' };
+    useAuthStore.setState({
+      status: 'authenticated',
+      identity: { ...identity, restaurantIds: [restaurant.id, secondRestaurant.id] },
+      error: null,
+    });
+    mocks.listStores.mockResolvedValue([restaurant, secondRestaurant]);
+
+    render(<TablesOperationsPage />);
+
+    const selector = await screen.findByLabelText('Cuenta de restaurante');
+    expect(selector).toHaveValue(restaurant.id);
+    fireEvent.change(selector, { target: { value: secondRestaurant.id } });
+    await waitFor(() => expect(selector).toHaveValue(secondRestaurant.id));
+  });
+
+  it('preselecciona una sede staff para administrar repartidores', async () => {
+    const secondRestaurant = { ...restaurant, id: 'restaurant-2', name: 'Andá Paya' };
+    useAuthStore.setState({
+      status: 'authenticated',
+      identity: { ...identity, restaurantIds: [restaurant.id, secondRestaurant.id] },
+      error: null,
+    });
+    mocks.listStores.mockResolvedValue([restaurant, secondRestaurant]);
+
+    render(<RidersOperationsPage />);
+
+    const selector = await screen.findByLabelText('Cuenta de restaurante');
+    expect(selector).toHaveValue(restaurant.id);
+    expect(screen.getByText(`Agregar a ${restaurant.name}`)).toBeInTheDocument();
+  });
+
   it('preselecciona el primer restaurante visible para administración', async () => {
     useAuthStore.setState({
       status: 'authenticated',

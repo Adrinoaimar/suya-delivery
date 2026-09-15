@@ -34,11 +34,8 @@ export default function TablesOperationsPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const loadRequestRef = useRef(0);
-  const activeRestaurantId = isPlatformAdmin
-    ? restaurantId
-    : restaurantIds.length === 1
-      ? restaurantIds[0]
-      : '';
+  const activeRestaurantId = restaurantId || (restaurantIds.length === 1 ? restaurantIds[0] : '');
+  const canSelectRestaurant = isPlatformAdmin || restaurantIds.length > 1;
   const visibleTables = useMemo(
     () =>
       activeRestaurantId
@@ -47,7 +44,7 @@ export default function TablesOperationsPage() {
     [activeRestaurantId, tables],
   );
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (preferredRestaurantId = '') => {
     const requestId = ++loadRequestRef.current;
     setLoading(true);
     setError(null);
@@ -56,30 +53,22 @@ export default function TablesOperationsPage() {
       const visibleStores = allStores.filter(
         (store) => isPlatformAdmin || restaurantIds.includes(store.id),
       );
-      const scopedIds = isPlatformAdmin ? visibleStores.map((store) => store.id) : restaurantIds;
+      const nextRestaurantId =
+        preferredRestaurantId && visibleStores.some((store) => store.id === preferredRestaurantId)
+          ? preferredRestaurantId
+          : (visibleStores[0]?.id ?? '');
+      const scopedIds = visibleStores.map((store) => store.id);
       // La selección no debe depender de que termine la carga de mesas: el operador
       // necesita saber qué cuenta está viendo mientras llegan los datos secundarios.
       if (requestId === loadRequestRef.current) {
         setStores(visibleStores);
-        if (isPlatformAdmin)
-          setRestaurantId((current) =>
-            current && visibleStores.some((store) => store.id === current)
-              ? current
-              : visibleStores[0]?.id || '',
-          );
-        else setRestaurantId(restaurantIds.length === 1 ? restaurantIds[0] : '');
+        setRestaurantId(nextRestaurantId);
       }
       const rows = await tableService.list(scopedIds);
       if (requestId !== loadRequestRef.current) return;
       setStores(visibleStores);
       setTables(rows);
-      if (isPlatformAdmin)
-        setRestaurantId((current) =>
-          current && visibleStores.some((store) => store.id === current)
-            ? current
-            : visibleStores[0]?.id || '',
-        );
-      else setRestaurantId(restaurantIds.length === 1 ? restaurantIds[0] : '');
+      setRestaurantId(nextRestaurantId);
     } catch (cause) {
       if (requestId !== loadRequestRef.current) return;
       setError(cause instanceof Error ? cause.message : 'No pudimos cargar las mesas.');
@@ -175,18 +164,21 @@ export default function TablesOperationsPage() {
             Crea mesas, imprime su QR y controla pedidos de salón.
           </p>
         </div>
-        <Button variant="secondary" onClick={() => void load()} disabled={loading}>
+        <Button variant="secondary" onClick={() => void load(restaurantId)} disabled={loading}>
           <RefreshCw className="h-4 w-4" />
           Actualizar
         </Button>
       </div>
       <Card className="grid gap-3 sm:grid-cols-[1fr_180px_auto] sm:items-end">
-        {isPlatformAdmin ? (
+        {canSelectRestaurant ? (
           <label className="text-sm font-semibold">
             Cuenta de restaurante
             <select
               value={restaurantId}
-              onChange={(event) => setRestaurantId(event.target.value)}
+              onChange={(event) => {
+                setRestaurantId(event.target.value);
+                void load(event.target.value);
+              }}
               className="mt-1 h-11 w-full rounded-btn border border-[#CDD4D0] bg-white px-3 font-normal"
             >
               <option value="">Selecciona…</option>

@@ -39,11 +39,9 @@ export default function CatalogPage() {
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const loadRequestRef = useRef(0);
-  const activeRestaurantId = isPlatformAdmin
-    ? selectedRestaurantId
-    : restaurantIds.length === 1
-      ? restaurantIds[0]
-      : '';
+  const activeRestaurantId =
+    selectedRestaurantId || (restaurantIds.length === 1 ? restaurantIds[0] : '');
+  const canSelectRestaurant = isPlatformAdmin || restaurantIds.length > 1;
   const owned = useMemo(
     () => stores.filter((store) => store.id === activeRestaurantId),
     [activeRestaurantId, stores],
@@ -52,7 +50,7 @@ export default function CatalogPage() {
   const update = (id: string, patch: Partial<MenuSettings>) =>
     setSettings((current) => ({ ...current, [id]: { ...current[id], ...patch } }));
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (preferredRestaurantId = '') => {
     const requestId = ++loadRequestRef.current;
     setLoading(true);
     setError(null);
@@ -61,18 +59,15 @@ export default function CatalogPage() {
       const visible = allStores.filter(
         (store) => isPlatformAdmin || restaurantIds.includes(store.id),
       );
-      const nextRestaurantId = isPlatformAdmin
-        ? selectedRestaurantId && visible.some((store) => store.id === selectedRestaurantId)
-          ? selectedRestaurantId
-          : (visible[0]?.id ?? '')
-        : restaurantIds.length === 1
-          ? restaurantIds[0]
-          : '';
+      const nextRestaurantId =
+        preferredRestaurantId && visible.some((store) => store.id === preferredRestaurantId)
+          ? preferredRestaurantId
+          : (visible[0]?.id ?? '');
       // Fijar la cuenta antes de productos y configuración evita un selector vacío
       // durante una carga lenta de datos secundarios.
       if (requestId === loadRequestRef.current) {
         setStores(visible);
-        if (isPlatformAdmin) setSelectedRestaurantId(nextRestaurantId);
+        setSelectedRestaurantId(nextRestaurantId);
       }
       const scoped = visible.filter((store) => store.id === nextRestaurantId);
       const [rows, menuRows] = await Promise.all([
@@ -93,14 +88,14 @@ export default function CatalogPage() {
       setStores(visible);
       setProducts(rows.flat());
       setSettings(Object.fromEntries(menuRows));
-      if (isPlatformAdmin) setSelectedRestaurantId(nextRestaurantId);
+      setSelectedRestaurantId(nextRestaurantId);
     } catch (cause) {
       if (requestId !== loadRequestRef.current) return;
       setError(cause instanceof Error ? cause.message : 'No se pudo cargar el catálogo.');
     } finally {
       if (requestId === loadRequestRef.current) setLoading(false);
     }
-  }, [isPlatformAdmin, restaurantIds, selectedRestaurantId]);
+  }, [isPlatformAdmin, restaurantIds]);
 
   useEffect(() => {
     void load();
@@ -174,7 +169,7 @@ export default function CatalogPage() {
         </div>
         <button
           className="press inline-flex items-center gap-2 rounded-xl bg-suya-green px-4 py-2 text-sm font-semibold text-white"
-          onClick={() => void load()}
+          onClick={() => void load(selectedRestaurantId)}
           disabled={loading}
         >
           <RefreshCw className="h-4 w-4" />
@@ -182,13 +177,16 @@ export default function CatalogPage() {
         </button>
       </div>
       {error && <Card className="border-red-200 text-sm text-red-700">{error}</Card>}
-      {isPlatformAdmin && stores.length > 0 && (
+      {canSelectRestaurant && stores.length > 0 && (
         <Card className="border-suya-green/20">
           <label className="text-sm font-semibold">
             Cuenta de restaurante
             <select
               value={selectedRestaurantId}
-              onChange={(event) => setSelectedRestaurantId(event.target.value)}
+              onChange={(event) => {
+                setSelectedRestaurantId(event.target.value);
+                void load(event.target.value);
+              }}
               className="mt-1 h-11 w-full rounded-btn border border-suya-mist bg-white px-3 font-normal"
               aria-label="Cuenta de restaurante"
             >
