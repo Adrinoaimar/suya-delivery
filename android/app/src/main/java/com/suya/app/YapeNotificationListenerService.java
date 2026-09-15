@@ -104,7 +104,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
 
         Matcher codeMatcher = CODE_PATTERN.matcher(combined);
         String code = codeMatcher.find() ? codeMatcher.group(1) : null;
-        String senderName = extractSenderName(combined);
+        String senderName = extractSenderNameFromFields(notificationTextFields(notification.extras), combined);
         long postTime = statusBarNotification.getPostTime();
         String observedAt = isoAt(postTime);
         String notificationKey = statusBarNotification.getKey();
@@ -139,6 +139,15 @@ public final class YapeNotificationListenerService extends NotificationListenerS
 
     private static String combinedNotificationText(Bundle extras) {
         StringBuilder result = new StringBuilder();
+        for (String value : notificationTextFields(extras)) {
+            if (value == null || value.trim().isEmpty()) continue;
+            if (result.length() > 0) result.append(' ');
+            result.append(value);
+        }
+        return result.toString().replaceAll("\\s+", " ").trim();
+    }
+
+    private static String[] notificationTextFields(Bundle extras) {
         String[] keys = new String[]{
                 Notification.EXTRA_TITLE,
                 Notification.EXTRA_TEXT,
@@ -147,13 +156,30 @@ public final class YapeNotificationListenerService extends NotificationListenerS
                 Notification.EXTRA_INFO_TEXT,
                 Notification.EXTRA_SUMMARY_TEXT
         };
-        for (String key : keys) {
-            CharSequence value = extras.getCharSequence(key);
-            if (value == null || value.toString().trim().isEmpty()) continue;
-            if (result.length() > 0) result.append(' ');
-            result.append(value);
+        String[] values = new String[keys.length];
+        for (int index = 0; index < keys.length; index++) {
+            CharSequence value = extras.getCharSequence(keys[index]);
+            values[index] = value == null ? null : value.toString();
         }
-        return result.toString().replaceAll("\\s+", " ").trim();
+        return values;
+    }
+
+    static String extractSenderNameFromFields(String[] fields, String combined) {
+        for (String field : fields) {
+            if (field == null || field.trim().isEmpty()) continue;
+            String candidate = extractSenderName(field.replaceAll("\\s+", " ").trim());
+            if (candidate != null) return candidate;
+        }
+        return extractSenderName(combined);
+    }
+
+    static String extractSenderName(String combined) {
+        Matcher matcher = SENDER_PATTERN.matcher(combined);
+        if (!matcher.find()) return null;
+        String value = matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
+        if (value == null) return null;
+        String normalized = value.replaceAll("\\s+", " ").trim();
+        return normalized.length() >= 2 && normalized.length() <= 120 ? normalized : null;
     }
 
     @Nullable
@@ -371,16 +397,6 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         } finally {
             if (connection != null) connection.disconnect();
         }
-    }
-
-    @Nullable
-    static String extractSenderName(String combined) {
-        Matcher matcher = SENDER_PATTERN.matcher(combined);
-        if (!matcher.find()) return null;
-        String value = matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
-        if (value == null) return null;
-        String normalized = value.replaceAll("\\s+", " ").trim();
-        return normalized.length() >= 2 && normalized.length() <= 120 ? normalized : null;
     }
 
     @Nullable

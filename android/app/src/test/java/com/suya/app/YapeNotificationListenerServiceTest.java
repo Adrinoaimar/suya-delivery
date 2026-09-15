@@ -10,7 +10,10 @@ public class YapeNotificationListenerServiceTest {
     public void extractsSenderAfterWalletTitle() {
         assertEquals(
                 "Ana María Torres",
-                YapeNotificationListenerService.extractSenderName("Yape Ana María Torres te envió S/ 30.00")
+                YapeNotificationListenerService.extractSenderNameFromFields(
+                        new String[]{"Yape", "Ana María Torres te envió S/ 30.00"},
+                        "Yape Ana María Torres te envió S/ 30.00"
+                )
         );
     }
 

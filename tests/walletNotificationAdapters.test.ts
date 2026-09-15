@@ -52,6 +52,17 @@ describe('wallet notification adapters', () => {
     });
   });
 
+  it('keeps the wallet title separate from a sender before the verb', () => {
+    const result = parseWalletNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Yape',
+      text: 'Ana María Torres te envió S/ 30.00',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({ provider: 'yape', amountCents: 3000, senderName: 'Ana María Torres' });
+  });
+
   it('rejects unverified package IDs even when message says Lemon', () => {
     expect(
       parseWalletNotification({ packageName: 'com.example.lemon', text: 'Lemon recibiste S/ 10.00' }),

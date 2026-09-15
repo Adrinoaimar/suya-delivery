@@ -121,6 +121,14 @@ function senderName(text: string): string | null {
   return value.length >= 2 && value.length <= 120 ? value : null;
 }
 
+function senderNameFromFields(input: WalletNotificationInput, text: string): string | null {
+  for (const field of [input.text, input.bigText, input.subText, input.infoText, input.summaryText, input.title]) {
+    const candidate = field ? senderName(field.replace(/\s+/g, ' ').trim()) : null;
+    if (candidate) return candidate;
+  }
+  return senderName(text);
+}
+
 function matchesAdapter(input: WalletNotificationInput, adapter: WalletNotificationAdapter, text: string): boolean {
   if (!input.packageName || !adapter.packageNames.includes(input.packageName)) return false;
   if (!adapter.keywords.length) return true;
@@ -166,7 +174,7 @@ export function parseWalletNotification(
     verification: 'unverified',
     amountCents,
     currency,
-    senderName: senderName(text),
+    senderName: senderNameFromFields(input, text),
     code: codeMatch?.[1] ?? null,
     observedAt,
     fingerprint: fingerprint(adapter.provider, stable),
