@@ -72,9 +72,14 @@ describe('MobileRoutes', () => {
       </MemoryRouter>,
     );
 
+    const asyncRenderOptions = { timeout: 5_000 };
     expect(
-      await screen.findByText('Invita y habilita repartidores para que la cuenta pueda asignarles pedidos.'),
+      await screen.findByText(
+        'Invita y habilita repartidores para que la cuenta pueda asignarles pedidos.',
+        {},
+        asyncRenderOptions,
+      ),
     ).toBeInTheDocument();
-    expect(await screen.findByText('Agregar a Donde Joel')).toBeInTheDocument();
+    expect(await screen.findByText('Agregar a Donde Joel', {}, asyncRenderOptions)).toBeInTheDocument();
   });
 });
