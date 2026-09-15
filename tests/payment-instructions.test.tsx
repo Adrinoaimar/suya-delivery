@@ -232,4 +232,37 @@ describe('PaymentInstructions', () => {
 
     expect(screen.getByRole('button', { name: 'Reintentar pago' })).toBeEnabled();
   });
+
+  it('ignora un callback duplicado de token mientras el primer cargo sigue en curso', async () => {
+    const gatewayIntent: PaymentIntent = {
+      ...pendingIntent,
+      method: 'card',
+      provider: 'culqi',
+      providerReference: 'ord_test_suya_duplicate_token',
+    };
+    let resolveCharge!: (reference: string) => void;
+    mocks.chargeCard.mockImplementationOnce(
+      () => new Promise((resolve) => { resolveCharge = resolve; }),
+    );
+    mocks.openCulqiCheckout.mockImplementationOnce(
+      (options: { onToken: (tokenId: string) => Promise<void> }) => {
+        void options.onToken('tkn_test_duplicate_token');
+        void options.onToken('tkn_test_duplicate_token');
+        return Promise.resolve();
+      },
+    );
+    sessionStorage.setItem('suya.payment-email:order-1', 'cliente@example.com');
+    render(<PaymentInstructions order={order(gatewayIntent)} />);
+
+    await act(async () => {
+      screen.getByRole('button', { name: 'Pagar con tarjeta' }).click();
+    });
+    await waitFor(() => expect(mocks.chargeCard).toHaveBeenCalledTimes(1));
+
+    resolveCharge('chr_test_duplicate_token');
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Pago verificado' })).toBeDisabled(),
+    );
+    expect(mocks.chargeCard).toHaveBeenCalledTimes(1);
+  });
 });

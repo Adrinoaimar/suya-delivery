@@ -207,6 +207,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         onToken: async (tokenId) => {
           // Custom Checkout abre un modal no bloqueante. El callback puede
           // llegar después de que openCulqiCheckout() haya retornado.
+          if (gatewayTokenBusyRef.current) return;
           gatewayTokenBusyRef.current = true;
           setGatewayBusy(true);
           try {
