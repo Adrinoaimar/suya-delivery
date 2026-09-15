@@ -35,7 +35,7 @@ export function BottomSheet({ open, onClose, title, children, footer }: BottomSh
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="relative z-10 flex max-h-[88dvh] w-full max-w-lg animate-sheet-up flex-col rounded-t-sheet border border-b-0 border-suya-border bg-white/95 shadow-sheet"
+        className="relative z-10 flex max-h-[88dvh] w-full max-w-lg animate-sheet-up flex-col rounded-t-sheet border border-b-0 border-suya-border bg-white shadow-sheet"
       >
         <div className="flex flex-col items-center px-4 pt-2.5">
           <span aria-hidden="true" className="h-1 w-12 rounded-full bg-suya-border" />
@@ -87,7 +87,7 @@ export function ExpandableSheet({
   return (
     <section
       className={cn(
-        'rounded-t-sheet border border-b-0 border-suya-border bg-white/95 shadow-sheet',
+        'rounded-t-sheet border border-b-0 border-suya-border bg-white shadow-sheet',
         className,
       )}
       aria-label={title}
