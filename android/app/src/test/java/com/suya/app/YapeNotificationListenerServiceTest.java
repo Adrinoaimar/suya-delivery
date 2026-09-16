@@ -14,6 +14,12 @@ public class YapeNotificationListenerServiceTest {
     }
 
     @Test
+    public void doesNotNormalizeNegativeAmountsAsIncomingPayments() {
+        assertEquals(Long.valueOf(3000), YapeNotificationListenerService.normalizeAmount("30.00"));
+        assertTrue(!YapeNotificationListenerService.containsIncomingMoney("Reversión -S/ 30.00"));
+    }
+
+    @Test
     public void extractsSenderAfterWalletTitle() {
         assertEquals(
                 "Ana María Torres",

@@ -77,7 +77,7 @@ export const DEFAULT_WALLET_NOTIFICATION_ADAPTERS: readonly WalletNotificationAd
   MERCADO_PAGO_NOTIFICATION_ADAPTER,
 ];
 
-const MONEY_PATTERN = /(?<![\p{L}\d])(?:s\/?|s\.|pen|ars|usd|us\$|\$)\s*((?:\d{1,3}(?:[.,]\d{3})+|\d+)(?:[.,]\d{2})?)(?!\d)/giu;
+const MONEY_PATTERN = /(?<![\p{L}\d+-])(?:s\/?|s\.|pen|ars|usd|us\$|\$)\s*((?:\d{1,3}(?:[.,]\d{3})+|\d+)(?:[.,]\d{2})?)(?!\d)/giu;
 const CODE_PATTERN = /(?:c[oó]digo(?:\s+(?:de\s+)?(?:seguridad|operaci[oó]n|aprobaci[oó]n))?|operaci[oó]n|referencia|reference|ref\.?|id(?:\s+de)?\s+(?:transferencia|operaci[oó]n))\b\s*[:#-]?\s*([a-z0-9-]{3,64})/i;
 const SENDER_PATTERN = /(?:^|\b)(?:de|from|remitente|sender)\s*[:#-]?\s*(?!(?:seguridad|operaci[oó]n|transferencia|pago|payment|referencia|reference)\b)([\p{L}][\p{L}'-]*(?:\s+[\p{L}][\p{L}'-]*){0,4})(?=\s*(?:[.,;:·|]|$|\b(?:te\b|envi[oó]|sent\b|por\b|monto\b|amount\b|operaci[oó]n\b|c[oó]digo\b|ref(?:erencia)?\b|s\/?|pen\b|usd\b|ars\b)))|(?:^|\b)([\p{L}][\p{L}'-]*(?:\s+[\p{L}][\p{L}'-]*){0,4})(?=\s+te\s+(?:envi[oó](?=\s|$)|sent\b))/iu;
 

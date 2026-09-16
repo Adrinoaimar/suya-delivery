@@ -266,3 +266,13 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
   - Backoffice: `output/android/Suya-Backoffice-debug.apk`, **25,239,952 bytes**, SHA-256 `4980052ee740712c26b76039aa1571c722a405ea3284318a4c71cdd539a12f4d`, paquete `com.suya.backoffice`.
   - Wallet Observer: `output/android/Suya-Wallet-Observer-debug.apk`, **25,192,060 bytes**, SHA-256 `7c5d98f49debef7d0dbebb3385d5608be9c58bbb48eaa770d99061a325a73e5e`, paquete `com.suya.walletobserver`.
 - No hay dispositivo/emulador conectado: instalación, actualización, insets, TalkBack, fuente ampliada, permisos y offline físico siguen pendientes. No se ejecutaron pagos reales, despliegue ni publicación.
+
+## Corrección P-05 — rechazar importes con signo y APK vigentes — 2026-09-16
+
+- La expresión de importe del parser web y del observador Android ahora exige que el símbolo monetario no esté precedido directamente por `+` o `-`; una notificación como `Reversión -S/ 30.00` ya no entra como ingreso observado. Los formatos positivos agrupados y decimales existentes se conservan.
+- Regresión web de adaptadores/parser: **20/20**; Android `test`: **5/5**; suite global: **71 archivos / 322 pruebas**; lint, typecheck, build aislado, smoke **12/12** y secretos **924 archivos / sin patrones** pasan.
+- APKs vigentes tras este cambio, todas debug `1.4/5`, no release, ZIP íntegro, firma v2 y un firmante:
+  - Rider: `output/android/Suya-Rider-debug.apk`, **25,371,385 bytes**, SHA-256 `b5595298fbaafe0d8131fa63e1dee201bedf0da3d8862f404f22372f8b922c8f`, `com.suya.rider`.
+  - Backoffice: `output/android/Suya-Backoffice-debug.apk`, **25,239,952 bytes**, SHA-256 `2440b6963d74e7b677edb1c9d186e9a8b1b8df941720a02104abd4c421e70409`, `com.suya.backoffice`.
+  - Wallet Observer: `output/android/Suya-Wallet-Observer-debug.apk`, **25,192,060 bytes**, SHA-256 `c4da86fb43d10302a44bbd3fa6c291330f3d7892c9c6f946dacb3e5787e96b7f`, `com.suya.walletobserver`.
+- Esto evita una clasificación positiva evidente, pero no convierte notificaciones en autoridad de pago: P-01/P-02/P-03/P-08 siguen requiriendo backend, movimientos del receptor y conciliación autorizada. No se ejecutaron pagos reales ni se relaja la ruta manual.

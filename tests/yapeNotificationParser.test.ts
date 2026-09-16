@@ -42,6 +42,17 @@ describe('parseYapeNotification', () => {
     expect(result).toMatchObject({ amountCents: 100000, currency: 'PEN' });
   });
 
+  it('does not treat a negative amount as an incoming payment', () => {
+    const result = parseYapeNotification({
+      packageName: 'com.bcp.yape.app',
+      title: 'Yape recibido',
+      text: 'Reversión -S/ 30.00',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toBeNull();
+  });
+
   it('uses the stable notification key to separate same-time equal payments', () => {
     const input = {
       packageName: 'com.bcp.yape.app',
