@@ -180,6 +180,13 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - El contrato `supabase/tests/20260915180000_payment_identity_auth_guard.test.sql` declara **6 aserciones** sobre guardia, seguridad y privilegios. `npm run lint`, `npm run typecheck` y `git diff --check` pasan; la ejecución pgTAP queda pendiente del runtime oficial Supabase/Postgres.
 - Este cambio es SQL y no modifica las APK debug `1.4/5`; no se ejecutaron pagos reales ni se amplió autorización de producción.
 
+## Seguimiento posterior — wrappers seguros para Culqi opcional (2026-09-15)
+
+- Se revisaron también las RPC legacy usadas por el adaptador Culqi opcional. `20260915190000_culqi_identity_wrappers.sql` añade un helper de identidad único y wrappers para crear intent, reservar orden/cargo, autorizar y fallar claims; todos validan el propietario o el token guest antes de delegar.
+- Los Edge Functions ahora llaman solo los wrappers `_secure`; las RPC legacy de lectura/estado quedaron revocadas para `anon`/`authenticated` y no hay una ruta pública que dependa de la comparación nula.
+- `supabase/tests/20260915190000_culqi_identity_wrappers.test.sql` declara **12 aserciones** de identidad, delegación, privilegios y revocación. El conjunto documentado queda en **71 aserciones**; lint, typecheck, suite web 69/318, build y smoke 12/12 pasan. La validación SQL oficial sigue pendiente del runtime local.
+- Culqi continúa siendo opcional y deshabilitado en esta prueba; no se procesaron tarjetas, transferencias ni pagos reales.
+
 ## Bloqueos reproducibles
 
 1. `npm run db:lint` no conecta a `127.0.0.1:54322`; `npm run db:start` tampoco puede conectar al socket Docker normal. Se probó un daemon rootless temporal con `vfs`, cgroups desactivados y seccomp/AppArmor aislados: la red `none` no permite aliases, `host` rechaza aliases y la red rootless con `slirp4netns` sí crea `bridge`, pero el contenedor Postgres queda saludable sin publicar el puerto hacia el host; la CLI termina con `LegacyDbConnectError` (timeout/conexión terminada) y limpia el contenedor. No se modificó el sistema ni el código para ocultarlo. La suite SQL sí fue validada de forma independiente en PostgreSQL temporal; queda pendiente repetirla mediante el flujo oficial de Supabase cuando exista daemon/puerto normal.

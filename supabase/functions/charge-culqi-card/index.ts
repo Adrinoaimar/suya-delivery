@@ -90,7 +90,7 @@ Deno.serve(async (request) => {
   const rpcAuthorization = incomingAuthorization?.startsWith('Bearer ')
     ? incomingAuthorization : `Bearer ${anonKey}`;
   const guestAccessToken = typeof body.guestAccessToken === 'string' ? body.guestAccessToken : null;
-  const claimResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/claim_culqi_payment`, {
+  const claimResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/claim_culqi_payment_secure`, {
     method: 'POST',
     headers: { apikey: anonKey, Authorization: rpcAuthorization, 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -121,7 +121,7 @@ Deno.serve(async (request) => {
     }
   }
   if (!customerEmail) {
-    await fetch(`${supabaseUrl}/rest/v1/rpc/fail_culqi_payment_claim`, {
+    await fetch(`${supabaseUrl}/rest/v1/rpc/fail_culqi_payment_claim_secure`, {
       method: 'POST',
       headers: { apikey: anonKey, Authorization: rpcAuthorization, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -158,7 +158,7 @@ Deno.serve(async (request) => {
   });
   if (!chargeResponse.ok) {
     console.error(`Culqi ${body.method} charge failed`, chargeResponse.status);
-    await fetch(`${supabaseUrl}/rest/v1/rpc/fail_culqi_payment_claim`, {
+    await fetch(`${supabaseUrl}/rest/v1/rpc/fail_culqi_payment_claim_secure`, {
       method: 'POST',
       headers: { apikey: anonKey, Authorization: rpcAuthorization, 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -176,7 +176,7 @@ Deno.serve(async (request) => {
     return json({ error: 'Culqi devolvió un cargo inválido.' }, 502, origin);
   }
 
-  const authorizeResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/authorize_culqi_payment`, {
+  const authorizeResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/authorize_culqi_payment_secure`, {
     method: 'POST',
     headers: { apikey: anonKey, Authorization: rpcAuthorization, 'Content-Type': 'application/json' },
     body: JSON.stringify({

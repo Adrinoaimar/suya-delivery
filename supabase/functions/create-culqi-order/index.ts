@@ -127,7 +127,7 @@ Deno.serve(async (request) => {
     ? incomingAuthorization
     : `Bearer ${anonKey}`;
 
-  const intentResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/create_culqi_payment_intent`, {
+  const intentResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/create_culqi_payment_intent_secure`, {
     method: 'POST',
     headers: {
       apikey: anonKey,
@@ -201,7 +201,7 @@ Deno.serve(async (request) => {
   // The row lock and digest are acquired immediately before the external
   // provider call. A second browser retry receives 409 instead of creating a
   // second Culqi order for the same Suya payment attempt.
-  const claimResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/claim_culqi_order_creation`, {
+  const claimResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/claim_culqi_order_creation_secure`, {
     method: 'POST',
     headers: {
       apikey: anonKey,
