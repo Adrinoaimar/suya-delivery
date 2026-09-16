@@ -131,6 +131,26 @@ describe('WalletsOperationsPage', () => {
     resolveObservations([]);
   });
 
+  it('ignora un permiso de restaurante obsoleto y usa la primera sede visible', async () => {
+    useAuthStore.setState({
+      identity: {
+        ...identity,
+        access: ['restaurant_staff'],
+        restaurantIds: ['stale-restaurant', restaurant.id],
+      },
+    });
+
+    render(<WalletsOperationsPage />);
+
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: 'Cuenta de restaurante' })).toHaveValue(
+        restaurant.id,
+      ),
+    );
+    await waitFor(() => expect(mocks.listPaymentAccounts).toHaveBeenCalledWith(restaurant.id));
+    expect(mocks.listPaymentAccounts).not.toHaveBeenCalledWith('stale-restaurant');
+  });
+
   it('crea el dispositivo ligado a la cuenta receptora activa', async () => {
     mocks.listPaymentAccounts.mockResolvedValue([
       {

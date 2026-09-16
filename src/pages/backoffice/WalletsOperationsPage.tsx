@@ -97,7 +97,9 @@ export default function WalletsOperationsPage() {
   const candidateRequestRef = useRef(0);
   const [deviceActionId, setDeviceActionId] = useState<string | null>(null);
   const canSelectRestaurant = isPlatformAdmin || restaurantIds.length > 1;
-  const activeRestaurantId = restaurantId || (isPlatformAdmin ? '' : restaurantIds[0] ?? '');
+  const activeRestaurantId = stores.some((store) => store.id === restaurantId)
+    ? restaurantId
+    : stores[0]?.id ?? '';
 
   const load = useCallback(async () => {
     const requestId = ++loadRequestRef.current;
@@ -126,7 +128,9 @@ export default function WalletsOperationsPage() {
           );
         } else {
           setRestaurantId((current) =>
-            current && restaurantIds.includes(current) ? current : restaurantIds[0] ?? '',
+            current && visibleStores.some((store) => store.id === current)
+              ? current
+              : visibleStores[0]?.id ?? '',
           );
         }
       }
