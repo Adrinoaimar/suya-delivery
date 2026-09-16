@@ -12,12 +12,14 @@ import {
   Users,
   Wallet,
 } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { Drawer } from '@/components/common/Drawer';
 import { LogoMark } from '@/components/common/Logo';
 import { cn } from '@/lib/cn';
+import { storeService } from '@/lib/services';
 import { useAuthStore } from '@/store/authStore';
+import { useBackofficeContextStore } from '@/store/backofficeContextStore';
 
 interface BackofficeLayoutProps {
   basePath?: string;
@@ -26,6 +28,10 @@ interface BackofficeLayoutProps {
 export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
   const identity = useAuthStore((state) => state.identity);
   const signOut = useAuthStore((state) => state.signOut);
+  const restaurantIds = useMemo(() => identity?.restaurantIds ?? [], [identity?.restaurantIds]);
+  const activeRestaurantId = useBackofficeContextStore((state) => state.activeRestaurantId);
+  const setActiveRestaurantId = useBackofficeContextStore((state) => state.setActiveRestaurantId);
+  const [visibleStores, setVisibleStores] = useState<Array<{ id: string; name: string }>>([]);
   const location = useLocation();
   const navigationRef = useRef<HTMLElement | null>(null);
   const isPlatformAdmin = identity?.access.includes('platform_admin') ?? false;
@@ -47,6 +53,27 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
   );
   const mobileMoreNavigation = navigation.filter((item) => !mobileNavigation.includes(item));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void storeService.listStores().then((allStores) => {
+      if (!active) return;
+      const stores = allStores.filter(
+        (store) => isPlatformAdmin || restaurantIds.includes(store.id),
+      );
+      setVisibleStores(stores);
+      setActiveRestaurantId((current) =>
+        current && stores.some((store) => store.id === current)
+          ? current
+          : stores[0]?.id ?? '',
+      );
+    }).catch(() => {
+      if (active) setVisibleStores([]);
+    });
+    return () => { active = false; };
+  }, [isPlatformAdmin, restaurantIds, setActiveRestaurantId]);
+
+  const activeRestaurantName = visibleStores.find((store) => store.id === activeRestaurantId)?.name;
 
   // En escritorio la navegación es vertical y puede necesitar desplazarse al cambiar de sección.
   // En móvil se muestran los accesos frecuentes y el resto vive en un drawer compacto.
@@ -126,6 +153,11 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
           <div className="min-w-0">
             <p className="font-display font-bold">Centro de operaciones</p>
             <p className="truncate text-xs text-suya-muted">{identity?.email}</p>
+            <p className="truncate text-xs font-semibold text-suya-green-dark" aria-live="polite">
+              {activeRestaurantName
+                ? `Cuenta activa: ${activeRestaurantName}`
+                : 'Cuenta de restaurante pendiente de vincular'}
+            </p>
           </div>
           <button
             type="button"

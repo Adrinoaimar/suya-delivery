@@ -255,3 +255,14 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - `20260916100000_payment_intent_active_receiver_read_guard.sql` evita que `get_payment_intent` devuelva al cliente el QR de una cuenta receptora inactiva; el intento sigue disponible para soporte/revisión sin orientar un nuevo pago a ese destino.
 - `supabase/tests/20260916100000_payment_intent_active_receiver_read_guard.test.sql` declara **4 aserciones**. Lint, typecheck y contratos de pagos/webhook/preflight **8/8** pasan; pgTAP oficial permanece pendiente por el runtime local inaccesible.
 - El cambio es SQL y no altera las APK debug `1.4/5`; no se ejecutaron cobros reales ni despliegue.
+
+## Corrección U-02 — cuenta activa en cabecera global y APK asociadas — 2026-09-16
+
+- `BackofficeLayout` carga las sedes visibles, filtra por permisos de identidad o `platform_admin`, preselecciona la primera sede autorizada cuando el contexto no es válido y muestra `Cuenta activa: …` en la cabecera global. Si la carga falla, el estado queda explícitamente pendiente de vinculación.
+- Esto corrige la ausencia de restaurante preseleccionado en pantallas de Backoffice y mantiene el alcance de operaciones limitado a la sede visible; no sustituye la validación RLS del servidor.
+- Regresión focal Backoffice: **13/13**; suite global: **71 archivos / 321 pruebas**; lint, typecheck, `npm run build:apps`, `npm run test:e2e` (**12/12**) y `git diff --check` pasan. Seguridad de secretos: **924 archivos / sin patrones**.
+- `npm run build:mobile:roles` terminó con Android test **5/5**, lint nativo exitoso, `assembleDebug`, ZIP íntegro, `apksigner verify` v2 y `aapt dump badging` correctos. Las tres APK son debug `1.4/5`, no release:
+  - Rider: `output/android/Suya-Rider-debug.apk`, **25,371,385 bytes**, SHA-256 `37021829ba121d013616e4580532c765910e3de07b17b3e68934c9dccf568930`, paquete `com.suya.rider`.
+  - Backoffice: `output/android/Suya-Backoffice-debug.apk`, **25,239,952 bytes**, SHA-256 `4980052ee740712c26b76039aa1571c722a405ea3284318a4c71cdd539a12f4d`, paquete `com.suya.backoffice`.
+  - Wallet Observer: `output/android/Suya-Wallet-Observer-debug.apk`, **25,192,060 bytes**, SHA-256 `7c5d98f49debef7d0dbebb3385d5608be9c58bbb48eaa770d99061a325a73e5e`, paquete `com.suya.walletobserver`.
+- No hay dispositivo/emulador conectado: instalación, actualización, insets, TalkBack, fuente ampliada, permisos y offline físico siguen pendientes. No se ejecutaron pagos reales, despliegue ni publicación.
