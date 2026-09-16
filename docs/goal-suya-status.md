@@ -170,7 +170,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 
 - Se reprodujo una carrera de Culqi: cambiar de pedido o intento mientras el modal seguía abierto podía dejar un callback tardío con capacidad de cobrar o autorizar sobre el contexto nuevo.
 - `db44f8d` ata cada checkout a `pedido:intento` e invalida callbacks `onToken`, `onOrder` y `onError` obsoletos, además de comprobar la clave después de operaciones asíncronas.
-- `tests/payment-instructions.test.tsx` confirma que el callback del pedido anterior no llama `chargeCard` ni autoriza el pedido nuevo. Focal pagos: **15/15**; suite global posterior: **69 archivos / 318 pruebas**; lint, typecheck y `git diff --check` pasan.
+- `tests/payment-instructions.test.tsx` confirma que el callback del pedido anterior no llama `chargeCard` ni autoriza el pedido nuevo. Focal pagos: **15/15**; suite global posterior: **69 archivos / 318 pruebas**; lint, typecheck, `git diff --check`, `npm run build:apps` y smoke E2E **12/12** pasan.
 - El cambio es web y no modifica los APK debug `1.4/5`. P-02/P-11/U-08 siguen en verificación hasta E2E con backend y proveedor de prueba autorizado; no se ejecutaron pagos reales.
 
 ## Bloqueos reproducibles
