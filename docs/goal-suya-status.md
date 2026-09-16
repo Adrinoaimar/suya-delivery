@@ -208,6 +208,13 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Wallet Observer: `output/android/Suya-Wallet-Observer-debug.apk`, **25,192,060 bytes**, SHA-256 `7c5d98f49debef7d0dbebb3385d5608be9c58bbb48eaa770d99061a325a73e5e`, `com.suya.walletobserver`.
 - La captura/instalación física, actualización, TalkBack, fuente ampliada y offline nativo siguen pendientes por falta de dispositivo/emulador.
 
+## Verificación posterior — lint nativo Android (2026-09-15)
+
+- `bash android/gradlew -p android lint --no-daemon` terminó `BUILD SUCCESSFUL` con JDK 21/SDK 36 temporales y reportó **sin nuevos problemas del proyecto**.
+- Gradle solo indicó seis entradas históricas filtradas por el baseline de Capacitor y avisos generales de deprecación; no se atribuyó una regresión a Suya.
+- Se complementa Android `test` **5/5**, `assembleDebug`, ZIP íntegro, v2 y hashes de §41. No sustituye instalación/actualización física, TalkBack, fuente ampliada, offline, permisos ni DB/RLS oficial.
+- El siguiente gate sigue siendo `npm run db:start && npm run db:lint && npm run db:test` con runtime accesible; después E2E financiero sintético, dispositivo, endpoint privado OTA y firma release autorizada.
+
 ## Bloqueos reproducibles
 
 1. `npm run db:lint` no conecta a `127.0.0.1:54322`; `npm run db:start` tampoco puede conectar al socket Docker normal. Se probó un daemon rootless temporal con `vfs`, cgroups desactivados y seccomp/AppArmor aislados: la red `none` no permite aliases, `host` rechaza aliases y la red rootless con `slirp4netns` sí crea `bridge`, pero el contenedor Postgres queda saludable sin publicar el puerto hacia el host; la CLI termina con `LegacyDbConnectError` (timeout/conexión terminada) y limpia el contenedor. No se modificó el sistema ni el código para ocultarlo. La suite SQL sí fue validada de forma independiente en PostgreSQL temporal; queda pendiente repetirla mediante el flujo oficial de Supabase cuando exista daemon/puerto normal.
