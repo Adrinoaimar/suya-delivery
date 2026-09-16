@@ -138,6 +138,12 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Focal billeteras: **9/9**; wallet/payment/guest: **25/25**; suite global posterior: **69 archivos / 315 pruebas**; lint, typecheck, build:apps y smoke E2E **12/12** pasan. El cambio solo afecta Backoffice web; las APK debug `1.4/5` mantienen sus hashes.
 - A-09/U-04 siguen en verificación hasta backend real, RLS, cambio de restaurante y restauración de red. No se declara cierre ni aprobación financiera por esta prueba mock.
 
+## Seguimiento posterior — sede visible frente a permiso obsoleto (2026-09-15)
+
+- Se reprodujo el caso en que `restaurantIds` conserva una sede ya no visible. Backoffice podía usar ese ID para cargar cuentas antes de que el operador escogiera la sede correcta.
+- La corrección usa únicamente `stores` visibles y respalda con la primera sede visible; no consulta cuentas ni crea dispositivos contra un ID obsoleto. Regresión focal de billeteras: **10/10**; lint y typecheck pasan.
+- Suite global anterior: **69 archivos / 315 pruebas**; la nueva regresión queda incorporada al siguiente gate global. A-09/U-03 siguen en verificación hasta RLS y cambio de restaurante con backend real.
+
 ## Seguimiento posterior — actualización del comprobante invitado (2026-09-15)
 
 - Se reprodujo un defecto real de U-07 en `GuestOrderPage`: el botón «Actualizar estado» vaciaba el comprobante sin cambiar las dependencias del efecto y no volvía a consultar el servidor.
