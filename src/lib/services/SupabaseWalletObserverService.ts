@@ -174,6 +174,26 @@ export class SupabaseWalletObserverService implements WalletObserverService {
     });
   }
 
+  async setDeviceActive(deviceId: string, active: boolean): Promise<boolean> {
+    if (!deviceId) throw new Error('Selecciona un dispositivo.');
+    const { data, error } = await this.client.rpc('set_wallet_observer_device_active', {
+      p_device_id: deviceId,
+      p_active: active,
+    });
+    if (error) throw new Error(error.message);
+    return data === true;
+  }
+
+  async rotateDevice(deviceId: string): Promise<CreatedWalletObserverDevice> {
+    if (!deviceId) throw new Error('Selecciona un dispositivo.');
+    const { data, error } = await this.client.rpc('rotate_wallet_observer_device', {
+      p_device_id: deviceId,
+    });
+    if (error) throw new Error(error.message);
+    const row = Array.isArray(data) ? data[0] : data;
+    return mapCreatedDevice((row ?? {}) as DeviceRow);
+  }
+
   async listObservations(restaurantIds: string[]): Promise<WalletObservation[]> {
     if (restaurantIds.length === 0) return [];
     const { data, error } = await this.client

@@ -1,6 +1,6 @@
 begin;
 
-select plan(24);
+select plan(37);
 
 select has_function('public', 'create_delivery_order_with_payment',
   array['uuid', 'jsonb', 'text', 'text', 'text', 'uuid', 'text', 'text', 'double precision', 'double precision'],
@@ -145,6 +145,17 @@ select ok(
   ),
   'observaciones exigen cuenta receptora activa'
 );
+select has_function('public', 'set_wallet_observer_device_active',
+  array['uuid', 'boolean'], 'revocación de dispositivo existe');
+select has_function('public', 'rotate_wallet_observer_device',
+  array['uuid'], 'rotación de token existe');
+select ok((select exists (select 1 from pg_indexes
+  where schemaname = 'public' and indexname = 'wallet_observations_device_created_idx')),
+  'ingesta tiene índice por dispositivo y fecha');
+select ok((select pg_get_functiondef('public.ingest_wallet_observation(text,text,text,text,text,bigint,text,timestamptz)'::regprocedure)
+  like '%split_part%'), 'tokens nuevos localizan el dispositivo por UUID');
+select ok((select pg_get_functiondef('public.ingest_wallet_observation(text,text,text,text,text,bigint,text,timestamptz)'::regprocedure)
+  like '%device observation rate limit exceeded%'), 'ingesta aplica límite por dispositivo');
 
 select set_config('role', 'postgres', true);
 insert into public.orders (
@@ -195,13 +206,57 @@ set token_hash = extensions.crypt(
   extensions.gen_salt('bf')
 ), token_last4 = '7890'
 where id = 'b7400000-0000-0000-0000-000000000001';
+select set_config('role', 'authenticated', true);
+select lives_ok(
+  $$ select public.set_wallet_observer_device_active(
+    'b7400000-0000-0000-0000-000000000001', false
+  ) $$,
+  'el operador puede revocar un dispositivo'
+);
+select set_config('role', 'anon', true);
+select throws_ok(
+  $$ select * from public.ingest_wallet_observation(
+    'receiver-binding-device-token-123456789012345678901234567890',
+    'revoked-device-event', 'yape', null, null, 3000, 'PEN', now()
+  ) $$,
+  'P0001', 'invalid device token',
+  'el token revocado ya no puede ingresar evidencia'
+);
+select set_config('role', 'authenticated', true);
+select lives_ok(
+  $$ select public.set_wallet_observer_device_active(
+    'b7400000-0000-0000-0000-000000000001', true
+  ) $$,
+  'el operador puede reactivar un dispositivo'
+);
+select lives_ok(
+  $$ create temporary table rotated_wallet_device as
+    select * from public.rotate_wallet_observer_device(
+      'b7400000-0000-0000-0000-000000000001'
+    ) $$,
+  'el operador puede rotar el token'
+);
+select ok(
+  (select device_token ~ '^[0-9a-f-]{36}\.[0-9a-f]{64}$' from rotated_wallet_device),
+  'el token rotado incluye identificador y secreto de alta entropía'
+);
+select set_config('role', 'anon', true);
+select lives_ok(
+  $$ select * from public.ingest_wallet_observation(
+    (select device_token from rotated_wallet_device),
+    'rotated-device-event', 'yape', null, null, 3000, 'PEN', now()
+  ) $$,
+  'el token rotado funciona en la ingesta'
+);
+
+select set_config('role', 'postgres', true);
 update public.restaurant_payment_accounts
 set active = false
 where id = 'b7300000-0000-0000-0000-000000000001';
 select set_config('role', 'anon', true);
 select throws_ok(
   $$ select * from public.ingest_wallet_observation(
-    'receiver-binding-device-token-123456789012345678901234567890',
+    (select device_token from rotated_wallet_device),
     'inactive-receiver-ingest', 'yape', null, null, 3000, 'PEN', now()
   ) $$,
   'P0001', 'receiver payment account is inactive',

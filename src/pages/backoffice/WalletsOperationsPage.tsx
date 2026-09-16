@@ -95,6 +95,7 @@ export default function WalletsOperationsPage() {
   const loadRequestRef = useRef(0);
   const observationRequestRef = useRef(0);
   const candidateRequestRef = useRef(0);
+  const [deviceActionId, setDeviceActionId] = useState<string | null>(null);
   const canSelectRestaurant = isPlatformAdmin || restaurantIds.length > 1;
   const activeRestaurantId = restaurantId || (isPlatformAdmin ? '' : restaurantIds[0] ?? '');
 
@@ -269,6 +270,50 @@ export default function WalletsOperationsPage() {
       notificationService.notify('Token copiado. Trátalo como una contraseña.', 'success');
     } catch {
       notificationService.notify('No pudimos copiar el token; cópialo manualmente.', 'warning');
+    }
+  };
+
+  const setDeviceActive = async (device: WalletObserverDevice, active: boolean) => {
+    if (deviceActionId) return;
+    setDeviceActionId(device.id);
+    try {
+      const saved = await walletObserverService.setDeviceActive(device.id, active);
+      if (!saved) throw new Error('El servidor no encontró el dispositivo.');
+      setDevices((current) =>
+        current.map((entry) => (entry.id === device.id ? { ...entry, active } : entry)),
+      );
+      notificationService.notify(
+        active ? 'Dispositivo reactivado.' : 'Dispositivo revocado; su token ya no ingresa evidencia.',
+        'success',
+      );
+    } catch (cause) {
+      notificationService.notify(
+        cause instanceof Error ? cause.message : 'No pudimos cambiar el estado del dispositivo.',
+        'danger',
+      );
+    } finally {
+      setDeviceActionId(null);
+    }
+  };
+
+  const rotateDevice = async (device: WalletObserverDevice) => {
+    if (deviceActionId) return;
+    setDeviceActionId(device.id);
+    try {
+      const rotated = await walletObserverService.rotateDevice(device.id);
+      setDevices((current) => current.map((entry) => (entry.id === device.id ? rotated : entry)));
+      setNewDevice(rotated);
+      notificationService.notify(
+        'Token regenerado. Pégalo en el celular de caja; el token anterior quedó invalidado.',
+        'success',
+      );
+    } catch (cause) {
+      notificationService.notify(
+        cause instanceof Error ? cause.message : 'No pudimos regenerar el token.',
+        'danger',
+      );
+    } finally {
+      setDeviceActionId(null);
     }
   };
 
@@ -475,7 +520,7 @@ export default function WalletsOperationsPage() {
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
                 <p className="font-semibold text-amber-950">
-                  Token generado · muéstralo solo ahora
+                  Token de acceso · muéstralo solo ahora
                 </p>
                 <p className="mt-1 text-sm text-amber-900">
                   Guárdalo en el celular. Por seguridad, Suya no volverá a mostrar este token.
@@ -583,7 +628,7 @@ export default function WalletsOperationsPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {devices.map((device) => (
-              <Card key={device.id} className="flex items-start justify-between gap-3">
+              <Card key={device.id} className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-semibold">{device.label}</p>
                   <p className="mt-1 text-xs text-suya-muted">
@@ -594,6 +639,32 @@ export default function WalletsOperationsPage() {
                 <Badge tone={device.active ? 'lime' : 'neutral'}>
                   {device.active ? 'Activo' : 'Inactivo'}
                 </Badge>
+                <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => void setDeviceActive(device, !device.active)}
+                    disabled={deviceActionId !== null}
+                  >
+                    {deviceActionId === device.id
+                      ? 'Guardando…'
+                      : device.active
+                        ? 'Revocar'
+                        : 'Reactivar'}
+                  </Button>
+                  {device.active && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => void rotateDevice(device)}
+                      disabled={deviceActionId !== null}
+                    >
+                      Rotar token
+                    </Button>
+                  )}
+                </div>
               </Card>
             ))}
           </div>

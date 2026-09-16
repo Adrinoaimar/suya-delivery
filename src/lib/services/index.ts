@@ -121,6 +121,12 @@ function resolveWalletObserverService(): Promise<WalletObserverService> {
           async createDevice() {
             throw new Error('La conexión de billeteras requiere Supabase.');
           },
+          async setDeviceActive() {
+            throw new Error('La conexión de billeteras requiere Supabase.');
+          },
+          async rotateDevice() {
+            throw new Error('La conexión de billeteras requiere Supabase.');
+          },
           async listObservations() {
             return [];
           },
@@ -153,6 +159,12 @@ export const walletObserverService: WalletObserverService = {
       label,
       receiverAccountId,
     );
+  },
+  async setDeviceActive(deviceId, active) {
+    return (await resolveWalletObserverService()).setDeviceActive(deviceId, active);
+  },
+  async rotateDevice(deviceId) {
+    return (await resolveWalletObserverService()).rotateDevice(deviceId);
   },
   async listObservations(restaurantIds) {
     return (await resolveWalletObserverService()).listObservations(restaurantIds);

@@ -46,8 +46,9 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - Pedidos delivery en efectivo y mesas con pago en efectivo quedan vinculados al turno; el reintento de mesa reutiliza `payment_request_id` y no duplica el movimiento.
 - La ruta de cierre manual de mesas quedó limitada a `cash` en el contrato TypeScript y en la RPC; métodos digitales no pueden marcar una mesa como pagada sin su autorización propia.
 - `MainActivity` fija el color y el contraste claro de las barras de estado/navegación después del splash; reduce el riesgo de iconos claros sobre fondos pálidos en Android con `targetSdk 36`, sin superponer ni redimensionar el layout web.
-- Guardia adicional de evidencia wallet: un trigger server-side serializa por cuenta, proveedor, importe y código visible, y rechaza que una observación ya consumida autorice otro intento; el segundo dispositivo queda para revisión manual. Se añadió regresión pgTAP de 24 aserciones.
+- Guardia adicional de evidencia wallet: un trigger server-side serializa por cuenta, proveedor, importe y código visible, y rechaza que una observación ya consumida autorice otro intento; el segundo dispositivo queda para revisión manual. La regresión pgTAP conjunta declara 37 aserciones.
 - Guardia de receptor activo: `20260915150000_active_wallet_receiver_guard.sql` rechaza crear o ingresar nuevas filas ligadas a una cuenta receptora desactivada y conserva el histórico para auditoría.
+- Controles A-09: `20260915160000_wallet_observer_device_controls.sql` añade revocación/reactivación, rotación de token de un solo retorno, auditoría sin `token_hash`, localización por UUID en tokens nuevos y límite de 120 observaciones/minuto por dispositivo; los tokens legacy conservan fallback hasta rotación.
 - Cola Android: cuando se alcanza el límite de 500, la selección conserva primero el evento nuevo y todos los pendientes; solo puede descartar historial ya sincronizado. Se añadió regresión nativa para 400 pendientes + 100 históricos.
 
 ## Matriz de hallazgos
@@ -85,7 +86,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | A-06 | Verificado local | `.range(0,49)` y sin N+1 de códigos; test de servicio pasa | Confirmar paginación/índice en DB |
 | A-07 | En verificación | Migración nueva forward-only y test pgTAP añadido | Instalación limpia, actualización y rollback restaurable |
 | A-08 | En verificación | APKs debug Rider/Backoffice/Wallet Observer generadas con versionCode 5/versionName 1.4; hashes registrados abajo | Capturas, instalación/actualización y firma release |
-| A-09 | En verificación | RPC account-aware, token hash, auditoría y guardia que rechaza bindings/observaciones de cuentas receptoras inactivas | SQL/RLS/concurrencia en DB local |
+| A-09 | En verificación | RPC account-aware, revocación/reactivación, rotación, auditoría sin secreto, token identificable y límite por dispositivo; guardia de receptor inactivo | SQL/RLS/concurrencia en DB local |
 | A-10 | En verificación | Navegador sin cookies ni tracking; pedido invitado no se guarda completo en Web Storage; su huella de recuperación es SHA-256 de 64 hex y no contiene PII; correo solo se conserva si el checkout opcional de gateway lo requiere; controles sin nombre: 0; Edge Functions ya no registran cuerpos crudos externos (`tests/privacy-logs.test.ts`, 1/1) | Confirmar red/Set-Cookie y minimización en E2E con backend, más revisión final de logs, GPS, teléfonos, direcciones y permisos |
 | A-11 | En verificación | El mapa no usa `router.project-osrm.org`; sin endpoint privado/autorizado no hace requests y conserva un trazo local; el build productivo rechaza el host público; `tests/route-planner.test.ts` cubre 2 casos | Validar un endpoint same-origin/privado real y su política de retención sin exponer GPS a terceros |
 
@@ -93,11 +94,11 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 
 - `npm run typecheck`: pasa.
 - `npm run lint`: pasa sin warnings.
-- `npm test -- --run`: **68 archivos / 301 pruebas pasan** tras añadir las regresiones de privacidad de logs, configuración de sesión nativa/web, huella guest sin PII, correo mínimo, routing sin exposición pública de GPS y OTA/CSP junto con privacidad del pedido invitado, reset de intento, caja auditable, cobro de mesas y cambio rápido de restaurante.
+- `npm test -- --run`: **68 archivos / 305 pruebas pasan** tras añadir las regresiones de privacidad de logs, configuración de sesión nativa/web, huella guest sin PII, correo mínimo, routing sin exposición pública de GPS, OTA/CSP y controles de dispositivo junto con privacidad del pedido invitado, reset de intento, caja auditable, cobro de mesas y cambio rápido de restaurante.
 - Pruebas focalizadas de acceso invitado/order/payment/layout: 19/19 pasan.
 - `tests/backoffice-layout.test.tsx`, `tests/cash-register-page.test.tsx`, `tests/supabase-cash-register.test.ts` y privacidad invitado: **12/12** pasan; la carga obsoleta no reemplaza la cuenta y el pedido completo no queda en Web Storage.
 - `npm run build`: pasa.
-- `npm run security:secrets`: pasa; 911 archivos sin patrones de secreto.
+- `npm run security:secrets`: pasa; 913 archivos sin patrones de secreto.
 - Prueba focal de rutas/configuración/mapa: **11/11**; endpoint OSRM público rechazado, request omitido sin endpoint autorizado y endpoint HTTPS sintético aceptado.
 - Build/aislamiento de bundles customer, rider y backoffice con configuración local sintética: pasa.
 - Smoke visual/a11y web: customer, Rider y Backoffice pasan **12/12** en 360×800, 390×844, tablet y desktop sin overflow; barras inferiores no filtran texto; keyboard traversal customer con 16 controles nombrados/visibles y 0 sin nombre. `scripts/browser-smoke.mjs` comprueba además `document.cookie` vacío y cero scripts con origen externo; ambos checks pasan.
@@ -115,11 +116,13 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Android: `bash android/gradlew test --no-daemon` pasa 4/4 pruebas unitarias y `assembleDebug` pasa para Rider, Backoffice y Wallet Observer; el ajuste nativo de barras compila; advertencia existente de API deprecada en `YapeNotificationListenerService.java`, sin fallo de compilación.
 - Android posterior a la corrección de cola (2026-09-15): `bash android/gradlew test --no-daemon` pasa **5/5** pruebas unitarias, incluyendo que 400 eventos pendientes sobreviven a 100 históricos sincronizados bajo el límite de 500; el build compila sin errores.
 - Revalidación posterior a la guardia de evidencia (2026-09-15): typecheck, lint, suite web **68/301**, escaneo de secretos (**911 archivos**) y reconstrucción de APKs debug pasan; `git diff --check` pasa. La prueba oficial SQL sigue pendiente por el runtime local (`127.0.0.1:54322` rechazado también tras la migración de receptor activo).
-- Reconstrucción final posterior al ajuste nativo y a la revisión de privacidad: `npm run build:mobile:roles` volvió a compilar y empaquetar Rider, Backoffice y Wallet Observer con `versionName 1.4`/`versionCode 5`; `unzip -tqq` y `apksigner verify` v2 pasan en las tres APK.
+- Revalidación de controles A-09 (2026-09-15): typecheck, lint y pruebas focales de servicio/UI de dispositivos **17/17** pasan; la migración forward-only y sus 37 aserciones SQL quedan pendientes del runtime oficial.
+- Reconstrucción final posterior a los controles A-09: `npm run build:mobile:roles` volvió a compilar y empaquetar Rider, Backoffice y Wallet Observer con `versionName 1.4`/`versionCode 5`; `unzip -tqq` y `apksigner verify` v2 pasan en las tres APK. Los hashes actuales quedan registrados abajo.
+- Gate local final posterior a los controles A-09: suite global **68 archivos / 305 pruebas**, typecheck, lint, `npm audit --omit=dev --audit-level=high` (0 vulnerabilidades) y `npm run security:secrets` (**913 archivos**) pasan; `db:lint`/`db:test` siguen bloqueados únicamente por la ausencia del Postgres oficial local.
 - PostgreSQL temporal 17.6.1 con esquema mínimo oficial de Auth/Storage equivalente: instalación limpia de **53 migraciones**, `seed.sql` y **24/24 archivos pgTAP** pasan; la migración de caja (`20260915130000`) es la número 54 y queda pendiente de repetir en el flujo oficial. Es evidencia independiente del port-forward, no reemplaza `supabase db lint/test`.
-- APK Rider debug: `output/android/Suya-Rider-debug.apk`, 25,371,041 bytes, SHA-256 `4a430701ce30c497e8b63c3d415770bd078e5bebf527577c208e979687a7db4a`, paquete `com.suya.rider`, `versionName 1.4`, `versionCode 5`.
-- APK Backoffice debug: `output/android/Suya-Backoffice-debug.apk`, 25,238,844 bytes, SHA-256 `390b0fb0baf2f0127853e2d49684bcac7a86f32c7ac2d717e96aceade516a388`, paquete `com.suya.backoffice`, `versionName 1.4`, `versionCode 5`.
-- APK Wallet Observer debug: `output/android/Suya-Wallet-Observer-debug.apk`, 25,191,944 bytes, SHA-256 `020fe42f548e89b5d04e6792a8fd1c16f097b740453d46124c753c75f9239244`, paquete `com.suya.walletobserver`, `versionName 1.4`, `versionCode 5`.
+- APK Rider debug: `output/android/Suya-Rider-debug.apk`, 25,371,053 bytes, SHA-256 `b2d8d22518ce6262948baf5bdf20b5281eb5b7a58481a1c1499ba99e3d651e0c`, paquete `com.suya.rider`, `versionName 1.4`, `versionCode 5`.
+- APK Backoffice debug: `output/android/Suya-Backoffice-debug.apk`, 25,239,336 bytes, SHA-256 `9e63b35d141e9d48af37f4e010c45a7a36b9cd53e72583491e1396f2005022cb`, paquete `com.suya.backoffice`, `versionName 1.4`, `versionCode 5`.
+- APK Wallet Observer debug: `output/android/Suya-Wallet-Observer-debug.apk`, 25,191,948 bytes, SHA-256 `e9c4a6aae593503dc8c32e89fd6097c85fcab9df937546c7e9286ed5becde5d9`, paquete `com.suya.walletobserver`, `versionName 1.4`, `versionCode 5`.
 - Las tres APK pasan `unzip -tqq` y `apksigner verify` con APK Signature Scheme v2; están firmadas con la clave debug del entorno y no son entregables de producción.
 
 ## Bloqueos reproducibles
@@ -130,7 +133,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 
 ## Siguiente acción exacta
 
-1. Con Docker Desktop/daemon normal disponible, ejecutar `npm run db:start`, `npm run db:lint` y `npm run db:test`; incluir `20260915140000_wallet_evidence_reuse_guard.sql` y `20260915150000_active_wallet_receiver_guard.sql`, corregir sintaxis/RLS/concurrencia y actualizar esta matriz. El experimento rootless temporal ya no debe repetirse salvo que cambie el runtime o la publicación de puertos.
+1. Con Docker Desktop/daemon normal disponible, ejecutar `npm run db:start`, `npm run db:lint` y `npm run db:test`; incluir `20260915140000_wallet_evidence_reuse_guard.sql`, `20260915150000_active_wallet_receiver_guard.sql` y `20260915160000_wallet_observer_device_controls.sql`, corregir sintaxis/RLS/concurrencia y actualizar esta matriz. El experimento rootless temporal ya no debe repetirse salvo que cambie el runtime o la publicación de puertos.
 2. Completar A-03, U-09, U-10 y A-10 con E2E business de recuperación, visuales, accesibilidad y privacidad; completar E2E de las cuatro modalidades cuando el backend local esté disponible.
 3. Completar capturas/instalación/actualización y pruebas físicas cuando haya dispositivo; conservar los hashes debug como evidencia de prueba, no como release.
 4. Validar A-11 con endpoint privado/same-origin autorizado y política de retención; no activar un router público.

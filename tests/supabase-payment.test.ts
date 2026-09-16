@@ -167,4 +167,38 @@ describe('SupabasePaymentService', () => {
       p_code: '482913',
     });
   });
+
+  it('revoca un dispositivo mediante el RPC account-scoped', async () => {
+    const client = fakeClient({ data: true, error: null });
+    const service = new SupabaseWalletObserverService(client);
+    await expect(service.setDeviceActive('device-1', false)).resolves.toBe(true);
+    expect(client.rpc).toHaveBeenCalledWith('set_wallet_observer_device_active', {
+      p_device_id: 'device-1',
+      p_active: false,
+    });
+  });
+
+  it('mapea el token rotado y conserva el restaurante de origen', async () => {
+    const client = fakeClient({
+      data: [
+        {
+          device_id: 'device-1',
+          device_label: 'Caja principal',
+          device_token: 'device-1.' + 'b'.repeat(64),
+          restaurant_id: 'restaurant-1',
+        },
+      ],
+      error: null,
+    });
+    const service = new SupabaseWalletObserverService(client);
+    await expect(service.rotateDevice('device-1')).resolves.toMatchObject({
+      id: 'device-1',
+      restaurantId: 'restaurant-1',
+      label: 'Caja principal',
+      deviceToken: 'device-1.' + 'b'.repeat(64),
+    });
+    expect(client.rpc).toHaveBeenCalledWith('rotate_wallet_observer_device', {
+      p_device_id: 'device-1',
+    });
+  });
 });

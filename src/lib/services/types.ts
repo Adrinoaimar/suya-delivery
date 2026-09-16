@@ -204,6 +204,8 @@ export interface WalletObserverService {
     label: string,
     receiverAccountId?: string | null,
   ): Promise<CreatedWalletObserverDevice>;
+  setDeviceActive(deviceId: string, active: boolean): Promise<boolean>;
+  rotateDevice(deviceId: string): Promise<CreatedWalletObserverDevice>;
   listObservations(restaurantIds: string[]): Promise<WalletObservation[]>;
   listPaymentCandidates(observationId: string): Promise<WalletPaymentCandidate[]>;
   setObservationCode(observationId: string, code: string): Promise<boolean>;

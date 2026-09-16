@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
   listObservations: vi.fn(),
   listPaymentAccounts: vi.fn(),
   createDevice: vi.fn(),
+  setDeviceActive: vi.fn(),
+  rotateDevice: vi.fn(),
   listPaymentCandidates: vi.fn(),
   notify: vi.fn(),
 }));
@@ -24,6 +26,8 @@ vi.mock('@/lib/services', async (importOriginal) => ({
     listObservations: mocks.listObservations,
     listPaymentAccounts: mocks.listPaymentAccounts,
     createDevice: mocks.createDevice,
+    setDeviceActive: mocks.setDeviceActive,
+    rotateDevice: mocks.rotateDevice,
     listPaymentCandidates: mocks.listPaymentCandidates,
     setObservationCode: vi.fn(),
     verifyObservation: vi.fn(),
@@ -203,6 +207,56 @@ describe('WalletsOperationsPage', () => {
     expect(screen.getAllByRole('button', { name: 'Verificar pago' }).every((button) =>
       (button as HTMLButtonElement).disabled,
     )).toBe(true);
+  });
+
+  it('permite revocar un dispositivo sin borrar su evidencia histórica', async () => {
+    mocks.listDevices.mockResolvedValue([
+      {
+        id: 'device-1',
+        restaurantId: restaurant.id,
+        label: 'Caja observadora',
+        active: true,
+        lastSeenAt: null,
+      },
+    ]);
+    mocks.setDeviceActive.mockResolvedValue(true);
+    render(<WalletsOperationsPage />);
+
+    expect(await screen.findByText('Caja observadora')).toBeInTheDocument();
+    await act(async () => {
+      screen.getByRole('button', { name: 'Revocar' }).click();
+    });
+    expect(mocks.setDeviceActive).toHaveBeenCalledWith('device-1', false);
+    expect(await screen.findByRole('button', { name: 'Reactivar' })).toBeInTheDocument();
+  });
+
+  it('rota el token y muestra la credencial nueva una sola vez', async () => {
+    mocks.listDevices.mockResolvedValue([
+      {
+        id: 'device-1',
+        restaurantId: restaurant.id,
+        label: 'Caja observadora',
+        active: true,
+        lastSeenAt: null,
+      },
+    ]);
+    mocks.rotateDevice.mockResolvedValue({
+      id: 'device-1',
+      restaurantId: restaurant.id,
+      label: 'Caja observadora',
+      active: true,
+      lastSeenAt: null,
+      deviceToken: 'b'.repeat(64),
+    });
+    render(<WalletsOperationsPage />);
+
+    expect(await screen.findByText('Caja observadora')).toBeInTheDocument();
+    await act(async () => {
+      screen.getByRole('button', { name: 'Rotar token' }).click();
+    });
+    expect(mocks.rotateDevice).toHaveBeenCalledWith('device-1');
+    expect(await screen.findByText('Token de acceso · muéstralo solo ahora')).toBeInTheDocument();
+    expect(screen.getByText('b'.repeat(64))).toBeInTheDocument();
   });
 
   it('descarta una respuesta vieja al buscar candidatos en rápida sucesión', async () => {
