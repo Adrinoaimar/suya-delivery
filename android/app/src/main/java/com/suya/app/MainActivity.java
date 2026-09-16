@@ -11,6 +11,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         registerPlugin(SuyaWalletObserverPlugin.class);
+        registerPlugin(SuyaSecureStoragePlugin.class);
         super.onCreate(savedInstanceState);
         configureSystemBars();
     }

@@ -58,6 +58,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - P-02: `20260916120000_wallet_evidence_reuse_identity_guard.sql` deja de bloquear por últimos cuatro cuando existe fingerprint/HMAC completo; la regresión de mismo sufijo y código distinto amplía el fixture conjunto a 40 aserciones. La ejecución oficial sigue pendiente.
 - U-09: `LeafletMap` reserva una columna derecha para la atribución OSM y apila leyendas/errores en una columna izquierda con límites de ancho; la atribución nativa duplicada queda desactivada para evitar superposición en mapas móviles estrechos.
 - P-04/P-10/A-01: `20260916130000_payment_intent_terminal_retry.sql` conserva la clave determinista para el primer intento, reutiliza el intento activo bajo `FOR UPDATE` y genera una clave `:retry:<uuid>` después de un intento terminal; evita que la unicidad global bloquee reintentos legítimos. El contrato SQL declara 6 aserciones y queda pendiente del runtime oficial.
+- A-05: Android ya persiste la sesión Supabase mediante `SuyaSecureStoragePlugin`: AES-GCM con clave no exportable de Android Keystore, ciphertext en preferencias privadas y sin fallback plaintext. El navegador conserva su almacenamiento web; iOS no simula persistencia segura.
 
 ## Matriz de hallazgos
 
@@ -90,7 +91,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | A-02 | En verificación | Contratos distintos para delivery, menú y mesa; GPS ya no se exige universalmente y coordenadas entran en la creación | DB limpia + E2E por modalidad |
 | A-03 | En verificación | Test y bundle customer real: token sintético de 64 caracteres se conserva en sesión, `location.hash` queda vacío después de cargar; tests focales 19/19 cubren reintento guest y refresco de pago con token estable | E2E con recarga, enlace en otro contexto y pérdida de respuesta sin duplicar pedido |
 | A-04 | Verificado local | `analytics.ts` no carga script, no persiste UTM ni emite eventos; tests y build pasan | Confirmar red/`Set-Cookie` en E2E |
-| A-05 | En verificación | Native Supabase no persiste refresh token en Web Storage; `tests/supabase-client-auth.test.ts` cubre Android/web 2/2; token observador usa Keystore; `create/get_payment_intent` rechazan explícitamente `auth.uid() IS NULL` para órdenes autenticadas | Ejecutar migración y probar cierre/reinicio; evaluar secure storage de sesión |
+| A-05 | En verificación | `SuyaSecureStoragePlugin` cifra Auth con AES-GCM y clave no exportable de Android Keystore; `secureStorage.ts` se inyecta solo en Android; `tests/supabase-client-auth.test.ts` verifica persistencia segura y PKCE; token observador usa Keystore; `create/get_payment_intent` rechazan explícitamente `auth.uid() IS NULL` | Probar en dispositivo cierre/reinicio/bloqueo/restauración/OAuth; revisar borrado y fallback de sesión |
 | A-06 | Verificado local | `.range(0,49)` y sin N+1 de códigos; test de servicio pasa | Confirmar paginación/índice en DB |
 | A-07 | En verificación | Migración nueva forward-only y test pgTAP añadido | Instalación limpia, actualización y rollback restaurable |
 | A-08 | En verificación | APKs debug Rider/Backoffice/Wallet Observer generadas con versionCode 5/versionName 1.4; hashes registrados abajo | Capturas, instalación/actualización y firma release |
@@ -323,3 +324,11 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - `20260916130000_payment_intent_terminal_retry.sql` conserva el lock del pedido y la reutilización de `pending/authorized`; si existe historial previo sin intento activo, genera `order:<id>:<method>:retry:<uuid>`. No se elimina la unicidad ni se permite duplicar llamadas concurrentes.
 - `20260916130000_payment_intent_terminal_retry.test.sql` declara **6 aserciones**. Lint, typecheck, `git diff --check` y Vitest global **71/327** pasan. El gate oficial de DB continúa en `ECONNREFUSED 127.0.0.1:54322`; la migración queda en verificación.
 - Es cambio SQL-only: APKs debug `1.4/5` sin cambios. No hubo pagos reales, despliegue ni publicación; siguen pendientes DB/RLS, E2E financiero, dispositivo, accesibilidad nativa, offline, OTA privado y firma release.
+
+## Corrección A-05 — almacenamiento seguro de sesión Android — 2026-09-16
+
+- La revisión encontró que desactivar toda persistencia nativa protegía Web Storage, pero degradaba la continuidad de sesión tras reinicio. `secureStorage.ts` implementa `SupportedStorage` y se inyecta solo para Android.
+- `SuyaSecureStoragePlugin` cifra con AES-GCM/IV aleatorio, conserva la clave no exportable en Android Keystore y guarda solo ciphertext en preferencias privadas. Valida claves y no permite fallback en claro. `MainActivity` registra el plugin; no se añade dependencia ni permiso nuevo.
+- `tests/supabase-client-auth.test.ts` pasa **2/2**; typecheck, lint, `bash android/gradlew -p android test --no-daemon` y las tres reconstrucciones APK pasan. Falta hardware para verificar reinicio, bloqueo, restauración, OAuth y sign-out físico; A-05 permanece en verificación.
+- Las APK debug `1.4/5` actuales pasan ZIP, `apksigner verify` v2 y `aapt dump badging`. No son release, no implican sesión física validada y no habilitan pagos reales.
+- Huellas actuales: Rider **25,371,865 bytes**, `6103790069674cf4a1c0b11d8cd84c03b91ec2a6adb9541a6afc9f347002a0ff`; Backoffice **25,240,196 bytes**, `d4d171ac5495f340c159dfdcbfa5025478ef5b85b8cb765605a929d44db54e8f`; Wallet Observer **25,192,272 bytes**, `b67ef174693d1aa378555dd82ae1276b162f83a9549593f8fafbb3e1065775b7`.
