@@ -59,8 +59,18 @@ describe('Suya hardening guards', () => {
     const listener = source('android/app/src/main/java/com/suya/app/YapeNotificationListenerService.java');
     const match = listener.match(/static boolean isQueueFull\(Context context\) \{([\s\S]*?)\n    \}/);
     expect(match?.[1]).toMatch(/new JSONArray\(decryptEvents\(/);
-    expect(match?.[1]).toMatch(/isPendingCapacityReached\(events\)/);
+    expect(match?.[1]).toMatch(/isPendingCapacityReached\(events, bindingId\)/);
     expect(match?.[1]).toMatch(/putBoolean\(QUEUE_FULL_KEY, queueFull\)/);
+  });
+
+  it('scopes observer queue health to the active binding without dropping old evidence', () => {
+    const listener = source('android/app/src/main/java/com/suya/app/YapeNotificationListenerService.java');
+    expect(listener).toMatch(/pendingCountForBinding\(current, bindingId\)/);
+    expect(listener).toMatch(/return pendingCountForBinding\(events, bindingId\);/);
+    expect(listener).toMatch(/isPendingCapacityReached\(events, bindingId\)/);
+    expect(listener).toMatch(/bindingId\.equals\(event\.optString\("bindingId", null\)\)/);
+    expect(listener).toMatch(/int syncedLimit = Math\.max\(0, MAX_EVENTS - 1 - pendingCount\);/);
+    expect(listener).toMatch(/if \(wantSynced && count - pendingCount >= syncedLimit\) continue;/);
   });
 
   it('ships defensive headers with every static Pages bundle', () => {

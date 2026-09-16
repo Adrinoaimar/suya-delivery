@@ -95,4 +95,26 @@ public class YapeNotificationListenerServiceTest {
         events.put(new JSONObject().put("synced", false));
         assertTrue(YapeNotificationListenerService.isPendingCapacityReached(events));
     }
+
+    @Test
+    public void scopesQueueCapacityToTheActiveBinding() throws JSONException {
+        JSONArray events = new JSONArray();
+        for (int index = 0; index < 500; index++) {
+            events.put(new JSONObject().put("bindingId", "old-binding").put("synced", false));
+        }
+
+        assertTrue(YapeNotificationListenerService.isPendingCapacityReached(events, "old-binding"));
+        assertTrue(!YapeNotificationListenerService.isPendingCapacityReached(events, "new-binding"));
+    }
+
+    @Test
+    public void retainsAllPendingEventsWhenOnlySyncedHistoryMustBeTrimmed() {
+        boolean[] synced = new boolean[501];
+        int[] indexes = YapeNotificationListenerService.pendingPriorityIndexes(synced);
+
+        assertEquals(501, indexes.length);
+        for (int index : indexes) {
+            assertTrue(!synced[index]);
+        }
+    }
 }

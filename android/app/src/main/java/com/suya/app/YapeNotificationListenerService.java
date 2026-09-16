@@ -300,6 +300,8 @@ public final class YapeNotificationListenerService extends NotificationListenerS
 
     private void appendEventLocked(JSONObject event) {
         SharedPreferences preferences = getSharedPreferences(PREFS, MODE_PRIVATE);
+        String bindingId = currentBindingId(this);
+        if (bindingId == null) return;
         JSONArray current;
         try {
             current = new JSONArray(decryptEvents(preferences.getString(EVENTS_KEY, null)));
@@ -325,11 +327,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
             }
             return;
         }
-        int pendingCount = 0;
-        for (int index = 0; index < current.length(); index++) {
-            JSONObject existing = current.optJSONObject(index);
-            if (existing != null && !existing.optBoolean("synced", false)) pendingCount++;
-        }
+        int pendingCount = pendingCountForBinding(current, bindingId);
         // La cola nunca sustituye evidencia pendiente por historia sincronizada.
         // Si está llena, se conserva todo y el estado queda visible para la capa nativa.
         if (pendingCount >= MAX_EVENTS) {
@@ -344,9 +342,10 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         String encrypted = encryptEvents(events.toString());
         // Never fall back to plaintext if Android Keystore is unavailable.
         if (encrypted != null) {
+            String bindingId = preferences.getString(DEVICE_BINDING_KEY, null);
             preferences.edit()
                     .putString(EVENTS_KEY, encrypted)
-                    .putBoolean(QUEUE_FULL_KEY, isPendingCapacityReached(events))
+                    .putBoolean(QUEUE_FULL_KEY, bindingId != null && isPendingCapacityReached(events, bindingId))
                     .apply();
         }
     }
@@ -371,14 +370,20 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         return next;
     }
 
-    /** Returns current-event indexes in lossless pending-first order. */
+    /** Returns indexes in pending-first order, retaining every pending event. */
     static int[] pendingPriorityIndexes(boolean[] synced) {
-        int[] indexes = new int[Math.min(MAX_EVENTS - 1, synced.length)];
+        int pendingCount = 0;
+        for (boolean eventSynced : synced) {
+            if (!eventSynced) pendingCount++;
+        }
+        int syncedLimit = Math.max(0, MAX_EVENTS - 1 - pendingCount);
+        int[] indexes = new int[Math.min(synced.length, pendingCount + syncedLimit)];
         int count = 0;
         for (int pass = 0; pass < 2 && count < indexes.length; pass++) {
             boolean wantSynced = pass == 1;
             for (int index = 0; index < synced.length && count < indexes.length; index++) {
                 if (synced[index] != wantSynced) continue;
+                if (wantSynced && count - pendingCount >= syncedLimit) continue;
                 indexes[count++] = index;
             }
         }
@@ -386,12 +391,22 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     }
 
     static boolean isPendingCapacityReached(JSONArray events) {
+        return pendingCountForBinding(events, null) >= MAX_EVENTS;
+    }
+
+    static boolean isPendingCapacityReached(JSONArray events, @Nullable String bindingId) {
+        if (bindingId == null) return false;
+        return pendingCountForBinding(events, bindingId) >= MAX_EVENTS;
+    }
+
+    private static int pendingCountForBinding(JSONArray events, @Nullable String bindingId) {
         int pending = 0;
         for (int index = 0; index < events.length(); index++) {
             JSONObject event = events.optJSONObject(index);
-            if (event != null && !event.optBoolean("synced", false)) pending++;
+            if (event != null && !event.optBoolean("synced", false)
+                    && (bindingId == null || bindingId.equals(event.optString("bindingId", null)))) pending++;
         }
-        return pending >= MAX_EVENTS;
+        return pending;
     }
 
     private static boolean mergeEvidenceField(JSONObject existing, JSONObject incoming, String key) throws JSONException {
@@ -444,15 +459,12 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     static int pendingEventCount(Context context) {
         if (context == null) return 0;
         synchronized (QUEUE_LOCK) {
+            String bindingId = currentBindingId(context);
+            if (bindingId == null) return 0;
             String stored = context.getSharedPreferences(PREFS, MODE_PRIVATE).getString(EVENTS_KEY, null);
             try {
                 JSONArray events = new JSONArray(decryptEvents(stored));
-                int count = 0;
-                for (int index = 0; index < events.length(); index++) {
-                    JSONObject event = events.optJSONObject(index);
-                    if (event != null && !event.optBoolean("synced", false)) count++;
-                }
-                return count;
+                return pendingCountForBinding(events, bindingId);
             } catch (JSONException ignored) {
                 return 0;
             }
@@ -463,13 +475,15 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         if (context == null) return false;
         synchronized (QUEUE_LOCK) {
             SharedPreferences preferences = context.getSharedPreferences(PREFS, MODE_PRIVATE);
+            String bindingId = currentBindingId(context);
+            if (bindingId == null) return false;
             JSONArray events;
             try {
                 events = new JSONArray(decryptEvents(preferences.getString(EVENTS_KEY, null)));
             } catch (JSONException ignored) {
                 events = new JSONArray();
             }
-            boolean queueFull = isPendingCapacityReached(events);
+            boolean queueFull = isPendingCapacityReached(events, bindingId);
             if (preferences.getBoolean(QUEUE_FULL_KEY, false) != queueFull) {
                 preferences.edit().putBoolean(QUEUE_FULL_KEY, queueFull).apply();
             }
@@ -549,7 +563,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
                 break;
             }
         }
-        boolean queueFull = isPendingCapacityReached(current);
+        boolean queueFull = isPendingCapacityReached(current, bindingId);
         if (changed || preferences.getBoolean(QUEUE_FULL_KEY, false) != queueFull) {
             persistEvents(preferences, current);
         }
