@@ -102,7 +102,7 @@ begin
   if v_attempt.method not in ('yape', 'lemon') then
     raise exception 'payment declaration is only valid for wallet payments';
   end if;
-  v_context := concat_ws('|', 'payment-claim', coalesce(v_attempt.receiver_account_id::text, 'unbound'), v_attempt.method::text);
+  v_context := concat_ws('|', 'payment-code', coalesce(v_attempt.receiver_account_id::text, 'unbound'), v_attempt.method::text);
   if v_code is not null then
     v_hmac := private.payment_claim_hmac(v_code);
     v_context_hmac := private.payment_claim_hmac(v_code, v_context);
@@ -191,7 +191,7 @@ begin
   if not found then raise exception 'invalid device token'; end if;
 
   if v_code is not null then
-    v_context := concat_ws('|', 'wallet-observation', coalesce(v_device.receiver_account_id::text, 'unbound'), v_provider);
+    v_context := concat_ws('|', 'payment-code', coalesce(v_device.receiver_account_id::text, 'unbound'), v_provider);
     v_context_hmac := private.payment_claim_hmac(v_code, v_context);
   end if;
 
@@ -257,7 +257,7 @@ begin
   if not found then raise exception 'wallet observation not found'; end if;
   if not (private.is_platform_admin() or private.has_restaurant_role(v_observation.restaurant_id, array['owner', 'manager']::public.restaurant_role[])) then raise exception 'not authorized'; end if;
   if v_observation.verification_status not in ('unverified', 'under_review') then raise exception 'wallet observation is already closed'; end if;
-  v_context := concat_ws('|', 'wallet-observation', coalesce(v_observation.receiver_account_id::text, 'unbound'), v_observation.provider);
+  v_context := concat_ws('|', 'payment-code', coalesce(v_observation.receiver_account_id::text, 'unbound'), v_observation.provider);
   v_hmac := private.payment_claim_hmac(v_code);
   v_context_hmac := private.payment_claim_hmac(v_code, v_context);
   update public.wallet_observations

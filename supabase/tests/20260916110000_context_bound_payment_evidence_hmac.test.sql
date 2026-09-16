@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(12);
+select plan(13);
 
 select ok(
   (select exists (select 1 from information_schema.columns
@@ -41,6 +41,12 @@ select ok(
 select ok(
   (select pg_get_functiondef('public.set_wallet_observation_code(uuid,text)'::regprocedure) like '%payment_claim_hmac(v_code, v_context)%'),
   'la corrección operativa liga la evidencia a cuenta y proveedor'
+);
+select ok(
+  (select pg_get_functiondef('public.declare_manual_payment(uuid,text,text,text)'::regprocedure) like '%payment-code%')
+    and (select pg_get_functiondef('public.ingest_wallet_observation(text,text,text,text,text,bigint,text,timestamptz)'::regprocedure) like '%payment-code%')
+    and (select pg_get_functiondef('public.set_wallet_observation_code(uuid,text)'::regprocedure) like '%payment-code%'),
+  'declaración, observación y corrección comparten el contexto de código de pago'
 );
 select ok(
   (select pg_get_functiondef('public.list_wallet_payment_candidates(uuid)'::regprocedure) like '%payer_code_hmac_context%'),
