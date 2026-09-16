@@ -175,6 +175,7 @@ returns table (
   device_id uuid,
   device_label text,
   device_token text,
+  device_active boolean,
   restaurant_id uuid
 )
 language plpgsql
@@ -206,7 +207,7 @@ begin
   set token_hash = extensions.crypt(v_token, extensions.gen_salt('bf')),
       token_last4 = right(v_token, 4)
   where id = v_device.id;
-  return query select v_device.id, v_device.label, v_token, v_device.restaurant_id;
+  return query select v_device.id, v_device.label, v_token, v_device.active, v_device.restaurant_id;
 end;
 $$;
 

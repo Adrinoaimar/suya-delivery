@@ -16,6 +16,7 @@ type DeviceRow = {
   label?: unknown;
   device_label?: unknown;
   active?: unknown;
+  device_active?: unknown;
   last_seen_at?: unknown;
   device_token?: unknown;
   token?: unknown;
@@ -89,7 +90,7 @@ function mapDevice(row: DeviceRow): WalletObserverDevice {
     id: text(row.id ?? row.device_id),
     restaurantId: text(row.restaurant_id),
     label: text(row.label ?? row.device_label, 'Dispositivo móvil'),
-    active: booleanValue(row.active),
+    active: booleanValue(row.active ?? row.device_active),
     lastSeenAt: nullableText(row.last_seen_at),
   };
 }

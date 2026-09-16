@@ -1,6 +1,6 @@
 begin;
 
-select plan(37);
+select plan(38);
 
 select has_function('public', 'create_delivery_order_with_payment',
   array['uuid', 'jsonb', 'text', 'text', 'text', 'uuid', 'text', 'text', 'double precision', 'double precision'],
@@ -149,6 +149,8 @@ select has_function('public', 'set_wallet_observer_device_active',
   array['uuid', 'boolean'], 'revocación de dispositivo existe');
 select has_function('public', 'rotate_wallet_observer_device',
   array['uuid'], 'rotación de token existe');
+select ok((select pg_get_function_result('public.rotate_wallet_observer_device(uuid)'::regprocedure)
+  like '%device_active%'), 'la rotación conserva el estado activo del dispositivo');
 select ok((select exists (select 1 from pg_indexes
   where schemaname = 'public' and indexname = 'wallet_observations_device_created_idx')),
   'ingesta tiene índice por dispositivo y fecha');

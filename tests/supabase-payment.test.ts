@@ -185,6 +185,7 @@ describe('SupabasePaymentService', () => {
           device_id: 'device-1',
           device_label: 'Caja principal',
           device_token: 'device-1.' + 'b'.repeat(64),
+          device_active: false,
           restaurant_id: 'restaurant-1',
         },
       ],
@@ -195,6 +196,7 @@ describe('SupabasePaymentService', () => {
       id: 'device-1',
       restaurantId: 'restaurant-1',
       label: 'Caja principal',
+      active: false,
       deviceToken: 'device-1.' + 'b'.repeat(64),
     });
     expect(client.rpc).toHaveBeenCalledWith('rotate_wallet_observer_device', {
