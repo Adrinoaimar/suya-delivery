@@ -76,7 +76,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | P-06 | En verificación | Binding guardado, cola separa eventos por binding y re-vinculación no reenvía | Prueba Android de rotación/revocación |
 | P-07 | En verificación | Lock de cola, 500 pendientes, reintentos y estado `queueFull`; selección pending-first corregida y test nativo 5/5 | Prueba Android offline/reinicio/concurrencia en dispositivo |
 | P-08 | En verificación | Adaptadores por paquete y palabras; caso Yape probado | Matriz Android real por versión de billetera |
-| P-09 | En verificación | Código normalizado hasta 64; HMAC v2 privado ligado a receptor/tipo, HMAC legacy aislado para transición, auditoría saneada y contrato de 12 aserciones | Ejecutar migración nueva en DB oficial y confirmar límites de proveedor |
+| P-09 | En verificación | Código normalizado hasta 64; HMAC v2 privado ligado a receptor/tipo con contexto compartido entre declaración/observación/corrección, HMAC legacy aislado para transición, auditoría saneada y contrato de 13 aserciones | Ejecutar migración nueva en DB oficial y confirmar límites de proveedor |
 | P-10 | En verificación | Renovación conserva cuenta histórica; una declaración vencida no se renueva, una cuenta desactivada se rechaza y un intento terminal no envenena el siguiente retry; la cuenta histórica debe pertenecer al restaurante del pedido | Ejecutar migración nueva y caso de vencimiento/reintento/concurrencia |
 | P-11 | En verificación | Copy no promete confirmación; declaración separada, pagador opcional, reset por intento, reembolso sin QR/reintento y destinatario activo visible/validado antes del QR; lectura adicional ligada al restaurante del pedido; sin QR válido tampoco se invita a pagar; con `authorized` se ocultan QR/checkout/acciones; focal `PaymentInstructions` 19/19 y suite de pagos relacionada 65/65 | Revisión sobre APK final y estados reales |
 | U-01 | En verificación | Drawer opaco, `isolate`, portal `z-[1100]`; test/build web pasan | Captura sobre APK final con mapa normal/expandido |
@@ -395,3 +395,9 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - La migración `20260916150000_receiver_restaurant_binding_read_guard.sql` declaraba 10 columnas para `create_payment_intent`, pero la rama de creación retornaba 11 al incluir `provider_reference`; se eliminó solo esa columna extra. `get_payment_intent` conserva sus 11 columnas.
 - Se añadió `tests/payment-sql-contract.test.ts` y una aserción pgTAP; TDD falló antes y pasó después. Focal SQL + A-11 **6/6**; suite global **72/336**; lint, typecheck, secretos (**937 archivos**) y diff pasan. Contrato pgTAP: **16 aserciones**.
 - Commit `c5046ce`; no cambia APKs ni procesa pagos reales. El runtime oficial Supabase/Postgres sigue pendiente por `ECONNREFUSED 127.0.0.1:54322`.
+
+## Corrección P-09 — contexto HMAC comparable entre evidencias — 2026-09-16
+
+- La auditoría detectó que declaración manual y observación generaban HMAC contextual con dominios distintos (`payment-claim` frente a `wallet-observation`), impidiendo conciliar evidencia nueva aunque el código, receptor y método fueran iguales.
+- Las tres rutas usan ahora `payment-code|receiver_account_id|method/provider`; se mantienen el secreto server-side, la cuenta receptora, el método y el rechazo ante discordancia contextual. No se expone HMAC ni se degrada automáticamente a últimos cuatro.
+- `supabase/tests/20260916110000_context_bound_payment_evidence_hmac.test.sql` sube a **13 aserciones**; TDD focal SQL + A-11 **7/7** y suite global **72/337** pasan. Commit `0ca2517`; no hubo pagos reales ni cambios de APK. DB oficial sigue pendiente por `ECONNREFUSED 127.0.0.1:54322`.
