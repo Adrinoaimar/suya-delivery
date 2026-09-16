@@ -101,7 +101,10 @@ export default function WalletsOperationsPage() {
 
   const load = useCallback(async () => {
     const requestId = ++loadRequestRef.current;
-    const observationRequestId = ++observationRequestRef.current;
+    // Invalida una recarga de observaciones que haya quedado pendiente. La carga
+    // completa conserva su propio contador: una sesión lenta no puede quedar
+    // descartada por el refresco periódico de los 15 s.
+    ++observationRequestRef.current;
     setLoading(true);
     setError(null);
     try {
@@ -113,10 +116,7 @@ export default function WalletsOperationsPage() {
       // La cuenta debe quedar visible y preseleccionada aunque las cargas secundarias
       // de dispositivos u observaciones tarden. Así el operador puede identificar el
       // restaurante desde el primer render útil y no ve un selector vacío.
-      if (
-        requestId === loadRequestRef.current &&
-        observationRequestId === observationRequestRef.current
-      ) {
+      if (requestId === loadRequestRef.current) {
         setStores(visibleStores);
         if (isPlatformAdmin) {
           setRestaurantId((current) =>
@@ -134,11 +134,7 @@ export default function WalletsOperationsPage() {
         walletObserverService.listDevices(scopedRestaurantIds),
         walletObserverService.listObservations(scopedRestaurantIds),
       ]);
-      if (
-        requestId !== loadRequestRef.current ||
-        observationRequestId !== observationRequestRef.current
-      )
-        return;
+      if (requestId !== loadRequestRef.current) return;
       setStores(visibleStores);
       setDevices(nextDevices);
       setObservations(nextObservations);

@@ -399,4 +399,72 @@ describe('WalletsOperationsPage', () => {
       vi.useRealTimers();
     }
   });
+
+  it('conserva la carga completa si el refresco de 15 s ocurre mientras aún responde', async () => {
+    vi.useFakeTimers();
+    try {
+      let resolveDevices!: (value: unknown[]) => void;
+      let resolveInitialObservations!: (value: unknown[]) => void;
+      let resolveRefresh!: (value: unknown[]) => void;
+      const slowDevices = new Promise<unknown[]>((resolve) => {
+        resolveDevices = resolve;
+      });
+      const slowInitialObservations = new Promise<unknown[]>((resolve) => {
+        resolveInitialObservations = resolve;
+      });
+      const refreshObservations = new Promise<unknown[]>((resolve) => {
+        resolveRefresh = resolve;
+      });
+      const device = {
+        id: 'device-slow',
+        restaurantId: restaurant.id,
+        label: 'Caja lenta',
+        active: true,
+        lastSeenAt: null,
+      };
+      const initialObservation = {
+        id: 'observation-initial',
+        restaurantId: restaurant.id,
+        deviceId: device.id,
+        provider: 'yape',
+        senderName: 'Inicial',
+        codeLast4: '1111',
+        amountCents: 3000,
+        currency: 'PEN',
+        observedAt: '2026-09-14T18:30:00.000Z',
+        verification: 'unverified',
+      };
+      const refreshedObservation = { ...initialObservation, id: 'observation-refresh', senderName: 'Actualizada' };
+      mocks.listDevices.mockImplementationOnce(() => slowDevices);
+      mocks.listObservations
+        .mockImplementationOnce(() => slowInitialObservations)
+        .mockImplementationOnce(() => refreshObservations);
+
+      render(<WalletsOperationsPage />);
+      await act(async () => {
+        for (let index = 0; index < 8; index += 1) await Promise.resolve();
+      });
+
+      await act(async () => {
+        vi.advanceTimersByTime(15_000);
+        await Promise.resolve();
+      });
+
+      await act(async () => {
+        resolveRefresh([refreshedObservation]);
+        await Promise.resolve();
+      });
+      await act(async () => {
+        resolveDevices([device]);
+        resolveInitialObservations([initialObservation]);
+        for (let index = 0; index < 8; index += 1) await Promise.resolve();
+      });
+
+      expect(screen.getByText('Caja lenta')).toBeInTheDocument();
+      expect(screen.getByText('Inicial')).toBeInTheDocument();
+      expect(screen.queryByText('Actualizada')).not.toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });
