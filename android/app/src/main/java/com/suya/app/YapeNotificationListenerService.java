@@ -261,7 +261,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
 
     static boolean hasMalformedAmountContinuation(String text, int end) {
         if (text == null || end < 0 || end > text.length()) return false;
-        return text.substring(end).matches("^[.,]\\d");
+        return text.substring(end).matches("^[.,]\\d.*");
     }
 
     private static boolean isGroupedInteger(String value) {
@@ -399,12 +399,29 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         return pendingCountForBinding(events, bindingId) >= MAX_EVENTS;
     }
 
+    /** Pure queue-capacity contract used by JVM tests without Android JSON stubs. */
+    static boolean isPendingCapacityReached(String[] bindingIds, boolean[] synced, @Nullable String bindingId) {
+        return pendingCountForBinding(bindingIds, synced, bindingId) >= MAX_EVENTS;
+    }
+
     private static int pendingCountForBinding(JSONArray events, @Nullable String bindingId) {
-        int pending = 0;
+        if (events == null) return 0;
+        String[] bindingIds = new String[events.length()];
+        boolean[] synced = new boolean[events.length()];
         for (int index = 0; index < events.length(); index++) {
             JSONObject event = events.optJSONObject(index);
-            if (event != null && !event.optBoolean("synced", false)
-                    && (bindingId == null || bindingId.equals(event.optString("bindingId", null)))) pending++;
+            if (event == null) continue;
+            bindingIds[index] = event.optString("bindingId", null);
+            synced[index] = event.optBoolean("synced", false);
+        }
+        return pendingCountForBinding(bindingIds, synced, bindingId);
+    }
+
+    private static int pendingCountForBinding(String[] bindingIds, boolean[] synced, @Nullable String bindingId) {
+        if (bindingIds == null || synced == null || bindingIds.length != synced.length) return 0;
+        int pending = 0;
+        for (int index = 0; index < synced.length; index++) {
+            if (!synced[index] && (bindingId == null || bindingId.equals(bindingIds[index]))) pending++;
         }
         return pending;
     }

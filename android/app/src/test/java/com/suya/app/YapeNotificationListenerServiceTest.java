@@ -3,9 +3,6 @@ package com.suya.app;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.junit.Test;
 
 public class YapeNotificationListenerServiceTest {
@@ -86,25 +83,24 @@ public class YapeNotificationListenerServiceTest {
     }
 
     @Test
-    public void derivesQueueFullFromCurrentPendingEvents() throws JSONException {
-        JSONArray events = new JSONArray();
-        for (int index = 0; index < 499; index++) {
-            events.put(new JSONObject().put("synced", false));
-        }
-        assertTrue(!YapeNotificationListenerService.isPendingCapacityReached(events));
-        events.put(new JSONObject().put("synced", false));
-        assertTrue(YapeNotificationListenerService.isPendingCapacityReached(events));
+    public void derivesQueueFullFromCurrentPendingEvents() {
+        String[] bindings = new String[499];
+        boolean[] synced = new boolean[499];
+        assertTrue(!YapeNotificationListenerService.isPendingCapacityReached(bindings, synced, null));
+
+        String[] fullBindings = new String[500];
+        boolean[] fullSynced = new boolean[500];
+        assertTrue(YapeNotificationListenerService.isPendingCapacityReached(fullBindings, fullSynced, null));
     }
 
     @Test
-    public void scopesQueueCapacityToTheActiveBinding() throws JSONException {
-        JSONArray events = new JSONArray();
-        for (int index = 0; index < 500; index++) {
-            events.put(new JSONObject().put("bindingId", "old-binding").put("synced", false));
-        }
+    public void scopesQueueCapacityToTheActiveBinding() {
+        String[] bindings = new String[500];
+        boolean[] synced = new boolean[500];
+        for (int index = 0; index < bindings.length; index++) bindings[index] = "old-binding";
 
-        assertTrue(YapeNotificationListenerService.isPendingCapacityReached(events, "old-binding"));
-        assertTrue(!YapeNotificationListenerService.isPendingCapacityReached(events, "new-binding"));
+        assertTrue(YapeNotificationListenerService.isPendingCapacityReached(bindings, synced, "old-binding"));
+        assertTrue(!YapeNotificationListenerService.isPendingCapacityReached(bindings, synced, "new-binding"));
     }
 
     @Test
