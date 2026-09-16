@@ -236,3 +236,9 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 4. Validar A-11 con endpoint privado/same-origin autorizado y política de retención; no activar un router público.
 5. Repetir suite global, build, aislamiento, seguridad y matriz completa. Solo entonces evaluar G10–G12; no marcar el goal completo mientras queden bloqueos o casillas obligatorias.
 6. Antes de habilitar OTA, publicar mediante el flujo autorizado un `latest.json` real con firma privada fuera del repositorio, verificar content-type/CORS/cache-control, checksum, firma y retención; el endpoint actual HTML no cuenta como manifest.
+- Continúan pendientes DB/RLS oficial, E2E financiero con backend, dispositivo/offline/TalkBack/fuente ampliada/permisos, endpoint privado OTA, firma release y autorización de pagos reales.
+
+## Regresión visual posterior — drawer sobre mapa (2026-09-16)
+
+- `b31b1b1` refuerza `tests/motion.test.tsx`: exige `bg-white` e `isolate` en el `Drawer`, además del portal `z-[1100]`, para contener capas Leaflet.
+- Focal UI de movimiento **5/5**. Es una prueba, no cambia los APK funcionales asociados a `10ecf41`; captura nativa, foco, TalkBack y hardware siguen pendientes.
