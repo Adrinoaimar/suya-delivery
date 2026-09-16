@@ -401,7 +401,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
           </span>
           <div>
             <h2 className="font-display text-[15px] font-bold">
-              Paga con {paymentLabel(intent.method)}
+              {verified ? 'Pago verificado con' : 'Paga con'} {paymentLabel(intent.method)}
             </h2>
             <p className="mt-1 text-sm text-suya-muted">
               Monto exacto: <strong>{formatPrice(intent.amount)}</strong>

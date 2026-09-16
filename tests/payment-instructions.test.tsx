@@ -109,6 +109,7 @@ describe('PaymentInstructions', () => {
     );
 
     expect(screen.getByText('Pago verificado')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Pago verificado con Yape' })).toBeInTheDocument();
     expect(screen.queryByText('QR del negocio')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Ya pagué' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Aún no pagué' })).not.toBeInTheDocument();

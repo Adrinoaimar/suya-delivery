@@ -375,3 +375,10 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Regresiones: `tests/payment-instructions.test.tsx` **19/19**; suite de pagos relacionada **65/65**; suite global **71 archivos / 335 pruebas**. Typecheck, lint, `git diff --check`, build aislado y smoke web **12/12** pasan.
 - APK debug `1.4/5`, SDK 36, ZIP íntegro, firma v2, un firmante y Android nativo **5/5**: Rider **25,372,749 bytes**, SHA-256 `94693784ce58bf6a6e4ce383fcc832eb6e6062071c282e529e416b203740dc56`; Backoffice **25,240,792 bytes**, `2e1d2705c578e93cab0858ed60bb80ed1670cf2c2bf3a978fa172510d3a5b21d`; Wallet Observer **25,192,268 bytes**, `6c3f381e40f2476597e9595277c9b363a756a3757e6c262b6e0b7b10876b54d1`.
 - El build fue local y de depuración: no hubo pagos reales ni despliegue. DB/RLS oficial, E2E financiero, dispositivo, accesibilidad nativa, offline, OTA privado y firma release siguen pendientes.
+
+## Corrección P-11/U-08 — copy informativo tras autorización — 2026-09-16
+
+- `PaymentInstructions` cambia el encabezado a «Pago verificado con Yape/Plin» para intentos `authorized`; los intentos pendientes conservan «Paga con …».
+- La guardia anterior permanece: tras autorización no se muestran QR, checkout, destinatario ni acciones de pago; solo estado y referencia auditable.
+- Evidencia: PaymentInstructions **19/19**, pagos **65/65**, global **71/335**, Android **5/5**, smoke **12/12**, build, lint, typecheck, secretos y diff pasan. APK debug `1.4/5` regeneradas, ZIP íntegro, firma v2 y SDK 36; hashes Rider `94693784…`, Backoffice `2e1d2705…`, Wallet `6c3f381e…`.
+- No hubo pagos reales, despliegue ni dispositivo. Pendientes: DB/RLS oficial, E2E financiero, offline/accesibilidad física, OTA privado y firma release.
