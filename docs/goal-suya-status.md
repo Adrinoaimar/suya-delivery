@@ -242,3 +242,10 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 
 - `b31b1b1` refuerza `tests/motion.test.tsx`: exige `bg-white` e `isolate` en el `Drawer`, además del portal `z-[1100]`, para contener capas Leaflet.
 - Focal UI de movimiento **5/5**. Es una prueba, no cambia los APK funcionales asociados a `10ecf41`; captura nativa, foco, TalkBack y hardware siguen pendientes.
+
+## Flujo maestro y búsqueda upstream — 2026-09-16
+
+- `E.md` añade el flujo maestro §45 para pegar directamente en un goal: continuidad ante fallos normales, preservación de cambios ajenos, matriz P/U/A, prioridades de dinero/RLS/idempotencia/UI/Android, gates verificables y condiciones explícitas para no declarar cierre.
+- `E.md` añade §46 con investigación de repositorios primarios: Leaflet (BSD-2-Clause) para panes/stacking, Supabase (Apache-2.0) para grants/RLS/pgTAP, Android Architecture Samples y AndroidX (Apache-2.0) para capas/tests/ciclo de vida, e Hyperswitch (Apache-2.0) únicamente como referencia de estados/conectores.
+- Decisión: no añadir dependencias ni instalar una pasarela propia. El camino sin cookies sigue siendo cobro directo al restaurante, declaración manual, observación no confiable y conciliación server-side auditable; una alternativa bancaria requiere proveedor, autorización, cumplimiento y pruebas externas.
+- El goal continúa abierto por SQL/RLS oficial, backend E2E, dispositivo Android, accesibilidad nativa, offline, endpoint privado y firma release. No se ejecutaron pagos reales, despliegue ni publicación.
