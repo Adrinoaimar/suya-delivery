@@ -97,7 +97,9 @@ export default function LeafletMap({
       zoomControl: false,
       dragging: interactive,
       scrollWheelZoom: false,
-      attributionControl: true,
+      // La atribución se renderiza en una superficie propia para reservar espacio
+      // frente a leyendas y errores largos en mapas móviles estrechos.
+      attributionControl: false,
     });
     mapRef.current = map;
 
@@ -585,34 +587,45 @@ export default function LeafletMap({
           </p>
         </div>
       )}
-      {rider && (
-        <div className="absolute bottom-3 left-3 z-[500] flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-[11px] font-semibold text-[#0E6B44] shadow-card ring-1 ring-black/10">
-          <span className="h-2 w-5 rounded-full bg-suya-lime" aria-hidden="true" />
-          Recorrido real
-        </div>
-      )}
-      {routePlan && routePlan.alternatives.length > 0 && (
-        <div
-          className={cn(
-            'absolute left-3 z-[500] flex items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-[11px] font-semibold text-suya-muted shadow-card ring-1 ring-black/10',
-            rider ? 'bottom-14' : 'bottom-3',
+      {(rider || (routePlan && routePlan.alternatives.length > 0) || tileError) && (
+        <div className="pointer-events-none absolute bottom-3 left-3 z-[500] flex max-w-[52%] flex-col items-start gap-1.5">
+          {rider && (
+            <div className="flex max-w-full items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-[11px] font-semibold text-[#0E6B44] shadow-card ring-1 ring-black/10">
+              <span className="h-2 w-5 shrink-0 rounded-full bg-suya-lime" aria-hidden="true" />
+              <span className="truncate">Recorrido real</span>
+            </div>
           )}
-        >
-          <span
-            className="h-0 w-5 border-t-2 border-dashed border-suya-green/45"
-            aria-hidden="true"
-          />
-          Ruta alternativa
+          {routePlan && routePlan.alternatives.length > 0 && (
+            <div className="flex max-w-full items-center gap-2 rounded-full bg-white/95 px-3 py-2 text-[11px] font-semibold text-suya-muted shadow-card ring-1 ring-black/10">
+              <span
+                className="h-0 w-5 shrink-0 border-t-2 border-dashed border-suya-green/45"
+                aria-hidden="true"
+              />
+              <span className="truncate">Ruta alternativa</span>
+            </div>
+          )}
+          {tileError && (
+            <div
+              role="status"
+              className="max-w-full rounded-xl bg-white/95 px-3 py-2 text-xs leading-tight text-[#6B7076] shadow-md ring-1 ring-black/10"
+            >
+              No se pudieron cargar algunas calles. La ruta y las direcciones siguen disponibles.
+            </div>
+          )}
         </div>
       )}
-      {tileError && (
-        <div
-          role="status"
-          className="absolute inset-x-3 bottom-3 z-[500] rounded-xl bg-white/95 px-3 py-2 text-xs text-[#6B7076] shadow-md ring-1 ring-black/10"
+      <div className="absolute bottom-1 right-1 z-[500] max-w-[43%] rounded bg-white/90 px-1.5 py-1 text-right text-[10px] leading-tight text-suya-muted shadow-sm ring-1 ring-black/5">
+        <span aria-hidden="true">©</span>{' '}
+        <a
+          href="https://www.openstreetmap.org/copyright"
+          target="_blank"
+          rel="noreferrer"
+          className="underline decoration-suya-green/40 underline-offset-2"
         >
-          No se pudieron cargar algunas calles. La ruta y las direcciones siguen disponibles.
-        </div>
-      )}
+          OpenStreetMap
+        </a>{' '}
+        contributors
+      </div>
     </div>
   );
 }

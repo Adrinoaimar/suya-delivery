@@ -1,6 +1,6 @@
 # Estado reanudable del goal de Suya
 
-Último checkpoint: 2026-09-15 (America/Lima). Estado: **EN PROGRESO**.
+Último checkpoint: 2026-09-16 (America/Lima). Estado: **EN PROGRESO**.
 
 ## Objetivo operativo
 
@@ -53,6 +53,8 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - Declaración de pago manual: `PaymentInstructions` separa «Ya pagué» de «Aún no pagué» y bloquea la renovación mientras el estado server-side sea desconocido o exista una declaración. Permite registrar el nombre de otra persona sin tratarlo como autorización; un intento `refunded` no muestra QR ni acciones para repetir el cobro.
 - Migración `20260915170000_payment_claims_and_late_review.sql`: claims auditables, HMAC privado de códigos, declaración protegida por usuario/token invitado, revisión tardía limitada a propuesta, receptor exacto, verificación final autorizada y auditoría sin hashes/códigos. Sus ramas autenticadas rechazan explícitamente `auth.uid() IS NULL`. El contrato legado `submit_payment_evidence` delega al flujo nuevo. Su prueba declara 15 aserciones; el conjunto acumulado de este bloque declara 53 (38 previas + 15 nuevas).
 - Observaciones wallet: `observed_at` sigue siendo hora de la notificación; `created_at` se muestra como hora de recepción del servidor. No se presenta una hora bancaria inexistente.
+- P-01: el fixture principal ahora cubre colisión exacta de dos intentos pendientes con el mismo HMAC completo; exige dos candidatos, rechazo de `verify_wallet_payment` y conservación de ambos pendientes (105 aserciones declaradas en ese fixture). La ejecución oficial sigue pendiente.
+- U-09: `LeafletMap` reserva una columna derecha para la atribución OSM y apila leyendas/errores en una columna izquierda con límites de ancho; la atribución nativa duplicada queda desactivada para evitar superposición en mapas móviles estrechos.
 
 ## Matriz de hallazgos
 
@@ -60,7 +62,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 
 | ID | Estado | Evidencia actual | Pendiente / salida |
 |---|---|---|---|
-| P-01 | En verificación | Conteo global de coincidencias y test SQL preparados; índice de asignación única añadido | Ejecutar `npm run db:test` con Postgres local y concurrencia |
+| P-01 | En verificación | Conteo global de coincidencias, índice de asignación única y fixture de colisión exacta (105 aserciones) | Ejecutar `npm run db:test` con Postgres local y concurrencia |
 | P-02 | En verificación | `eventId` estable por binding/notificación, conflicto técnico único y trigger de no reutilización entre dispositivos/concurrencia | Ejecutar migraciones `20260915140000` y `20260915150000` en DB oficial y caso SQL multiequipo |
 | P-03 | En verificación | `receiver_account_id` en intento/dispositivo/observación y QR por cuenta exacta | Instalar migración y probar cambio de cuenta |
 | P-04 | En verificación | RPC atómico para los tres canales; oferta y pago dentro de la transacción | Test de rollback y actualización limpia en DB local |
@@ -79,7 +81,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | U-06 | En verificación | GPS opcional y dirección escrita permitida; servidor valida coordenadas cuando llegan | E2E delivery/recojo/mesa y cobertura |
 | U-07 | En verificación | `GuestOrderPage` reinicia carga por `id`/token, «Actualizar estado», recuperación `online` y retorno mediante `visibilitychange` disparan nuevas consultas, y muestra última actualización; regresión y suite relacionada 29/29 pasan | E2E offline/retorno a app/última actualización |
 | U-08 | En verificación | Reset por `order.id` e `attemptId`, respuestas obsoletas, sesiones de checkout invalidables y estados separados; regresión focal pagos 15/15 pasa | E2E navegando entre dos pedidos |
-| U-09 | En verificación | Capturas web customer/Rider a 390×844; `scrollWidth === viewport` y barras inferiores opacas para no filtrar texto | Capturas sobre APK final a 360×800, mapa normal/expandido, leyendas/atribución y estados largos |
+| U-09 | En verificación | Capturas web a 390×844, `scrollWidth === viewport`, barras opacas y pie de mapa dividido en columnas de estado/atribución; focal mapa/tracking/operaciones 13/13 | Capturas sobre APK final a 360×800, mapa normal/expandido, leyendas/atribución y estados largos |
 | U-10 | En verificación | Navegación por teclado sobre bundle customer: 16 destinos con nombre y visibles; controles sin nombre: 0; medición web 390×844 sin controles visibles menores de 44×44 y enlace de salto enfocado 178×44 | axe/contraste/TalkBack, fuente ampliada y validación nativa |
 | A-01 | En verificación | Rutas wallet atómicas; helper v2 calcula huella con canal/método/oferta/mesa/datos y rechaza conflicto; cliente reutiliza request y token guest | Ejecutar SQL/pgTAP y E2E real tras pérdida de respuesta/concurrencia |
 | A-02 | En verificación | Contratos distintos para delivery, menú y mesa; GPS ya no se exige universalmente y coordenadas entran en la creación | DB limpia + E2E por modalidad |
@@ -286,3 +288,14 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
   - Backoffice: `output/android/Suya-Backoffice-debug.apk`, **25,239,952 bytes**, SHA-256 `aff91b042d9e918bb74db9a3371c194d8c0b959a8f5adfc190c108f4c6572ceb`, paquete `com.suya.backoffice`.
   - Wallet Observer: `output/android/Suya-Wallet-Observer-debug.apk`, **25,192,060 bytes**, SHA-256 `b0200cc2a13a168c22a5dc6cc151c69f88d126f03d7b3143c090dc8993a66911`, paquete `com.suya.walletobserver`.
 - El build valida empaquetado y metadatos, pero no sustituye la prueba en dispositivo: siguen pendientes instalación/actualización física, permisos de notificaciones, offline, insets, TalkBack y fuente ampliada. El goal también sigue abierto por DB/RLS oficial, E2E financiero con backend, endpoint OTA privado, firma release y autorización de pagos reales.
+
+## Corrección P-01/U-09 — colisión exacta y pie de mapa sin superposición — 2026-09-16
+
+- El fixture `supabase/tests/20260914100000_payment_intents_and_wallet_reconciliation.test.sql` sube su plan de 102 a **105 aserciones**. Dos intentos pendientes con el mismo HMAC completo y últimos cuatro dígitos deben conservar dos candidatos, hacer que `verify_wallet_payment` rechace la ambigüedad con `payment identity is ambiguous; full operation code required` y mantener ambos intentos pendientes. El contrato está escrito; pgTAP oficial sigue pendiente por ausencia del runtime Supabase/Postgres.
+- `LeafletMap` deja de usar la atribución nativa superpuesta y renderiza una atribución OSM propia en la columna derecha. Las leyendas de recorrido/ruta y el error de tiles se apilan en la columna izquierda con límites `max-w-[52%]` y `max-w-[43%]`, evitando colisiones en anchos móviles. `tests/map-controls.test.ts` lo fija.
+- Focal mapa/tracking/operaciones: **13/13**; suite global: **71 archivos / 327 pruebas**; `npm run lint`, `npm run typecheck`, `npm run test:e2e` **12/12** y `git diff --check` pasan. `npm run build:apps` rechazó la configuración incompleta y, con configuración pública sintética, el smoke de previews aislados pasó 12/12.
+- `npm run build:mobile:roles` pasa con JDK 21/SDK 36; Android `test` **5/5**, `assembleDebug`, ZIP íntegro, firma v2 y metadatos `1.4/5` pasan. APKs debug actuales:
+  - Rider: `output/android/Suya-Rider-debug.apk`, **25,371,649 bytes**, SHA-256 `d81cd2e3d343301416ed3cf22214a2f54eaa250e2322d78eb0a5ad1c4fd796f4`.
+  - Backoffice: `output/android/Suya-Backoffice-debug.apk`, **25,239,988 bytes**, SHA-256 `cf955ebbeffa6bbe498967089e734615118a375604cc533cb530b7a857434266`.
+  - Wallet Observer: `output/android/Suya-Wallet-Observer-debug.apk`, **25,192,112 bytes**, SHA-256 `b17cf052ed295392739eea2a6cd0e233479b463b39a7ca91090c5a201a125ac9`.
+- Los cambios ajenos `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` y `output/` permanecen sin incluir. Continúan pendientes DB/RLS oficial, E2E financiero con backend, instalación/actualización física, TalkBack, fuente ampliada, offline, permisos, OTA privado, firma release y pagos reales.

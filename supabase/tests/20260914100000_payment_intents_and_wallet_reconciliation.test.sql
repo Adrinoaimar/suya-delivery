@@ -1,6 +1,6 @@
 begin;
 
-select plan(102);
+select plan(105);
 
 select has_function(
   'public', 'refresh_payment_intent', array['uuid', 'text', 'text'],
@@ -743,6 +743,46 @@ select throws_ok(
   ) $$,
   'cancelled order cannot be verified',
   'la autorización final rechaza un pedido cancelado'
+);
+reset role;
+
+-- Exact identity collision: two pending attempts can carry the same complete
+-- operation code. Even with server-side HMACs, the observer must not choose
+-- the first candidate; the operator must inspect the real receiver movement.
+reset role;
+update public.payment_attempts
+set status = 'pending', observed_wallet_observation_id = null,
+    payer_code_hmac = repeat('a', 64), payer_code_digest = null, payer_code_last4 = '1234'
+where order_id in (
+  'a6300000-0000-0000-0000-000000000005',
+  'a6300000-0000-0000-0000-000000000006'
+);
+update public.wallet_observations
+set verification_status = 'unverified', code_hmac = repeat('a', 64),
+    code_fingerprint = null, code_last4 = '1234'
+where id = 'a6600000-0000-0000-0000-000000000003';
+set local request.jwt.claims =
+  '{"sub":"a6000000-0000-0000-0000-000000000003","role":"authenticated"}';
+set local role authenticated;
+select is(
+  (select count(*) from public.list_wallet_payment_candidates('a6600000-0000-0000-0000-000000000003')),
+  2::bigint,
+  'dos códigos completos idénticos mantienen dos candidatos'
+);
+select throws_ok(
+  $$ select public.verify_wallet_payment(
+    'a6600000-0000-0000-0000-000000000003',
+    (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000005')
+  ) $$,
+  'payment identity is ambiguous; full operation code required',
+  'dos códigos completos idénticos no autorizan el primer pedido'
+);
+select is(
+  (select count(*) from public.payment_attempts
+   where order_id in ('a6300000-0000-0000-0000-000000000005', 'a6300000-0000-0000-0000-000000000006')
+     and status = 'pending'),
+  2::bigint,
+  'la colisión exacta conserva ambos intentos pendientes para revisión'
 );
 reset role;
 
