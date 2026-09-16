@@ -87,6 +87,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 
 - Se detectó que `SuyaWalletObserverPlugin.status()` podía devolver `QUEUE_FULL_KEY` sin reconciliarlo con la cola cifrada. `YapeNotificationListenerService.isQueueFull()` ahora deriva el estado bajo lock desde los eventos pendientes y corrige el flag persistido, evitando estados obsoletos.
 - Regresión de contrato: **6/6**; suite global posterior: **72 archivos / 346 pruebas**; typecheck, lint, secretos (**937 archivos**), `git diff --check` y `npm run build:apps` con configuración sintética pasan.
+- Commit fuente: `c94ab3a` (`fix(wallet): derive queue health from encrypted state`).
 - Android test/build queda pendiente por ausencia de `java`/JDK; no hay APK nueva. Se preservan `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` y `output/`.
 
 ## Matriz de hallazgos
