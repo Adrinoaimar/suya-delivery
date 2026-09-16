@@ -29,6 +29,14 @@ export class CashPaymentServiceImpl implements PaymentService {
     throw new Error('La evidencia de pago requiere Supabase configurado.');
   }
 
+  async declarePayment(): Promise<boolean> {
+    throw new Error('La declaración de pago requiere Supabase configurado.');
+  }
+
+  async getPaymentDeclaration(): Promise<null> {
+    throw new Error('La declaración de pago requiere Supabase configurado.');
+  }
+
   async chargeCard(): Promise<string> {
     throw new Error('Los pagos digitales requieren Supabase configurado.');
   }

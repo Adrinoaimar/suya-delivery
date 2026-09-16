@@ -35,6 +35,7 @@ type ObservationRow = {
   amount?: unknown;
   currency?: unknown;
   observed_at?: unknown;
+  created_at?: unknown;
   verification?: unknown;
   verification_status?: unknown;
   status?: unknown;
@@ -121,6 +122,7 @@ function mapObservation(row: ObservationRow): WalletObservation {
     amountCents,
     currency: text(row.currency, 'PEN'),
     observedAt: text(row.observed_at, new Date(0).toISOString()),
+    receivedAt: nullableText(row.created_at),
     verification: text(row.verification_status ?? row.verification ?? row.status, 'unverified'),
   };
 }
@@ -200,7 +202,7 @@ export class SupabaseWalletObserverService implements WalletObserverService {
     const { data, error } = await this.client
       .from('wallet_observations')
       .select(
-        'id, restaurant_id, device_id, provider, sender_name, code_last4, amount_cents, currency, observed_at, verification_status',
+        'id, restaurant_id, device_id, provider, sender_name, code_last4, amount_cents, currency, observed_at, created_at, verification_status',
       )
       .in('restaurant_id', restaurantIds)
       .order('observed_at', { ascending: false })

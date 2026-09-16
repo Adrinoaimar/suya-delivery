@@ -56,7 +56,7 @@ function observationStatus(value: string): { label: string; tone: 'neutral' | 's
   return { label: 'Solo observación', tone: 'neutral' };
 }
 
-function dateLabel(value: string | null): string {
+function dateLabel(value: string | null | undefined): string {
   if (!value) return 'Nunca conectado';
   try {
     return formatDateTime(value);
@@ -704,8 +704,11 @@ export default function WalletsOperationsPage() {
                       </p>
                       <p className="text-xs text-suya-muted">
                         {providerLabel(observation.provider)} ·{' '}
-                        {storeNames.get(observation.restaurantId) ?? 'Restaurante'} ·{' '}
-                        {dateLabel(observation.observedAt)}
+                        {storeNames.get(observation.restaurantId) ?? 'Restaurante'}
+                      </p>
+                      <p className="text-xs text-suya-muted">
+                        Notificación: {dateLabel(observation.observedAt)} · Servidor:{' '}
+                        {dateLabel(observation.receivedAt)}
                       </p>
                     </div>
                     <p className="text-sm">

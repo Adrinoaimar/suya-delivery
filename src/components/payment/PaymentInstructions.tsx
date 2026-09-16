@@ -40,8 +40,12 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   const [loading, setLoading] = useState(!order.paymentIntent);
   const [error, setError] = useState<string | null>(null);
   const [evidenceCode, setEvidenceCode] = useState('');
+  const [payerDisplayName, setPayerDisplayName] = useState('');
   const [submittingEvidence, setSubmittingEvidence] = useState(false);
   const [evidenceSaved, setEvidenceSaved] = useState(false);
+  const [paymentDeclared, setPaymentDeclared] = useState(false);
+  const [declarationKnown, setDeclarationKnown] = useState(false);
+  const [declarationBusy, setDeclarationBusy] = useState(false);
   const [gatewayBusy, setGatewayBusy] = useState(false);
   const [gatewayAwaitingWebhook, setGatewayAwaitingWebhook] = useState(false);
   const [manualBusy, setManualBusy] = useState(false);
@@ -54,8 +58,12 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
     setLoading(true);
     setError(null);
     setEvidenceCode('');
+    setPayerDisplayName('');
     setSubmittingEvidence(false);
     setEvidenceSaved(false);
+    setPaymentDeclared(false);
+    setDeclarationKnown(false);
+    setDeclarationBusy(false);
     setGatewayBusy(false);
     setGatewayAwaitingWebhook(false);
     setManualBusy(false);
@@ -91,6 +99,37 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
     setError(null);
     setLoading(false);
   }, [order.paymentIntent]);
+
+  useEffect(() => {
+    const isManualWallet = order.paymentMethod === 'yape' || order.paymentMethod === 'lemon';
+    if (
+      !order.paymentIntent ||
+      !isManualWallet ||
+      order.paymentIntent.provider === 'culqi' ||
+      order.paymentIntent.status === 'refunded'
+    ) {
+      setPaymentDeclared(false);
+      setDeclarationKnown(true);
+      return;
+    }
+
+    let active = true;
+    setDeclarationKnown(false);
+    void Promise.resolve(paymentService.getPaymentDeclaration(order.id))
+      .then((declaration) => {
+        if (!active) return;
+        setPaymentDeclared(Boolean(declaration));
+        setDeclarationKnown(true);
+      })
+      .catch(() => {
+        // Fail closed: an unavailable declaration state must never expose a
+        // renewal action that could create a second payment.
+        if (active) setDeclarationKnown(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [order.id, order.paymentIntent, order.paymentIntent?.attemptId, order.paymentIntent?.provider, order.paymentMethod]);
 
   useEffect(() => {
     if (intent?.status !== 'pending') return;
@@ -141,9 +180,11 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   }
 
   const verified = intent.status === 'authorized';
+  const paymentRefunded = intent.status === 'refunded';
   const gatewayExpired = isExpired(intent);
   const gatewayWaitingForWebhook =
     gatewayAwaitingWebhook && intent.status === 'pending' && !gatewayExpired;
+  const manualRecoveryRequired = !paymentRefunded && (gatewayExpired || intent.status === 'failed');
   const copyReference = async () => {
     try {
       await navigator.clipboard.writeText(intent.checkoutReference);
@@ -154,17 +195,31 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   };
 
   const saveEvidence = async () => {
-    if (!evidenceCode.trim()) {
-      notificationService.notify('Escribe el código de seguridad u operación de la constancia.', 'warning');
+    const normalizedCode = evidenceCode.trim();
+    const normalizedPayerName = payerDisplayName.trim();
+    const hasCode = Boolean(normalizedCode);
+    if (!hasCode && !normalizedPayerName) {
+      notificationService.notify('Escribe el código o el nombre de quien realizó el pago.', 'warning');
       return;
     }
     setSubmittingEvidence(true);
     try {
-      const saved = await paymentService.submitEvidence(order.id, evidenceCode);
+      const saved = await paymentService.declarePayment(
+        order.id,
+        normalizedCode || null,
+        normalizedPayerName || null,
+      );
       if (!saved) throw new Error('No pudimos vincular la constancia al pedido.');
       setEvidenceCode('');
-      setEvidenceSaved(true);
-      notificationService.notify('Código guardado. Caja podrá identificar este pago.', 'success');
+      setEvidenceSaved(hasCode);
+      setPaymentDeclared(true);
+      setDeclarationKnown(true);
+      notificationService.notify(
+        hasCode
+          ? 'Código guardado. Caja podrá identificar este pago.'
+          : 'Pagador guardado. Caja podrá usar este dato para revisar el pago.',
+        'success',
+      );
     } catch (cause) {
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No pudimos guardar el código.',
@@ -181,12 +236,13 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   };
 
   const renewManualIntent = async () => {
-    if (manualBusy || intent.provider === 'culqi') return;
+    if (manualBusy || intent.provider === 'culqi' || !declarationKnown || paymentDeclared) return;
     setManualBusy(true);
     try {
       const refreshed = await paymentService.createIntent(order.id, intent.method);
       setIntent(refreshed);
       setEvidenceCode('');
+      setPayerDisplayName('');
       setEvidenceSaved(false);
       notificationService.notify('Nueva referencia de pago generada.', 'success');
     } catch (cause) {
@@ -199,8 +255,29 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
     }
   };
 
+  const declareManualPayment = async () => {
+    if (declarationBusy || paymentDeclared || !declarationKnown) return;
+    setDeclarationBusy(true);
+    try {
+      const saved = await paymentService.declarePayment(order.id);
+      if (!saved) throw new Error('No pudimos registrar la declaración de pago.');
+      setPaymentDeclared(true);
+      notificationService.notify(
+        'Pago declarado. No generes otra referencia; el restaurante revisará el abono.',
+        'success',
+      );
+    } catch (cause) {
+      notificationService.notify(
+        cause instanceof Error ? cause.message : 'No pudimos registrar la declaración de pago.',
+        'danger',
+      );
+    } finally {
+      setDeclarationBusy(false);
+    }
+  };
+
   const openGateway = async () => {
-    if (gatewayBusy || gatewayWaitingForWebhook || verified) return;
+    if (gatewayBusy || gatewayWaitingForWebhook || verified || paymentRefunded) return;
     const customerEmail = savedPaymentEmail(order.id);
     if (!customerEmail) {
       notificationService.notify('Falta el correo usado para abrir el checkout seguro.', 'warning');
@@ -316,7 +393,12 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         <Badge tone={verified ? 'lime' : 'sun'}>{statusLabel(intent.status, gatewayExpired)}</Badge>
       </div>
 
-      {intent.provider === 'culqi' ? (
+      {paymentRefunded ? (
+        <div className="mt-4 rounded-card border border-suya-border bg-white p-4 text-sm text-suya-carbon">
+          Este pago fue devuelto. No vuelvas a pagar desde esta pantalla; contacta al restaurante
+          para revisar el siguiente paso.
+        </div>
+      ) : intent.provider === 'culqi' ? (
         <div className="mt-4 rounded-card border border-suya-green/20 bg-white p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
@@ -333,7 +415,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
             <Button
               type="button"
               onClick={() => void openGateway()}
-              disabled={gatewayBusy || gatewayWaitingForWebhook || verified}
+              disabled={gatewayBusy || gatewayWaitingForWebhook || verified || paymentRefunded}
             >
               <ExternalLink className="h-4 w-4" aria-hidden="true" />
               {gatewayBusy
@@ -358,7 +440,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
             Referencia de pago: <span className="font-mono">{intent.providerReference ?? 'pendiente'}</span>
           </p>
         </div>
-      ) : intent.qrPayload ? (
+      ) : intent.qrPayload && !manualRecoveryRequired ? (
         <div className="mt-4 flex flex-col items-center gap-3 rounded-card border border-suya-border bg-white p-4 sm:flex-row sm:items-start">
           <div className="rounded-xl border border-suya-mist bg-white p-2">
             <QRCodeSVG value={intent.qrPayload} size={156} level="M" includeMargin />
@@ -376,8 +458,11 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         </div>
       ) : (
         <div className="mt-4 rounded-btn border border-suya-sun/60 bg-white/70 p-3 text-sm text-suya-carbon">
-          El negocio aún no configuró su QR público. Abre {paymentLabel(intent.method)}, paga
-          exactamente el monto indicado y conserva la constancia.
+          {paymentRefunded
+            ? 'Este pago fue devuelto. No vuelvas a pagar desde esta referencia.'
+            : manualRecoveryRequired
+              ? 'Esta referencia ya venció. Si ya pagaste, conserva esta revisión; si aún no pagaste, usa la opción correspondiente más abajo.'
+              : `El negocio aún no configuró su QR público. Abre ${paymentLabel(intent.method)}, paga exactamente el monto indicado y conserva la constancia.`}
         </div>
       )}
 
@@ -399,69 +484,114 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         </Button>
       </div>
 
-      {intent.provider !== 'culqi' && (gatewayExpired || intent.status === 'failed') && (
+      {intent.provider !== 'culqi' && manualRecoveryRequired && !paymentDeclared && (
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-btn border border-suya-sun/60 bg-white/80 p-3">
           <p className="text-sm text-suya-carbon">
-            Esta referencia ya no acepta pagos. Genera otra antes de pagar.
+            Esta referencia ya venció. Si ya pagaste, conserva esta revisión; si aún no pagaste,
+            genera una referencia nueva.
           </p>
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            onClick={() => void renewManualIntent()}
-            disabled={manualBusy}
-          >
-            {manualBusy ? 'Generando…' : 'Generar nueva referencia'}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => void declareManualPayment()}
+              disabled={!declarationKnown || declarationBusy}
+            >
+              {declarationBusy ? 'Guardando…' : 'Ya pagué'}
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              onClick={() => void renewManualIntent()}
+              disabled={!declarationKnown || declarationBusy || manualBusy}
+            >
+              {manualBusy ? 'Generando…' : 'Aún no pagué'}
+            </Button>
+          </div>
         </div>
       )}
 
-      {!verified && intent.provider !== 'culqi' && (intent.method === 'yape' || intent.method === 'lemon') && (
+      {!verified && !paymentRefunded && intent.provider !== 'culqi' && (intent.method === 'yape' || intent.method === 'lemon') && (
         <div className="mt-4 rounded-btn border border-suya-green/20 bg-white/75 p-3">
-          <p className="text-sm font-semibold text-suya-carbon">
-            Identifica tu pago antes de cerrar esta pantalla
-          </p>
-          <p className="mt-1 text-xs text-suya-muted">
-            Después de pagar, escribe el código de seguridad u operación que aparece en tu
-            constancia. En Yape suele ser el código de seguridad de 3 dígitos; si la constancia
-            muestra un código de operación, copia el valor completo. Este dato solo ayuda a caja
-            a revisar el movimiento: por sí solo no confirma que el abono llegó ni identifica de
-            forma única un pago.
-          </p>
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
-            <label className="min-w-0 flex-1 text-xs font-semibold text-suya-carbon">
-              Código de constancia {intent.method === 'lemon' ? 'o referencia' : ''}
-              <input
-                value={evidenceCode}
-                onChange={(event) => setEvidenceCode(event.target.value)}
-                autoComplete="one-time-code"
-                inputMode={intent.method === 'yape' ? 'numeric' : 'text'}
-                maxLength={64}
-                placeholder={intent.method === 'yape' ? 'Ej. 384' : 'Ej. LM-123'}
-                className="mt-1 h-11 w-full rounded-btn border border-suya-border bg-white px-3 text-sm font-normal outline-none focus:border-suya-green focus:ring-2 focus:ring-suya-green/20"
-                disabled={submittingEvidence || evidenceSaved}
-              />
-            </label>
-            {evidenceSaved ? (
-              <Button type="button" variant="secondary" size="sm" onClick={editEvidence}>
-                Cambiar código
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => void saveEvidence()}
-                disabled={submittingEvidence || !evidenceCode.trim()}
-              >
-                {submittingEvidence ? 'Guardando…' : 'Vincular código'}
-              </Button>
-            )}
-          </div>
-          {evidenceSaved && (
-            <p className="mt-2 text-xs font-semibold text-suya-green-dark">
-              Código vinculado. Puedes cambiarlo mientras el pago siga pendiente.
-            </p>
+          {!paymentDeclared ? (
+            <>
+              <p className="text-sm font-semibold text-suya-carbon">¿Ya realizaste el pago?</p>
+              <p className="mt-1 text-xs text-suya-muted">
+                Toca «Ya pagué» para conservar este intento en revisión. Luego podrás agregar el
+                código de seguridad u operación de tu constancia, si existe.
+              </p>
+              {!manualRecoveryRequired && (
+                <Button
+                  type="button"
+                  className="mt-3"
+                  onClick={() => void declareManualPayment()}
+                  disabled={!declarationKnown || declarationBusy}
+                >
+                  {declarationBusy ? 'Guardando…' : 'Ya pagué'}
+                </Button>
+              )}
+            </>
+          ) : (
+            <>
+              <p className="text-sm font-semibold text-suya-carbon">Pago en revisión</p>
+              <p className="mt-1 text-xs text-suya-muted">
+                No generes otra referencia. El restaurante revisará monto, cuenta receptora y
+                constancia antes de confirmar. El código ayuda a buscar el movimiento, pero no lo
+                confirma por sí solo.
+              </p>
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+                <label className="min-w-0 flex-1 text-xs font-semibold text-suya-carbon">
+                  Código de constancia {intent.method === 'lemon' ? 'o referencia' : ''}
+                  <input
+                    value={evidenceCode}
+                    onChange={(event) => setEvidenceCode(event.target.value)}
+                    autoComplete="one-time-code"
+                    inputMode={intent.method === 'yape' ? 'numeric' : 'text'}
+                    maxLength={64}
+                    placeholder={intent.method === 'yape' ? 'Ej. 384' : 'Ej. LM-123'}
+                    className="mt-1 h-11 w-full rounded-btn border border-suya-border bg-white px-3 text-sm font-normal outline-none focus:border-suya-green focus:ring-2 focus:ring-suya-green/20"
+                    disabled={submittingEvidence || evidenceSaved}
+                  />
+                </label>
+                <label className="min-w-0 flex-1 text-xs font-semibold text-suya-carbon">
+                  Nombre del pagador (opcional)
+                  <input
+                    value={payerDisplayName}
+                    onChange={(event) => setPayerDisplayName(event.target.value)}
+                    autoComplete="name"
+                    maxLength={120}
+                    placeholder="Si pagó otra persona"
+                    className="mt-1 h-11 w-full rounded-btn border border-suya-border bg-white px-3 text-sm font-normal outline-none focus:border-suya-green focus:ring-2 focus:ring-suya-green/20"
+                    disabled={submittingEvidence}
+                  />
+                </label>
+                {evidenceSaved ? (
+                  <Button type="button" variant="secondary" size="sm" onClick={editEvidence}>
+                    Cambiar código
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => void saveEvidence()}
+                    disabled={submittingEvidence || (!evidenceCode.trim() && !payerDisplayName.trim())}
+                  >
+                    {submittingEvidence
+                      ? 'Guardando…'
+                      : evidenceCode.trim()
+                        ? 'Vincular código'
+                        : 'Guardar pagador'}
+                  </Button>
+                )}
+              </div>
+              {evidenceSaved && (
+                <p className="mt-2 text-xs font-semibold text-suya-green-dark">
+                  Código vinculado. Puedes cambiarlo mientras el pago siga pendiente.
+                </p>
+              )}
+            </>
           )}
         </div>
       )}
@@ -469,9 +599,11 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
       <div className="mt-4 flex items-start gap-2 border-t border-black/10 pt-3 text-xs text-suya-muted">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-suya-green" aria-hidden="true" />
         <p>
-          {intent.provider === 'culqi'
+          {paymentRefunded
+            ? 'Este pago fue devuelto y no debe repetirse desde esta referencia.'
+            : intent.provider === 'culqi'
             ? 'El servidor confirma el pago. Suya conserva la referencia del pedido y no libera por una notificación local.'
-            : 'La notificación del celular de caja solo es evidencia. El restaurante debe verificar monto, billetera, hora y referencia antes de liberar el pedido.'}
+            : 'El estado cambia cuando el restaurante revisa el abono. Una constancia o notificación solo ayuda a localizarlo y no confirma el pago por sí sola.'}
         </p>
       </div>
     </Card>

@@ -172,6 +172,8 @@ export interface WalletObservation {
   amountCents: number;
   currency: string;
   observedAt: string;
+  /** Hora en que el servidor recibió la observación; no es la hora bancaria. */
+  receivedAt?: string | null;
   verification: string;
 }
 
@@ -415,6 +417,11 @@ export interface PaymentResult {
   message: string;
 }
 
+export interface PaymentDeclaration {
+  declaredAt: string;
+  payerDisplayName: string | null;
+}
+
 export interface PaymentService {
   /** La confirmación final de pagos digitales siempre proviene del backend/webhook. */
   authorize(method: PaymentMethod, amount: number): Promise<PaymentResult>;
@@ -429,6 +436,16 @@ export interface PaymentService {
     code: string,
     guestAccessToken?: string | null,
   ): Promise<boolean>;
+  declarePayment(
+    orderId: string,
+    code?: string | null,
+    payerDisplayName?: string | null,
+    guestAccessToken?: string | null,
+  ): Promise<boolean>;
+  getPaymentDeclaration(
+    orderId: string,
+    guestAccessToken?: string | null,
+  ): Promise<PaymentDeclaration | null>;
   chargeCard(
     intent: PaymentIntent,
     tokenId: string,

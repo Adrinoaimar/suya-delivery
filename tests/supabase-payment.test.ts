@@ -158,6 +158,36 @@ describe('SupabasePaymentService', () => {
     });
   });
 
+  it('declara un pago manual sin enviar credenciales ni el código al almacenamiento del cliente', async () => {
+    const client = fakeClient({ data: true, error: null });
+    const service = new SupabasePaymentService(client);
+
+    await expect(service.declarePayment('order-1', null, '  Otra Persona  ', 'guest-token')).resolves.toBe(true);
+    expect(client.rpc).toHaveBeenCalledWith('declare_manual_payment', {
+      p_order_id: 'order-1',
+      p_code: null,
+      p_payer_display_name: 'Otra Persona',
+      p_guest_access_token: 'guest-token',
+    });
+  });
+
+  it('lee solo el estado público de revisión, nunca la huella del código', async () => {
+    const client = fakeClient({
+      data: [{ declared_at: '2026-09-15T22:00:00.000Z', payer_display_name: 'Otra Persona', code_hmac: 'secret' }],
+      error: null,
+    });
+    const declaration = await new SupabasePaymentService(client).getPaymentDeclaration('order-1');
+
+    expect(declaration).toEqual({
+      declaredAt: '2026-09-15T22:00:00.000Z',
+      payerDisplayName: 'Otra Persona',
+    });
+    expect(client.rpc).toHaveBeenCalledWith('get_payment_declaration', {
+      p_order_id: 'order-1',
+      p_guest_access_token: null,
+    });
+  });
+
   it('permite completar el código faltante desde backoffice sin exponer el código completo', async () => {
     const client = fakeClient({ data: true, error: null });
     const service = new SupabaseWalletObserverService(client);

@@ -538,6 +538,12 @@ export const paymentService: PaymentService = {
   submitEvidence(orderId, code, guestAccessToken) {
     return resolvePaymentService().submitEvidence(orderId, code, guestAccessToken);
   },
+  declarePayment(orderId, code, payerDisplayName, guestAccessToken) {
+    return resolvePaymentService().declarePayment(orderId, code, payerDisplayName, guestAccessToken);
+  },
+  getPaymentDeclaration(orderId, guestAccessToken) {
+    return resolvePaymentService().getPaymentDeclaration(orderId, guestAccessToken);
+  },
   chargeCard(intent, tokenId, customerEmail, guestAccessToken) {
     return resolvePaymentService().chargeCard(intent, tokenId, customerEmail, guestAccessToken);
   },

@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
 import type { PaymentIntent, PaymentIntentStatus, PaymentMethod } from '@/types';
 import type { PaymentResult, PaymentService } from './types';
+import type { PaymentDeclaration } from './types';
 import { readGuestOrderToken } from './guestOrderAccess';
 
 interface PaymentIntentRow {
@@ -16,6 +17,11 @@ interface PaymentIntentRow {
   provider?: unknown;
   provider_reference?: unknown;
   qr_payload?: unknown;
+}
+
+interface PaymentDeclarationRow {
+  declared_at?: unknown;
+  payer_display_name?: unknown;
 }
 
 function requireClient(): SupabaseClient {
@@ -179,6 +185,50 @@ export class SupabasePaymentService implements PaymentService {
     });
     if (error) throw new Error(error.message);
     return data === true;
+  }
+
+  async declarePayment(
+    orderId: string,
+    code?: string | null,
+    payerDisplayName?: string | null,
+    suppliedGuestAccessToken?: string | null,
+  ): Promise<boolean> {
+    if (!orderId) throw new Error('No pudimos identificar el pedido.');
+    const normalizedCode = code?.trim() || null;
+    if (normalizedCode && !/^[a-z0-9-]{3,64}$/iu.test(normalizedCode)) {
+      throw new Error('Escribe un código de operación válido.');
+    }
+    const normalizedPayer = payerDisplayName?.trim() || null;
+    if (normalizedPayer && (normalizedPayer.length < 2 || normalizedPayer.length > 120)) {
+      throw new Error('El nombre del pagador debe tener entre 2 y 120 caracteres.');
+    }
+    const { data, error } = await this.client.rpc('declare_manual_payment', {
+      p_order_id: orderId,
+      p_code: normalizedCode,
+      p_payer_display_name: normalizedPayer,
+      p_guest_access_token: guestToken(orderId, suppliedGuestAccessToken),
+    });
+    if (error) throw new Error(error.message);
+    return data === true;
+  }
+
+  async getPaymentDeclaration(
+    orderId: string,
+    suppliedGuestAccessToken?: string | null,
+  ): Promise<PaymentDeclaration | null> {
+    if (!orderId) return null;
+    const { data, error } = await this.client.rpc('get_payment_declaration', {
+      p_order_id: orderId,
+      p_guest_access_token: guestToken(orderId, suppliedGuestAccessToken),
+    });
+    if (error) throw new Error(error.message);
+    const row = firstRow(data) as PaymentDeclarationRow | null;
+    const declaredAt = text(row?.declared_at);
+    if (!declaredAt) return null;
+    return {
+      declaredAt,
+      payerDisplayName: typeof row?.payer_display_name === 'string' ? row.payer_display_name : null,
+    };
   }
 
   async getIntent(
