@@ -55,6 +55,14 @@ describe('Suya hardening guards', () => {
     expect(manifest).toMatch(/android:enabled="\$\{suyaWalletObserverEnabled\}"/);
   });
 
+  it('derives Android queue health from the encrypted event state', () => {
+    const listener = source('android/app/src/main/java/com/suya/app/YapeNotificationListenerService.java');
+    const match = listener.match(/static boolean isQueueFull\(Context context\) \{([\s\S]*?)\n    \}/);
+    expect(match?.[1]).toMatch(/new JSONArray\(decryptEvents\(/);
+    expect(match?.[1]).toMatch(/isPendingCapacityReached\(events\)/);
+    expect(match?.[1]).toMatch(/putBoolean\(QUEUE_FULL_KEY, queueFull\)/);
+  });
+
   it('ships defensive headers with every static Pages bundle', () => {
     const headers = source('public/_headers');
     expect(headers).toMatch(/frame-ancestors 'none'/);

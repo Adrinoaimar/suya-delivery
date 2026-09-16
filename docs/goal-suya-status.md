@@ -76,6 +76,19 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - La persistencia y reconciliación de la cola Android recalculan `queueFull` según los eventos pendientes: se activa en 500 y se limpia después de una sincronización que baje el contador, incluso si una instalación antigua dejó el flag obsoleto. No cambia la prioridad de pendientes ni permite descartarlos por historial.
 - Se añadió `derivesQueueFullFromCurrentPendingEvents`; Android test/build queda pendiente porque este entorno no tiene `java`/JDK. No se presentan APK nuevas ni se declaran compiladas.
 
+## Revalidación local posterior — suite global y gates estáticos — 2026-09-16
+
+- `npm test -- --run`: **72 archivos / 345 pruebas pasan**.
+- `npm run typecheck`, `npm run lint`, `npm run security:secrets` (**937 archivos, sin patrones**) y `git diff --check` pasan.
+- La cifra previa de 344 queda corregida a 345. No cambia los bloqueos externos: Android test/build sin JDK, Supabase/Postgres oficial, dispositivo, E2E financiero, OTA privado, firma release y pagos reales.
+- Los cambios ajenos del usuario (`src/lib/routePlanner.ts`, `tests/route-planner.test.ts`, `output/`) siguen preservados y fuera de los commits propios.
+
+## Corrección A-09 — `queueFull` derivado al consultar estado — 2026-09-16
+
+- Se detectó que `SuyaWalletObserverPlugin.status()` podía devolver `QUEUE_FULL_KEY` sin reconciliarlo con la cola cifrada. `YapeNotificationListenerService.isQueueFull()` ahora deriva el estado bajo lock desde los eventos pendientes y corrige el flag persistido, evitando estados obsoletos.
+- Regresión de contrato: **6/6**; suite global posterior: **72 archivos / 346 pruebas**; typecheck, lint, secretos (**937 archivos**), `git diff --check` y `npm run build:apps` con configuración sintética pasan.
+- Android test/build queda pendiente por ausencia de `java`/JDK; no hay APK nueva. Se preservan `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` y `output/`.
+
 ## Matriz de hallazgos
 
 Estados usados: pendiente, en corrección, en verificación, verificado, bloqueado. Un bloqueo de entorno no es aprobación.

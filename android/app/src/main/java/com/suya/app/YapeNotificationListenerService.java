@@ -460,8 +460,21 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     }
 
     static boolean isQueueFull(Context context) {
-        return context != null && context.getSharedPreferences(PREFS, MODE_PRIVATE)
-                .getBoolean(QUEUE_FULL_KEY, false);
+        if (context == null) return false;
+        synchronized (QUEUE_LOCK) {
+            SharedPreferences preferences = context.getSharedPreferences(PREFS, MODE_PRIVATE);
+            JSONArray events;
+            try {
+                events = new JSONArray(decryptEvents(preferences.getString(EVENTS_KEY, null)));
+            } catch (JSONException ignored) {
+                events = new JSONArray();
+            }
+            boolean queueFull = isPendingCapacityReached(events);
+            if (preferences.getBoolean(QUEUE_FULL_KEY, false) != queueFull) {
+                preferences.edit().putBoolean(QUEUE_FULL_KEY, queueFull).apply();
+            }
+            return queueFull;
+        }
     }
 
     @Nullable
