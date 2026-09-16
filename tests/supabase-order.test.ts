@@ -287,6 +287,9 @@ describe('SupabaseOrderServiceImpl', () => {
             error: null,
           };
         }
+        if (name === 'get_payment_receiver_label') {
+          return { data: [{ account_label: 'El Buen Sabor' }], error: null };
+        }
         if (name === 'get_guest_order') return { data: [guestRow], error: null };
         throw new Error(`RPC inesperada: ${name}`);
       },
@@ -344,6 +347,9 @@ describe('SupabaseOrderServiceImpl', () => {
             ],
             error: null,
           };
+        }
+        if (name === 'get_payment_receiver_label') {
+          return { data: [{ account_label: 'El Buen Sabor' }], error: null };
         }
         expect(name).toBe('create_delivery_order_with_payment');
         return {

@@ -59,6 +59,8 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - U-09: `LeafletMap` reserva una columna derecha para la atribución OSM y apila leyendas/errores en una columna izquierda con límites de ancho; la atribución nativa duplicada queda desactivada para evitar superposición en mapas móviles estrechos.
 - P-04/P-10/A-01: `20260916130000_payment_intent_terminal_retry.sql` conserva la clave determinista para el primer intento, reutiliza el intento activo bajo `FOR UPDATE` y genera una clave `:retry:<uuid>` después de un intento terminal; evita que la unicidad global bloquee reintentos legítimos. El contrato SQL declara 6 aserciones y queda pendiente del runtime oficial.
 - A-05: Android ya persiste la sesión Supabase mediante `SuyaSecureStoragePlugin`: AES-GCM con clave no exportable de Android Keystore, ciphertext en preferencias privadas y sin fallback plaintext. El navegador conserva su almacenamiento web; iOS no simula persistencia segura.
+- P-11: `get_payment_receiver_label` devuelve solo la etiqueta de la cuenta receptora activa al propietario o token guest válido; `PaymentInstructions` muestra el destinatario junto al QR y oculta el QR si no puede validarlo. Focal pagos/UI 28/28.
+- A-02: un pedido con `tableId` ya no sobrescribe `profiles.default_address/default_reference`; la regresión focal de servicio pasa 9/9.
 
 ## Matriz de hallazgos
 
@@ -76,7 +78,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | P-08 | En verificación | Adaptadores por paquete y palabras; caso Yape probado | Matriz Android real por versión de billetera |
 | P-09 | En verificación | Código normalizado hasta 64; HMAC v2 privado ligado a receptor/tipo, HMAC legacy aislado para transición, auditoría saneada y contrato de 12 aserciones | Ejecutar migración nueva en DB oficial y confirmar límites de proveedor |
 | P-10 | En verificación | Renovación conserva cuenta histórica; una declaración vencida no se renueva, una cuenta desactivada se rechaza y un intento terminal no envenena el siguiente retry | Ejecutar migración nueva y caso de vencimiento/reintento/concurrencia |
-| P-11 | En verificación | Copy no promete confirmación; declaración separada, pagador opcional, reset por intento y reembolso sin QR/reintento | Revisión sobre APK final y estados reales |
+| P-11 | En verificación | Copy no promete confirmación; declaración separada, pagador opcional, reset por intento, reembolso sin QR/reintento y destinatario activo visible/validado antes del QR; focal pagos/UI 28/28 | Revisión sobre APK final y estados reales |
 | U-01 | En verificación | Drawer opaco, `isolate`, portal `z-[1100]`; test/build web pasan | Captura sobre APK final con mapa normal/expandido |
 | U-02 | Verificado local | Navegación móvil compacta + drawer “Más”; `backoffice-layout.test.tsx` pasa | Confirmar en Android final |
 | U-03 | En verificación | Store global en cinco módulos; pruebas focalizadas de contexto pasan | Cambiar dos restaurantes con respuestas lentas y probar permisos |
@@ -333,3 +335,9 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Las APK debug `1.4/5` actuales pasan ZIP, `apksigner verify` v2 y `aapt dump badging`. No son release, no implican sesión física validada y no habilitan pagos reales.
 - Huellas actuales: Rider **25,371,865 bytes**, `6103790069674cf4a1c0b11d8cd84c03b91ec2a6adb9541a6afc9f347002a0ff`; Backoffice **25,240,196 bytes**, `d4d171ac5495f340c159dfdcbfa5025478ef5b85b8cb765605a929d44db54e8f`; Wallet Observer **25,192,272 bytes**, `b67ef174693d1aa378555dd82ae1276b162f83a9549593f8fafbb3e1065775b7`.
 - El entorno actual no dispone de `adb` ni `emulator`; reinicio, bloqueo, OAuth, TalkBack, fuente ampliada, offline, actualización e instalación física siguen pendientes y no se declaran verificadas.
+
+## Corrección A-02/P-11 — contexto de mesa y destinatario visible — 2026-09-16
+
+- `0f2d3c8` impide que un pedido con mesa sobrescriba la dirección habitual del perfil; `tests/supabase-order.test.ts` pasa **9/9**.
+- `0a1b51a` añade `get_payment_receiver_label`, ligado al propietario/token guest, restaurante, intento y cuenta receptora activa. `PaymentInstructions` muestra el `account_label` junto al QR y oculta el QR si la etiqueta no se puede validar. Focal pagos/UI **28/28**; suite global posterior **71/330**, lint, typecheck, secretos y diff pasan.
+- La migración `20260916140000_payment_recipient_label_read_guard.sql` y su contrato de **8 aserciones** quedan pendientes del runtime oficial Supabase/Postgres. No hubo pagos reales; DB/RLS, E2E, dispositivo y estados físicos siguen pendientes.
