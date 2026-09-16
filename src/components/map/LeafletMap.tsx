@@ -523,7 +523,7 @@ export default function LeafletMap({
             <button
               type="button"
               onClick={() => mapRef.current?.zoomIn()}
-              className="press flex h-9 w-9 items-center justify-center rounded-full text-[#0E6B44] transition hover:bg-suya-ivory focus:outline-none focus:ring-2 focus:ring-[#0E6B44]"
+              className="press flex h-11 w-11 items-center justify-center rounded-full text-[#0E6B44] transition hover:bg-suya-ivory focus:outline-none focus:ring-2 focus:ring-[#0E6B44]"
               aria-label="Acercar mapa"
               title="Acercar mapa"
             >
@@ -532,7 +532,7 @@ export default function LeafletMap({
             <button
               type="button"
               onClick={() => mapRef.current?.zoomOut()}
-              className="press flex h-9 w-9 items-center justify-center rounded-full text-[#0E6B44] transition hover:bg-suya-ivory focus:outline-none focus:ring-2 focus:ring-[#0E6B44]"
+              className="press flex h-11 w-11 items-center justify-center rounded-full text-[#0E6B44] transition hover:bg-suya-ivory focus:outline-none focus:ring-2 focus:ring-[#0E6B44]"
               aria-label="Alejar mapa"
               title="Alejar mapa"
             >

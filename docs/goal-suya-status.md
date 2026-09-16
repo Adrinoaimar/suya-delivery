@@ -194,6 +194,12 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Las **71 aserciones pgTAP** siguen pendientes del runtime oficial porque Docker/Supabase local no está accesible. Culqi permanece opcional/deshabilitado; no hubo cobros reales.
 - Próximo gate: `npm run db:start`, `npm run db:lint` y `npm run db:test`; luego RLS/concurrencia, E2E financiero de prueba, dispositivo/offline/accesibilidad y firma release. El goal continúa abierto.
 
+## Seguimiento posterior — controles táctiles del mapa (2026-09-15)
+
+- La auditoría UI detectó que zoom in/out usaban 36×36 px. `LeafletMap` ahora usa `h-11 w-11` (44×44 px) y `tests/map-controls.test.ts` fija el contrato de los controles principales; focal **1/1**.
+- Suite global actual: **71 archivos / 320 pruebas**; lint, typecheck, build aislado y smoke E2E **12/12** pasan. No cambia pagos ni las APK debug.
+- Captura nativa/TalkBack siguen pendientes sin dispositivo; DB/RLS oficial continúa bloqueado por Docker/Supabase local inaccesible. El goal sigue en progreso.
+
 ## Bloqueos reproducibles
 
 1. `npm run db:lint` no conecta a `127.0.0.1:54322`; `npm run db:start` tampoco puede conectar al socket Docker normal. Se probó un daemon rootless temporal con `vfs`, cgroups desactivados y seccomp/AppArmor aislados: la red `none` no permite aliases, `host` rechaza aliases y la red rootless con `slirp4netns` sí crea `bridge`, pero el contenedor Postgres queda saludable sin publicar el puerto hacia el host; la CLI termina con `LegacyDbConnectError` (timeout/conexión terminada) y limpia el contenedor. No se modificó el sistema ni el código para ocultarlo. La suite SQL sí fue validada de forma independiente en PostgreSQL temporal; queda pendiente repetirla mediante el flujo oficial de Supabase cuando exista daemon/puerto normal.
