@@ -66,7 +66,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 
 ## Corrección A-09 — salud de cola visible y regresión global — 2026-09-16
 
-- La pantalla `WalletObserverPage` tipa y muestra `pendingEvents`; cuando el plugin informa `queueFull`, presenta una alerta operativa para sincronizar antes de continuar. No inventa cero si una versión nativa antigua no entrega el contador.
+- La pantalla `WalletObserverPage` tipa y muestra `pendingEvents`; cuando el plugin informa `queueFull`, presenta una alerta operativa para sincronizar antes de continuar. No inventa cero si una versión nativa antigua no entrega el contador. `npm run build:walletobserver` y `npm run verify:apps -- walletobserver` pasan con configuración pública sintética.
 - TDD: la prueba UI pasó **2/2**; suite global **72 archivos / 345 pruebas**; typecheck, lint, `npm run security:secrets` (**937 archivos, sin patrones**) y `git diff --check` pasan.
 - Es una corrección web sobre el bundle de caja; no cambia Android nativo ni APKs. JDK, Android test/build, dispositivo, sincronización real, reinicio, permisos y accesibilidad física permanecen pendientes.
 
