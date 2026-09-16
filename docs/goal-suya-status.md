@@ -62,6 +62,13 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - A-05: Android ya persiste la sesión Supabase mediante `SuyaSecureStoragePlugin`: AES-GCM con clave no exportable de Android Keystore, ciphertext en preferencias privadas y sin fallback plaintext. El navegador conserva su almacenamiento web; iOS no simula persistencia segura.
 - P-11: `get_payment_receiver_label` devuelve solo la etiqueta de la cuenta receptora activa al propietario o token guest válido; `PaymentInstructions` muestra el destinatario junto al QR solo mientras el intento está pendiente y oculta todo cobro cuando está autorizado. Focal `PaymentInstructions` 19/19; suite de pagos relacionada 65/65.
 - A-02: un pedido con `tableId` ya no sobrescribe `profiles.default_address/default_reference`; la regresión focal de servicio pasa 9/9.
+- A-09: `WalletObserverPage` ahora muestra los `pendingEvents` y la alerta de `queueFull` que ya devolvía el plugin nativo; si el contador no existe mantiene el estado como no disponible. Regresión UI 2/2; falta validar el comportamiento nativo en dispositivo.
+
+## Corrección A-09 — salud de cola visible y regresión global — 2026-09-16
+
+- La pantalla `WalletObserverPage` tipa y muestra `pendingEvents`; cuando el plugin informa `queueFull`, presenta una alerta operativa para sincronizar antes de continuar. No inventa cero si una versión nativa antigua no entrega el contador.
+- TDD: la prueba UI pasó **2/2**; suite global **72 archivos / 345 pruebas**; typecheck, lint, `npm run security:secrets` (**937 archivos, sin patrones**) y `git diff --check` pasan.
+- Es una corrección web sobre el bundle de caja; no cambia Android nativo ni APKs. JDK, Android test/build, dispositivo, sincronización real, reinicio, permisos y accesibilidad física permanecen pendientes.
 
 ## Matriz de hallazgos
 

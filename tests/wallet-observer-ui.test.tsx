@@ -50,4 +50,19 @@ describe('WalletObserverPage', () => {
     await waitFor(() => expect(mocks.getStatus).toHaveBeenCalledTimes(1));
     expect(screen.getByText('Sin vincular')).toBeInTheDocument();
   });
+
+  it('muestra la salud de la cola cuando el teléfono está vinculado', async () => {
+    mocks.getStatus.mockResolvedValue({
+      configured: true,
+      notificationAccess: true,
+      role: 'ready',
+      pendingEvents: 3,
+      queueFull: true,
+    });
+
+    render(<WalletObserverPage />);
+
+    expect(await screen.findByText('3 eventos pendientes')).toBeInTheDocument();
+    expect(screen.getByText('La cola está llena. Sincroniza antes de seguir capturando pagos.')).toBeInTheDocument();
+  });
 });

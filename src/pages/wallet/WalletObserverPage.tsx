@@ -11,6 +11,13 @@ function statusLabel(status: NativeWalletObserverStatus | null): string {
   return status.notificationAccess ? 'Listo para sincronizar' : 'Falta activar notificaciones';
 }
 
+function pendingEventsLabel(status: NativeWalletObserverStatus): string {
+  if (!Number.isInteger(status.pendingEvents) || (status.pendingEvents ?? 0) < 0) {
+    return 'Eventos pendientes: no disponible';
+  }
+  return status.pendingEvents === 1 ? '1 evento pendiente' : `${status.pendingEvents} eventos pendientes`;
+}
+
 export default function WalletObserverPage() {
   const isAndroid = Capacitor.getPlatform() === 'android';
   const [status, setStatus] = useState<NativeWalletObserverStatus | null>(null);
@@ -142,6 +149,14 @@ export default function WalletObserverPage() {
               <p className="mt-1 text-sm text-suya-muted">{statusLabel(status)}</p>
             </div>
           </div>
+          {status?.configured && (
+            <div className="mt-4 rounded-btn border border-suya-border bg-suya-ivory px-3 py-3 text-sm" role="status" aria-live="polite">
+              <p className="font-semibold">{pendingEventsLabel(status)}</p>
+              {status.queueFull && (
+                <p className="mt-1 text-suya-danger">La cola está llena. Sincroniza antes de seguir capturando pagos.</p>
+              )}
+            </div>
+          )}
           <div className="mt-4 flex flex-wrap gap-2">
             <Button variant="secondary" size="sm" onClick={() => void nativeWalletObserver.openNotificationSettings()} disabled={!isAndroid || busy}>
               <Settings2 className="h-4 w-4" aria-hidden="true" />

@@ -4,6 +4,8 @@ interface NativeWalletObserverStatus {
   configured: boolean;
   notificationAccess: boolean;
   role: 'ready' | 'unconfigured' | string;
+  pendingEvents?: number;
+  queueFull?: boolean;
 }
 
 interface NativeWalletObserverPlugin {
