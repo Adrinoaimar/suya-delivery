@@ -374,4 +374,43 @@ describe('PaymentInstructions', () => {
     );
     expect(mocks.chargeCard).toHaveBeenCalledTimes(1);
   });
+
+  it('ignora callbacks de Culqi del pedido anterior al cambiar de pedido', async () => {
+    const firstIntent: PaymentIntent = {
+      ...pendingIntent,
+      provider: 'culqi',
+      providerReference: 'ord_test_stale_order',
+    };
+    const secondIntent: PaymentIntent = {
+      ...pendingIntent,
+      orderId: 'order-2',
+      attemptId: 'attempt-2',
+      provider: 'culqi',
+      providerReference: 'ord_test_current_order',
+    };
+    let onToken!: (tokenId: string) => Promise<void>;
+    mocks.openCulqiCheckout.mockImplementationOnce(
+      async (options: { onToken: (tokenId: string) => Promise<void> }) => {
+        onToken = options.onToken;
+      },
+    );
+    sessionStorage.setItem('suya.payment-email:order-1', 'cliente@example.com');
+    sessionStorage.setItem('suya.payment-email:order-2', 'cliente@example.com');
+    const { rerender } = render(<PaymentInstructions order={order(firstIntent)} />);
+
+    await act(async () => {
+      screen.getByRole('button', { name: 'Abrir QR Yape' }).click();
+    });
+    expect(onToken).toBeTypeOf('function');
+
+    rerender(<PaymentInstructions order={order(secondIntent)} />);
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Abrir QR Yape' })).toBeInTheDocument());
+
+    await act(async () => {
+      await onToken('tkn_test_stale_order');
+    });
+
+    expect(mocks.chargeCard).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: 'Abrir QR Yape' })).toBeEnabled();
+  });
 });

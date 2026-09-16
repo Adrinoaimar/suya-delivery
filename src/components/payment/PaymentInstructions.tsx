@@ -50,6 +50,8 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   const [gatewayAwaitingWebhook, setGatewayAwaitingWebhook] = useState(false);
   const [manualBusy, setManualBusy] = useState(false);
   const gatewayTokenBusyRef = useRef(false);
+  const gatewaySessionKeyRef = useRef('');
+  const gatewaySessionKey = `${order.id}:${order.paymentIntent?.attemptId ?? ''}`;
 
   useEffect(() => {
     // Este componente vive en rutas que pueden cambiar de pedido o de intento sin desmontarse.
@@ -68,7 +70,8 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
     setGatewayAwaitingWebhook(false);
     setManualBusy(false);
     gatewayTokenBusyRef.current = false;
-  }, [order.id, order.paymentIntent?.attemptId]);
+    gatewaySessionKeyRef.current = gatewaySessionKey;
+  }, [gatewaySessionKey]);
 
   useEffect(() => {
     if (order.paymentMethod === 'cash' || order.paymentIntent) return;
@@ -278,6 +281,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
 
   const openGateway = async () => {
     if (gatewayBusy || gatewayWaitingForWebhook || verified || paymentRefunded) return;
+    const checkoutSessionKey = gatewaySessionKeyRef.current;
     const customerEmail = savedPaymentEmail(order.id);
     if (!customerEmail) {
       notificationService.notify('Falta el correo usado para abrir el checkout seguro.', 'warning');
@@ -291,6 +295,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         intent.status === 'failed' || gatewayExpired || !intent.providerReference
           ? await paymentService.createIntent(order.id, intent.method, undefined, customerEmail)
           : intent;
+      if (gatewaySessionKeyRef.current !== checkoutSessionKey) return;
       setIntent(activeIntent);
       await openCulqiCheckout({
         intent: activeIntent,
@@ -299,7 +304,10 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         onToken: async (tokenId) => {
           // Custom Checkout abre un modal no bloqueante. El callback puede
           // llegar después de que openCulqiCheckout() haya retornado.
-          if (gatewayTokenBusyRef.current) return;
+          if (
+            gatewaySessionKeyRef.current !== checkoutSessionKey ||
+            gatewayTokenBusyRef.current
+          ) return;
           gatewayTokenBusyRef.current = true;
           setGatewayBusy(true);
           try {
@@ -308,6 +316,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
               tokenId,
               customerEmail,
             );
+            if (gatewaySessionKeyRef.current !== checkoutSessionKey) return;
             setIntent((current) =>
               current ? { ...current, status: 'authorized', providerReference } : current,
             );
@@ -319,6 +328,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
             // El backend cierra el intento cuando Culqi rechaza el cargo. No
             // conserves el estado pending local: así el próximo toque crea
             // una orden/referencia nueva y no reusa la anterior.
+            if (gatewaySessionKeyRef.current !== checkoutSessionKey) return;
             const refreshed = await paymentService.getIntent(order.id).catch(() => null);
             setIntent(
               refreshed ?? {
@@ -334,11 +344,14 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
               'danger',
             );
           } finally {
-            gatewayTokenBusyRef.current = false;
-            setGatewayBusy(false);
+            if (gatewaySessionKeyRef.current === checkoutSessionKey) {
+              gatewayTokenBusyRef.current = false;
+              setGatewayBusy(false);
+            }
           }
         },
         onOrder: () => {
+          if (gatewaySessionKeyRef.current !== checkoutSessionKey) return;
           setGatewayBusy(false);
           setGatewayAwaitingWebhook(true);
           notificationService.notify(
@@ -347,6 +360,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
           );
         },
         onError: (message) => {
+          if (gatewaySessionKeyRef.current !== checkoutSessionKey) return;
           setGatewayBusy(false);
           setGatewayAwaitingWebhook(false);
           notificationService.notify(message, 'danger');
@@ -355,8 +369,12 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
       // Culqi.open() no espera a que el usuario cierre el modal. Liberamos el
       // estado de apertura para no dejar la pantalla bloqueada si lo cancela;
       // onToken vuelve a marcarlo ocupado durante el cobro.
-      if (!gatewayTokenBusyRef.current) setGatewayBusy(false);
+      if (
+        gatewaySessionKeyRef.current === checkoutSessionKey &&
+        !gatewayTokenBusyRef.current
+      ) setGatewayBusy(false);
     } catch (cause) {
+      if (gatewaySessionKeyRef.current !== checkoutSessionKey) return;
       setGatewayBusy(false);
       setGatewayAwaitingWebhook(false);
       notificationService.notify(
