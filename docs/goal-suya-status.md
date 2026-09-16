@@ -166,6 +166,13 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Focal guest order: **3/3**; suite global posterior: **69 archivos / 317 pruebas**; `npm run lint`, `npm run typecheck` y `git diff --check` pasan.
 - Es una cobertura de comportamiento del bundle customer web; no modifica las APK debug `1.4/5` ni sus hashes. U-07 continúa en verificación hasta E2E con backend real, offline y frescura del estado de pago.
 
+## Seguimiento posterior — invalidación de checkout obsoleto (2026-09-15)
+
+- Se reprodujo una carrera de Culqi: cambiar de pedido o intento mientras el modal seguía abierto podía dejar un callback tardío con capacidad de cobrar o autorizar sobre el contexto nuevo.
+- `db44f8d` ata cada checkout a `pedido:intento` e invalida callbacks `onToken`, `onOrder` y `onError` obsoletos, además de comprobar la clave después de operaciones asíncronas.
+- `tests/payment-instructions.test.tsx` confirma que el callback del pedido anterior no llama `chargeCard` ni autoriza el pedido nuevo. Focal pagos: **15/15**; suite global posterior: **69 archivos / 318 pruebas**; lint, typecheck y `git diff --check` pasan.
+- El cambio es web y no modifica los APK debug `1.4/5`. P-02/P-11/U-08 siguen en verificación hasta E2E con backend y proveedor de prueba autorizado; no se ejecutaron pagos reales.
+
 ## Bloqueos reproducibles
 
 1. `npm run db:lint` no conecta a `127.0.0.1:54322`; `npm run db:start` tampoco puede conectar al socket Docker normal. Se probó un daemon rootless temporal con `vfs`, cgroups desactivados y seccomp/AppArmor aislados: la red `none` no permite aliases, `host` rechaza aliases y la red rootless con `slirp4netns` sí crea `bridge`, pero el contenedor Postgres queda saludable sin publicar el puerto hacia el host; la CLI termina con `LegacyDbConnectError` (timeout/conexión terminada) y limpia el contenedor. No se modificó el sistema ni el código para ocultarlo. La suite SQL sí fue validada de forma independiente en PostgreSQL temporal; queda pendiente repetirla mediante el flujo oficial de Supabase cuando exista daemon/puerto normal.
