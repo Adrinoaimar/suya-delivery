@@ -135,7 +135,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 
 - Se reprodujo una carrera en `WalletsOperationsPage`: el refresco periódico de observaciones podía invalidar una carga inicial lenta y dejar invisibles los dispositivos sin error visible.
 - `64b0b90` separa los contadores de carga completa y refresco periódico. La regresión mantiene ambas promesas pendientes, resuelve primero el refresco y confirma que la carga completa conserva dispositivo y observación inicial.
-- Focal billeteras: **9/9**; wallet/payment/guest: **25/25**; lint y typecheck pasan. El cambio solo afecta Backoffice web; las APK debug `1.4/5` mantienen sus hashes.
+- Focal billeteras: **9/9**; wallet/payment/guest: **25/25**; suite global posterior: **69 archivos / 315 pruebas**; lint, typecheck, build:apps y smoke E2E **12/12** pasan. El cambio solo afecta Backoffice web; las APK debug `1.4/5` mantienen sus hashes.
 - A-09/U-04 siguen en verificación hasta backend real, RLS, cambio de restaurante y restauración de red. No se declara cierre ni aprobación financiera por esta prueba mock.
 
 ## Seguimiento posterior — actualización del comprobante invitado (2026-09-15)
