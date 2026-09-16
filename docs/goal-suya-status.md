@@ -339,5 +339,5 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 ## Corrección A-02/P-11 — contexto de mesa y destinatario visible — 2026-09-16
 
 - `0f2d3c8` impide que un pedido con mesa sobrescriba la dirección habitual del perfil; `tests/supabase-order.test.ts` pasa **9/9**.
-- `0a1b51a` añade `get_payment_receiver_label`, ligado al propietario/token guest, restaurante, intento y cuenta receptora activa. `PaymentInstructions` muestra el `account_label` junto al QR y oculta el QR si la etiqueta no se puede validar. Focal pagos/UI **28/28**; suite global posterior **71/330**, lint, typecheck, secretos y diff pasan.
+- `0a1b51a` añade `get_payment_receiver_label`, ligado al propietario/token guest, restaurante, intento y cuenta receptora activa. `PaymentInstructions` muestra el `account_label` junto al QR y oculta el QR si la etiqueta no se puede validar. `db1a8a0` limita el guardia al flujo directo `wallet_observer` para conservar compatibilidad con Culqi opcional. Focal pagos/UI **28/28**; suite global posterior **71/330**, lint, typecheck, secretos y diff pasan.
 - La migración `20260916140000_payment_recipient_label_read_guard.sql` y su contrato de **8 aserciones** quedan pendientes del runtime oficial Supabase/Postgres. No hubo pagos reales; DB/RLS, E2E, dispositivo y estados físicos siguen pendientes.
