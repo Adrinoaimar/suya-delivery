@@ -34,6 +34,18 @@ describe('movimiento accesible', () => {
     );
   });
 
+  it('mantiene el enlace de salto táctil cuando recibe foco', () => {
+    render(
+      <MemoryRouter>
+        <AppShell>
+          <main id="contenido">Contenido</main>
+        </AppShell>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('link', { name: 'Saltar al contenido' })).toHaveClass('focus:min-h-11');
+  });
+
   it.each([
     ['left', 'animate-drawer-left'],
     ['right', 'animate-drawer-right'],

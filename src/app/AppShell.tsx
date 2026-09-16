@@ -31,7 +31,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <>
       <a
         href="#contenido"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-[70] focus:rounded-btn focus:bg-white focus:px-4 focus:py-2 focus:font-semibold focus:text-suya-green"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-[70] focus:min-h-11 focus:rounded-btn focus:bg-white focus:px-4 focus:py-2 focus:font-semibold focus:text-suya-green"
       >
         Saltar al contenido
       </a>
