@@ -42,6 +42,17 @@ describe('parseYapeNotification', () => {
     expect(result).toMatchObject({ amountCents: 100000, currency: 'PEN' });
   });
 
+  it('treats the short sol prefix without a slash as PEN like Android', () => {
+    const result = parseYapeNotification({
+      packageName: 'com.bcp.yape.app',
+      title: 'Yape recibido',
+      text: 'Recibiste S 30.00',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({ amountCents: 3000, currency: 'PEN' });
+  });
+
   it.each(['Recibiste S/ 1,000.00', 'Recibiste S/ 1.000,00'])('accepts an unambiguous grouped decimal amount: %s', (text) => {
     expect(parseYapeNotification({
       packageName: 'com.bcp.yape.app',

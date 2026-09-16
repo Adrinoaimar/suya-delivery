@@ -122,7 +122,7 @@ function normalizeAmount(value: string): number | null {
 
 function currencyForPrefix(prefix: string): WalletCurrency {
   const normalized = prefix.toLocaleUpperCase('es-PE');
-  if (normalized === 'S/' || normalized === 'S.' || normalized === 'PEN') return 'PEN';
+  if (normalized === 'S' || normalized === 'S/' || normalized === 'S.' || normalized === 'PEN') return 'PEN';
   if (normalized === 'ARS') return 'ARS';
   return 'USD';
 }
