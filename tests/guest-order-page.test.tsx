@@ -99,4 +99,21 @@ describe('GuestOrderPage', () => {
     await waitFor(() => expect(mocks.get).toHaveBeenCalledTimes(2));
     expect(screen.getByText(/Actualizado/)).toBeInTheDocument();
   });
+
+  it('actualiza al volver al primer plano si el pedido estaba visible', async () => {
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/pedido/order-refresh-1', state: { guestOrder } }]}>
+        <Routes>
+          <Route path="/pedido/:id" element={<GuestOrderPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Pedido enviado a tu mesa' })).toBeInTheDocument();
+    expect(mocks.get).toHaveBeenCalledTimes(1);
+
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    await waitFor(() => expect(mocks.get).toHaveBeenCalledTimes(2));
+  });
 });
