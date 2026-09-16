@@ -1,6 +1,7 @@
 package com.suya.app;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -31,5 +32,23 @@ public class YapeNotificationListenerServiceTest {
                         "Yape recibido S/ 30.00. De: Ana María Torres. Código de operación: 482901"
                 )
         );
+    }
+
+    @Test
+    public void preservesPendingEventsBeforeSyncedHistoryWhenQueueReachesLimit() {
+        boolean[] synced = new boolean[500];
+        for (int index = 0; index < 100; index++) {
+            synced[index] = true;
+        }
+
+        int[] indexes = YapeNotificationListenerService.pendingPriorityIndexes(synced);
+
+        int pending = 0;
+        for (int index : indexes) {
+            if (!synced[index]) pending++;
+        }
+        assertEquals(499, indexes.length);
+        assertEquals(400, pending);
+        assertTrue(!synced[indexes[0]]);
     }
 }

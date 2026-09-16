@@ -1,6 +1,6 @@
 begin;
 
-select plan(15);
+select plan(20);
 
 select has_function('public', 'create_delivery_order_with_payment',
   array['uuid', 'jsonb', 'text', 'text', 'text', 'uuid', 'text', 'text', 'double precision', 'double precision'],
@@ -109,6 +109,66 @@ select lives_ok(
   'una coincidencia única sí se verifica');
 select is((select status::text from public.payment_attempts where id = 'b7700000-0000-0000-0000-000000000001'),
   'authorized', 'la autorización actualiza el intento exacto');
+
+select ok(
+  exists (
+    select 1 from pg_proc
+    where pronamespace = 'private'::regnamespace
+      and proname = 'prevent_wallet_evidence_reuse'
+  ),
+  'guardia privada contra reutilización de evidencia existe'
+);
+select ok(
+  exists (
+    select 1 from pg_trigger
+    where tgrelid = 'public.payment_attempts'::regclass
+      and tgname = 'payment_attempts_wallet_evidence_reuse_guard'
+      and not tgisinternal
+  ),
+  'payment_attempts tiene trigger de reutilización de evidencia'
+);
+
+select set_config('role', 'postgres', true);
+insert into public.orders (
+  id, code, customer_id, restaurant_id, status, payment_method, subtotal, delivery_fee,
+  customer_name, customer_phone, delivery_address, estimated_minutes, idempotency_key
+) values (
+  'b7500000-0000-0000-0000-000000000003', 'BINDING3', 'b7000000-0000-0000-0000-000000000001',
+  'b7200000-0000-0000-0000-000000000001', 'confirmed', 'yape', 30, 0, 'Cliente Binding 3',
+  '999999997', 'Calle Binding 3', 30, 'b7600000-0000-0000-0000-000000000003'
+);
+insert into public.payment_attempts (
+  id, order_id, receiver_account_id, provider, method, status, amount, idempotency_key,
+  payer_code_last4, payer_code_digest, checkout_reference, expires_at
+) values (
+  'b7700000-0000-0000-0000-000000000003', 'b7500000-0000-0000-0000-000000000003',
+  'b7300000-0000-0000-0000-000000000001', 'wallet_observer', 'yape', 'pending', 30,
+  'b7800000-0000-0000-0000-000000000003', '1234', encode(extensions.digest('same-code', 'sha256'), 'hex'),
+  'SUYA-BIND003', now() + interval '30 minutes'
+);
+insert into public.wallet_observations (
+  id, device_id, restaurant_id, receiver_account_id, event_id, provider, code_last4,
+  code_fingerprint, amount_cents, currency, observed_at
+) values (
+  'b7900000-0000-0000-0000-000000000002', 'b7400000-0000-0000-0000-000000000001',
+  'b7200000-0000-0000-0000-000000000001', 'b7300000-0000-0000-0000-000000000001',
+  'receiver-binding-event-2', 'yape', '1234', encode(extensions.digest('same-code', 'sha256'), 'hex'),
+  3000, 'PEN', now()
+);
+select set_config('role', 'authenticated', true);
+select throws_ok(
+  $$ select public.verify_wallet_payment('b7900000-0000-0000-0000-000000000002', 'b7700000-0000-0000-0000-000000000003') $$,
+  'P0001', 'wallet evidence already consumed; review duplicate',
+  'un segundo dispositivo no puede reutilizar evidencia ya consumida'
+);
+select is(
+  (select status::text from public.payment_attempts where id = 'b7700000-0000-0000-0000-000000000003'),
+  'pending', 'el intento duplicado permanece pendiente'
+);
+select is(
+  (select verification_status from public.wallet_observations where id = 'b7900000-0000-0000-0000-000000000002'),
+  'unverified', 'la evidencia duplicada permanece para revisión'
+);
 
 select * from finish();
 rollback;

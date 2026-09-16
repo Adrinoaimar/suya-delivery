@@ -10,10 +10,11 @@ producción.
 ## Estado vigente — checkpoint F28
 
 - Rama: `feat/backoffice-restaurant-ops`; último bloque F28: `bd24802` (`docs(checkpoint): record multiapp smoke`), sobre los fixes OTA/CSP `d7d37be`–`ac9b607`. Los cambios sin commit de `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` y `output/` se conservan fuera de este checkpoint.
-- Suite completa: **68 archivos / 301 pruebas**; typecheck, lint, build web, `verify:apps`, escaneo de secretos (909 archivos) y `npm audit --omit=dev --audit-level=high` pasan.
+- Suite completa: **68 archivos / 301 pruebas**; typecheck, lint, build web, `verify:apps`, escaneo de secretos (911 archivos) y `npm audit --omit=dev --audit-level=high` pasan.
 - OTA: manifest y artefacto requieren origen/ruta exactos bajo `https://suyadelivery.com/mobile-updates/`, JSON, bundle ID seguro, ZIP, checksum SHA-256, firma presente y timeout de 10 s. CSP retiró hosts de GA/GTM y permite el origen OTA. El endpoint productivo observado devuelve HTML HTTP 200; OTA no está activo ni desplegado.
 - Android: Rider, Backoffice y Wallet Observer `versionName 1.4`/`versionCode 5`; APK debug con integridad ZIP y firma v2 válida. No son releases.
 - Gates pendientes: `verify:production` por configuración real ausente; `supabase db lint/test` por daemon/puerto local; dispositivo Android para pruebas físicas; endpoint vial privado; firma release; E2E financiero y autorización para pagos reales.
+- Seguimiento 2026-09-15: la cola Android conserva pendientes antes del historial sincronizado; el backend incorpora una guardia transaccional contra reutilización de evidencia wallet entre dispositivos. Android `test` pasa 5/5 y la migración nueva queda pendiente de `db:test` oficial.
 
 La evidencia detallada de este bloque está en `docs/execution/F28.md` y la matriz operativa en `docs/goal-suya-status.md`.
 

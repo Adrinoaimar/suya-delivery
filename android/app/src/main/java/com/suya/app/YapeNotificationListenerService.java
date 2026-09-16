@@ -275,22 +275,44 @@ public final class YapeNotificationListenerService extends NotificationListenerS
             preferences.edit().putBoolean(QUEUE_FULL_KEY, true).apply();
             return;
         }
-        JSONArray next = new JSONArray();
-        next.put(event);
-        // Primero se preserva toda la evidencia no enviada; la historia sincronizada
-        // es la única parte descartable cuando la cola total alcanza el límite.
-        for (int pass = 0; pass < 2 && next.length() < MAX_EVENTS; pass++) {
-            for (int index = 0; index < current.length() && next.length() < MAX_EVENTS; index++) {
-                JSONObject existing = current.optJSONObject(index);
-                if (existing == null || eventId.equals(existing.optString("eventId"))) continue;
-                boolean synced = existing.optBoolean("synced", false);
-                if ((pass == 0 && synced) || (pass == 1 && !synced)) continue;
-                next.put(existing);
-            }
-        }
+        JSONArray next = buildQueueWithPendingPriority(current, event);
         String encrypted = encryptEvents(next.toString());
         // Never fall back to plaintext if Android Keystore is unavailable.
         if (encrypted != null) preferences.edit().putString(EVENTS_KEY, encrypted).apply();
+    }
+
+    /**
+     * Keeps the incoming event and every unsynced event before retaining synced
+     * history. Once the cap is reached, only already uploaded history may be
+     * discarded; a pending observation must never be displaced by old history.
+     */
+    static JSONArray buildQueueWithPendingPriority(JSONArray current, JSONObject incoming) {
+        JSONArray next = new JSONArray();
+        next.put(incoming);
+        boolean[] synced = new boolean[current.length()];
+        for (int index = 0; index < current.length(); index++) {
+            JSONObject existing = current.optJSONObject(index);
+            synced[index] = existing != null && existing.optBoolean("synced", false);
+        }
+        for (int index : pendingPriorityIndexes(synced)) {
+            JSONObject existing = current.optJSONObject(index);
+            if (existing != null) next.put(existing);
+        }
+        return next;
+    }
+
+    /** Returns current-event indexes in lossless pending-first order. */
+    static int[] pendingPriorityIndexes(boolean[] synced) {
+        int[] indexes = new int[Math.min(MAX_EVENTS - 1, synced.length)];
+        int count = 0;
+        for (int pass = 0; pass < 2 && count < indexes.length; pass++) {
+            boolean wantSynced = pass == 1;
+            for (int index = 0; index < synced.length && count < indexes.length; index++) {
+                if (synced[index] != wantSynced) continue;
+                indexes[count++] = index;
+            }
+        }
+        return Arrays.copyOf(indexes, count);
     }
 
     private static boolean mergeEvidenceField(JSONObject existing, JSONObject incoming, String key) throws JSONException {
