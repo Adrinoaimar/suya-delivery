@@ -249,3 +249,9 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - `E.md` añade §46 con investigación de repositorios primarios: Leaflet (BSD-2-Clause) para panes/stacking, Supabase (Apache-2.0) para grants/RLS/pgTAP, Android Architecture Samples y AndroidX (Apache-2.0) para capas/tests/ciclo de vida, e Hyperswitch (Apache-2.0) únicamente como referencia de estados/conectores.
 - Decisión: no añadir dependencias ni instalar una pasarela propia. El camino sin cookies sigue siendo cobro directo al restaurante, declaración manual, observación no confiable y conciliación server-side auditable; una alternativa bancaria requiere proveedor, autorización, cumplimiento y pruebas externas.
 - El goal continúa abierto por SQL/RLS oficial, backend E2E, dispositivo Android, accesibilidad nativa, offline, endpoint privado y firma release. No se ejecutaron pagos reales, despliegue ni publicación.
+
+## Corrección de lectura de receptor desactivado — 2026-09-16
+
+- `20260916100000_payment_intent_active_receiver_read_guard.sql` evita que `get_payment_intent` devuelva al cliente el QR de una cuenta receptora inactiva; el intento sigue disponible para soporte/revisión sin orientar un nuevo pago a ese destino.
+- `supabase/tests/20260916100000_payment_intent_active_receiver_read_guard.test.sql` declara **4 aserciones**. Lint, typecheck y contratos de pagos/webhook/preflight **8/8** pasan; pgTAP oficial permanece pendiente por el runtime local inaccesible.
+- El cambio es SQL y no altera las APK debug `1.4/5`; no se ejecutaron cobros reales ni despliegue.
