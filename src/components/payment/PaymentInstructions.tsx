@@ -10,7 +10,7 @@ import type { Order, PaymentIntent } from '@/types';
 import { formatDateTime, formatPrice, paymentLabel } from '@/utils/format';
 
 interface PaymentInstructionsProps {
-  order: Pick<Order, 'id' | 'code' | 'total' | 'paymentMethod' | 'paymentIntent'>;
+  order: Pick<Order, 'id' | 'code' | 'total' | 'paymentMethod' | 'paymentIntent' | 'status'>;
 }
 
 function statusLabel(status: PaymentIntent['status'], expired = false): string {
@@ -36,8 +36,11 @@ function savedPaymentEmail(orderId: string): string | null {
 }
 
 export function PaymentInstructions({ order }: PaymentInstructionsProps) {
-  const [intent, setIntent] = useState<PaymentIntent | null>(order.paymentIntent ?? null);
-  const [loading, setLoading] = useState(!order.paymentIntent);
+  const cancelled = order.status === 'cancelled';
+  const [intent, setIntent] = useState<PaymentIntent | null>(
+    cancelled ? null : order.paymentIntent ?? null,
+  );
+  const [loading, setLoading] = useState(!cancelled && !order.paymentIntent);
   const [error, setError] = useState<string | null>(null);
   const [evidenceCode, setEvidenceCode] = useState('');
   const [payerDisplayName, setPayerDisplayName] = useState('');
@@ -51,7 +54,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   const [manualBusy, setManualBusy] = useState(false);
   const gatewayTokenBusyRef = useRef(false);
   const gatewaySessionKeyRef = useRef('');
-  const gatewaySessionKey = `${order.id}:${order.paymentIntent?.attemptId ?? ''}`;
+  const gatewaySessionKey = `${order.id}:${order.status}:${order.paymentIntent?.attemptId ?? ''}`;
 
   useEffect(() => {
     // Este componente vive en rutas que pueden cambiar de pedido o de intento sin desmontarse.
@@ -74,7 +77,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   }, [gatewaySessionKey]);
 
   useEffect(() => {
-    if (order.paymentMethod === 'cash' || order.paymentIntent) return;
+    if (cancelled || order.paymentMethod === 'cash' || order.paymentIntent) return;
     let active = true;
     setLoading(true);
     void paymentService
@@ -94,18 +97,19 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
     return () => {
       active = false;
     };
-  }, [order.id, order.paymentIntent, order.paymentMethod]);
+  }, [cancelled, order.id, order.paymentIntent, order.paymentMethod]);
 
   useEffect(() => {
-    if (!order.paymentIntent) return;
+    if (cancelled || !order.paymentIntent) return;
     setIntent(order.paymentIntent);
     setError(null);
     setLoading(false);
-  }, [order.paymentIntent]);
+  }, [cancelled, order.paymentIntent]);
 
   useEffect(() => {
     const isManualWallet = order.paymentMethod === 'yape' || order.paymentMethod === 'lemon';
     if (
+      cancelled ||
       !order.paymentIntent ||
       !isManualWallet ||
       order.paymentIntent.provider === 'culqi' ||
@@ -132,10 +136,10 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
     return () => {
       active = false;
     };
-  }, [order.id, order.paymentIntent, order.paymentIntent?.attemptId, order.paymentIntent?.provider, order.paymentMethod]);
+  }, [cancelled, order.id, order.paymentIntent, order.paymentIntent?.attemptId, order.paymentIntent?.provider, order.paymentMethod]);
 
   useEffect(() => {
-    if (intent?.status !== 'pending') return;
+    if (cancelled || intent?.status !== 'pending') return;
     let active = true;
     const refresh = () => {
       void paymentService
@@ -150,7 +154,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
       active = false;
       window.clearInterval(timer);
     };
-  }, [intent?.status, order.id]);
+  }, [cancelled, intent?.status, order.id]);
 
   useEffect(() => {
     if (!intent || intent.status !== 'pending' || isExpired(intent)) {
@@ -160,7 +164,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
 
   const gatewayStatus = intent?.status;
 
-  if (order.paymentMethod === 'cash') return null;
+  if (cancelled || order.paymentMethod === 'cash') return null;
   if (loading) {
     return (
       <Card role="status" aria-busy="true">

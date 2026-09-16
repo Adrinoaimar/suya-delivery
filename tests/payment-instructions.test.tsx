@@ -44,13 +44,17 @@ const pendingIntent: PaymentIntent = {
   qrPayload: null,
 };
 
-function order(paymentIntent: PaymentIntent): Pick<Order, 'id' | 'code' | 'total' | 'paymentMethod' | 'paymentIntent'> {
+function order(
+  paymentIntent: PaymentIntent,
+  status: Order['status'] = 'confirmed',
+): Pick<Order, 'id' | 'code' | 'total' | 'paymentMethod' | 'paymentIntent' | 'status'> {
   return {
     id: paymentIntent.orderId,
     code: 'SUY-10001',
     total: paymentIntent.amount,
     paymentMethod: paymentIntent.method,
     paymentIntent,
+    status,
   };
 }
 
@@ -66,6 +70,17 @@ beforeEach(() => {
 });
 
 describe('PaymentInstructions', () => {
+  it('no muestra ni consulta pago cuando el pedido está cancelado', async () => {
+    render(<PaymentInstructions order={order(pendingIntent, 'cancelled')} />);
+
+    expect(screen.queryByText(/Paga con/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Ya pagué' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Aún no pagué' })).not.toBeInTheDocument();
+    await waitFor(() => expect(mocks.getIntent).not.toHaveBeenCalled());
+    expect(mocks.getIntent).not.toHaveBeenCalled();
+    expect(mocks.createIntent).not.toHaveBeenCalled();
+  });
+
   it('reflects server authorization when the parent order refreshes', () => {
     const { rerender } = render(<PaymentInstructions order={order(pendingIntent)} />);
     expect(screen.getByText('Pendiente de verificación')).toBeInTheDocument();
