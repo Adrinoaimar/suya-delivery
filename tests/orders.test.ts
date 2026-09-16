@@ -197,7 +197,9 @@ describe('contrato de pedidos async', () => {
     await Promise.all(Array.from({ length: 55 }, () => createOrder(service)));
 
     const page = await service.list({ offset: 0, limit: 100 });
+    const defaultPage = await service.list();
 
     expect(page).toHaveLength(50);
+    expect(defaultPage).toHaveLength(50);
   });
 });
