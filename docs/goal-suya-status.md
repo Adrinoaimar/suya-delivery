@@ -77,7 +77,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | U-04 | En verificación | Selector de cuenta no recarga en loop; binding exige cuenta activa | Probar Yape→Lemon en dispositivo con DB real |
 | U-05 | En verificación | `MainActivity` fija barras y contraste; `:app:test` pasa y los tres APK compilan; el CSS conserva safe-area | Confirmar en Android 15/16 real, teclado, cutout y navegación gestual |
 | U-06 | En verificación | GPS opcional y dirección escrita permitida; servidor valida coordenadas cuando llegan | E2E delivery/recojo/mesa y cobertura |
-| U-07 | En verificación | Carga por `id` siempre reinicia estado; pago se actualiza por intento | E2E offline/retorno a app/última actualización |
+| U-07 | En verificación | `GuestOrderPage` reinicia carga por `id`/token y el botón «Actualizar estado» dispara una nueva consulta; regresión `tests/guest-order-page.test.tsx` y suite relacionada 27/27 pasan | E2E offline/retorno a app/última actualización |
 | U-08 | En verificación | Reset por `order.id` e `attemptId`, respuestas obsoletas y estados separados; regresión focal pasa | E2E navegando entre dos pedidos |
 | U-09 | En verificación | Capturas web customer/Rider a 390×844; `scrollWidth === viewport` y barras inferiores opacas para no filtrar texto | Capturas sobre APK final a 360×800, mapa normal/expandido, leyendas/atribución y estados largos |
 | U-10 | En verificación | Navegación por teclado sobre bundle customer: 16 destinos con nombre y visibles; controles sin nombre: 0; medición web 390×844 sin controles visibles menores de 44×44 y enlace de salto enfocado 178×44 | axe/contraste/TalkBack, fuente ampliada y validación nativa |
@@ -130,6 +130,14 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Las tres APK pasan `unzip -tqq` y `apksigner verify` con APK Signature Scheme v2; están firmadas con la clave debug del entorno y no son entregables de producción.
 - Checkpoint local `a960237` (sobre `137c1e6`): la suite global **68/312**, focal payment/service/UI **33/33**, typecheck, lint, build, aislamiento, smoke web **12/12**, secretos (**915 archivos**), audit (**0 vulnerabilidades**) y `npm run build:mobile:roles` pasan. Android `test`/`assembleDebug` pasan con Java 21/SDK 36. APK Rider debug: `output/android/Suya-Rider-debug.apk`, **25,371,365 bytes**, SHA-256 `779adb9578e375479e73732e4d38c2877bb07b51a154c1313f1ce96131cbc83c`. Backoffice: `output/android/Suya-Backoffice-debug.apk`, **25,239,780 bytes**, SHA-256 `b7bd499c2d3a1ecd591d8980a9767e000c7717b246dbba387727dbd49dc676f`. Wallet Observer: `output/android/Suya-Wallet-Observer-debug.apk`, **25,192,036 bytes**, SHA-256 `3e7c7b1ffa6abd626264c4a8dd60882e0519bbe0a39821c12c2cd12a1b73bcdb`. Las tres son `versionName 1.4`/`versionCode 5`, ZIP íntegro y firma debug v2; no son release. La corrección de `auth.uid() IS NULL` está solo en SQL/pruebas, por eso no cambia los bytes de las APK.
 - La validación SQL de este checkpoint declara **53 aserciones acumuladas** (38 previas + 15 nuevas), pero `npm run db:lint`/`npm run db:test` siguen pendientes porque el runtime oficial no está accesible. La prueba PostgreSQL independiente no sustituye el gate oficial.
+
+## Seguimiento posterior — actualización del comprobante invitado (2026-09-15)
+
+- Se reprodujo un defecto real de U-07 en `GuestOrderPage`: el botón «Actualizar estado» vaciaba el comprobante sin cambiar las dependencias del efecto y no volvía a consultar el servidor.
+- `dc9da5e` añade un contador de recarga, marca `loading` y repite la consulta por `id`/token; `tests/guest-order-page.test.tsx` verifica dos consultas y la restauración del comprobante. La carga obsoleta sigue protegida por el cleanup del efecto.
+- Suite relacionada de pedidos/invitados: **27/27**. Regresión global posterior: **69 archivos / 313 pruebas**; lint, typecheck, `npm run build:apps` y smoke E2E **12/12** pasan.
+- El cambio solo afecta el bundle customer web; no modifica Rider/Backoffice/Wallet Observer, por lo que las APK debug `1.4/5` existentes conservan su trazabilidad y no se reconstruyeron.
+- U-07 sigue en verificación hasta E2E con backend real, retorno a la app, offline y frescura del estado de pago. No se convierte el test mock en aprobación física.
 
 ## Bloqueos reproducibles
 
