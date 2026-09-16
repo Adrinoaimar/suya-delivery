@@ -27,6 +27,7 @@ export default function GuestOrderPage() {
   const [loading, setLoading] = useState(!order);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -42,6 +43,7 @@ export default function GuestOrderPage() {
       .then((value) => {
         if (active) {
           setOrder(value ?? null);
+          if (value) setLastUpdatedAt(new Date().toISOString());
           setError(value ? null : 'No encontramos este pedido.');
         }
       })
@@ -54,6 +56,19 @@ export default function GuestOrderPage() {
       active = false;
     };
   }, [id, location.hash, reloadKey]);
+
+  useEffect(() => {
+    const refreshOnResume = () => {
+      if (document.visibilityState === 'hidden') return;
+      setReloadKey((value) => value + 1);
+    };
+    window.addEventListener('online', refreshOnResume);
+    document.addEventListener('visibilitychange', refreshOnResume);
+    return () => {
+      window.removeEventListener('online', refreshOnResume);
+      document.removeEventListener('visibilitychange', refreshOnResume);
+    };
+  }, []);
 
   function refresh(): void {
     setError(null);
@@ -122,9 +137,12 @@ export default function GuestOrderPage() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <h2 className="font-display text-lg font-bold">{order.storeName}</h2>
-              <p className="mt-1 text-sm text-[#68716C]">
-                {tableOrder ? 'Pedido en mesa' : 'Entrega a domicilio'}
-              </p>
+              <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[#68716C]">
+                <p>{tableOrder ? 'Pedido en mesa' : 'Entrega a domicilio'}</p>
+                {lastUpdatedAt && (
+                  <p aria-live="polite">Actualizado {formatDateTime(lastUpdatedAt)}</p>
+                )}
+              </div>
             </div>
             <Button variant="ghost" size="sm" onClick={refresh} aria-label="Actualizar estado">
               <RefreshCw className="h-4 w-4" aria-hidden="true" />

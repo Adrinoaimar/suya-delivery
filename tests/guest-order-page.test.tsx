@@ -81,4 +81,22 @@ describe('GuestOrderPage', () => {
     await waitFor(() => expect(mocks.get).toHaveBeenCalledTimes(2));
     expect(await screen.findByRole('heading', { name: 'Pedido enviado a tu mesa' })).toBeInTheDocument();
   });
+
+  it('actualiza al recuperar conexión y muestra la última actualización', async () => {
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/pedido/order-refresh-1', state: { guestOrder } }]}>
+        <Routes>
+          <Route path="/pedido/:id" element={<GuestOrderPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Pedido enviado a tu mesa' })).toBeInTheDocument();
+    expect(screen.getByText(/Actualizado/)).toBeInTheDocument();
+
+    window.dispatchEvent(new Event('online'));
+
+    await waitFor(() => expect(mocks.get).toHaveBeenCalledTimes(2));
+    expect(screen.getByText(/Actualizado/)).toBeInTheDocument();
+  });
 });
