@@ -200,6 +200,14 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Suite global actual: **71 archivos / 320 pruebas**; lint, typecheck, build aislado y smoke E2E **12/12** pasan. No cambia pagos ni las APK debug.
 - Captura nativa/TalkBack siguen pendientes sin dispositivo; DB/RLS oficial continúa bloqueado por Docker/Supabase local inaccesible. El goal sigue en progreso.
 
+## Artefactos posteriores — APKs con controles de mapa actualizados (2026-09-15)
+
+- `npm run build:mobile:roles` terminó con JDK 21/SDK 36; Android `test` **5/5**, `assembleDebug`, `unzip -tqq` y `apksigner verify` v2 pasan en las tres variantes. Todas son debug `1.4/5`, no release.
+- Rider: `output/android/Suya-Rider-debug.apk`, **25,371,385 bytes**, SHA-256 `37021829ba121d013616e4580532c765910e3de07b17b3e68934c9dccf568930`, `com.suya.rider`.
+- Backoffice: `output/android/Suya-Backoffice-debug.apk`, **25,239,780 bytes**, SHA-256 `6af59f2fb008842bc2c2ae51c0050a895fa402189f0e9fd27c15f3b1c6332c4a`, `com.suya.backoffice`.
+- Wallet Observer: `output/android/Suya-Wallet-Observer-debug.apk`, **25,192,060 bytes**, SHA-256 `7c5d98f49debef7d0dbebb3385d5608be9c58bbb48eaa770d99061a325a73e5e`, `com.suya.walletobserver`.
+- La captura/instalación física, actualización, TalkBack, fuente ampliada y offline nativo siguen pendientes por falta de dispositivo/emulador.
+
 ## Bloqueos reproducibles
 
 1. `npm run db:lint` no conecta a `127.0.0.1:54322`; `npm run db:start` tampoco puede conectar al socket Docker normal. Se probó un daemon rootless temporal con `vfs`, cgroups desactivados y seccomp/AppArmor aislados: la red `none` no permite aliases, `host` rechaza aliases y la red rootless con `slirp4netns` sí crea `bridge`, pero el contenedor Postgres queda saludable sin publicar el puerto hacia el host; la CLI termina con `LegacyDbConnectError` (timeout/conexión terminada) y limpia el contenedor. No se modificó el sistema ni el código para ocultarlo. La suite SQL sí fue validada de forma independiente en PostgreSQL temporal; queda pendiente repetirla mediante el flujo oficial de Supabase cuando exista daemon/puerto normal.
