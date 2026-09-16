@@ -79,6 +79,37 @@ describe('PaymentInstructions', () => {
     expect(screen.getByText('Pago verificado')).toBeInTheDocument();
   });
 
+  it('muestra el destinatario exacto junto al QR del negocio', () => {
+    render(
+      <PaymentInstructions
+        order={order({
+          ...pendingIntent,
+          qrPayload: 'yape://public-business-qr',
+          receiverLabel: 'Andá Paya Cevichería',
+        })}
+      />,
+    );
+
+    expect(screen.getByText('Destinatario:')).toBeInTheDocument();
+    expect(screen.getByText('Andá Paya Cevichería')).toBeInTheDocument();
+    expect(screen.getByText('QR del negocio')).toBeInTheDocument();
+  });
+
+  it('oculta el QR si el destinatario no fue validado', () => {
+    render(
+      <PaymentInstructions
+        order={order({ ...pendingIntent, qrPayload: 'yape://unverified-qr' })}
+      />,
+    );
+
+    expect(screen.queryByText('QR del negocio')).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'No pudimos validar el destinatario de este QR. No pagues todavía; vuelve a intentarlo o contacta al restaurante.',
+      ),
+    ).toBeInTheDocument();
+  });
+
   it('limpia la constancia al cambiar el intento del mismo pedido', async () => {
     mocks.declarePayment.mockResolvedValueOnce(true);
     const { rerender } = render(<PaymentInstructions order={order(pendingIntent)} />);

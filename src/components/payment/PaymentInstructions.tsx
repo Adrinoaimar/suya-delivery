@@ -458,7 +458,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
             Referencia de pago: <span className="font-mono">{intent.providerReference ?? 'pendiente'}</span>
           </p>
         </div>
-      ) : intent.qrPayload && !manualRecoveryRequired ? (
+      ) : intent.qrPayload && intent.receiverLabel && !manualRecoveryRequired ? (
         <div className="mt-4 flex flex-col items-center gap-3 rounded-card border border-suya-border bg-white p-4 sm:flex-row sm:items-start">
           <div className="rounded-xl border border-suya-mist bg-white p-2">
             <QRCodeSVG value={intent.qrPayload} size={156} level="M" includeMargin />
@@ -469,6 +469,11 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
               Escanéalo en {paymentLabel(intent.method)} y escribe exactamente{' '}
               {formatPrice(intent.amount)}.
             </p>
+            {intent.receiverLabel && (
+              <p className="mt-2 text-suya-carbon">
+                Destinatario: <strong>{intent.receiverLabel}</strong>
+              </p>
+            )}
             <p className="mt-2 text-xs">
               Este QR identifica al negocio; el monto se valida en Suya contra el pedido.
             </p>
@@ -480,6 +485,8 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
             ? 'Este pago fue devuelto. No vuelvas a pagar desde esta referencia.'
             : manualRecoveryRequired
               ? 'Esta referencia ya venció. Si ya pagaste, conserva esta revisión; si aún no pagaste, usa la opción correspondiente más abajo.'
+              : !intent.receiverLabel
+                ? 'No pudimos validar el destinatario de este QR. No pagues todavía; vuelve a intentarlo o contacta al restaurante.'
               : `El negocio aún no configuró su QR público. Abre ${paymentLabel(intent.method)}, paga exactamente el monto indicado y conserva la constancia.`}
         </div>
       )}

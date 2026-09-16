@@ -19,6 +19,10 @@ interface PaymentIntentRow {
   qr_payload?: unknown;
 }
 
+interface PaymentReceiverLabelRow {
+  account_label?: unknown;
+}
+
 interface PaymentDeclarationRow {
   declared_at?: unknown;
   payer_display_name?: unknown;
@@ -74,6 +78,11 @@ function firstRow(data: unknown): PaymentIntentRow | null {
   return data && typeof data === 'object' ? (data as PaymentIntentRow) : null;
 }
 
+function firstReceiverLabel(data: unknown): PaymentReceiverLabelRow | null {
+  if (Array.isArray(data)) return (data[0] as PaymentReceiverLabelRow | undefined) ?? null;
+  return data && typeof data === 'object' ? (data as PaymentReceiverLabelRow) : null;
+}
+
 function guestToken(orderId: string, supplied?: string | null): string | null {
   return supplied === undefined ? readGuestOrderToken(orderId) : supplied;
 }
@@ -83,6 +92,20 @@ export class SupabasePaymentService implements PaymentService {
 
   constructor(client: SupabaseClient = requireClient()) {
     this.client = client;
+  }
+
+  private async withReceiverLabel(
+    intent: PaymentIntent,
+    suppliedGuestAccessToken?: string | null,
+  ): Promise<PaymentIntent> {
+    if (intent.method === 'card') return intent;
+    const { data, error } = await this.client.rpc('get_payment_receiver_label', {
+      p_order_id: intent.orderId,
+      p_guest_access_token: guestToken(intent.orderId, suppliedGuestAccessToken),
+    });
+    if (error) throw new Error(error.message);
+    const label = text(firstReceiverLabel(data)?.account_label).trim();
+    return { ...intent, receiverLabel: label || null };
   }
 
   async authorize(method: PaymentMethod, amount: number): Promise<PaymentResult> {
@@ -123,7 +146,7 @@ export class SupabasePaymentService implements PaymentService {
       if (error) throw new Error(error.message);
       const row = firstRow(data && typeof data === 'object' && 'paymentIntent' in data ? data.paymentIntent : data);
       if (!row) throw new Error('La pasarela no devolvió el intento de pago.');
-      return mapIntent(row);
+      return this.withReceiverLabel(mapIntent(row), token);
     }
     if (method === 'card') {
       throw new Error('El pago con tarjeta no está habilitado en esta aplicación.');
@@ -136,7 +159,7 @@ export class SupabasePaymentService implements PaymentService {
     if (error) throw new Error(error.message);
     const row = firstRow(data);
     if (!row) throw new Error('Supabase no devolvió el intento de pago.');
-    return mapIntent(row);
+    return this.withReceiverLabel(mapIntent(row), token);
   }
 
   async chargeCard(
@@ -243,6 +266,6 @@ export class SupabasePaymentService implements PaymentService {
     });
     if (error) throw new Error(error.message);
     const row = firstRow(data);
-    return row ? mapIntent(row) : null;
+    return row ? this.withReceiverLabel(mapIntent(row), token) : null;
   }
 }

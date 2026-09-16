@@ -26,7 +26,13 @@ const intentRow = {
 
 describe('SupabasePaymentService', () => {
   it('envía el token guest y mapea el importe server-side', async () => {
-    const client = fakeClient({ data: [intentRow], error: null });
+    const client = {
+      rpc: vi.fn(async (name: string) =>
+        name === 'get_payment_receiver_label'
+          ? { data: [{ account_label: 'Andá Paya Cevichería' }], error: null }
+          : { data: [intentRow], error: null },
+      ),
+    } as unknown as SupabaseClient & { rpc: ReturnType<typeof vi.fn> };
     const intent = await new SupabasePaymentService(client).createIntent(
       'order-1',
       'yape',
@@ -45,6 +51,11 @@ describe('SupabasePaymentService', () => {
       checkoutReference: 'SUYA-AB12CD34',
       qrPayload: 'yape://public-business-qr',
       providerReference: null,
+      receiverLabel: 'Andá Paya Cevichería',
+    });
+    expect(client.rpc).toHaveBeenCalledWith('get_payment_receiver_label', {
+      p_order_id: 'order-1',
+      p_guest_access_token: 'guest-token',
     });
   });
 

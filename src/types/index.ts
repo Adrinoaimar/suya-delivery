@@ -167,6 +167,8 @@ export interface PaymentIntent {
   provider: string;
   providerReference: string | null;
   qrPayload: string | null;
+  /** Label configured by the restaurant for the exact receiver account. */
+  receiverLabel?: string | null;
 }
 
 export interface OrderStatusEvent {
