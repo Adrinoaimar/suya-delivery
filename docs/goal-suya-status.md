@@ -389,3 +389,9 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Se conservó el cambio del usuario en `src/lib/routePlanner.ts`: rechaza también `//router.project-osrm.org`, evitando que una URL protocol-relative eluda la política de endpoint privado.
 - `tests/route-planner.test.ts` pasa **5/5** y confirma que los endpoints públicos no disparan `fetch`. El cambio permanece sin incluir en los commits del agente; `routePlanner`, su prueba y `output/` siguen preservados.
 - A-11 continúa en verificación hasta disponer de endpoint privado autorizado y validar retención de GPS.
+
+## Corrección P-03/P-11 — aridad de RPC wallet — 2026-09-16
+
+- La migración `20260916150000_receiver_restaurant_binding_read_guard.sql` declaraba 10 columnas para `create_payment_intent`, pero la rama de creación retornaba 11 al incluir `provider_reference`; se eliminó solo esa columna extra. `get_payment_intent` conserva sus 11 columnas.
+- Se añadió `tests/payment-sql-contract.test.ts` y una aserción pgTAP; TDD falló antes y pasó después. Focal SQL + A-11 **6/6**; suite global **72/336**; lint, typecheck, secretos (**937 archivos**) y diff pasan. Contrato pgTAP: **16 aserciones**.
+- Commit `c5046ce`; no cambia APKs ni procesa pagos reales. El runtime oficial Supabase/Postgres sigue pendiente por `ECONNREFUSED 127.0.0.1:54322`.
