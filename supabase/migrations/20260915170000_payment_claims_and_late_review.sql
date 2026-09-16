@@ -107,7 +107,7 @@ begin
         and extensions.crypt(p_guest_access_token, s.guest_access_token_hash) = s.guest_access_token_hash
     ) into v_guest_ok;
     if not v_guest_ok then raise exception 'guest order token is invalid'; end if;
-  elsif v_order.customer_id <> (select auth.uid()) then
+  elsif (select auth.uid()) is null or v_order.customer_id <> (select auth.uid()) then
     raise exception 'order owner required';
   end if;
 
@@ -196,7 +196,7 @@ begin
         and extensions.crypt(p_guest_access_token, s.guest_access_token_hash) = s.guest_access_token_hash
     ) into v_guest_ok;
     if not v_guest_ok then return; end if;
-  elsif v_order.customer_id <> (select auth.uid()) then
+  elsif (select auth.uid()) is null or v_order.customer_id <> (select auth.uid()) then
     return;
   end if;
 

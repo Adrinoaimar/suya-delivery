@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(13);
+select plan(15);
 
 select has_function('private', 'payment_claim_hmac', array['text'],
   'la huella de evidencia vive en una función privada');
@@ -38,6 +38,14 @@ select ok(
 select ok(
   (select pg_get_functiondef('public.declare_manual_payment(uuid,text,text,text)'::regprocedure) like '%payment_claims%'),
   'la declaración persiste una claim sin exponer el código'
+);
+select ok(
+  (select pg_get_functiondef('public.declare_manual_payment(uuid,text,text,text)'::regprocedure) like '%auth.uid()) is null or v_order.customer_id <>%'),
+  'la declaración rechaza explícitamente al anónimo ante una orden autenticada'
+);
+select ok(
+  (select pg_get_functiondef('public.get_payment_declaration(uuid,text)'::regprocedure) like '%auth.uid()) is null or v_order.customer_id <>%'),
+  'la lectura de declaración no filtra órdenes autenticadas al anónimo'
 );
 select ok(
   (select pg_get_functiondef('public.refresh_payment_intent(uuid,text,text)'::regprocedure) like '%v_declared_at%'),
