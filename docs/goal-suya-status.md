@@ -54,6 +54,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - Migración `20260915170000_payment_claims_and_late_review.sql`: claims auditables, HMAC privado de códigos, declaración protegida por usuario/token invitado, revisión tardía limitada a propuesta, receptor exacto, verificación final autorizada y auditoría sin hashes/códigos. Sus ramas autenticadas rechazan explícitamente `auth.uid() IS NULL`. El contrato legado `submit_payment_evidence` delega al flujo nuevo. Su prueba declara 15 aserciones; el conjunto acumulado de este bloque declara 53 (38 previas + 15 nuevas).
 - Observaciones wallet: `observed_at` sigue siendo hora de la notificación; `created_at` se muestra como hora de recepción del servidor. No se presenta una hora bancaria inexistente.
 - P-01: el fixture principal ahora cubre colisión exacta de dos intentos pendientes con el mismo HMAC completo; exige dos candidatos, rechazo de `verify_wallet_payment` y conservación de ambos pendientes (105 aserciones declaradas en ese fixture). La ejecución oficial sigue pendiente.
+- P-09: `20260916110000_context_bound_payment_evidence_hmac.sql` añade HMAC v2 privado ligado a receptor y tipo de evidencia, columnas separadas para compatibilidad legacy y exclusión del nuevo HMAC en auditoría; su contrato declara 12 aserciones. La ejecución oficial sigue pendiente.
 - U-09: `LeafletMap` reserva una columna derecha para la atribución OSM y apila leyendas/errores en una columna izquierda con límites de ancho; la atribución nativa duplicada queda desactivada para evitar superposición en mapas móviles estrechos.
 
 ## Matriz de hallazgos
@@ -70,7 +71,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | P-06 | En verificación | Binding guardado, cola separa eventos por binding y re-vinculación no reenvía | Prueba Android de rotación/revocación |
 | P-07 | En verificación | Lock de cola, 500 pendientes, reintentos y estado `queueFull`; selección pending-first corregida y test nativo 5/5 | Prueba Android offline/reinicio/concurrencia en dispositivo |
 | P-08 | En verificación | Adaptadores por paquete y palabras; caso Yape probado | Matriz Android real por versión de billetera |
-| P-09 | En verificación | Código normalizado hasta 64; HMAC privado en claim/observación; sufijo solo pista y colisión exige identidad completa | Ejecutar migración nueva y Android; confirmar límites de proveedor |
+| P-09 | En verificación | Código normalizado hasta 64; HMAC v2 privado ligado a receptor/tipo, HMAC legacy aislado para transición, auditoría saneada y contrato de 12 aserciones | Ejecutar migración nueva en DB oficial y confirmar límites de proveedor |
 | P-10 | En verificación | Renovación conserva cuenta histórica; una declaración vencida no se renueva y una cuenta desactivada se rechaza | Ejecutar migración nueva y caso de vencimiento/concurrencia |
 | P-11 | En verificación | Copy no promete confirmación; declaración separada, pagador opcional, reset por intento y reembolso sin QR/reintento | Revisión sobre APK final y estados reales |
 | U-01 | En verificación | Drawer opaco, `isolate`, portal `z-[1100]`; test/build web pasan | Captura sobre APK final con mapa normal/expandido |
@@ -299,3 +300,10 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
   - Backoffice: `output/android/Suya-Backoffice-debug.apk`, **25,239,988 bytes**, SHA-256 `cf955ebbeffa6bbe498967089e734615118a375604cc533cb530b7a857434266`.
   - Wallet Observer: `output/android/Suya-Wallet-Observer-debug.apk`, **25,192,112 bytes**, SHA-256 `b17cf052ed295392739eea2a6cd0e233479b463b39a7ca91090c5a201a125ac9`.
 - Los cambios ajenos `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` y `output/` permanecen sin incluir. Continúan pendientes DB/RLS oficial, E2E financiero con backend, instalación/actualización física, TalkBack, fuente ampliada, offline, permisos, OTA privado, firma release y pagos reales.
+
+## Corrección P-09 — HMAC contextual de evidencia — 2026-09-16
+
+- `20260916110000_context_bound_payment_evidence_hmac.sql` añade columnas separadas para HMAC contextual en intentos, observaciones y claims. El HMAC v2 usa un dominio versionado y liga el código a `receiver_account_id` y método/proveedor; el HMAC legacy se conserva solo para compatibilidad de filas antiguas.
+- Las funciones de declaración, ingesta, corrección, lista y verificación usan el contexto nuevo. Cuando ambos lados tienen HMAC contextual, una discordancia no cae a digest ni a últimos cuatro dígitos. `private.write_audit_log()` excluye también el campo contextual del JSON financiero.
+- `supabase/tests/20260916110000_context_bound_payment_evidence_hmac.test.sql` declara **12 aserciones**. `npm run db:lint` fue intentado y falla con `ECONNREFUSED 127.0.0.1:54322`; por ello esta migración queda en verificación, no aprobada.
+- No se modifican APKs ni se procesan pagos reales. El goal sigue abierto por DB/RLS oficial, E2E backend, dispositivo, offline/accesibilidad, OTA privado y firma release.
