@@ -20,6 +20,15 @@ public class YapeNotificationListenerServiceTest {
     }
 
     @Test
+    public void ignoresNonIncomingNotificationLanguage() {
+        assertTrue(!YapeNotificationListenerService.isIncomingNotification("Saldo disponible: S/ 30.00"));
+        assertTrue(!YapeNotificationListenerService.isIncomingNotification("Enviaste S/ 30.00"));
+        assertTrue(!YapeNotificationListenerService.isIncomingNotification("Solicitud de pago: S/ 30.00"));
+        assertTrue(!YapeNotificationListenerService.isIncomingNotification("Reversión de S/ 30.00"));
+        assertTrue(YapeNotificationListenerService.isIncomingNotification("Recibiste S/ 30.00"));
+    }
+
+    @Test
     public void extractsSenderAfterWalletTitle() {
         assertEquals(
                 "Ana María Torres",

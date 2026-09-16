@@ -53,6 +53,20 @@ describe('parseYapeNotification', () => {
     expect(result).toBeNull();
   });
 
+  it.each([
+    'Saldo disponible: S/ 30.00',
+    'Enviaste S/ 30.00',
+    'Solicitud de pago: S/ 30.00',
+    'Reversión de S/ 30.00',
+  ])('ignora notificaciones que no representan un ingreso: %s', (text) => {
+    expect(parseYapeNotification({
+      packageName: 'com.bcp.yape.app',
+      title: 'Yape',
+      text,
+      postedAt: '2026-09-06T12:00:00.000Z',
+    })).toBeNull();
+  });
+
   it('uses the stable notification key to separate same-time equal payments', () => {
     const input = {
       packageName: 'com.bcp.yape.app',

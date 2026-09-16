@@ -276,3 +276,13 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
   - Backoffice: `output/android/Suya-Backoffice-debug.apk`, **25,239,952 bytes**, SHA-256 `2440b6963d74e7b677edb1c9d186e9a8b1b8df941720a02104abd4c421e70409`, `com.suya.backoffice`.
   - Wallet Observer: `output/android/Suya-Wallet-Observer-debug.apk`, **25,192,060 bytes**, SHA-256 `c4da86fb43d10302a44bbd3fa6c291330f3d7892c9c6f946dacb3e5787e96b7f`, `com.suya.walletobserver`.
 - Esto evita una clasificación positiva evidente, pero no convierte notificaciones en autoridad de pago: P-01/P-02/P-03/P-08 siguen requiriendo backend, movimientos del receptor y conciliación autorizada. No se ejecutaron pagos reales ni se relaja la ruta manual.
+
+## Corrección P-08 — clasificar lenguaje entrante y APK vigentes — 2026-09-16
+
+- Se añadió una guardia explícita de lenguaje entrante al parser web y a `YapeNotificationListenerService`: solo textos con señales de recepción (`recibiste`, `received`, `te envió`, etc.) continúan al parser de importes; `saldo`, `enviaste`, `solicitud`, `reversión`, `falló` y equivalentes no entran como cobros. La guardia es clasificación defensiva, no confirmación bancaria.
+- La primera regresión detectó que `\b` de JavaScript no manejaba correctamente la `ó` de `te envió`; se corrigió con límites Unicode basados en caracteres no alfabéticos. Focal parser/adaptadores: **24/24**; Android `test`: **5/5**; suite global: **71 archivos / 326 pruebas**; lint, typecheck, `npm run build:apps`, smoke E2E **12/12** y secretos (**924 archivos / sin patrones**) pasan.
+- `npm run build:mobile:roles` terminó con JDK 21/SDK 36; `assembleDebug`, `unzip -tqq`, `apksigner verify` v2 y `aapt dump badging` pasan en las tres variantes. Son debug `versionName 1.4`/`versionCode 5`, un firmante y no release:
+  - Rider: `output/android/Suya-Rider-debug.apk`, **25,371,385 bytes**, SHA-256 `18c97c8f07bac06ae3de6f12f606ab50505e9360abc5c2312d5d4055e2cd0a3f`, paquete `com.suya.rider`.
+  - Backoffice: `output/android/Suya-Backoffice-debug.apk`, **25,239,952 bytes**, SHA-256 `aff91b042d9e918bb74db9a3371c194d8c0b959a8f5adfc190c108f4c6572ceb`, paquete `com.suya.backoffice`.
+  - Wallet Observer: `output/android/Suya-Wallet-Observer-debug.apk`, **25,192,060 bytes**, SHA-256 `b0200cc2a13a168c22a5dc6cc151c69f88d126f03d7b3143c090dc8993a66911`, paquete `com.suya.walletobserver`.
+- El build valida empaquetado y metadatos, pero no sustituye la prueba en dispositivo: siguen pendientes instalación/actualización física, permisos de notificaciones, offline, insets, TalkBack y fuente ampliada. El goal también sigue abierto por DB/RLS oficial, E2E financiero con backend, endpoint OTA privado, firma release y autorización de pagos reales.

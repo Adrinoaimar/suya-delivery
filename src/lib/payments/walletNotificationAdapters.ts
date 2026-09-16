@@ -80,6 +80,8 @@ export const DEFAULT_WALLET_NOTIFICATION_ADAPTERS: readonly WalletNotificationAd
 const MONEY_PATTERN = /(?<![\p{L}\d+-])(?:s\/?|s\.|pen|ars|usd|us\$|\$)\s*((?:\d{1,3}(?:[.,]\d{3})+|\d+)(?:[.,]\d{2})?)(?!\d)/giu;
 const CODE_PATTERN = /(?:c[oó]digo(?:\s+(?:de\s+)?(?:seguridad|operaci[oó]n|aprobaci[oó]n))?|operaci[oó]n|referencia|reference|ref\.?|id(?:\s+de)?\s+(?:transferencia|operaci[oó]n))\b\s*[:#-]?\s*([a-z0-9-]{3,64})/i;
 const SENDER_PATTERN = /(?:^|\b)(?:de|from|remitente|sender)\s*[:#-]?\s*(?!(?:seguridad|operaci[oó]n|transferencia|pago|payment|referencia|reference)\b)([\p{L}][\p{L}'-]*(?:\s+[\p{L}][\p{L}'-]*){0,4})(?=\s*(?:[.,;:·|]|$|\b(?:te\b|envi[oó]|sent\b|por\b|monto\b|amount\b|operaci[oó]n\b|c[oó]digo\b|ref(?:erencia)?\b|s\/?|pen\b|usd\b|ars\b)))|(?:^|\b)([\p{L}][\p{L}'-]*(?:\s+[\p{L}][\p{L}'-]*){0,4})(?=\s+te\s+(?:envi[oó](?=\s|$)|sent\b))/iu;
+const INCOMING_NOTIFICATION_PATTERN = /(?:^|[^\p{L}])(?:recib(?:e|es|iste|i[oó]|ido|ieron|imos)|received|payment\s+received|te\s+envi[oó]|you\s+(?:received|got)|dep[oó]sito\s+(?:recibido|received)|transferencia\s+recibida)(?=$|[^\p{L}])/iu;
+const NON_INCOMING_NOTIFICATION_PATTERN = /(?:^|[^\p{L}])(?:saldo|reversi[oó]n|devoluci[oó]n|promoci[oó]n|oferta|solicitud|solicitaste|enviaste|enviado|enviada|sent|failed|fall[oó])(?=$|[^\p{L}])/iu;
 
 function normalizeAmount(value: string): number | null {
   const compact = value.replace(/\s/g, '');
@@ -138,6 +140,10 @@ function matchesAdapter(input: WalletNotificationInput, adapter: WalletNotificat
   return adapter.keywords.some((keyword) => lower.includes(keyword.toLocaleLowerCase('es-PE')));
 }
 
+function isIncomingNotification(text: string): boolean {
+  return INCOMING_NOTIFICATION_PATTERN.test(text) && !NON_INCOMING_NOTIFICATION_PATTERN.test(text);
+}
+
 export function createGenericWalletNotificationAdapter(
   config: Omit<WalletNotificationAdapter, 'provider'> & { provider?: 'generic' },
 ): WalletNotificationAdapter {
@@ -156,6 +162,7 @@ export function parseWalletNotification(
 
   const adapter = adapters.find((candidate) => matchesAdapter(input, candidate, text));
   if (!adapter) return null;
+  if (!isIncomingNotification(text)) return null;
 
   MONEY_PATTERN.lastIndex = 0;
   const amountMatch = MONEY_PATTERN.exec(text);

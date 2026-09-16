@@ -69,6 +69,8 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     private static final Pattern MONEY_PATTERN = Pattern.compile("(?<![\\p{L}\\d+-])(?:S\\/?|S\\.|PEN|ARS|USD|US\\$|\\$)\\s*((?:\\d{1,3}(?:[.,]\\d{3})+|\\d+)(?:[.,]\\d{2})?)(?!\\d)", Pattern.CASE_INSENSITIVE);
     private static final Pattern CODE_PATTERN = Pattern.compile("(?:c[oó]digo(?:\\s+(?:de\\s+)?(?:seguridad|operaci[oó]n|aprobaci[oó]n))?|operaci[oó]n|referencia|reference|ref\\.?|id(?:\\s+de)?\\s+(?:transferencia|operaci[oó]n))\\b\\s*[:#-]?\\s*([a-z0-9-]{3,64})", Pattern.CASE_INSENSITIVE);
     private static final Pattern SENDER_PATTERN = Pattern.compile("(?:^|\\b)(?:de|from|remitente|sender)\\s*[:#-]?\\s*(?!(?:seguridad|operaci[oó]n|transferencia|pago|payment|referencia|reference)\\b)([\\p{L}][\\p{L}'-]*(?:\\s+[\\p{L}][\\p{L}'-]*){0,4})(?=\\s*(?:[.,;:·|]|$|\\b(?:te\\b|envi[oó]|sent\\b|por\\b|monto\\b|amount\\b|operaci[oó]n\\b|c[oó]digo\\b|ref(?:erencia)?\\b|S\\/?|PEN\\b|USD\\b|ARS\\b)))|(?:^|\\b)([\\p{L}][\\p{L}'-]*(?:\\s+[\\p{L}][\\p{L}'-]*){0,4})(?=\\s+te\\s+(?:envi[oó](?=\\s|$)|sent\\b))", Pattern.CASE_INSENSITIVE);
+    private static final Pattern INCOMING_NOTIFICATION_PATTERN = Pattern.compile("(?:^|[^\\p{L}])(?:recib(?:e|es|iste|i[oó]|ido|ieron|imos)|received|payment\\s+received|te\\s+envi[oó]|you\\s+(?:received|got)|dep[oó]sito\\s+(?:recibido|received)|transferencia\\s+recibida)(?=$|[^\\p{L}])", Pattern.CASE_INSENSITIVE);
+    private static final Pattern NON_INCOMING_NOTIFICATION_PATTERN = Pattern.compile("(?:^|[^\\p{L}])(?:saldo|reversi[oó]n|devoluci[oó]n|promoci[oó]n|oferta|solicitud|solicitaste|enviaste|enviado|enviada|sent|failed|fall[oó])(?=$|[^\\p{L}])", Pattern.CASE_INSENSITIVE);
     private static final WalletAdapter[] ADAPTERS = new WalletAdapter[]{
             new WalletAdapter("yape", "yape_notification",
                     new String[]{"com.bcp.innovacxion.yapeapp", "com.bcp.yape.app"},
@@ -102,7 +104,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
 
         String combined = combinedNotificationText(notification.extras);
         String lower = combined.toLowerCase(new Locale("es", "PE"));
-        if (combined.isEmpty() || !adapter.matchesText(lower)) return;
+        if (combined.isEmpty() || !adapter.matchesText(lower) || !isIncomingNotification(lower)) return;
 
         Matcher amountMatcher = MONEY_PATTERN.matcher(combined);
         if (!amountMatcher.find()) return;
@@ -216,6 +218,11 @@ public final class YapeNotificationListenerService extends NotificationListenerS
 
     static boolean containsIncomingMoney(String text) {
         return MONEY_PATTERN.matcher(text).find();
+    }
+
+    static boolean isIncomingNotification(String text) {
+        return INCOMING_NOTIFICATION_PATTERN.matcher(text).find()
+                && !NON_INCOMING_NOTIFICATION_PATTERN.matcher(text).find();
     }
 
     @Nullable
