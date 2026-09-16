@@ -191,4 +191,13 @@ describe('contrato de pedidos async', () => {
     expect(useOrderStore.getState().orders).toHaveLength(51);
     expect(useOrderStore.getState().hasMore).toBe(false);
   });
+
+  it('mantiene el límite de 50 también en el servicio demo', async () => {
+    const service = new MockOrderServiceImpl();
+    await Promise.all(Array.from({ length: 55 }, () => createOrder(service)));
+
+    const page = await service.list({ offset: 0, limit: 100 });
+
+    expect(page).toHaveLength(50);
+  });
 });

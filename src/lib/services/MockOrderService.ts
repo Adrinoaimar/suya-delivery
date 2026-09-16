@@ -5,6 +5,8 @@ import { ORDER_FLOW } from '@/types';
 import type { CartItem, Order, OrderStatus } from '@/types';
 import type { CodeResult, CreateOrderInput, OrderListOptions, OrderService } from './types';
 
+const MAX_ORDER_PAGE_SIZE = 50;
+
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
 }
@@ -17,7 +19,7 @@ export class MockOrderServiceImpl implements OrderService {
     const orders = this.load();
     const offset = Number.isInteger(options?.offset) && (options?.offset ?? 0) >= 0 ? options!.offset! : 0;
     const limit = Number.isInteger(options?.limit) && (options?.limit ?? 0) > 0 ? options!.limit! : orders.length;
-    return orders.slice(offset, offset + limit);
+    return orders.slice(offset, offset + Math.min(limit, MAX_ORDER_PAGE_SIZE));
   }
 
   private load(): Order[] {
