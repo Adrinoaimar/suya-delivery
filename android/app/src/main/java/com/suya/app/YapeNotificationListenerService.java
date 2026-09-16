@@ -318,8 +318,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
                     // can fill the missing identity fields server-side.
                     existing.put("synced", false);
                     current.put(index, existing);
-                    String encrypted = encryptEvents(current.toString());
-                    if (encrypted != null) preferences.edit().putString(EVENTS_KEY, encrypted).apply();
+                    persistEvents(preferences, current);
                 }
             } catch (JSONException ignored) {
                 // Keep the original encrypted event if enrichment fails.
@@ -338,9 +337,18 @@ public final class YapeNotificationListenerService extends NotificationListenerS
             return;
         }
         JSONArray next = buildQueueWithPendingPriority(current, event);
-        String encrypted = encryptEvents(next.toString());
+        persistEvents(preferences, next);
+    }
+
+    private static void persistEvents(SharedPreferences preferences, JSONArray events) {
+        String encrypted = encryptEvents(events.toString());
         // Never fall back to plaintext if Android Keystore is unavailable.
-        if (encrypted != null) preferences.edit().putString(EVENTS_KEY, encrypted).apply();
+        if (encrypted != null) {
+            preferences.edit()
+                    .putString(EVENTS_KEY, encrypted)
+                    .putBoolean(QUEUE_FULL_KEY, isPendingCapacityReached(events))
+                    .apply();
+        }
     }
 
     /**
@@ -375,6 +383,15 @@ public final class YapeNotificationListenerService extends NotificationListenerS
             }
         }
         return Arrays.copyOf(indexes, count);
+    }
+
+    static boolean isPendingCapacityReached(JSONArray events) {
+        int pending = 0;
+        for (int index = 0; index < events.length(); index++) {
+            JSONObject event = events.optJSONObject(index);
+            if (event != null && !event.optBoolean("synced", false)) pending++;
+        }
+        return pending >= MAX_EVENTS;
     }
 
     private static boolean mergeEvidenceField(JSONObject existing, JSONObject incoming, String key) throws JSONException {
@@ -520,8 +537,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
             }
         }
         if (changed) {
-            String encrypted = encryptEvents(current.toString());
-            if (encrypted != null) preferences.edit().putString(EVENTS_KEY, encrypted).apply();
+            persistEvents(preferences, current);
         }
     }
 

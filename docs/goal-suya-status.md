@@ -71,6 +71,11 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - TDD: la prueba UI pasó **2/2**; suite global **72 archivos / 345 pruebas**; typecheck, lint, `npm run security:secrets` (**937 archivos, sin patrones**) y `git diff --check` pasan.
 - Es una corrección web sobre el bundle de caja; no cambia Android nativo ni APKs. JDK, Android test/build, dispositivo, sincronización real, reinicio, permisos y accesibilidad física permanecen pendientes.
 
+## Corrección P-07/A-09 — `queueFull` derivado del estado real — 2026-09-16
+
+- La persistencia de la cola Android recalcula `queueFull` según los eventos pendientes: se activa en 500 y se limpia después de una sincronización que baje el contador. No cambia la prioridad de pendientes ni permite descartarlos por historial.
+- Se añadió `derivesQueueFullFromCurrentPendingEvents`; Android test/build queda pendiente porque este entorno no tiene `java`/JDK. No se presentan APK nuevas ni se declaran compiladas.
+
 ## Matriz de hallazgos
 
 Estados usados: pendiente, en corrección, en verificación, verificado, bloqueado. Un bloqueo de entorno no es aprobación.
@@ -83,7 +88,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | P-04 | En verificación | RPC atómico para los tres canales; oferta y pago dentro de la transacción; reintento terminal usa clave nueva bajo lock de pedido | Test de rollback, reintento y actualización limpia en DB local |
 | P-05 | En verificación | Parser TS/Android valida formato y tope común; web focal 30/30; Android tiene regresiones nuevas pero no se pudo ejecutar por falta de JDK en este entorno | Ejecutar Android test/build y matriz real por versión de billetera |
 | P-06 | En verificación | Binding guardado, cola separa eventos por binding y re-vinculación no reenvía | Prueba Android de rotación/revocación |
-| P-07 | En verificación | Lock de cola, 500 pendientes, reintentos y estado `queueFull`; selección pending-first corregida y test nativo 5/5 | Prueba Android offline/reinicio/concurrencia en dispositivo |
+| P-07 | En verificación | Lock de cola, 500 pendientes, reintentos y estado `queueFull`; persistencia recalcula el indicador; selección pending-first corregida; regresión nativa nueva sin ejecutar por falta de JDK | Ejecutar Android test/build y probar offline/reinicio/concurrencia en dispositivo |
 | P-08 | En verificación | Adaptadores por paquete y palabras; caso Yape probado | Matriz Android real por versión de billetera |
 | P-09 | En verificación | Código normalizado hasta 64; HMAC v2 privado ligado a receptor/tipo con contexto compartido entre declaración/observación/corrección, HMAC legacy aislado para transición, auditoría saneada y contrato de 13 aserciones | Ejecutar migración nueva en DB oficial y confirmar límites de proveedor |
 | P-10 | En verificación | Renovación conserva cuenta histórica; una declaración vencida no se renueva, una cuenta desactivada se rechaza y un intento terminal no envenena el siguiente retry; la cuenta histórica debe pertenecer al restaurante del pedido | Ejecutar migración nueva y caso de vencimiento/reintento/concurrencia |

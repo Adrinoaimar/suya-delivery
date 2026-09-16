@@ -3,6 +3,9 @@ package com.suya.app;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.junit.Test;
 
 public class YapeNotificationListenerServiceTest {
@@ -80,5 +83,16 @@ public class YapeNotificationListenerServiceTest {
         assertEquals(499, indexes.length);
         assertEquals(400, pending);
         assertTrue(!synced[indexes[0]]);
+    }
+
+    @Test
+    public void derivesQueueFullFromCurrentPendingEvents() throws JSONException {
+        JSONArray events = new JSONArray();
+        for (int index = 0; index < 499; index++) {
+            events.put(new JSONObject().put("synced", false));
+        }
+        assertTrue(!YapeNotificationListenerService.isPendingCapacityReached(events));
+        events.put(new JSONObject().put("synced", false));
+        assertTrue(YapeNotificationListenerService.isPendingCapacityReached(events));
     }
 }
