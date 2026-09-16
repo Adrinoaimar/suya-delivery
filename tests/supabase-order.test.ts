@@ -383,6 +383,34 @@ describe('SupabaseOrderServiceImpl', () => {
     });
   });
 
+  it('no sobrescribe la dirección habitual al pedir desde una mesa', async () => {
+    const { client, from, rpc } = createFakeClient({
+      userId: 'customer-1',
+      rowResult: { data: buildRow({ table_id: 'table-1', payment_method: 'cash' }), error: null },
+      rpc: async (name) => {
+        expect(name).toBe('create_table_cash_order_with_customer');
+        return {
+          data: [{ order_id: buildRow().id, delivery_code: '1234', cancel_code: '5678' }],
+          error: null,
+        };
+      },
+    });
+
+    const order = await new SupabaseOrderServiceImpl(client).create({
+      ...createInput('cash'),
+      tableId: 'table-1',
+      tableSessionId: 'table-session-1',
+      origin: 'table_qr',
+    });
+
+    expect(order.tableId).toBe('table-1');
+    expect(from).not.toHaveBeenCalledWith('profiles');
+    expect(rpc).toHaveBeenCalledWith('create_table_cash_order_with_customer', expect.objectContaining({
+      p_table_id: 'table-1',
+      p_table_session_id: 'table-session-1',
+    }));
+  });
+
   it('clasifica cancelación inexistente, cerrada y con código inválido', async () => {
     const missing = createFakeClient({ rowResult: { data: null, error: null } });
     await expect(

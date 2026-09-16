@@ -461,7 +461,7 @@ export class SupabaseOrderServiceImpl
     const user = userData.user ?? null;
     const publicMenuChannel = input.origin === 'suya_menu' || Boolean(input.tableId);
     if (!user && !publicMenuChannel) throw new Error('Inicia sesión para confirmar el pedido.');
-    if (user) {
+    if (user && !input.tableId) {
       const { error: profileError } = await this.client
         .from('profiles')
         .update({
