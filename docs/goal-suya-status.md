@@ -208,6 +208,13 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Wallet Observer: `output/android/Suya-Wallet-Observer-debug.apk`, **25,192,060 bytes**, SHA-256 `7c5d98f49debef7d0dbebb3385d5608be9c58bbb48eaa770d99061a325a73e5e`, `com.suya.walletobserver`.
 - La captura/instalación física, actualización, TalkBack, fuente ampliada y offline nativo siguen pendientes por falta de dispositivo/emulador.
 
+## Corrección posterior — contexto visible y APK asociada (2026-09-16)
+
+- `10ecf41` corrige el fallback final de `WalletsOperationsPage`: el contexto persistido se valida contra `visibleStores`, nunca contra un `restaurantId` obsoleto.
+- Regresión focal de billeteras **10/10**, operaciones Backoffice **21/21**, suite global **71 archivos / 320 pruebas**; lint, typecheck y diff pasan.
+- `build:mobile:roles`, ZIP, `apksigner verify` v2 y `aapt dump badging` pasan. Rider conserva SHA-256 `37021829ba121d013616e4580532c765910e3de07b17b3e68934c9dccf568930`; Backoffice actualizado: **25,239,776 bytes**, SHA-256 `4ce52695198084b3a71e1444fc1e61d9fae7db73a496ecc49d138eb4bb8bec60`; Wallet Observer conserva SHA-256 `7c5d98f49debef7d0dbebb3385d5608be9c58bbb48eaa770d99061a325a73e5e`. Todas `1.4/5`, debug, un firmante y v2.
+- Continúan pendientes DB/RLS oficial, E2E financiero con backend, dispositivo/offline/TalkBack/fuente ampliada/permisos, endpoint privado OTA, firma release y autorización de pagos reales.
+
 ## Verificación posterior — lint nativo Android (2026-09-15)
 
 - `bash android/gradlew -p android lint --no-daemon` terminó `BUILD SUCCESSFUL` con JDK 21/SDK 36 temporales y reportó **sin nuevos problemas del proyecto**.
