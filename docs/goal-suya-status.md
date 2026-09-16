@@ -57,6 +57,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - P-09: `20260916110000_context_bound_payment_evidence_hmac.sql` añade HMAC v2 privado ligado a receptor y tipo de evidencia, columnas separadas para compatibilidad legacy y exclusión del nuevo HMAC en auditoría; su contrato declara 12 aserciones. La ejecución oficial sigue pendiente.
 - P-02: `20260916120000_wallet_evidence_reuse_identity_guard.sql` deja de bloquear por últimos cuatro cuando existe fingerprint/HMAC completo; la regresión de mismo sufijo y código distinto amplía el fixture conjunto a 40 aserciones. La ejecución oficial sigue pendiente.
 - U-09: `LeafletMap` reserva una columna derecha para la atribución OSM y apila leyendas/errores en una columna izquierda con límites de ancho; la atribución nativa duplicada queda desactivada para evitar superposición en mapas móviles estrechos.
+- P-04/P-10/A-01: `20260916130000_payment_intent_terminal_retry.sql` conserva la clave determinista para el primer intento, reutiliza el intento activo bajo `FOR UPDATE` y genera una clave `:retry:<uuid>` después de un intento terminal; evita que la unicidad global bloquee reintentos legítimos. El contrato SQL declara 6 aserciones y queda pendiente del runtime oficial.
 
 ## Matriz de hallazgos
 
@@ -67,13 +68,13 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | P-01 | En verificación | Conteo global de coincidencias, índice de asignación única y fixture de colisión exacta (105 aserciones) | Ejecutar `npm run db:test` con Postgres local y concurrencia |
 | P-02 | En verificación | `eventId` estable por binding/notificación, conflicto técnico único y trigger de no reutilización por la identidad más fuerte; mismo sufijo con fingerprint distinto no bloquea (fixture 40 aserciones) | Ejecutar migraciones `20260915140000`/`20260916120000` y caso SQL multiequipo en DB oficial |
 | P-03 | En verificación | `receiver_account_id` en intento/dispositivo/observación y QR por cuenta exacta | Instalar migración y probar cambio de cuenta |
-| P-04 | En verificación | RPC atómico para los tres canales; oferta y pago dentro de la transacción | Test de rollback y actualización limpia en DB local |
+| P-04 | En verificación | RPC atómico para los tres canales; oferta y pago dentro de la transacción; reintento terminal usa clave nueva bajo lock de pedido | Test de rollback, reintento y actualización limpia en DB local |
 | P-05 | En verificación | Parser TS y test de `S/ 1000.00`; parser Java actualizado; pruebas unitarias Android 4/4 pasan | Matriz Android real por versión de billetera |
 | P-06 | En verificación | Binding guardado, cola separa eventos por binding y re-vinculación no reenvía | Prueba Android de rotación/revocación |
 | P-07 | En verificación | Lock de cola, 500 pendientes, reintentos y estado `queueFull`; selección pending-first corregida y test nativo 5/5 | Prueba Android offline/reinicio/concurrencia en dispositivo |
 | P-08 | En verificación | Adaptadores por paquete y palabras; caso Yape probado | Matriz Android real por versión de billetera |
 | P-09 | En verificación | Código normalizado hasta 64; HMAC v2 privado ligado a receptor/tipo, HMAC legacy aislado para transición, auditoría saneada y contrato de 12 aserciones | Ejecutar migración nueva en DB oficial y confirmar límites de proveedor |
-| P-10 | En verificación | Renovación conserva cuenta histórica; una declaración vencida no se renueva y una cuenta desactivada se rechaza | Ejecutar migración nueva y caso de vencimiento/concurrencia |
+| P-10 | En verificación | Renovación conserva cuenta histórica; una declaración vencida no se renueva, una cuenta desactivada se rechaza y un intento terminal no envenena el siguiente retry | Ejecutar migración nueva y caso de vencimiento/reintento/concurrencia |
 | P-11 | En verificación | Copy no promete confirmación; declaración separada, pagador opcional, reset por intento y reembolso sin QR/reintento | Revisión sobre APK final y estados reales |
 | U-01 | En verificación | Drawer opaco, `isolate`, portal `z-[1100]`; test/build web pasan | Captura sobre APK final con mapa normal/expandido |
 | U-02 | Verificado local | Navegación móvil compacta + drawer “Más”; `backoffice-layout.test.tsx` pasa | Confirmar en Android final |
@@ -85,7 +86,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | U-08 | En verificación | Reset por `order.id` e `attemptId`, respuestas obsoletas, sesiones de checkout invalidables y estados separados; regresión focal pagos 15/15 pasa | E2E navegando entre dos pedidos |
 | U-09 | En verificación | Capturas web a 390×844, `scrollWidth === viewport`, barras opacas y pie de mapa dividido en columnas de estado/atribución; focal mapa/tracking/operaciones 13/13 | Capturas sobre APK final a 360×800, mapa normal/expandido, leyendas/atribución y estados largos |
 | U-10 | En verificación | Navegación por teclado sobre bundle customer: 16 destinos con nombre y visibles; controles sin nombre: 0; medición web 390×844 sin controles visibles menores de 44×44 y enlace de salto enfocado 178×44 | axe/contraste/TalkBack, fuente ampliada y validación nativa |
-| A-01 | En verificación | Rutas wallet atómicas; helper v2 calcula huella con canal/método/oferta/mesa/datos y rechaza conflicto; cliente reutiliza request y token guest | Ejecutar SQL/pgTAP y E2E real tras pérdida de respuesta/concurrencia |
+| A-01 | En verificación | Rutas wallet atómicas; helper v2 calcula huella con canal/método/oferta/mesa/datos y rechaza conflicto; cliente reutiliza request y token guest; retries terminales no colisionan con la clave global | Ejecutar SQL/pgTAP y E2E real tras pérdida de respuesta/concurrencia |
 | A-02 | En verificación | Contratos distintos para delivery, menú y mesa; GPS ya no se exige universalmente y coordenadas entran en la creación | DB limpia + E2E por modalidad |
 | A-03 | En verificación | Test y bundle customer real: token sintético de 64 caracteres se conserva en sesión, `location.hash` queda vacío después de cargar; tests focales 19/19 cubren reintento guest y refresco de pago con token estable | E2E con recarga, enlace en otro contexto y pérdida de respuesta sin duplicar pedido |
 | A-04 | Verificado local | `analytics.ts` no carga script, no persiste UTM ni emite eventos; tests y build pasan | Confirmar red/`Set-Cookie` en E2E |
@@ -315,3 +316,10 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - `supabase/tests/20260914230000_atomic_wallet_checkout_and_receiver_binding.test.sql` pasa de 38 a **40 aserciones**: añade dos pagos con el mismo sufijo y fingerprints distintos, que deben verificarse independientemente; la colisión completa previa continúa siendo rechazada para revisión.
 - La suite web actual permanece en **71 archivos / 327 pruebas**; lint, typecheck y diff pasan. `npm run db:lint` sigue bloqueado por `ECONNREFUSED 127.0.0.1:54322`, por lo que P-02 continúa en verificación.
 - No se modifican APKs ni se ejecutan pagos reales. El goal sigue abierto por DB/RLS oficial, E2E backend, dispositivo/offline/accesibilidad, OTA privado y firma release.
+
+## Corrección P-04/P-10/A-01 — reintento de intento terminal — 2026-09-16
+
+- La auditoría detectó que `payment_attempts.idempotency_key` es globalmente única y que una clave determinista permanente (`order:<id>:<method>`) podía impedir reintentar después de `failed` o `refunded`.
+- `20260916130000_payment_intent_terminal_retry.sql` conserva el lock del pedido y la reutilización de `pending/authorized`; si existe historial previo sin intento activo, genera `order:<id>:<method>:retry:<uuid>`. No se elimina la unicidad ni se permite duplicar llamadas concurrentes.
+- `20260916130000_payment_intent_terminal_retry.test.sql` declara **6 aserciones**. Lint, typecheck, `git diff --check` y Vitest global **71/327** pasan. El gate oficial de DB continúa en `ECONNREFUSED 127.0.0.1:54322`; la migración queda en verificación.
+- Es cambio SQL-only: APKs debug `1.4/5` sin cambios. No hubo pagos reales, despliegue ni publicación; siguen pendientes DB/RLS, E2E financiero, dispositivo, accesibilidad nativa, offline, OTA privado y firma release.
