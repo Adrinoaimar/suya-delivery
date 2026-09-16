@@ -50,6 +50,9 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - Guardia de receptor activo: `20260915150000_active_wallet_receiver_guard.sql` rechaza crear o ingresar nuevas filas ligadas a una cuenta receptora desactivada y conserva el histórico para auditoría.
 - Controles A-09: `20260915160000_wallet_observer_device_controls.sql` añade revocación/reactivación, rotación de token de un solo retorno, auditoría sin `token_hash`, localización por UUID en tokens nuevos y límite de 120 observaciones/minuto por dispositivo; los tokens legacy conservan fallback hasta rotación. El cliente ahora mapea `device_active` y la rotación conserva el estado revocado.
 - Cola Android: cuando se alcanza el límite de 500, la selección conserva primero el evento nuevo y todos los pendientes; solo puede descartar historial ya sincronizado. Se añadió regresión nativa para 400 pendientes + 100 históricos.
+- Declaración de pago manual: `PaymentInstructions` separa «Ya pagué» de «Aún no pagué» y bloquea la renovación mientras el estado server-side sea desconocido o exista una declaración. Permite registrar el nombre de otra persona sin tratarlo como autorización; un intento `refunded` no muestra QR ni acciones para repetir el cobro.
+- Migración `20260915170000_payment_claims_and_late_review.sql`: claims auditables, HMAC privado de códigos, declaración protegida por usuario/token invitado, revisión tardía limitada a propuesta, receptor exacto, verificación final autorizada y auditoría sin hashes/códigos. El contrato legado `submit_payment_evidence` delega al flujo nuevo. Su prueba declara 13 aserciones; el conjunto acumulado de este bloque declara 51 (38 previas + 13 nuevas).
+- Observaciones wallet: `observed_at` sigue siendo hora de la notificación; `created_at` se muestra como hora de recepción del servidor. No se presenta una hora bancaria inexistente.
 
 ## Matriz de hallazgos
 
@@ -65,9 +68,9 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | P-06 | En verificación | Binding guardado, cola separa eventos por binding y re-vinculación no reenvía | Prueba Android de rotación/revocación |
 | P-07 | En verificación | Lock de cola, 500 pendientes, reintentos y estado `queueFull`; selección pending-first corregida y test nativo 5/5 | Prueba Android offline/reinicio/concurrencia en dispositivo |
 | P-08 | En verificación | Adaptadores por paquete y palabras; caso Yape probado | Matriz Android real por versión de billetera |
-| P-09 | En verificación | Código normalizado hasta 64; sufijo solo pista y código completo requerido para colisión | Ejecutar SQL y Android; confirmar límites de proveedor |
-| P-10 | En verificación | Renovación conserva cuenta histórica y rechaza cuenta desactivada | Ejecutar migración y caso de vencimiento |
-| P-11 | En verificación | Textos de pago no prometen unicidad por código/hash ni exponen detalles internos; evidencia separada y reset por pedido/intento | Revisión sobre APK final |
+| P-09 | En verificación | Código normalizado hasta 64; HMAC privado en claim/observación; sufijo solo pista y colisión exige identidad completa | Ejecutar migración nueva y Android; confirmar límites de proveedor |
+| P-10 | En verificación | Renovación conserva cuenta histórica; una declaración vencida no se renueva y una cuenta desactivada se rechaza | Ejecutar migración nueva y caso de vencimiento/concurrencia |
+| P-11 | En verificación | Copy no promete confirmación; declaración separada, pagador opcional, reset por intento y reembolso sin QR/reintento | Revisión sobre APK final y estados reales |
 | U-01 | En verificación | Drawer opaco, `isolate`, portal `z-[1100]`; test/build web pasan | Captura sobre APK final con mapa normal/expandido |
 | U-02 | Verificado local | Navegación móvil compacta + drawer “Más”; `backoffice-layout.test.tsx` pasa | Confirmar en Android final |
 | U-03 | En verificación | Store global en cinco módulos; pruebas focalizadas de contexto pasan | Cambiar dos restaurantes con respuestas lentas y probar permisos |
@@ -94,7 +97,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 
 - `npm run typecheck`: pasa.
 - `npm run lint`: pasa sin warnings.
-- `npm test -- --run`: **68 archivos / 306 pruebas pasan** tras añadir las regresiones de privacidad de logs, configuración de sesión nativa/web, huella guest sin PII, correo mínimo, routing sin exposición pública de GPS, OTA/CSP, controles de dispositivo y objetivo táctil del enlace de salto, junto con privacidad del pedido invitado, reset de intento, caja auditable, cobro de mesas y cambio rápido de restaurante.
+- `npm test -- --run`: **68 archivos / 312 pruebas pasan** tras añadir la declaración manual, pagador opcional, reembolso sin repetición, HMAC privado, revisión tardía y separación de hora observada/hora recibida, además de las regresiones previas de privacidad, checkout, caja, mesa, cola y accesibilidad.
 - Pruebas focalizadas de acceso invitado/order/payment/layout: 19/19 pasan.
 - `tests/backoffice-layout.test.tsx`, `tests/cash-register-page.test.tsx`, `tests/supabase-cash-register.test.ts` y privacidad invitado: **12/12** pasan; la carga obsoleta no reemplaza la cuenta y el pedido completo no queda en Web Storage.
 - `npm run build`: pasa.
@@ -125,6 +128,8 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - APK Backoffice debug: `output/android/Suya-Backoffice-debug.apk`, 25,239,372 bytes, SHA-256 `838da484c2b88b586e431870c5e229d8b0da5e8b434174e18e8d7a5b4131171c`, paquete `com.suya.backoffice`, `versionName 1.4`, `versionCode 5`.
 - APK Wallet Observer debug: `output/android/Suya-Wallet-Observer-debug.apk`, 25,191,988 bytes, SHA-256 `9ef9ee7fe546870e1c562181c870148849becfc9073ad9f29e122bfebb475a42`, paquete `com.suya.walletobserver`, `versionName 1.4`, `versionCode 5`.
 - Las tres APK pasan `unzip -tqq` y `apksigner verify` con APK Signature Scheme v2; están firmadas con la clave debug del entorno y no son entregables de producción.
+- Checkpoint local `137c1e6`: la suite global **68/312**, focal payment/service/UI **33/33**, typecheck, lint, build, aislamiento, smoke web **12/12**, secretos (**915 archivos**), audit (**0 vulnerabilidades**) y `npm run build:mobile:roles` pasan. Android `test`/`assembleDebug` pasan con Java 21/SDK 36. APK Rider debug: `output/android/Suya-Rider-debug.apk`, **25,371,365 bytes**, SHA-256 `779adb9578e375479e73732e4d38c2877bb07b51a154c1313f1ce96131cbc83c`. Backoffice: `output/android/Suya-Backoffice-debug.apk`, **25,239,780 bytes**, SHA-256 `b7bd499c2d3a1ecd591d8980a9767e000c7717b246dbba387727dbd49dc676f`. Wallet Observer: `output/android/Suya-Wallet-Observer-debug.apk`, **25,192,036 bytes**, SHA-256 `3e7c7b1ffa6abd626264c4a8dd60882e0519bbe0a39821c12c2cd12a1b73bcdb`. Las tres son `versionName 1.4`/`versionCode 5`, ZIP íntegro y firma debug v2; no son release.
+- La validación SQL de este checkpoint declara **51 aserciones acumuladas** (38 previas + 13 nuevas), pero `npm run db:lint`/`npm run db:test` siguen pendientes porque el runtime oficial no está accesible. La prueba PostgreSQL independiente no sustituye el gate oficial.
 
 ## Bloqueos reproducibles
 
