@@ -401,3 +401,9 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - La auditoría detectó que declaración manual y observación generaban HMAC contextual con dominios distintos (`payment-claim` frente a `wallet-observation`), impidiendo conciliar evidencia nueva aunque el código, receptor y método fueran iguales.
 - Las tres rutas usan ahora `payment-code|receiver_account_id|method/provider`; se mantienen el secreto server-side, la cuenta receptora, el método y el rechazo ante discordancia contextual. No se expone HMAC ni se degrada automáticamente a últimos cuatro.
 - `supabase/tests/20260916110000_context_bound_payment_evidence_hmac.test.sql` sube a **13 aserciones**; TDD focal SQL + A-11 **7/7** y suite global **72/337** pasan. Commit `0ca2517`; no hubo pagos reales ni cambios de APK. DB oficial sigue pendiente por `ECONNREFUSED 127.0.0.1:54322`.
+
+## Revisión de contrato A-07 — RPC de caja — 2026-09-16
+
+- La sospecha inicial de una declaración duplicada en `20260915130000_cash_register_closing.sql` se descartó: provenía de rangos de lectura solapados. No se modificó la lógica de caja.
+- `tests/payment-sql-contract.test.ts` añade un guard para que `record_cash_sale` conserve una sola declaración de actor junto con los contratos wallet y routing. Focal **3/3**; suite global **72/338**; lint, typecheck, secretos (**937 archivos**) y diff pasan.
+- Es evidencia estática y no cierra A-07: siguen pendientes instalación limpia/actualización, RLS, rollback/restauración y concurrencia en DB oficial. No cambia APKs ni procesa pagos reales.
