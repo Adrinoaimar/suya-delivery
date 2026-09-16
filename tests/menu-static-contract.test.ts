@@ -11,9 +11,12 @@ describe('Suya static menu delivery contract', () => {
     const styles = source('apps/menu/styles.css');
 
     expect(index).toContain('<script src="qrcode-generator.js"></script><script type="module" src="app.js"></script>');
+    expect(index).toContain('<link rel="icon" href="favicon.svg" type="image/svg+xml">');
     expect(index).toContain('<div id="qrCode" class="qr-code" role="img"');
     expect(app).toContain("typeof window.qrcode");
     expect(app).toContain('renderQr(publicUrl)');
+    expect(app).toContain("$('#colorInput').value=safeHexColor");
+    expect(app).toContain("$('#fontInput').value=['DM Sans','Manrope','Plus Jakarta Sans']");
     expect(app).not.toContain('api.qrserver.com');
     expect(styles).not.toMatch(/@import|https?:\/\//iu);
   });

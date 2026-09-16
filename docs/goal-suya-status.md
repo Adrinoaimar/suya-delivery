@@ -473,3 +473,10 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - La API usa `credentials: 'omit'` y bearer token en `sessionStorage` cuando el backend entrega `access_token`; no se habilita una cookie implícita. La sesión local sigue siendo local-first y no afirma autenticación contra backend sin token.
 - TDD focal: `tests/menu-static-contract.test.ts`, `tests/menu-security.test.ts` y `tests/security-hardening.test.ts` **13/13**. Suite global: **73 archivos / 350 pruebas**; typecheck, lint, secretos (**939 archivos**) y `git diff --check` pasan. No cambia los APK debug vigentes porque `apps/menu` es un Pages estático separado.
 - No hubo pagos reales, pasarela, scraping, cookies propias, despliegue ni publicación. Permanecen pendientes DB/RLS oficial, E2E financiero, dispositivo, accesibilidad/offline físicos, OTA privado, firma release y cobros reales. Los cambios ajenos en `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` y `output/` siguen preservados.
+
+## Verificación visual real del menú estático — 2026-09-16
+
+- Se levantó `apps/menu` con servidor local y se recorrió con Firefox headless usando datos sintéticos: menú público, búsqueda/categoría, añadir al carrito, panel de apariencia y panel de QR.
+- La captura confirma que el color `#0B7048` y la tipografía `Manrope` persistidos vuelven a reflejarse en el panel; el QR local se muestra como SVG y no invade la tarjeta ni el viewport. Evidencia: `output/playwright/suya-menu-final-public-390x844.png`, `output/playwright/suya-menu-admin-appearance-390x844.png` y `output/playwright/suya-menu-final-qr-390x844.png`.
+- En 390×844, 360×800 y 768×1024 el `scrollWidth` coincide con el viewport. Red local observada: HTML, CSS, módulos, favicon y QR vendorizado; cero cookies, cero mensajes de consola y cero solicitudes externas. El favicon dejó de producir 404.
+- Esto fortalece A-10/U-09/U-10 para el menú estático, pero no sustituye TalkBack, fuente ampliada, insets, instalación/actualización ni evidencia sobre APK/dispositivo. El goal sigue abierto por esos gates, DB/RLS, E2E financiero, OTA privado, firma release y pagos reales.
