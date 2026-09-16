@@ -82,6 +82,17 @@ const CODE_PATTERN = /(?:c[oó]digo(?:\s+(?:de\s+)?(?:seguridad|operaci[oó]n|ap
 const SENDER_PATTERN = /(?:^|\b)(?:de|from|remitente|sender)\s*[:#-]?\s*(?!(?:seguridad|operaci[oó]n|transferencia|pago|payment|referencia|reference)\b)([\p{L}][\p{L}'-]*(?:\s+[\p{L}][\p{L}'-]*){0,4})(?=\s*(?:[.,;:·|]|$|\b(?:te\b|envi[oó]|sent\b|por\b|monto\b|amount\b|operaci[oó]n\b|c[oó]digo\b|ref(?:erencia)?\b|s\/?|pen\b|usd\b|ars\b)))|(?:^|\b)([\p{L}][\p{L}'-]*(?:\s+[\p{L}][\p{L}'-]*){0,4})(?=\s+te\s+(?:envi[oó](?=\s|$)|sent\b))/iu;
 const INCOMING_NOTIFICATION_PATTERN = /(?:^|[^\p{L}])(?:recib(?:e|es|iste|i[oó]|ido|ieron|imos)|received|payment\s+received|te\s+envi[oó]|you\s+(?:received|got)|dep[oó]sito\s+(?:recibido|received)|transferencia\s+recibida)(?=$|[^\p{L}])/iu;
 const NON_INCOMING_NOTIFICATION_PATTERN = /(?:^|[^\p{L}])(?:saldo|reversi[oó]n|devoluci[oó]n|promoci[oó]n|oferta|solicitud|solicitaste|enviaste|enviado|enviada|sent|failed|fall[oó])(?=$|[^\p{L}])/iu;
+const MAX_OBSERVED_AMOUNT_CENTS = 100_000_000;
+
+function isGroupedInteger(value: string): boolean {
+  const separators = [...value].filter((character) => character === ',' || character === '.');
+  if (!separators.length || new Set(separators).size !== 1) return false;
+  const groups = value.split(separators[0]);
+  return groups.length >= 2
+    && groups[0].length >= 1
+    && groups[0].length <= 3
+    && groups.slice(1).every((group) => /^\d{3}$/.test(group));
+}
 
 function normalizeAmount(value: string): number | null {
   const compact = value.replace(/\s/g, '');
@@ -89,10 +100,24 @@ function normalizeAmount(value: string): number | null {
   const lastDot = compact.lastIndexOf('.');
   const decimalIndex = Math.max(lastComma, lastDot);
   const hasDecimal = decimalIndex >= 0 && compact.length - decimalIndex - 1 === 2;
-  const integerPart = (hasDecimal ? compact.slice(0, decimalIndex) : compact).replace(/[.,]/g, '');
+  const integerSource = hasDecimal ? compact.slice(0, decimalIndex) : compact;
+  if (hasDecimal) {
+    const decimalSeparator = compact[decimalIndex];
+    if (!/^\d+$/.test(integerSource)) {
+      if (!isGroupedInteger(integerSource)) return null;
+      const groupingSeparator = integerSource.match(/[.,]/)?.[0];
+      if (groupingSeparator === decimalSeparator) return null;
+    }
+  } else if (!/^\d+$/.test(integerSource) && !isGroupedInteger(integerSource)) {
+    return null;
+  }
+  const integerPart = integerSource.replace(/[.,]/g, '');
   const decimalPart = hasDecimal ? compact.slice(decimalIndex + 1) : '00';
   const amount = Number(`${integerPart}.${decimalPart}`);
-  return Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : null;
+  const amountCents = Math.round(amount * 100);
+  return Number.isSafeInteger(amountCents) && amountCents > 0 && amountCents <= MAX_OBSERVED_AMOUNT_CENTS
+    ? amountCents
+    : null;
 }
 
 function currencyForPrefix(prefix: string): WalletCurrency {
@@ -144,6 +169,10 @@ function isIncomingNotification(text: string): boolean {
   return INCOMING_NOTIFICATION_PATTERN.test(text) && !NON_INCOMING_NOTIFICATION_PATTERN.test(text);
 }
 
+function hasMalformedAmountContinuation(text: string, end: number): boolean {
+  return /^[.,]\d/.test(text.slice(end));
+}
+
 export function createGenericWalletNotificationAdapter(
   config: Omit<WalletNotificationAdapter, 'provider'> & { provider?: 'generic' },
 ): WalletNotificationAdapter {
@@ -167,6 +196,7 @@ export function parseWalletNotification(
   MONEY_PATTERN.lastIndex = 0;
   const amountMatch = MONEY_PATTERN.exec(text);
   if (!amountMatch) return null;
+  if (hasMalformedAmountContinuation(text, amountMatch.index + amountMatch[0].length)) return null;
   const amountCents = normalizeAmount(amountMatch[1]);
   const currency = currencyForPrefix(
     amountMatch[0].slice(0, amountMatch[0].length - amountMatch[1].length).trim(),

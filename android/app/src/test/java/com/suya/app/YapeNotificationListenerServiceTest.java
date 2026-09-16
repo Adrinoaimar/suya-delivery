@@ -11,6 +11,21 @@ public class YapeNotificationListenerServiceTest {
     public void parsesFourDigitThousandsAmountWithoutTruncatingIt() {
         assertEquals(Long.valueOf(100000), YapeNotificationListenerService.normalizeAmount("1000.00"));
         assertEquals(Long.valueOf(100000), YapeNotificationListenerService.normalizeAmount("1,000.00"));
+        assertEquals(Long.valueOf(100000), YapeNotificationListenerService.normalizeAmount("1.000,00"));
+    }
+
+    @Test
+    public void rejectsMalformedMonetaryTokensInsteadOfPartiallyParsingThem() {
+        assertEquals(null, YapeNotificationListenerService.parseMoney("S/", "30.5"));
+        assertEquals(null, YapeNotificationListenerService.parseMoney("S/", "30,5"));
+        assertEquals(null, YapeNotificationListenerService.parseMoney("S/", "1,2345"));
+        assertTrue(YapeNotificationListenerService.hasMalformedAmountContinuation("S/ 30.5", 5));
+        assertTrue(YapeNotificationListenerService.hasMalformedAmountContinuation("S/ 1,2345", 4));
+    }
+
+    @Test
+    public void rejectsObservationsAboveTheServerAmountContract() {
+        assertEquals(null, YapeNotificationListenerService.parseMoney("S/", "1000000.01"));
     }
 
     @Test

@@ -42,6 +42,37 @@ describe('parseYapeNotification', () => {
     expect(result).toMatchObject({ amountCents: 100000, currency: 'PEN' });
   });
 
+  it.each(['Recibiste S/ 1,000.00', 'Recibiste S/ 1.000,00'])('accepts an unambiguous grouped decimal amount: %s', (text) => {
+    expect(parseYapeNotification({
+      packageName: 'com.bcp.yape.app',
+      title: 'Yape recibido',
+      text,
+      postedAt: '2026-09-06T12:00:00.000Z',
+    })).toMatchObject({ amountCents: 100000, currency: 'PEN' });
+  });
+
+  it.each([
+    'Recibiste S/ 30.5',
+    'Recibiste S/ 30,5',
+    'Recibiste S/ 1,2345',
+  ])('rejects malformed monetary tokens instead of partially parsing them: %s', (text) => {
+    expect(parseYapeNotification({
+      packageName: 'com.bcp.yape.app',
+      title: 'Yape recibido',
+      text,
+      postedAt: '2026-09-06T12:00:00.000Z',
+    })).toBeNull();
+  });
+
+  it('rejects observations above the server amount contract', () => {
+    expect(parseYapeNotification({
+      packageName: 'com.bcp.yape.app',
+      title: 'Yape recibido',
+      text: 'Recibiste S/ 1000000.01',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    })).toBeNull();
+  });
+
   it('does not treat a negative amount as an incoming payment', () => {
     const result = parseYapeNotification({
       packageName: 'com.bcp.yape.app',

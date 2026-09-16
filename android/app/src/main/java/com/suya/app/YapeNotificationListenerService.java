@@ -64,6 +64,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     private static final String KEYSTORE = "AndroidKeyStore";
     private static final int SYNC_JOB_ID = 170914;
     private static final int MAX_EVENTS = 500;
+    private static final long MAX_OBSERVED_AMOUNT_CENTS = 100000000L;
     private static final Object QUEUE_LOCK = new Object();
     private static final ExecutorService SYNC_EXECUTOR = Executors.newSingleThreadExecutor();
     private static final Pattern MONEY_PATTERN = Pattern.compile("(?<![\\p{L}\\d+-])(?:S\\/?|S\\.|PEN|ARS|USD|US\\$|\\$)\\s*((?:\\d{1,3}(?:[.,]\\d{3})+|\\d+)(?:[.,]\\d{2})?)(?!\\d)", Pattern.CASE_INSENSITIVE);
@@ -108,6 +109,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
 
         Matcher amountMatcher = MONEY_PATTERN.matcher(combined);
         if (!amountMatcher.find()) return;
+        if (hasMalformedAmountContinuation(combined, amountMatcher.end())) return;
         String rawAmount = amountMatcher.group(1);
         String prefix = amountMatcher.group().substring(0, amountMatcher.group().length() - rawAmount.length()).trim();
         Money money = parseMoney(prefix, rawAmount);
@@ -227,18 +229,67 @@ public final class YapeNotificationListenerService extends NotificationListenerS
 
     @Nullable
     static Long normalizeAmount(String raw) {
+        if (raw == null) return null;
         String compact = raw.replace(" ", "");
         int comma = compact.lastIndexOf(',');
         int dot = compact.lastIndexOf('.');
         int decimalIndex = Math.max(comma, dot);
         boolean hasDecimal = decimalIndex >= 0 && compact.length() - decimalIndex - 1 == 2;
-        String integer = (hasDecimal ? compact.substring(0, decimalIndex) : compact).replace(",", "").replace(".", "");
+        String integerSource = hasDecimal ? compact.substring(0, decimalIndex) : compact;
+        if (hasDecimal) {
+            char decimalSeparator = compact.charAt(decimalIndex);
+            if (!integerSource.matches("\\d+")) {
+                if (!isGroupedInteger(integerSource)) return null;
+                char groupingSeparator = firstSeparator(integerSource);
+                if (groupingSeparator == decimalSeparator) return null;
+            }
+        } else if (!integerSource.matches("\\d+") && !isGroupedInteger(integerSource)) {
+            return null;
+        }
+        String integer = integerSource.replace(",", "").replace(".", "");
         String decimal = hasDecimal ? compact.substring(decimalIndex + 1) : "00";
         try {
-            return Long.parseLong(integer) * 100L + Long.parseLong(decimal);
+            long integerValue = Long.parseLong(integer);
+            long decimalValue = Long.parseLong(decimal);
+            if (integerValue > (MAX_OBSERVED_AMOUNT_CENTS - decimalValue) / 100L) return null;
+            long amountCents = integerValue * 100L + decimalValue;
+            return amountCents > 0 ? amountCents : null;
         } catch (NumberFormatException error) {
             return null;
         }
+    }
+
+    static boolean hasMalformedAmountContinuation(String text, int end) {
+        if (text == null || end < 0 || end > text.length()) return false;
+        return text.substring(end).matches("^[.,]\\d");
+    }
+
+    private static boolean isGroupedInteger(String value) {
+        if (value == null || value.isEmpty()) return false;
+        char separator = firstSeparator(value);
+        if (separator == 0) return false;
+        for (int index = 0; index < value.length(); index++) {
+            char current = value.charAt(index);
+            if ((current == ',' || current == '.') && current != separator) return false;
+        }
+        String[] groups = value.split(separator == '.' ? "\\." : ",", -1);
+        if (groups.length < 2 || groups[0].length() < 1 || groups[0].length() > 3) return false;
+        for (int index = 0; index < groups.length; index++) {
+            if (index == 0) {
+                if (!groups[index].matches("\\d+")) return false;
+            } else if (!groups[index].matches("\\d{3}")) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static char firstSeparator(String value) {
+        for (int index = 0; index < value.length(); index++) {
+            char current = value.charAt(index);
+            if (current == ',' || current == '.') return current;
+        }
+        return 0;
     }
 
     private void appendEvent(JSONObject event) {
