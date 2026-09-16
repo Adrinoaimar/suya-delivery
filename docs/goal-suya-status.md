@@ -85,7 +85,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | A-02 | En verificación | Contratos distintos para delivery, menú y mesa; GPS ya no se exige universalmente y coordenadas entran en la creación | DB limpia + E2E por modalidad |
 | A-03 | En verificación | Test y bundle customer real: token sintético de 64 caracteres se conserva en sesión, `location.hash` queda vacío después de cargar; tests focales 19/19 cubren reintento guest y refresco de pago con token estable | E2E con recarga, enlace en otro contexto y pérdida de respuesta sin duplicar pedido |
 | A-04 | Verificado local | `analytics.ts` no carga script, no persiste UTM ni emite eventos; tests y build pasan | Confirmar red/`Set-Cookie` en E2E |
-| A-05 | En verificación | Native Supabase no persiste refresh token en Web Storage; `tests/supabase-client-auth.test.ts` cubre Android/web 2/2; token observador usa Keystore | Compilar Android y probar cierre/reinicio; evaluar secure storage de sesión |
+| A-05 | En verificación | Native Supabase no persiste refresh token en Web Storage; `tests/supabase-client-auth.test.ts` cubre Android/web 2/2; token observador usa Keystore; `create/get_payment_intent` rechazan explícitamente `auth.uid() IS NULL` para órdenes autenticadas | Ejecutar migración y probar cierre/reinicio; evaluar secure storage de sesión |
 | A-06 | Verificado local | `.range(0,49)` y sin N+1 de códigos; test de servicio pasa | Confirmar paginación/índice en DB |
 | A-07 | En verificación | Migración nueva forward-only y test pgTAP añadido | Instalación limpia, actualización y rollback restaurable |
 | A-08 | En verificación | APKs debug Rider/Backoffice/Wallet Observer generadas con versionCode 5/versionName 1.4; hashes registrados abajo | Capturas, instalación/actualización y firma release |
@@ -172,6 +172,13 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - `db44f8d` ata cada checkout a `pedido:intento` e invalida callbacks `onToken`, `onOrder` y `onError` obsoletos, además de comprobar la clave después de operaciones asíncronas.
 - `tests/payment-instructions.test.tsx` confirma que el callback del pedido anterior no llama `chargeCard` ni autoriza el pedido nuevo. Focal pagos: **15/15**; suite global posterior: **69 archivos / 318 pruebas**; lint, typecheck, `git diff --check`, `npm run build:apps` y smoke E2E **12/12** pasan.
 - El cambio es web y no modifica los APK debug `1.4/5`. P-02/P-11/U-08 siguen en verificación hasta E2E con backend y proveedor de prueba autorizado; no se ejecutaron pagos reales.
+
+## Seguimiento posterior — guardia explícita de identidad en intents (2026-09-15)
+
+- Se detectó una condición SQL de autorización: `customer_id <> auth.uid()` no rechaza por sí sola un `auth.uid()` nulo. La migración forward-only `20260915180000_payment_identity_auth_guard.sql` reemplaza `create_payment_intent` y `get_payment_intent` con la condición explícita `auth.uid() IS NULL OR ...`.
+- El acceso guest sigue dependiendo exclusivamente del token recuperable; las órdenes autenticadas requieren la sesión del propietario. Se conservaron `SECURITY DEFINER`, firmas y grants para `anon`/`authenticated`.
+- El contrato `supabase/tests/20260915180000_payment_identity_auth_guard.test.sql` declara **6 aserciones** sobre guardia, seguridad y privilegios. `npm run lint`, `npm run typecheck` y `git diff --check` pasan; la ejecución pgTAP queda pendiente del runtime oficial Supabase/Postgres.
+- Este cambio es SQL y no modifica las APK debug `1.4/5`; no se ejecutaron pagos reales ni se amplió autorización de producción.
 
 ## Bloqueos reproducibles
 
