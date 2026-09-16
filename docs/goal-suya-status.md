@@ -187,6 +187,13 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - `supabase/tests/20260915190000_culqi_identity_wrappers.test.sql` declara **12 aserciones** de identidad, delegación, privilegios y revocación. El conjunto documentado queda en **71 aserciones**; lint, typecheck, suite web 69/318, build y smoke 12/12 pasan. La validación SQL oficial sigue pendiente del runtime local.
 - Culqi continúa siendo opcional y deshabilitado en esta prueba; no se procesaron tarjetas, transferencias ni pagos reales.
 
+## Seguimiento posterior — contrato de wrappers Culqi (2026-09-15)
+
+- `tests/culqi-rpc-contract.test.ts` exige que `create-culqi-order` y `charge-culqi-card` llamen solo RPC `_secure` y rechaza rutas legacy; focal **1/1**.
+- Suite global actual: **70 archivos / 319 pruebas**; `npm run lint`, `npm run typecheck` y `git diff --check` pasan. Las dos Edge Functions compilan con Bun.
+- Las **71 aserciones pgTAP** siguen pendientes del runtime oficial porque Docker/Supabase local no está accesible. Culqi permanece opcional/deshabilitado; no hubo cobros reales.
+- Próximo gate: `npm run db:start`, `npm run db:lint` y `npm run db:test`; luego RLS/concurrencia, E2E financiero de prueba, dispositivo/offline/accesibilidad y firma release. El goal continúa abierto.
+
 ## Bloqueos reproducibles
 
 1. `npm run db:lint` no conecta a `127.0.0.1:54322`; `npm run db:start` tampoco puede conectar al socket Docker normal. Se probó un daemon rootless temporal con `vfs`, cgroups desactivados y seccomp/AppArmor aislados: la red `none` no permite aliases, `host` rechaza aliases y la red rootless con `slirp4netns` sí crea `bridge`, pero el contenedor Postgres queda saludable sin publicar el puerto hacia el host; la CLI termina con `LegacyDbConnectError` (timeout/conexión terminada) y limpia el contenedor. No se modificó el sistema ni el código para ocultarlo. La suite SQL sí fue validada de forma independiente en PostgreSQL temporal; queda pendiente repetirla mediante el flujo oficial de Supabase cuando exista daemon/puerto normal.
