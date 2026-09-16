@@ -26,6 +26,7 @@ export default function GuestOrderPage() {
   );
   const [loading, setLoading] = useState(!order);
   const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!id) return;
@@ -52,11 +53,12 @@ export default function GuestOrderPage() {
     return () => {
       active = false;
     };
-  }, [id, location.hash]);
+  }, [id, location.hash, reloadKey]);
 
   function refresh(): void {
-    setOrder(null);
     setError(null);
+    setLoading(true);
+    setReloadKey((value) => value + 1);
   }
 
   if (loading) {
