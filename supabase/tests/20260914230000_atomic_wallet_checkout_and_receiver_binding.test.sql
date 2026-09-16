@@ -1,6 +1,6 @@
 begin;
 
-select plan(23);
+select plan(24);
 
 select has_function('public', 'create_delivery_order_with_payment',
   array['uuid', 'jsonb', 'text', 'text', 'text', 'uuid', 'text', 'text', 'double precision', 'double precision'],
@@ -189,9 +189,24 @@ select is(
 );
 
 select set_config('role', 'postgres', true);
+update public.wallet_observer_devices
+set token_hash = extensions.crypt(
+  'receiver-binding-device-token-123456789012345678901234567890',
+  extensions.gen_salt('bf')
+), token_last4 = '7890'
+where id = 'b7400000-0000-0000-0000-000000000001';
 update public.restaurant_payment_accounts
 set active = false
 where id = 'b7300000-0000-0000-0000-000000000001';
+select set_config('role', 'anon', true);
+select throws_ok(
+  $$ select * from public.ingest_wallet_observation(
+    'receiver-binding-device-token-123456789012345678901234567890',
+    'inactive-receiver-ingest', 'yape', null, null, 3000, 'PEN', now()
+  ) $$,
+  'P0001', 'receiver payment account is inactive',
+  'la API de ingesta rechaza un receptor inactivo'
+);
 select set_config('role', 'authenticated', true);
 select throws_ok(
   $$ select * from public.create_wallet_observer_device_for_account(
