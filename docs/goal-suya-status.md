@@ -99,7 +99,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | A-08 | En verificación | APKs debug Rider/Backoffice/Wallet Observer generadas con versionCode 5/versionName 1.4; hashes registrados abajo | Capturas, instalación/actualización y firma release |
 | A-09 | En verificación | RPC account-aware, revocación/reactivación, rotación, auditoría sin secreto, token identificable y límite por dispositivo; guardia de receptor inactivo | SQL/RLS/concurrencia en DB local |
 | A-10 | En verificación | Navegador sin cookies ni tracking; pedido invitado no se guarda completo en Web Storage; su huella de recuperación es SHA-256 de 64 hex y no contiene PII; correo solo se conserva si el checkout opcional de gateway lo requiere; controles sin nombre: 0; Edge Functions ya no registran cuerpos crudos externos (`tests/privacy-logs.test.ts`, 1/1) | Confirmar red/Set-Cookie y minimización en E2E con backend, más revisión final de logs, GPS, teléfonos, direcciones y permisos |
-| A-11 | En verificación | El mapa no usa `router.project-osrm.org`; sin endpoint privado/autorizado no hace requests y conserva un trazo local; el build productivo rechaza el host público; `tests/route-planner.test.ts` cubre 2 casos | Validar un endpoint same-origin/privado real y su política de retención sin exponer GPS a terceros |
+| A-11 | En verificación | El mapa no usa `router.project-osrm.org`; sin endpoint privado/autorizado no hace requests y conserva un trazo local; el build productivo rechaza el host público y su variante protocol-relative; `tests/route-planner.test.ts` pasa **5/5** | Validar un endpoint same-origin/privado real y su política de retención sin exponer GPS a terceros |
 
 ## Verificaciones ejecutadas
 
@@ -383,3 +383,9 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Evidencia: PaymentInstructions **19/19**, pagos **65/65**, global **71/335**, Android **5/5**, smoke **12/12**, build, lint, typecheck, secretos y diff pasan. APK debug `1.4/5` regeneradas, ZIP íntegro, firma v2 y SDK 36; hashes Rider `94693784…`, Backoffice `2e1d2705…`, Wallet `6c3f381e…`.
 - Trazabilidad: commit fuente `d83ee59` (`fix(payment-ui): use informative authorized heading`) sobre `b643b15`; sincronización pública de la cápsula en `AGENCIA_MD`: commit `f1a3b48`, rama revisable del PR #92.
 - No hubo pagos reales, despliegue ni dispositivo. Pendientes: DB/RLS oficial, E2E financiero, offline/accesibilidad física, OTA privado y firma release.
+
+## Revalidación A-11 — endpoint protocol-relative — 2026-09-16
+
+- Se conservó el cambio del usuario en `src/lib/routePlanner.ts`: rechaza también `//router.project-osrm.org`, evitando que una URL protocol-relative eluda la política de endpoint privado.
+- `tests/route-planner.test.ts` pasa **5/5** y confirma que los endpoints públicos no disparan `fetch`. El cambio permanece sin incluir en los commits del agente; `routePlanner`, su prueba y `output/` siguen preservados.
+- A-11 continúa en verificación hasta disponer de endpoint privado autorizado y validar retención de GPS.

@@ -178,7 +178,7 @@ begin
 
   return query select v_attempt.id, v_attempt.order_id, v_attempt.method, v_attempt.status,
     v_attempt.amount, 'PEN'::text, v_attempt.checkout_reference, v_attempt.expires_at,
-    v_attempt.provider, v_attempt.provider_reference, v_qr_payload;
+    v_attempt.provider, v_qr_payload;
 end;
 $$;
 

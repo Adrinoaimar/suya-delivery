@@ -1,4 +1,4 @@
-select plan(15);
+select plan(16);
 
 select has_function('public', 'get_payment_intent', array['uuid', 'text'],
   'la lectura de intent conserva su contrato');
@@ -37,6 +37,12 @@ select ok(
   (select pg_get_functiondef('public.create_payment_intent(uuid,text,text)'::regprocedure)
     like '%rpa.restaurant_id = v_order.restaurant_id%rpa.active%'),
   'la creación solo reutiliza una cuenta activa del restaurante correcto'
+);
+
+select ok(
+  not (select pg_get_functiondef('public.create_payment_intent(uuid,text,text)'::regprocedure)
+    like '%v_attempt.provider, v_attempt.provider_reference, v_qr_payload%'),
+  'create_payment_intent devuelve la aridad declarada sin provider_reference extra'
 );
 
 select ok(
