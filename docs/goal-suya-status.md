@@ -353,5 +353,5 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 ## Mejora A-06 — contrato de paginación consistente en demo — 2026-09-16
 
 - `fc6336c` corrige una deriva del servicio demo: `MockOrderService.list()` también acota cada página a 50, igual que Supabase, aunque el consumidor solicite un límite mayor. Esto evita que el mock oculte regresiones de volumen y mantiene una sola expectativa para customer, Backoffice y rider.
-- La regresión añade 55 pedidos sintéticos, exige 50 tanto para `limit: 100` como para `list()` sin opciones; `tests/orders.test.ts` pasa **12/12**. Suite global: **71 archivos / 333 pruebas**; typecheck, lint, `git diff --check` y secretos (**934 archivos**) pasan.
+- La regresión añade 55 pedidos sintéticos, exige 50 tanto para `limit: 100` como para `list()` sin opciones; `tests/orders.test.ts` pasa **12/12**. Suite global: **71 archivos / 333 pruebas**; typecheck, lint, `git diff --check`, secretos (**934 archivos**), build aislado y smoke web actual (**12/12**) pasan.
 - No cambia contratos de pago, migraciones, APKs ni producción. A-06 continúa en verificación por índice/plan, RLS, concurrencia y prueba oficial de DB.
