@@ -55,6 +55,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - Observaciones wallet: `observed_at` sigue siendo hora de la notificación; `created_at` se muestra como hora de recepción del servidor. No se presenta una hora bancaria inexistente.
 - P-01: el fixture principal ahora cubre colisión exacta de dos intentos pendientes con el mismo HMAC completo; exige dos candidatos, rechazo de `verify_wallet_payment` y conservación de ambos pendientes (105 aserciones declaradas en ese fixture). La ejecución oficial sigue pendiente.
 - P-09: `20260916110000_context_bound_payment_evidence_hmac.sql` añade HMAC v2 privado ligado a receptor y tipo de evidencia, columnas separadas para compatibilidad legacy y exclusión del nuevo HMAC en auditoría; su contrato declara 12 aserciones. La ejecución oficial sigue pendiente.
+- P-02: `20260916120000_wallet_evidence_reuse_identity_guard.sql` deja de bloquear por últimos cuatro cuando existe fingerprint/HMAC completo; la regresión de mismo sufijo y código distinto amplía el fixture conjunto a 40 aserciones. La ejecución oficial sigue pendiente.
 - U-09: `LeafletMap` reserva una columna derecha para la atribución OSM y apila leyendas/errores en una columna izquierda con límites de ancho; la atribución nativa duplicada queda desactivada para evitar superposición en mapas móviles estrechos.
 
 ## Matriz de hallazgos
@@ -64,7 +65,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | ID | Estado | Evidencia actual | Pendiente / salida |
 |---|---|---|---|
 | P-01 | En verificación | Conteo global de coincidencias, índice de asignación única y fixture de colisión exacta (105 aserciones) | Ejecutar `npm run db:test` con Postgres local y concurrencia |
-| P-02 | En verificación | `eventId` estable por binding/notificación, conflicto técnico único y trigger de no reutilización entre dispositivos/concurrencia | Ejecutar migraciones `20260915140000` y `20260915150000` en DB oficial y caso SQL multiequipo |
+| P-02 | En verificación | `eventId` estable por binding/notificación, conflicto técnico único y trigger de no reutilización por la identidad más fuerte; mismo sufijo con fingerprint distinto no bloquea (fixture 40 aserciones) | Ejecutar migraciones `20260915140000`/`20260916120000` y caso SQL multiequipo en DB oficial |
 | P-03 | En verificación | `receiver_account_id` en intento/dispositivo/observación y QR por cuenta exacta | Instalar migración y probar cambio de cuenta |
 | P-04 | En verificación | RPC atómico para los tres canales; oferta y pago dentro de la transacción | Test de rollback y actualización limpia en DB local |
 | P-05 | En verificación | Parser TS y test de `S/ 1000.00`; parser Java actualizado; pruebas unitarias Android 4/4 pasan | Matriz Android real por versión de billetera |
@@ -307,3 +308,10 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Las funciones de declaración, ingesta, corrección, lista y verificación usan el contexto nuevo. Cuando ambos lados tienen HMAC contextual, una discordancia no cae a digest ni a últimos cuatro dígitos. `private.write_audit_log()` excluye también el campo contextual del JSON financiero.
 - `supabase/tests/20260916110000_context_bound_payment_evidence_hmac.test.sql` declara **12 aserciones**. `npm run db:lint` fue intentado y falla con `ECONNREFUSED 127.0.0.1:54322`; por ello esta migración queda en verificación, no aprobada.
 - No se modifican APKs ni se procesan pagos reales. El goal sigue abierto por DB/RLS oficial, E2E backend, dispositivo, offline/accesibilidad, OTA privado y firma release.
+
+## Corrección P-02 — guardia de reutilización por identidad fuerte — 2026-09-16
+
+- `20260916120000_wallet_evidence_reuse_identity_guard.sql` corrige el falso bloqueo por últimos cuatro dígitos. El trigger compara HMAC contextual, HMAC legacy o fingerprint completo; solo usa el sufijo cuando no existe una identidad completa. El advisory lock sigue siendo server-side y usa la mejor clave no reversible disponible.
+- `supabase/tests/20260914230000_atomic_wallet_checkout_and_receiver_binding.test.sql` pasa de 38 a **40 aserciones**: añade dos pagos con el mismo sufijo y fingerprints distintos, que deben verificarse independientemente; la colisión completa previa continúa siendo rechazada para revisión.
+- La suite web actual permanece en **71 archivos / 327 pruebas**; lint, typecheck y diff pasan. `npm run db:lint` sigue bloqueado por `ECONNREFUSED 127.0.0.1:54322`, por lo que P-02 continúa en verificación.
+- No se modifican APKs ni se ejecutan pagos reales. El goal sigue abierto por DB/RLS oficial, E2E backend, dispositivo/offline/accesibilidad, OTA privado y firma release.

@@ -1,6 +1,6 @@
 begin;
 
-select plan(38);
+select plan(40);
 
 select has_function('public', 'create_delivery_order_with_payment',
   array['uuid', 'jsonb', 'text', 'text', 'text', 'uuid', 'text', 'text', 'double precision', 'double precision'],
@@ -199,6 +199,45 @@ select is(
 select is(
   (select verification_status from public.wallet_observations where id = 'b7900000-0000-0000-0000-000000000002'),
   'unverified', 'la evidencia duplicada permanece para revisión'
+);
+
+-- Same suffix, different complete fingerprint: it is a different payment and
+-- must not be rejected by the reuse guard.
+select set_config('role', 'postgres', true);
+insert into public.orders (
+  id, code, customer_id, restaurant_id, status, payment_method, subtotal, delivery_fee,
+  customer_name, customer_phone, delivery_address, estimated_minutes, idempotency_key
+) values (
+  'b7500000-0000-0000-0000-000000000004', 'BINDING4', 'b7000000-0000-0000-0000-000000000001',
+  'b7200000-0000-0000-0000-000000000001', 'confirmed', 'yape', 30, 0, 'Cliente Binding 4',
+  '999999996', 'Calle Binding 4', 30, 'b7600000-0000-0000-0000-000000000004'
+);
+insert into public.payment_attempts (
+  id, order_id, receiver_account_id, provider, method, status, amount, idempotency_key,
+  payer_code_last4, payer_code_digest, checkout_reference, expires_at
+) values (
+  'b7700000-0000-0000-0000-000000000004', 'b7500000-0000-0000-0000-000000000004',
+  'b7300000-0000-0000-0000-000000000001', 'wallet_observer', 'yape', 'pending', 30,
+  'b7800000-0000-0000-0000-000000000004', '1234', encode(extensions.digest('different-code', 'sha256'), 'hex'),
+  'SUYA-BIND004', now() + interval '30 minutes'
+);
+insert into public.wallet_observations (
+  id, device_id, restaurant_id, receiver_account_id, event_id, provider, code_last4,
+  code_fingerprint, amount_cents, currency, observed_at
+) values (
+  'b7900000-0000-0000-0000-000000000003', 'b7400000-0000-0000-0000-000000000001',
+  'b7200000-0000-0000-0000-000000000001', 'b7300000-0000-0000-0000-000000000001',
+  'receiver-binding-event-3', 'yape', '1234', encode(extensions.digest('different-code', 'sha256'), 'hex'),
+  3000, 'PEN', now()
+);
+select set_config('role', 'authenticated', true);
+select lives_ok(
+  $$ select public.verify_wallet_payment('b7900000-0000-0000-0000-000000000003', 'b7700000-0000-0000-0000-000000000004') $$,
+  'un sufijo compartido no bloquea un código completo diferente'
+);
+select is(
+  (select status::text from public.payment_attempts where id = 'b7700000-0000-0000-0000-000000000004'),
+  'authorized', 'el pago con identidad completa distinta se autoriza para revisión'
 );
 
 select set_config('role', 'postgres', true);
