@@ -10,6 +10,10 @@ const hmacMigration = readFileSync(
   resolve(process.cwd(), 'supabase/migrations/20260916110000_context_bound_payment_evidence_hmac.sql'),
   'utf8',
 );
+const cashMigration = readFileSync(
+  resolve(process.cwd(), 'supabase/migrations/20260915130000_cash_register_closing.sql'),
+  'utf8',
+);
 
 const createStart = migration.indexOf('create or replace function public.create_payment_intent(');
 const refreshStart = migration.indexOf('create or replace function public.refresh_payment_intent(');
@@ -28,5 +32,15 @@ describe('contrato SQL de intención wallet', () => {
   it('usa el mismo contexto para comparar declaración, observación y corrección', () => {
     expect(hmacMigration.match(/concat_ws\('\|',\s*'payment-code',/g)).toHaveLength(3);
     expect(hmacMigration).not.toMatch(/'payment-claim'|'wallet-observation'/);
+  });
+
+  it('mantiene una sola declaración del actor en el registro de venta cash', () => {
+    const saleStart = cashMigration.indexOf('create function public.record_cash_sale(');
+    const adjustmentStart = cashMigration.indexOf('create function public.add_cash_adjustment(');
+    const saleSource = cashMigration.slice(saleStart, adjustmentStart);
+
+    expect(saleStart).toBeGreaterThanOrEqual(0);
+    expect(adjustmentStart).toBeGreaterThan(saleStart);
+    expect(saleSource.match(/actor_id uuid := \(select auth\.uid\(\)\);/g)).toHaveLength(1);
   });
 });
