@@ -98,7 +98,7 @@ export class SupabasePaymentService implements PaymentService {
     intent: PaymentIntent,
     suppliedGuestAccessToken?: string | null,
   ): Promise<PaymentIntent> {
-    if (intent.method === 'card') return intent;
+    if (intent.method === 'card' || intent.provider === 'culqi') return intent;
     const { data, error } = await this.client.rpc('get_payment_receiver_label', {
       p_order_id: intent.orderId,
       p_guest_access_token: guestToken(intent.orderId, suppliedGuestAccessToken),
