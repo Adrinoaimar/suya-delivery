@@ -73,7 +73,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 
 ## Corrección P-07/A-09 — `queueFull` derivado del estado real — 2026-09-16
 
-- La persistencia de la cola Android recalcula `queueFull` según los eventos pendientes: se activa en 500 y se limpia después de una sincronización que baje el contador. No cambia la prioridad de pendientes ni permite descartarlos por historial.
+- La persistencia y reconciliación de la cola Android recalculan `queueFull` según los eventos pendientes: se activa en 500 y se limpia después de una sincronización que baje el contador, incluso si una instalación antigua dejó el flag obsoleto. No cambia la prioridad de pendientes ni permite descartarlos por historial.
 - Se añadió `derivesQueueFullFromCurrentPendingEvents`; Android test/build queda pendiente porque este entorno no tiene `java`/JDK. No se presentan APK nuevas ni se declaran compiladas.
 
 ## Matriz de hallazgos

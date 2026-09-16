@@ -536,7 +536,8 @@ public final class YapeNotificationListenerService extends NotificationListenerS
                 break;
             }
         }
-        if (changed) {
+        boolean queueFull = isPendingCapacityReached(current);
+        if (changed || preferences.getBoolean(QUEUE_FULL_KEY, false) != queueFull) {
             persistEvents(preferences, current);
         }
     }
