@@ -1,6 +1,6 @@
 begin;
 
-select plan(20);
+select plan(23);
 
 select has_function('public', 'create_delivery_order_with_payment',
   array['uuid', 'jsonb', 'text', 'text', 'text', 'uuid', 'text', 'text', 'double precision', 'double precision'],
@@ -127,6 +127,24 @@ select ok(
   ),
   'payment_attempts tiene trigger de reutilización de evidencia'
 );
+select ok(
+  exists (
+    select 1 from pg_trigger
+    where tgrelid = 'public.wallet_observer_devices'::regclass
+      and tgname = 'wallet_observer_devices_active_receiver_guard'
+      and not tgisinternal
+  ),
+  'dispositivos observadores exigen cuenta receptora activa'
+);
+select ok(
+  exists (
+    select 1 from pg_trigger
+    where tgrelid = 'public.wallet_observations'::regclass
+      and tgname = 'wallet_observations_active_receiver_guard'
+      and not tgisinternal
+  ),
+  'observaciones exigen cuenta receptora activa'
+);
 
 select set_config('role', 'postgres', true);
 insert into public.orders (
@@ -168,6 +186,35 @@ select is(
 select is(
   (select verification_status from public.wallet_observations where id = 'b7900000-0000-0000-0000-000000000002'),
   'unverified', 'la evidencia duplicada permanece para revisión'
+);
+
+select set_config('role', 'postgres', true);
+update public.restaurant_payment_accounts
+set active = false
+where id = 'b7300000-0000-0000-0000-000000000001';
+select set_config('role', 'authenticated', true);
+select throws_ok(
+  $$ select * from public.create_wallet_observer_device_for_account(
+    'b7200000-0000-0000-0000-000000000001',
+    'b7300000-0000-0000-0000-000000000001',
+    'Caja inactiva'
+  ) $$,
+  'P0001', 'receiver payment account is inactive',
+  'no se crea un dispositivo para una cuenta receptora inactiva'
+);
+select set_config('role', 'postgres', true);
+select throws_ok(
+  $$ insert into public.wallet_observations (
+    device_id, restaurant_id, receiver_account_id, event_id, provider,
+    code_last4, amount_cents, currency, observed_at
+  ) values (
+    'b7400000-0000-0000-0000-000000000001',
+    'b7200000-0000-0000-0000-000000000001',
+    'b7300000-0000-0000-0000-000000000001',
+    'inactive-receiver-event', 'yape', '5678', 3000, 'PEN', now()
+  ) $$,
+  'P0001', 'receiver payment account is inactive',
+  'no se ingresa evidencia para una cuenta receptora inactiva'
 );
 
 select * from finish();

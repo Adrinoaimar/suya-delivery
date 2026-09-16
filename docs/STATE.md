@@ -14,7 +14,7 @@ producción.
 - OTA: manifest y artefacto requieren origen/ruta exactos bajo `https://suyadelivery.com/mobile-updates/`, JSON, bundle ID seguro, ZIP, checksum SHA-256, firma presente y timeout de 10 s. CSP retiró hosts de GA/GTM y permite el origen OTA. El endpoint productivo observado devuelve HTML HTTP 200; OTA no está activo ni desplegado.
 - Android: Rider, Backoffice y Wallet Observer `versionName 1.4`/`versionCode 5`; APK debug con integridad ZIP y firma v2 válida. No son releases.
 - Gates pendientes: `verify:production` por configuración real ausente; `supabase db lint/test` por daemon/puerto local; dispositivo Android para pruebas físicas; endpoint vial privado; firma release; E2E financiero y autorización para pagos reales.
-- Seguimiento 2026-09-15: la cola Android conserva pendientes antes del historial sincronizado; el backend incorpora una guardia transaccional contra reutilización de evidencia wallet entre dispositivos. Android `test` pasa 5/5 y la migración nueva queda pendiente de `db:test` oficial.
+- Seguimiento 2026-09-15: la cola Android conserva pendientes antes del historial sincronizado; el backend incorpora guardias contra reutilización de evidencia wallet y contra nuevos bindings/observaciones hacia receptores inactivos. Android `test` pasa 5/5 y las migraciones nuevas quedan pendientes de `db:test` oficial.
 
 La evidencia detallada de este bloque está en `docs/execution/F28.md` y la matriz operativa en `docs/goal-suya-status.md`.
 
