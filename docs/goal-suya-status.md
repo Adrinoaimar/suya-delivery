@@ -495,3 +495,16 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - TDD: el contrato estático de privacidad falló antes de la corrección y pasa después; focal guest **23/23**; suite global **73 archivos / 353 pruebas**. También pasan typecheck, lint, secretos (**941 archivos**), `git diff --check`, `npm run build:apps` con configuración sintética y smoke web **12/12** en 360/390/768/1440.
 - Trazabilidad: cambio pendiente para commit `fix(privacy): require server authorization for guest receipt`; no absorbe los cambios ajenos en `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` ni `output/`.
 - No cambia pagos, APKs, firma ni producción. DB/RLS oficial, E2E financiero, dispositivo, accesibilidad/offline físicos, OTA privado, firma release y pagos reales siguen pendientes; el goal permanece abierto.
+
+## Revalidación de gates productivos — configuración sintética — 2026-09-16
+
+- Los comandos sin variables (`npm run verify:payments`, `npm run verify:production`) fallan cerrado porque no hay configuración productiva real en el entorno; no se rellenaron secretos ni endpoints.
+- Con una configuración pública sintética y sin red, `verify:payments` pasa el contrato de entorno (Supabase canónico, Culqi `pk_test`, orígenes exactos, OSM) y confirma que no ejecutó cargos, migraciones ni llamadas de red. `verify:production` valida **433 archivos** sin simulaciones ni secretos.
+- Esta comprobación solo cubre forma/configuración y no autoriza despliegue: siguen pendientes valores reales, DB/RLS, funciones, webhooks, E2E financiero, pagos autorizados, firma release y revisión de producción.
+
+## Corrección A-05 — limpieza inmediata de pedidos al cerrar sesión — 2026-09-16
+
+- La revisión de sesión encontró una ventana de exposición: `OrderDetailPage` y `OrderTrackPage` leen del store en memoria, pero el store se limpiaba solo cuando `OrderBootstrap` reaccionaba al cambio de identidad. Durante esa transición podían persistir datos de la cuenta anterior en una pantalla ya montada.
+- `authStore.signOut()` ahora invalida y limpia `useOrderStore` antes de esperar la operación de red; el contexto de restaurante continúa reiniciándose al completar el cierre. No se alteran tokens ni se usa almacenamiento adicional.
+- TDD: `tests/auth-store.test.ts` falló antes (0 llamadas a `reset`) y pasa después; focal de sesión/pedidos/invitado **25/25**; suite serial completa **73 archivos / 354 pruebas**. Typecheck, lint, secretos (**941 archivos**), diff, build `build:apps` sintético y smoke web **12/12** pasan.
+- No cambia pagos ni APKs. DB/RLS oficial, prueba física de sesión, E2E financiero, dispositivo, accesibilidad/offline, OTA, firma release y pagos reales siguen pendientes.

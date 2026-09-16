@@ -15,6 +15,7 @@ const service = vi.hoisted(() => ({
 vi.mock('@/lib/auth/SupabaseAuthService', () => ({ authService: service }));
 
 import { useAuthStore } from '@/store/authStore';
+import { useOrderStore } from '@/store/orderStore';
 
 const customer: AuthIdentity = {
   id: '00000000-0000-0000-0000-000000000001',
@@ -33,6 +34,15 @@ beforeEach(() => {
 });
 
 describe('authStore con Google', () => {
+  it('limpia pedidos en memoria antes de cerrar sesión', async () => {
+    const reset = vi.spyOn(useOrderStore.getState(), 'reset');
+
+    await useAuthStore.getState().signOut();
+
+    expect(reset).toHaveBeenCalledTimes(1);
+    reset.mockRestore();
+  });
+
   it('traduce proveedor deshabilitado a mensaje seguro', async () => {
     service.signInWithGoogle.mockRejectedValueOnce(new Error('Unsupported provider: provider is not enabled'));
 
