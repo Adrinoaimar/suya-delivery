@@ -3,7 +3,7 @@ import { STORAGE_KEYS, readLocal, writeLocal } from '@/lib/storage';
 import { createId, createOrderCode, createPinCode } from '@/utils/id';
 import { ORDER_FLOW } from '@/types';
 import type { CartItem, Order, OrderStatus } from '@/types';
-import type { CodeResult, CreateOrderInput, OrderService } from './types';
+import type { CodeResult, CreateOrderInput, OrderListOptions, OrderService } from './types';
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
@@ -13,8 +13,11 @@ export class MockOrderServiceImpl implements OrderService {
   async createMenuOrder(input: CreateOrderInput): Promise<Order> { return this.create({ ...input, origin: 'suya_menu' }); }
   private cache: Order[] | null = null;
 
-  async list(): Promise<Order[]> {
-    return this.load();
+  async list(options?: OrderListOptions): Promise<Order[]> {
+    const orders = this.load();
+    const offset = Number.isInteger(options?.offset) && (options?.offset ?? 0) >= 0 ? options!.offset! : 0;
+    const limit = Number.isInteger(options?.limit) && (options?.limit ?? 0) > 0 ? options!.limit! : orders.length;
+    return orders.slice(offset, offset + limit);
   }
 
   private load(): Order[] {

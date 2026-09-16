@@ -2,6 +2,7 @@ import { History, MapPin, Package } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/common/Button';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
+import { LoadMoreOrders } from '@/components/order/LoadMoreOrders';
 import { useOrderStore } from '@/store/orderStore';
 import { formatDateTime, orderStatusLabel } from '@/utils/format';
 
@@ -99,6 +100,7 @@ export default function RiderHistoryPage() {
           ))}
         </ul>
       )}
+      <LoadMoreOrders />
     </div>
   );
 }

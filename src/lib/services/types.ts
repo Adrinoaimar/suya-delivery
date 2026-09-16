@@ -331,6 +331,13 @@ export interface CashRegisterService {
 
 export type CodeFailure = 'not_found' | 'invalid_code' | 'already_closed' | 'invalid_status';
 
+export interface OrderListOptions {
+  /** Zero-based offset for the next page. */
+  offset?: number;
+  /** Requested page size; implementations cap this to a safe server-side maximum. */
+  limit?: number;
+}
+
 export type CodeResult = { ok: true; order: Order } | { ok: false; reason: CodeFailure };
 
 export const CODE_ERROR_MESSAGES: Record<CodeFailure, string> = {
@@ -341,7 +348,7 @@ export const CODE_ERROR_MESSAGES: Record<CodeFailure, string> = {
 };
 
 export interface OrderService {
-  list(): Promise<Order[]>;
+  list(options?: OrderListOptions): Promise<Order[]>;
   get(id: string): Promise<Order | undefined>;
   create(input: CreateOrderInput): Promise<Order>;
   createMenuOrder(input: CreateOrderInput): Promise<Order>;

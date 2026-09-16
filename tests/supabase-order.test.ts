@@ -65,19 +65,25 @@ function createFakeClient(options: FakeClientOptions = {}) {
         error: null,
       })),
   );
+  const range = vi.fn(async (_from: number, _to: number) => options.listResult ?? { data: [], error: null });
+  const selects = vi.fn();
   const from = vi.fn(() => ({
-    select: vi.fn(() => ({
-      order: vi.fn(() => ({
-        range: vi.fn(async () => options.listResult ?? { data: [], error: null }),
-      })),
-      eq: vi.fn(() => ({
-        maybeSingle: vi.fn(async () =>
-          typeof options.rowResult === 'function'
-            ? options.rowResult()
-            : (options.rowResult ?? { data: null, error: null }),
-        ),
-      })),
-    })),
+    select: vi.fn((query: string) => {
+      selects(query);
+      return {
+        order: vi.fn(() => ({
+          order: vi.fn(() => ({ range })),
+          range,
+        })),
+        eq: vi.fn(() => ({
+          maybeSingle: vi.fn(async () =>
+            typeof options.rowResult === 'function'
+              ? options.rowResult()
+              : (options.rowResult ?? { data: null, error: null }),
+          ),
+        })),
+      };
+    }),
     update: vi.fn(() => ({
       eq: vi.fn(async () => ({ data: null, error: null })),
     })),
@@ -93,7 +99,7 @@ function createFakeClient(options: FakeClientOptions = {}) {
     rpc,
   } as unknown as SupabaseClient;
 
-  return { client, from, rpc };
+  return { client, from, rpc, range, selects };
 }
 
 function createInput(paymentMethod: CreateOrderInput['paymentMethod'] = 'cash'): CreateOrderInput {
@@ -176,6 +182,16 @@ describe('SupabaseOrderServiceImpl', () => {
       cancelCode: '',
       history: [{ status: 'confirmed', at: '2026-08-20T15:00:00.000Z' }],
     });
+  });
+
+  it('solicita páginas acotadas y nunca permite un tamaño mayor al límite seguro', async () => {
+    const { client, range, selects } = createFakeClient({ listResult: { data: [], error: null } });
+    const service = new SupabaseOrderServiceImpl(client);
+
+    await service.list({ offset: 50, limit: 500 });
+
+    expect(range).toHaveBeenCalledWith(50, 99);
+    expect(selects).toHaveBeenCalledWith(expect.not.stringContaining('gateway_qr_payload'));
   });
 
   it('reutiliza UUID tras fallo, limita payload y acepta precios y totales solo del servidor', async () => {

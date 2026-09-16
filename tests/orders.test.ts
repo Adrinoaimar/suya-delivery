@@ -175,4 +175,20 @@ describe('contrato de pedidos async', () => {
     expect(useOrderStore.getState().orders).toEqual([latestOrder]);
     expect(useOrderStore.getState().status).toBe('ready');
   });
+
+  it('carga la siguiente página sin repetir pedidos y corta al llegar al final', async () => {
+    const firstPage = Array.from({ length: 50 }, (_, index) => ({ id: `page-${index}` } as never));
+    const lastPage = [{ id: 'page-50' } as never];
+    const list = vi.spyOn(orderService, 'list')
+      .mockResolvedValueOnce(firstPage)
+      .mockResolvedValueOnce(lastPage);
+
+    await useOrderStore.getState().refresh();
+    await useOrderStore.getState().loadMore();
+
+    expect(list).toHaveBeenNthCalledWith(1, { offset: 0, limit: 50 });
+    expect(list).toHaveBeenNthCalledWith(2, { offset: 50, limit: 50 });
+    expect(useOrderStore.getState().orders).toHaveLength(51);
+    expect(useOrderStore.getState().hasMore).toBe(false);
+  });
 });

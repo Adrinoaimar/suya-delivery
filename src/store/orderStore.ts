@@ -4,6 +4,7 @@ import type { CodeResult, CreateOrderInput } from '@/lib/services';
 import type { Order, OrderStatus } from '@/types';
 
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'error';
+const ORDER_PAGE_SIZE = 50;
 let orderGeneration = 0;
 let orderRefreshRequest = 0;
 
@@ -11,8 +12,11 @@ interface OrderState {
   orders: Order[];
   status: LoadStatus;
   error: string | null;
+  hasMore: boolean;
+  loadingMore: boolean;
   hydrate: () => Promise<void>;
   refresh: () => Promise<void>;
+  loadMore: () => Promise<void>;
   createOrder: (input: CreateOrderInput) => Promise<Order>;
   updateOrderStatus: (id: string, status: OrderStatus) => Promise<Order | undefined>;
   cancelOrder: (id: string, code: string) => Promise<CodeResult>;
@@ -36,6 +40,8 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   orders: [],
   status: 'idle',
   error: null,
+  hasMore: false,
+  loadingMore: false,
 
   async hydrate() {
     if (get().status !== 'idle') return;
@@ -45,15 +51,39 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   async refresh() {
     const generation = orderGeneration;
     const requestId = ++orderRefreshRequest;
-    set({ status: 'loading', error: null });
+    set({ status: 'loading', error: null, hasMore: false, loadingMore: false });
     try {
-      const orders = await orderService.list();
+      const orders = await orderService.list({ offset: 0, limit: ORDER_PAGE_SIZE });
       if (generation === orderGeneration && requestId === orderRefreshRequest) {
-        set({ orders, status: 'ready', error: null });
+        set({ orders, status: 'ready', error: null, hasMore: orders.length === ORDER_PAGE_SIZE, loadingMore: false });
       }
     } catch (error) {
       if (generation === orderGeneration && requestId === orderRefreshRequest) {
         set({ status: 'error', error: errorMessage(error) });
+      }
+    }
+  },
+
+  async loadMore() {
+    const state = get();
+    if (!state.hasMore || state.loadingMore || state.status === 'loading') return;
+    const generation = orderGeneration;
+    const requestId = ++orderRefreshRequest;
+    const offset = state.orders.length;
+    set({ loadingMore: true, error: null });
+    try {
+      const nextPage = await orderService.list({ offset, limit: ORDER_PAGE_SIZE });
+      if (generation !== orderGeneration || requestId !== orderRefreshRequest) return;
+      const known = new Set(state.orders.map((order) => order.id));
+      const appended = nextPage.filter((order) => !known.has(order.id));
+      set((current) => ({
+        orders: [...current.orders, ...appended],
+        hasMore: nextPage.length === ORDER_PAGE_SIZE,
+        loadingMore: false,
+      }));
+    } catch (error) {
+      if (generation === orderGeneration && requestId === orderRefreshRequest) {
+        set({ loadingMore: false, error: errorMessage(error) });
       }
     }
   },
@@ -120,7 +150,7 @@ export const useOrderStore = create<OrderState>((set, get) => ({
   reset() {
     orderGeneration += 1;
     orderRefreshRequest += 1;
-    set({ orders: [], status: 'idle', error: null });
+    set({ orders: [], status: 'idle', error: null, hasMore: false, loadingMore: false });
   },
 }));
 

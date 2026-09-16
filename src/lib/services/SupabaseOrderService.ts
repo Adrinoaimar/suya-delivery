@@ -7,6 +7,7 @@ import type {
   CreateOrderInput,
   DispatchService,
   OrderService,
+  OrderListOptions,
   RiderOperationsService,
 } from './types';
 import { SupabasePaymentService } from './SupabasePaymentService';
@@ -132,7 +133,30 @@ const ORDER_SELECT = `
   order_events(status, created_at),
   payment_attempts(id, order_id, provider, provider_reference, method, status, amount, checkout_reference, expires_at, gateway_qr_payload, created_at)
 `;
+const ORDER_LIST_SELECT = `
+  id, code, customer_id, restaurant_id, rider_id, status, origin, table_id, payment_method, cancellation_reason,
+  subtotal, delivery_fee, discount, total, customer_name, customer_phone,
+  delivery_address, delivery_reference, estimated_minutes, created_at,
+  delivery_latitude, delivery_longitude,
+  cash_register_session_id, cash_collected_at,
+  restaurants!inner(name, latitude, longitude),
+  order_items(id, product_id, product_name, unit_price, quantity, extras, note, image_url),
+  order_events(status, created_at),
+  payment_attempts(id, order_id, provider, provider_reference, method, status, amount, checkout_reference, expires_at, created_at)
+`;
 const PENDING_REQUEST_KEY = 'suya.pending-cash-order';
+const DEFAULT_ORDER_PAGE_SIZE = 50;
+const MAX_ORDER_PAGE_SIZE = 50;
+
+function normalizeOrderListOptions(options?: OrderListOptions): { offset: number; limit: number } {
+  const offset = Number.isInteger(options?.offset) && (options?.offset ?? 0) >= 0
+    ? options!.offset!
+    : 0;
+  const requestedLimit = Number.isInteger(options?.limit) && (options?.limit ?? 0) > 0
+    ? options!.limit!
+    : DEFAULT_ORDER_PAGE_SIZE;
+  return { offset, limit: Math.min(requestedLimit, MAX_ORDER_PAGE_SIZE) };
+}
 
 function isMissingSession(error: { message?: string } | null | undefined): boolean {
   return Boolean(
@@ -425,14 +449,16 @@ export class SupabaseOrderServiceImpl
     return row ?? undefined;
   }
 
-  async list(): Promise<Order[]> {
+  async list(options?: OrderListOptions): Promise<Order[]> {
+    const { offset, limit } = normalizeOrderListOptions(options);
     const [{ error: userError }, { data, error }] = await Promise.all([
       this.client.auth.getUser(),
       this.client
         .from('orders')
-        .select(ORDER_SELECT)
+        .select(ORDER_LIST_SELECT)
         .order('created_at', { ascending: false })
-        .range(0, 49),
+        .order('id', { ascending: false })
+        .range(offset, offset + limit - 1),
     ]);
     if (userError && !isMissingSession(userError)) throw new Error(userError.message);
     if (error) throw new Error(error.message);

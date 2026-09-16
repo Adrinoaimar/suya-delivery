@@ -5,6 +5,7 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { Skeleton } from '@/components/common/Skeleton';
 import { SectionHeader } from '@/components/common/Card';
 import { OrderCard } from '@/components/order/OrderCard';
+import { LoadMoreOrders } from '@/components/order/LoadMoreOrders';
 import { selectActiveOrder, useOrderStore } from '@/store/orderStore';
 
 export default function OrdersPage() {
@@ -69,6 +70,7 @@ export default function OrdersPage() {
           </div>
         </section>
       )}
+      <LoadMoreOrders />
     </div>
   );
 }

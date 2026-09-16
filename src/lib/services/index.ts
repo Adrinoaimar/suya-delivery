@@ -26,6 +26,7 @@ import { BrowserLocationService } from './BrowserLocationService';
 import type {
   DispatchService,
   OrderService,
+  OrderListOptions,
   RiderOperationsService,
   SafetyOperationsService,
   StoreService,
@@ -410,8 +411,8 @@ function resolveOrderService(): Promise<OperationalOrderService> {
 
 /** Router asíncrono: pedidos demo nunca entran al bundle Supabase. */
 export const orderService: OrderService = {
-  async list() {
-    return (await resolveOrderService()).list();
+  async list(options?: OrderListOptions) {
+    return (await resolveOrderService()).list(options);
   },
   async get(id) {
     return (await resolveOrderService()).get(id);

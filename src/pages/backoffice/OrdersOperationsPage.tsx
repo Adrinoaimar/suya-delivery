@@ -5,6 +5,7 @@ import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Input } from '@/components/common/Input';
+import { LoadMoreOrders } from '@/components/order/LoadMoreOrders';
 import { dispatchService, notificationService } from '@/lib/services';
 import type { AvailableRider } from '@/lib/services';
 import { useOrderStore } from '@/store/orderStore';
@@ -279,6 +280,7 @@ export default function OrdersOperationsPage() {
           </Card>
         );
       })}
+      <LoadMoreOrders />
     </div>
   );
 }
