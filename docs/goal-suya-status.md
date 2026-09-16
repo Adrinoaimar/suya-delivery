@@ -381,4 +381,5 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - `PaymentInstructions` cambia el encabezado a «Pago verificado con Yape/Plin» para intentos `authorized`; los intentos pendientes conservan «Paga con …».
 - La guardia anterior permanece: tras autorización no se muestran QR, checkout, destinatario ni acciones de pago; solo estado y referencia auditable.
 - Evidencia: PaymentInstructions **19/19**, pagos **65/65**, global **71/335**, Android **5/5**, smoke **12/12**, build, lint, typecheck, secretos y diff pasan. APK debug `1.4/5` regeneradas, ZIP íntegro, firma v2 y SDK 36; hashes Rider `94693784…`, Backoffice `2e1d2705…`, Wallet `6c3f381e…`.
+- Trazabilidad: commit fuente `d83ee59` (`fix(payment-ui): use informative authorized heading`) sobre `b643b15`; sincronización pública de la cápsula en `AGENCIA_MD`: commit `f1a3b48`, rama revisable del PR #92.
 - No hubo pagos reales, despliegue ni dispositivo. Pendientes: DB/RLS oficial, E2E financiero, offline/accesibilidad física, OTA privado y firma release.
