@@ -25,6 +25,7 @@ Regla de continuidad: mientras exista una tarea segura, autorizada y útil, ejec
 - Checkout wallet delivery/menú/mesa: RPC atómico, oferta, coordenadas opcionales donde corresponde, intento y cuenta receptora en una transacción.
 - `receiver_account_id` en intento, dispositivo y observación; ingestión aislada por dispositivo; verificación con código completo cuando existe, colisión ambigua rechazada y asignación única.
 - Parser TS/Android: importes de cuatro o más dígitos, código hasta 64 caracteres, paquete explícito, fingerprint con clave estable y no autorización automática.
+- P-05 posterior: parser web/Android rechaza tokens monetarios parciales, valida agrupaciones inequívocas y aplica el tope común de 100,000,000 céntimos; la regresión web cubre rechazo y formatos locales.
 - Cola Android cifrada: binding por cuenta, reintentos, bloqueo sin expulsar pendientes, límite de 500 pendientes y estado visible; sin fallback en texto plano.
 - Lista de pedidos acotada a 50 filas sin RPC de códigos por tarjeta; códigos solo en detalle autorizado.
 - Contexto de restaurante global en Catálogo, Ofertas, Mesas, Repartidores y Dispositivos de pagos; alta de dispositivo exige cuenta receptora activa.
@@ -72,7 +73,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 | P-02 | En verificación | `eventId` estable por binding/notificación, conflicto técnico único y trigger de no reutilización por la identidad más fuerte; mismo sufijo con fingerprint distinto no bloquea (fixture 40 aserciones) | Ejecutar migraciones `20260915140000`/`20260916120000` y caso SQL multiequipo en DB oficial |
 | P-03 | En verificación | `receiver_account_id` en intento/dispositivo/observación y QR por cuenta exacta; `20260916150000` exige además `restaurant_id` coincidente en lectura, creación/reutilización y renovación | Instalar migración y probar cambio de cuenta |
 | P-04 | En verificación | RPC atómico para los tres canales; oferta y pago dentro de la transacción; reintento terminal usa clave nueva bajo lock de pedido | Test de rollback, reintento y actualización limpia en DB local |
-| P-05 | En verificación | Parser TS y test de `S/ 1000.00`; parser Java actualizado; pruebas unitarias Android 4/4 pasan | Matriz Android real por versión de billetera |
+| P-05 | En verificación | Parser TS/Android valida formato y tope común; web focal 30/30; Android tiene regresiones nuevas pero no se pudo ejecutar por falta de JDK en este entorno | Ejecutar Android test/build y matriz real por versión de billetera |
 | P-06 | En verificación | Binding guardado, cola separa eventos por binding y re-vinculación no reenvía | Prueba Android de rotación/revocación |
 | P-07 | En verificación | Lock de cola, 500 pendientes, reintentos y estado `queueFull`; selección pending-first corregida y test nativo 5/5 | Prueba Android offline/reinicio/concurrencia en dispositivo |
 | P-08 | En verificación | Adaptadores por paquete y palabras; caso Yape probado | Matriz Android real por versión de billetera |
