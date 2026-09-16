@@ -142,7 +142,15 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 
 - Se reprodujo el caso en que `restaurantIds` conserva una sede ya no visible. Backoffice podía usar ese ID para cargar cuentas antes de que el operador escogiera la sede correcta.
 - La corrección usa únicamente `stores` visibles y respalda con la primera sede visible; no consulta cuentas ni crea dispositivos contra un ID obsoleto. Regresión focal de billeteras: **10/10**; lint y typecheck pasan.
-- Suite global anterior: **69 archivos / 315 pruebas**; la nueva regresión queda incorporada al siguiente gate global. A-09/U-03 siguen en verificación hasta RLS y cambio de restaurante con backend real.
+- Suite global posterior: **69 archivos / 316 pruebas**; lint, typecheck y `npm run build:apps` pasan. A-09/U-03 siguen en verificación hasta RLS y cambio de restaurante con backend real.
+
+## Artefactos posteriores — APK debug tras `514784e` (2026-09-15)
+
+- `npm run build:mobile:roles` pasa con configuración pública Supabase sintética; `unzip -tqq` y `apksigner verify` pasan en las tres variantes. Todas son `versionName 1.4`/`versionCode 5`, un firmante y APK Signature Scheme v2.
+- Rider: `output/android/Suya-Rider-debug.apk`, **25,371,409 bytes**, SHA-256 `d61e757dd6f151305aefdc5ffbf3d542d086a84296751a68a8a6bf905cbf8757`, `com.suya.rider`.
+- Backoffice: `output/android/Suya-Backoffice-debug.apk`, **25,239,788 bytes**, SHA-256 `26be4ead906f98d99ca5fb22d210977664411680ad17f7a016586a596342ee33`, `com.suya.backoffice`.
+- Wallet Observer: `output/android/Suya-Wallet-Observer-debug.apk`, **25,192,072 bytes**, SHA-256 `589418bdbe5b39929da96fafdf67971bf9de9772e1d2be8944cd678ab92e93a1`, `com.suya.walletobserver`.
+- No hay dispositivo/emulador conectado; son APK debug de prueba, no release. Instalación, actualización, accesibilidad nativa, offline, permisos y validación física continúan pendientes.
 
 ## Seguimiento posterior — actualización del comprobante invitado (2026-09-15)
 
