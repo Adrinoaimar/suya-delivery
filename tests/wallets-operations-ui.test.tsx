@@ -2,6 +2,7 @@ import { act, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import WalletsOperationsPage from '@/pages/backoffice/WalletsOperationsPage';
 import { useAuthStore } from '@/store/authStore';
+import { useBackofficeContextStore } from '@/store/backofficeContextStore';
 import type { AuthIdentity } from '@/lib/auth/types';
 import type { WalletPaymentCandidate } from '@/lib/services';
 import type { Store } from '@/types';
@@ -149,6 +150,7 @@ describe('WalletsOperationsPage', () => {
     );
     await waitFor(() => expect(mocks.listPaymentAccounts).toHaveBeenCalledWith(restaurant.id));
     expect(mocks.listPaymentAccounts).not.toHaveBeenCalledWith('stale-restaurant');
+    expect(useBackofficeContextStore.getState().activeRestaurantId).toBe(restaurant.id);
   });
 
   it('crea el dispositivo ligado a la cuenta receptora activa', async () => {

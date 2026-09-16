@@ -150,7 +150,9 @@ export default function WalletsOperationsPage() {
         );
       } else {
         setRestaurantId((current) =>
-          current && restaurantIds.includes(current) ? current : restaurantIds[0] ?? '',
+          current && visibleStores.some((store) => store.id === current)
+            ? current
+            : visibleStores[0]?.id ?? '',
         );
       }
     } catch (cause) {
