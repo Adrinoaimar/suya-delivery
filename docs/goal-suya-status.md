@@ -131,6 +131,13 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Checkpoint local `a960237` (sobre `137c1e6`): la suite global **68/312**, focal payment/service/UI **33/33**, typecheck, lint, build, aislamiento, smoke web **12/12**, secretos (**915 archivos**), audit (**0 vulnerabilidades**) y `npm run build:mobile:roles` pasan. Android `test`/`assembleDebug` pasan con Java 21/SDK 36. APK Rider debug: `output/android/Suya-Rider-debug.apk`, **25,371,365 bytes**, SHA-256 `779adb9578e375479e73732e4d38c2877bb07b51a154c1313f1ce96131cbc83c`. Backoffice: `output/android/Suya-Backoffice-debug.apk`, **25,239,780 bytes**, SHA-256 `b7bd499c2d3a1ecd591d8980a9767e000c7717b246dbba387727dbd49dc676f`. Wallet Observer: `output/android/Suya-Wallet-Observer-debug.apk`, **25,192,036 bytes**, SHA-256 `3e7c7b1ffa6abd626264c4a8dd60882e0519bbe0a39821c12c2cd12a1b73bcdb`. Las tres son `versionName 1.4`/`versionCode 5`, ZIP íntegro y firma debug v2; no son release. La corrección de `auth.uid() IS NULL` está solo en SQL/pruebas, por eso no cambia los bytes de las APK.
 - La validación SQL de este checkpoint declara **53 aserciones acumuladas** (38 previas + 15 nuevas), pero `npm run db:lint`/`npm run db:test` siguen pendientes porque el runtime oficial no está accesible. La prueba PostgreSQL independiente no sustituye el gate oficial.
 
+## Seguimiento posterior — carrera de carga de billeteras (2026-09-15)
+
+- Se reprodujo una carrera en `WalletsOperationsPage`: el refresco periódico de observaciones podía invalidar una carga inicial lenta y dejar invisibles los dispositivos sin error visible.
+- `64b0b90` separa los contadores de carga completa y refresco periódico. La regresión mantiene ambas promesas pendientes, resuelve primero el refresco y confirma que la carga completa conserva dispositivo y observación inicial.
+- Focal billeteras: **9/9**; wallet/payment/guest: **25/25**; lint y typecheck pasan. El cambio solo afecta Backoffice web; las APK debug `1.4/5` mantienen sus hashes.
+- A-09/U-04 siguen en verificación hasta backend real, RLS, cambio de restaurante y restauración de red. No se declara cierre ni aprobación financiera por esta prueba mock.
+
 ## Seguimiento posterior — actualización del comprobante invitado (2026-09-15)
 
 - Se reprodujo un defecto real de U-07 en `GuestOrderPage`: el botón «Actualizar estado» vaciaba el comprobante sin cambiar las dependencias del efecto y no volvía a consultar el servidor.
