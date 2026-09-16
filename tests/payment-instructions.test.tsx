@@ -110,6 +110,21 @@ describe('PaymentInstructions', () => {
     ).toBeInTheDocument();
   });
 
+  it('no invita a pagar si falta el QR aunque exista una etiqueta', () => {
+    render(
+      <PaymentInstructions
+        order={order({ ...pendingIntent, receiverLabel: 'Andá Paya Cevichería' })}
+      />,
+    );
+
+    expect(
+      screen.getByText(
+        'No pudimos mostrar un QR válido del negocio. No pagues todavía; contacta al restaurante para validar el destinatario.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/Abre Yape/)).not.toBeInTheDocument();
+  });
+
   it('limpia la constancia al cambiar el intento del mismo pedido', async () => {
     mocks.declarePayment.mockResolvedValueOnce(true);
     const { rerender } = render(<PaymentInstructions order={order(pendingIntent)} />);

@@ -487,7 +487,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
               ? 'Esta referencia ya venció. Si ya pagaste, conserva esta revisión; si aún no pagaste, usa la opción correspondiente más abajo.'
               : !intent.receiverLabel
                 ? 'No pudimos validar el destinatario de este QR. No pagues todavía; vuelve a intentarlo o contacta al restaurante.'
-              : `El negocio aún no configuró su QR público. Abre ${paymentLabel(intent.method)}, paga exactamente el monto indicado y conserva la constancia.`}
+              : 'No pudimos mostrar un QR válido del negocio. No pagues todavía; contacta al restaurante para validar el destinatario.'}
         </div>
       )}
 
