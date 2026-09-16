@@ -35,4 +35,11 @@ describe('privacidad de pedidos invitados', () => {
     expect(guestOrderSource).toContain('consumeGuestOrderTokenFromHash');
     expect(guestOrderSource).toMatch(/orderService\s*\.get\(id\)/);
   });
+
+  it('no usa navegación ni caché local como autorización temporal', () => {
+    expect(guestOrderSource).not.toContain('GuestOrderLocationState');
+    expect(guestOrderSource).not.toContain('useOrderStore');
+    expect(guestOrderSource).toContain('useState<Order | null>(null)');
+    expect(guestOrderSource).toContain('useState(true)');
+  });
 });

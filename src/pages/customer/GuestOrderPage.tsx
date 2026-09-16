@@ -8,23 +8,15 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { OrderCodes } from '@/components/order/OrderCodes';
 import { PaymentInstructions } from '@/components/payment/PaymentInstructions';
 import { consumeGuestOrderTokenFromHash, orderService } from '@/lib/services';
-import { useOrderStore } from '@/store/orderStore';
 import { formatDateTime, formatPrice, orderStatusLabel } from '@/utils/format';
 import type { Order } from '@/types';
-
-interface GuestOrderLocationState {
-  guestOrder?: Order;
-}
 
 /** Public receipt for menu/QR orders. No customer session required. */
 export default function GuestOrderPage() {
   const { id = '', slug = '' } = useParams();
   const location = useLocation();
-  const cached = useOrderStore((state) => state.getOrder(id));
-  const [order, setOrder] = useState<Order | null>(
-    (location.state as GuestOrderLocationState | null)?.guestOrder ?? cached ?? null,
-  );
-  const [loading, setLoading] = useState(!order);
+  const [order, setOrder] = useState<Order | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);

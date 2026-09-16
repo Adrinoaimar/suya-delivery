@@ -487,3 +487,11 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Se añadió la migración forward-only `20260916160000_receiver_restaurant_reuse_guard.sql`, que conserva la autorización, lock de pedido, método, idempotencia, aridad y grants, y restaura el vínculo explícito en la rama de reutilización. No se relajan RLS ni se convierte evidencia en confirmación.
 - TDD: `tests/payment-sql-contract.test.ts` focal **4/4**; suite global **73 archivos / 351 pruebas**; typecheck, lint, secretos (**941 archivos, sin patrones**) y `git diff --check` pasan.
 - La validación pgTAP/DB oficial sigue pendiente porque `127.0.0.1:54322` continúa inaccesible. No hubo pagos reales, cambios de APK, despliegue ni publicación; las APK debug de §76 permanecen vigentes. El goal sigue abierto por DB/RLS, E2E financiero, dispositivo, accesibilidad/offline físicos, OTA privado, firma release y autorización de pagos reales.
+
+## Corrección A-03/A-10 — comprobante invitado exige autorización server-side — 2026-09-16
+
+- La revisión de privacidad detectó que `GuestOrderPage` podía pintar temporalmente datos del pedido desde `location.state` o `useOrderStore` antes de recibir la respuesta de `orderService.get(id)`. Navegación y caché local no son autorización.
+- Se eliminaron ambos fallbacks: el comprobante inicia con `order = null` y `loading = true`, y solo muestra datos después de la lectura autorizada del servidor con el token guest/sesión correspondiente. Si el servidor no autoriza, queda el estado «No encontramos este pedido».
+- TDD: el contrato estático de privacidad falló antes de la corrección y pasa después; focal guest **23/23**; suite global **73 archivos / 353 pruebas**. También pasan typecheck, lint, secretos (**941 archivos**), `git diff --check`, `npm run build:apps` con configuración sintética y smoke web **12/12** en 360/390/768/1440.
+- Trazabilidad: cambio pendiente para commit `fix(privacy): require server authorization for guest receipt`; no absorbe los cambios ajenos en `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` ni `output/`.
+- No cambia pagos, APKs, firma ni producción. DB/RLS oficial, E2E financiero, dispositivo, accesibilidad/offline físicos, OTA privado, firma release y pagos reales siguen pendientes; el goal permanece abierto.

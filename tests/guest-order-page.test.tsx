@@ -116,4 +116,19 @@ describe('GuestOrderPage', () => {
 
     await waitFor(() => expect(mocks.get).toHaveBeenCalledTimes(2));
   });
+
+  it('no pinta el estado de navegación si el servidor no autoriza el pedido', async () => {
+    mocks.get.mockResolvedValueOnce(undefined);
+
+    render(
+      <MemoryRouter initialEntries={[{ pathname: '/pedido/order-refresh-1', state: { guestOrder } }]}>
+        <Routes>
+          <Route path="/pedido/:id" element={<GuestOrderPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(screen.queryByRole('heading', { name: 'Pedido enviado a tu mesa' })).not.toBeInTheDocument();
+    expect(await screen.findByText('No encontramos este pedido')).toBeInTheDocument();
+  });
 });
