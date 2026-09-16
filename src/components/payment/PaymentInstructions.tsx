@@ -416,7 +416,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
           Este pago fue devuelto. No vuelvas a pagar desde esta pantalla; contacta al restaurante
           para revisar el siguiente paso.
         </div>
-      ) : intent.provider === 'culqi' ? (
+      ) : intent.provider === 'culqi' && !verified ? (
         <div className="mt-4 rounded-card border border-suya-green/20 bg-white p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
@@ -458,7 +458,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
             Referencia de pago: <span className="font-mono">{intent.providerReference ?? 'pendiente'}</span>
           </p>
         </div>
-      ) : intent.qrPayload && intent.receiverLabel && !manualRecoveryRequired ? (
+      ) : !verified && intent.qrPayload && intent.receiverLabel && !manualRecoveryRequired ? (
         <div className="mt-4 flex flex-col items-center gap-3 rounded-card border border-suya-border bg-white p-4 sm:flex-row sm:items-start">
           <div className="rounded-xl border border-suya-mist bg-white p-2">
             <QRCodeSVG value={intent.qrPayload} size={156} level="M" includeMargin />
@@ -483,6 +483,8 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         <div className="mt-4 rounded-btn border border-suya-sun/60 bg-white/70 p-3 text-sm text-suya-carbon">
           {paymentRefunded
             ? 'Este pago fue devuelto. No vuelvas a pagar desde esta referencia.'
+            : verified
+              ? 'Pago verificado. No vuelvas a pagar desde esta referencia.'
             : manualRecoveryRequired
               ? 'Esta referencia ya venció. Si ya pagaste, conserva esta revisión; si aún no pagaste, usa la opción correspondiente más abajo.'
               : !intent.receiverLabel

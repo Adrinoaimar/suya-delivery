@@ -95,6 +95,25 @@ describe('PaymentInstructions', () => {
     expect(screen.getByText('QR del negocio')).toBeInTheDocument();
   });
 
+  it('oculta el QR y las acciones de pago cuando el intento ya fue autorizado', () => {
+    render(
+      <PaymentInstructions
+        order={order({
+          ...pendingIntent,
+          status: 'authorized',
+          providerReference: 'wallet_observation:authorized',
+          qrPayload: 'yape://public-business-qr',
+          receiverLabel: 'Andá Paya Cevichería',
+        })}
+      />,
+    );
+
+    expect(screen.getByText('Pago verificado')).toBeInTheDocument();
+    expect(screen.queryByText('QR del negocio')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Ya pagué' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Aún no pagué' })).not.toBeInTheDocument();
+  });
+
   it('oculta el QR si el destinatario no fue validado', () => {
     render(
       <PaymentInstructions
@@ -416,8 +435,10 @@ describe('PaymentInstructions', () => {
 
     resolveCharge('chr_test_duplicate_token');
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Pago verificado' })).toBeDisabled(),
+      expect(screen.getByText('Pago verificado')).toBeInTheDocument(),
     );
+    expect(screen.queryByRole('button', { name: 'Pagar con tarjeta' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Pago electrónico seguro')).not.toBeInTheDocument();
     expect(mocks.chargeCard).toHaveBeenCalledTimes(1);
   });
 
