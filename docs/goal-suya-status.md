@@ -333,7 +333,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - `SuyaSecureStoragePlugin` cifra con AES-GCM/IV aleatorio, conserva la clave no exportable en Android Keystore y guarda solo ciphertext en preferencias privadas. Valida claves y no permite fallback en claro. `MainActivity` registra el plugin; no se añade dependencia ni permiso nuevo.
 - `tests/supabase-client-auth.test.ts` pasa **2/2**; typecheck, lint, `bash android/gradlew -p android test --no-daemon` y las tres reconstrucciones APK pasan. Falta hardware para verificar reinicio, bloqueo, restauración, OAuth y sign-out físico; A-05 permanece en verificación.
 - Las APK debug `1.4/5` actuales pasan ZIP, `apksigner verify` v2 y `aapt dump badging`. No son release, no implican sesión física validada y no habilitan pagos reales.
-- Huellas actuales: Rider **25,371,865 bytes**, `6103790069674cf4a1c0b11d8cd84c03b91ec2a6adb9541a6afc9f347002a0ff`; Backoffice **25,240,196 bytes**, `d4d171ac5495f340c159dfdcbfa5025478ef5b85b8cb765605a929d44db54e8f`; Wallet Observer **25,192,272 bytes**, `b67ef174693d1aa378555dd82ae1276b162f83a9549593f8fafbb3e1065775b7`.
+- Huellas finales actuales: Rider **25,371,965 bytes**, `7ed24f67c245f6d2f33241454ece08681690609bc0cec814736e8eb9ccd95860`; Backoffice **25,240,336 bytes**, `e00c6e8ed2f1d3db8902aeebc8066b47a4dd197083fb2452651bd66504772478`; Wallet Observer **25,192,272 bytes**, `b67ef174693d1aa378555dd82ae1276b162f83a9549593f8fafbb3e1065775b7`.
 - El entorno actual no dispone de `adb` ni `emulator`; reinicio, bloqueo, OAuth, TalkBack, fuente ampliada, offline, actualización e instalación física siguen pendientes y no se declaran verificadas.
 
 ## Corrección A-02/P-11 — contexto de mesa y destinatario visible — 2026-09-16
