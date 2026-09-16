@@ -509,3 +509,10 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - TDD: `tests/auth-store.test.ts` falló antes (0 llamadas a `reset`) y pasa después; focal de sesión/pedidos/invitado **25/25**; suite serial completa **73 archivos / 354 pruebas**. Typecheck, lint, secretos (**941 archivos**), diff, build `build:apps` sintético y smoke web **12/12** pasan.
 - Trazabilidad: commit fuente `a361d51` (`fix(auth): clear cached orders before signout`); se preservan los cambios ajenos en `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` y `output/`.
 - No cambia pagos ni APKs. DB/RLS oficial, prueba física de sesión, E2E financiero, dispositivo, accesibilidad/offline, OTA, firma release y pagos reales siguen pendientes.
+
+## Corrección U-08/P-10 — pago oculto al cancelar — 2026-09-16
+
+- El backend ya cerraba intentos `pending` al cancelar y rechazaba crear/renovar pagos, pero la UI podía pintar el intento fallido y ofrecer acciones manuales en un pedido cancelado.
+- `PaymentInstructions` ahora recibe `order.status` y corta carga, polling, declaración, checkout y renovación cuando el pedido es `cancelled`; tampoco muestra instrucciones aunque exista intento local/histórico. La autoridad continúa server-side.
+- TDD: la regresión falló antes y pasa después; focal pagos **20/20**, focal customer **41/41**; typecheck, lint y diff pasan. Commit `bc17fee` (`fix(payment-ui): hide cancelled order payment`).
+- No cambia APKs todavía. DB/RLS oficial, E2E financiero, dispositivo, accesibilidad/offline, OTA, firma release y pagos reales siguen pendientes.
