@@ -39,4 +39,15 @@ describe('Suya static menu delivery contract', () => {
     expect(app).toContain("const local=JSON.parse(localStorage.getItem('suya-menu-state')||'null')");
     expect(app).toContain('catch{clearMenuState()}');
   });
+
+  it('resets media and persists the selected public font', () => {
+    const app = source('apps/menu/app.js');
+    const styles = source('apps/menu/styles.css');
+
+    expect(app).toContain('logoEl.style.backgroundImage=logo?');
+    expect(app).toContain('coverEl.style.backgroundImage=coverImage?');
+    expect(app).toContain("setProperty('--menu-font',fontFamily)");
+    expect(app).toContain("const allowedMenuFonts=['DM Sans','Manrope','Plus Jakarta Sans']");
+    expect(styles).toContain('body{font-family:var(--menu-font,Inter)');
+  });
 });

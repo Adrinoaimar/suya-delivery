@@ -528,5 +528,5 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 
 - La revisión encontró que, si el backend configurado fallaba o cambiaba de restaurante, `apps/menu` podía reutilizar un menú local o el estado anterior mientras mostraba un error. Ese fallback no es seguro para datos multi-restaurante.
 - `app.js` ahora limpia menú, platos, promociones y carrito cuando existe API; solo permite fallback local sin API, tolera JSON local corrupto y limpia también al abrir/cerrar el panel o si falla su carga.
-- TDD: contrato estático + seguridad del menú **7/7**; suite global **73 archivos / 359 pruebas**; typecheck, lint, secretos, diff, `build:apps` y smoke web **12/12** pasan tras levantar previews separados. No cambia pagos, APKs ni autoridad financiera.
+- TDD: contrato estático + seguridad del menú **8/8**; suite global **73 archivos / 360 pruebas**; typecheck, lint, secretos, diff, `build:apps` y smoke web **12/12** pasan tras levantar previews separados. Verificación real del menú: cero cookies, cero solicitudes externas y cero errores de página. No cambia pagos, APKs ni autoridad financiera.
 - DB/RLS oficial, E2E financiero, dispositivo, accesibilidad/offline físicos, OTA privado, firma release y pagos reales continúan pendientes; el goal permanece abierto.
