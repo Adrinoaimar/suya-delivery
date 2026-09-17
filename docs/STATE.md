@@ -1,13 +1,24 @@
 # Estado de ejecución
 
-Actualizado: 15 de septiembre de 2026 (`America/Lima`)
+Actualizado: 16 de septiembre de 2026 (`America/Lima`)
 
 ## Objetivo
 
 Convertir Suya Delivery en producto funcional multiapp. Ninguna simulación puede quedar activa en
 producción.
 
-## Estado vigente — checkpoint F28
+## Estado vigente — checkpoint F29
+
+- Rama: `feat/backoffice-restaurant-ops`; checkpoint Android funcional `a2b7f4a`.
+- Android: Rider, Backoffice y Wallet Observer avanzan a `versionName 1.5`/`versionCode 6`; las tres APK debug tienen ZIP íntegro, SDK 36, un firmante y firma v2 válida.
+- La lectura de notificaciones de billetera conserva `Notification.EXTRA_TEXT_LINES`; la regresión se ejecuta como lógica JVM pura y la tarea Android completa pasa.
+- Suite web: **73 archivos / 363 pruebas**; typecheck, lint y escaneo de secretos (**946 archivos**) pasan.
+- Los artefactos se construyeron con configuración Supabase pública sintética. Son para QA técnico, no release ni producción; siguen pendientes configuración real, firma release, instalación/actualización física, TalkBack/offline, DB/RLS oficial, endpoint vial privado y E2E financiero autorizado.
+- Se conservaron fuera del commit los cambios previos de `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` y `output/`.
+
+La evidencia de este bloque está en `docs/execution/F29.md`; la matriz operativa continúa en `docs/goal-suya-status.md`.
+
+## Estado histórico — checkpoint F28
 
 - Rama: `feat/backoffice-restaurant-ops`; último bloque F28: `bd24802` (`docs(checkpoint): record multiapp smoke`), sobre los fixes OTA/CSP `d7d37be`–`ac9b607`. Los cambios sin commit de `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` y `output/` se conservan fuera de este checkpoint.
 - Suite completa: **68 archivos / 301 pruebas**; typecheck, lint, build web, `verify:apps`, escaneo de secretos (911 archivos) y `npm audit --omit=dev --audit-level=high` pasan.
