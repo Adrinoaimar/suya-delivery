@@ -100,6 +100,14 @@ export default function WalletsOperationsPage() {
   const activeRestaurantId = stores.some((store) => store.id === restaurantId)
     ? restaurantId
     : stores[0]?.id ?? '';
+  const visibleDevices = useMemo(
+    () => devices.filter((device) => device.restaurantId === activeRestaurantId),
+    [activeRestaurantId, devices],
+  );
+  const visibleObservations = useMemo(
+    () => observations.filter((observation) => observation.restaurantId === activeRestaurantId),
+    [activeRestaurantId, observations],
+  );
 
   const load = useCallback(async () => {
     const requestId = ++loadRequestRef.current;
@@ -253,13 +261,15 @@ export default function WalletsOperationsPage() {
       );
       return;
     }
+    const restaurantAtStart = activeRestaurantId;
     setBusy(true);
     try {
       const created = await walletObserverService.createDevice(
-        activeRestaurantId,
+        restaurantAtStart,
         label,
         receiverAccount.id,
       );
+      if (useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart) return;
       setDevices((current) => [created, ...current]);
       setNewDevice(created);
       notificationService.notify(
@@ -267,6 +277,7 @@ export default function WalletsOperationsPage() {
         'success',
       );
     } catch (cause) {
+      if (useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart) return;
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No pudimos crear el dispositivo.',
         'danger',
@@ -311,9 +322,11 @@ export default function WalletsOperationsPage() {
 
   const rotateDevice = async (device: WalletObserverDevice) => {
     if (deviceActionId) return;
+    const restaurantAtStart = activeRestaurantId;
     setDeviceActionId(device.id);
     try {
       const rotated = await walletObserverService.rotateDevice(device.id);
+      if (useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart) return;
       setDevices((current) => current.map((entry) => (entry.id === device.id ? rotated : entry)));
       setNewDevice(rotated);
       notificationService.notify(
@@ -321,6 +334,7 @@ export default function WalletsOperationsPage() {
         'success',
       );
     } catch (cause) {
+      if (useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart) return;
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No pudimos regenerar el token.',
         'danger',
@@ -423,21 +437,24 @@ export default function WalletsOperationsPage() {
       notificationService.notify('Selecciona la cuenta y escribe un nombre.', 'warning');
       return;
     }
+    const restaurantAtStart = activeRestaurantId;
     setBusy(true);
     try {
       const saved = await walletObserverService.savePaymentAccount({
-        restaurantId: activeRestaurantId,
+        restaurantId: restaurantAtStart,
         provider: accountProvider,
         accountLabel,
         qrPayload: qrPayload || null,
         active: accountActive,
       });
+      if (useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart) return;
       setPaymentAccounts((current) => [
         ...current.filter((account) => account.provider !== saved.provider),
         saved,
       ]);
       notificationService.notify('Cuenta de pago guardada.', 'success');
     } catch (cause) {
+      if (useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart) return;
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No pudimos guardar la cuenta de pago.',
         'danger',
@@ -641,7 +658,7 @@ export default function WalletsOperationsPage() {
           <Card role="status" className="p-8 text-center text-sm text-suya-muted">
             Cargando dispositivos conectados…
           </Card>
-        ) : devices.length === 0 ? (
+        ) : visibleDevices.length === 0 ? (
           <EmptyState
             icon={<Smartphone className="h-6 w-6" />}
             title="Aún no hay dispositivos"
@@ -649,7 +666,7 @@ export default function WalletsOperationsPage() {
           />
         ) : (
           <div className="grid gap-3 sm:grid-cols-2">
-            {devices.map((device) => (
+            {visibleDevices.map((device) => (
               <Card key={device.id} className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-semibold">{device.label}</p>
@@ -704,7 +721,7 @@ export default function WalletsOperationsPage() {
           <Card role="status" className="p-8 text-center text-sm text-suya-muted">
             Cargando observaciones…
           </Card>
-        ) : observations.length === 0 ? (
+        ) : visibleObservations.length === 0 ? (
           <EmptyState
             icon={<WalletCards className="h-6 w-6" />}
             title="Todavía no hay notificaciones detectadas"
@@ -713,7 +730,7 @@ export default function WalletsOperationsPage() {
         ) : (
           <div className="overflow-hidden rounded-card border border-suya-border bg-white">
             <div className="divide-y divide-suya-mist">
-              {observations.map((observation) => {
+              {visibleObservations.map((observation) => {
                 const status = observationStatus(observation.verification);
                 return (
                   <div
