@@ -530,3 +530,10 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - `app.js` ahora limpia menú, platos, promociones y carrito cuando existe API; solo permite fallback local sin API, tolera JSON local corrupto y limpia también al abrir/cerrar el panel o si falla su carga.
 - TDD: contrato estático + seguridad del menú **8/8**; suite global **73 archivos / 360 pruebas**; typecheck, lint, secretos, diff, `build:apps` y smoke web **12/12** pasan tras levantar previews separados. Verificación real del menú: cero cookies, cero solicitudes externas y cero errores de página. No cambia pagos, APKs ni autoridad financiera.
 - DB/RLS oficial, E2E financiero, dispositivo, accesibilidad/offline físicos, OTA privado, firma release y pagos reales continúan pendientes; el goal permanece abierto.
+
+## Corrección P-03/P-11 — integridad del receptor en `payment_attempts` — 2026-09-16
+
+- La revisión SQL detectó una defensa ausente: el receptor de un intento estaba validado por las RPC de checkout, pero la tabla no tenía un trigger que bloqueara una escritura futura con una cuenta activa de otro restaurante.
+- Se añadió la migración forward-only `20260916170000_payment_attempt_receiver_integrity.sql`. La guardia privada, `SECURITY DEFINER` con `search_path` vacío, valida en INSERT/UPDATE que la cuenta exista, esté activa y pertenezca al restaurante del pedido; conserva históricos si luego la cuenta se desactiva. No concede escritura directa al cliente.
+- TDD: el contrato estático falló por migración ausente y después pasó **5/5**; la suite global pasa **73 archivos / 361 pruebas**; typecheck, lint, secretos (**943 archivos**), diff y revisión de permisos pasan. Se añadió pgTAP con **8 aserciones**, pendiente de ejecución por falta de CLI Supabase, Postgres oficial y Docker accesible.
+- Commit: `7930797` (`fix(payments): enforce receiver restaurant binding`). No cambia APKs, UI, cookies, rastreo ni autoridad bancaria. Siguen pendientes DB/RLS real, E2E financiero, dispositivo, accesibilidad/offline físicos, OTA privado, firma release y pagos reales; el goal permanece abierto.
