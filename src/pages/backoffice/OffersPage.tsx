@@ -92,6 +92,16 @@ export default function OffersPage() {
     void load();
   }, [load]);
 
+  const visibleOffers = useMemo(
+    () => offers.filter(
+      (offer) => offer.restaurantId === null || offer.restaurantId === form.restaurantId,
+    ),
+    [form.restaurantId, offers],
+  );
+
+  const isCurrentRestaurant = (expectedRestaurantId: string) =>
+    useBackofficeContextStore.getState().activeRestaurantId === expectedRestaurantId;
+
   const update = <K extends keyof OfferForm>(key: K, value: OfferForm[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
   };
@@ -124,10 +134,11 @@ export default function OffersPage() {
       notificationService.notify('Selecciona un restaurante.', 'warning');
       return;
     }
+    const expectedRestaurantId = form.restaurantId;
     setSaving(true);
     try {
       const offer = await offerService.create({
-        restaurantId: form.restaurantId || null,
+        restaurantId: expectedRestaurantId || null,
         title,
         description: form.description.trim(),
         code,
@@ -138,10 +149,12 @@ export default function OffersPage() {
         endsAt: new Date(form.endsAt).toISOString(),
         maxRedemptions: form.maxRedemptions ? Math.max(1, Number(form.maxRedemptions)) : null,
       });
+      if (!isCurrentRestaurant(expectedRestaurantId)) return;
       setOffers((current) => [offer, ...current]);
-      setForm({ ...initialForm, restaurantId: form.restaurantId });
+      setForm({ ...initialForm, restaurantId: expectedRestaurantId });
       notificationService.notify('Oferta exclusiva creada.', 'success');
     } catch (cause) {
+      if (!isCurrentRestaurant(expectedRestaurantId)) return;
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No se pudo crear la oferta.',
         'danger',
@@ -152,8 +165,10 @@ export default function OffersPage() {
   }
 
   async function toggle(offer: AppOffer) {
+    const expectedRestaurantId = form.restaurantId;
     try {
       await offerService.setActive(offer.id, !offer.active);
+      if (!isCurrentRestaurant(expectedRestaurantId)) return;
       setOffers((current) =>
         current.map((row) => (row.id === offer.id ? { ...row, active: !offer.active } : row)),
       );
@@ -162,6 +177,7 @@ export default function OffersPage() {
         'success',
       );
     } catch (cause) {
+      if (!isCurrentRestaurant(expectedRestaurantId)) return;
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No se pudo actualizar la oferta.',
         'danger',
@@ -292,12 +308,12 @@ export default function OffersPage() {
           <Card role="status" className="p-8 text-center text-sm text-[#68716C]">
             Cargando ofertas…
           </Card>
-        ) : offers.length === 0 ? (
+        ) : visibleOffers.length === 0 ? (
           <Card className="border-dashed py-10 text-center text-sm text-[#68716C]">
             Todavía no hay ofertas configuradas.
           </Card>
         ) : null}
-        {offers.map((offer) => (
+        {visibleOffers.map((offer) => (
           <Card key={offer.id} className="flex flex-wrap items-center justify-between gap-4">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">

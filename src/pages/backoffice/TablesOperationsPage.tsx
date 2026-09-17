@@ -84,6 +84,11 @@ export default function TablesOperationsPage() {
     void load();
   }, [load]);
 
+  const isCurrentRestaurant = (expectedRestaurantId: string) =>
+    useBackofficeContextStore.getState().activeRestaurantId === expectedRestaurantId;
+  const finishOperation = (operation: string) =>
+    setBusy((current) => current === operation ? null : current);
+
   const create = async () => {
     if (!activeRestaurantId || !tableNumber.trim()) {
       notificationService.notify(
@@ -92,55 +97,67 @@ export default function TablesOperationsPage() {
       );
       return;
     }
-    setBusy('create');
+    const expectedRestaurantId = activeRestaurantId;
+    const operation = 'create';
+    setBusy(operation);
     try {
-      const table = await tableService.create(activeRestaurantId, tableNumber);
+      const table = await tableService.create(expectedRestaurantId, tableNumber);
+      if (!isCurrentRestaurant(expectedRestaurantId)) return;
       setTables((current) =>
         [...current, table].sort((a, b) => a.tableNumber.localeCompare(b.tableNumber)),
       );
       setTableNumber('');
       notificationService.notify(`Mesa ${table.tableNumber} creada con QR.`, 'success');
     } catch (cause) {
+      if (!isCurrentRestaurant(expectedRestaurantId)) return;
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No pudimos crear la mesa.',
         'danger',
       );
     } finally {
-      setBusy(null);
+      finishOperation(operation);
     }
   };
 
   const rotate = async (table: TableSummary) => {
-    setBusy(table.id);
+    const expectedRestaurantId = table.restaurantId;
+    const operation = table.id;
+    setBusy(operation);
     try {
       const next = await tableService.regenerateQr(table.id);
+      if (!isCurrentRestaurant(expectedRestaurantId)) return;
       setTables((current) => current.map((row) => (row.id === table.id ? next : row)));
       notificationService.notify(`QR de mesa ${table.tableNumber} regenerado.`, 'success');
     } catch (cause) {
+      if (!isCurrentRestaurant(expectedRestaurantId)) return;
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No pudimos regenerar el QR.',
         'danger',
       );
     } finally {
-      setBusy(null);
+      finishOperation(operation);
     }
   };
 
   const toggle = async (table: TableSummary) => {
-    setBusy(table.id);
+    const expectedRestaurantId = table.restaurantId;
+    const operation = table.id;
+    setBusy(operation);
     try {
       await tableService.setActive(table.id, !table.active);
+      if (!isCurrentRestaurant(expectedRestaurantId)) return;
       setTables((current) =>
         current.map((row) => (row.id === table.id ? { ...row, active: !table.active } : row)),
       );
       notificationService.notify(table.active ? 'Mesa desactivada.' : 'Mesa activada.', 'success');
     } catch (cause) {
+      if (!isCurrentRestaurant(expectedRestaurantId)) return;
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No pudimos actualizar la mesa.',
         'danger',
       );
     } finally {
-      setBusy(null);
+      finishOperation(operation);
     }
   };
 

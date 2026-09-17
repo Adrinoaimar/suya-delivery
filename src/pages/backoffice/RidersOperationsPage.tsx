@@ -116,6 +116,10 @@ export default function RidersOperationsPage() {
   const restaurant = stores.find((store) => store.id === restaurantId);
   const setField = (field: keyof FormState, value: string) =>
     setForm((current) => ({ ...current, [field]: value }));
+  const isCurrentRestaurant = (expectedRestaurantId: string) =>
+    useBackofficeContextStore.getState().activeRestaurantId === expectedRestaurantId;
+  const finishOperation = (operation: string) =>
+    setBusy((current) => current === operation ? null : current);
 
   const invite = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -123,27 +127,34 @@ export default function RidersOperationsPage() {
       notificationService.notify('Selecciona un restaurante para continuar.', 'warning');
       return;
     }
-    setBusy('invite');
+    const expectedRestaurantId = restaurantId;
+    const operation = 'invite';
+    setBusy(operation);
     try {
-      const created = await restaurantRiderService.invite({ restaurantId, ...form });
+      const created = await restaurantRiderService.invite({ restaurantId: expectedRestaurantId, ...form });
+      if (!isCurrentRestaurant(expectedRestaurantId)) return;
       setRiders((current) => [created, ...current.filter((rider) => rider.id !== created.id)]);
       setForm(emptyForm);
       notificationService.notify(`${created.name} quedó agregado a la cuenta.`, 'success');
     } catch (cause) {
+      if (!isCurrentRestaurant(expectedRestaurantId)) return;
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No pudimos invitar al repartidor.',
         'danger',
       );
     } finally {
-      setBusy(null);
+      finishOperation(operation);
     }
   };
 
   const toggle = async (rider: RestaurantRider) => {
-    setBusy(rider.id);
+    const expectedRestaurantId = restaurantId;
+    const operation = rider.id;
+    setBusy(operation);
     try {
       const active = !rider.active;
-      await restaurantRiderService.setActive(restaurantId, rider.id, active);
+      await restaurantRiderService.setActive(expectedRestaurantId, rider.id, active);
+      if (!isCurrentRestaurant(expectedRestaurantId)) return;
       setRiders((current) =>
         current.map((row) => (row.id === rider.id ? { ...row, active } : row)),
       );
@@ -154,12 +165,13 @@ export default function RidersOperationsPage() {
         'success',
       );
     } catch (cause) {
+      if (!isCurrentRestaurant(expectedRestaurantId)) return;
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No pudimos actualizar el repartidor.',
         'danger',
       );
     } finally {
-      setBusy(null);
+      finishOperation(operation);
     }
   };
 

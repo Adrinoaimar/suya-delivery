@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CatalogPage from '@/pages/backoffice/CatalogPage';
 import OffersPage from '@/pages/backoffice/OffersPage';
@@ -7,8 +7,8 @@ import TablesOperationsPage from '@/pages/backoffice/TablesOperationsPage';
 import { useAuthStore } from '@/store/authStore';
 import { useBackofficeContextStore } from '@/store/backofficeContextStore';
 import type { AuthIdentity } from '@/lib/auth/types';
-import type { Product, Store } from '@/types';
-import type { RestaurantRider } from '@/lib/services';
+import type { AppOffer, Product, Store } from '@/types';
+import type { RestaurantRider, TableSummary } from '@/lib/services';
 
 const mocks = vi.hoisted(() => ({
   listStores: vi.fn(),
@@ -103,9 +103,20 @@ const identity: AuthIdentity = {
   restaurantIds: [restaurant.id],
 };
 
+const secondRestaurant: Store = { ...restaurant, id: 'restaurant-2', name: 'Andá Paya' };
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((nextResolve) => {
+    resolve = nextResolve;
+  });
+  return { promise, resolve };
+}
+
 function reset() {
   vi.clearAllMocks();
   useAuthStore.setState({ status: 'authenticated', identity, error: null });
+  useBackofficeContextStore.setState({ activeRestaurantId: '' });
   mocks.listStores.mockResolvedValue([restaurant]);
   mocks.listProducts.mockResolvedValue([product]);
   mocks.getMenuSettings.mockResolvedValue({
@@ -127,6 +138,7 @@ beforeEach(reset);
 afterEach(() => {
   vi.unstubAllEnvs();
   useAuthStore.setState({ status: 'idle', identity: null, error: null });
+  useBackofficeContextStore.setState({ activeRestaurantId: '' });
 });
 
 describe('operaciones con alcance de cuenta de restaurante', () => {
@@ -351,5 +363,83 @@ describe('operaciones con alcance de cuenta de restaurante', () => {
     );
     expect(await screen.findByText(rider.email)).toBeInTheDocument();
     expect(mocks.listRiders).toHaveBeenCalledTimes(1);
+  });
+
+  it('no aplica una mesa creada en una cuenta anterior después de cambiar de sede', async () => {
+    const creation = deferred<TableSummary>();
+    useAuthStore.setState({ identity: { ...identity, restaurantIds: [restaurant.id, secondRestaurant.id] } });
+    mocks.listStores.mockResolvedValue([restaurant, secondRestaurant]);
+    mocks.createTable.mockReturnValue(creation.promise);
+
+    render(<TablesOperationsPage />);
+    const selector = await screen.findByLabelText('Cuenta de restaurante');
+    fireEvent.change(screen.getByLabelText('Número de mesa'), { target: { value: '12' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Crear mesa y QR' }));
+    await waitFor(() => expect(mocks.createTable).toHaveBeenCalledWith(restaurant.id, '12'));
+
+    fireEvent.change(selector, { target: { value: secondRestaurant.id } });
+    fireEvent.change(screen.getByLabelText('Número de mesa'), { target: { value: '22' } });
+    await act(async () => {
+      creation.resolve({
+        id: 'table-late', restaurantId: restaurant.id, tableNumber: '12', status: 'available',
+        sessionId: null, sessionStatus: null, total: 0, qrToken: 'late-token', active: true,
+      });
+      await creation.promise;
+    });
+
+    expect(screen.getByLabelText('Número de mesa')).toHaveValue('22');
+    expect(mocks.notify).not.toHaveBeenCalledWith('Mesa 12 creada con QR.', 'success');
+  });
+
+  it('muestra ofertas solo de la cuenta activa y las ofertas globales', async () => {
+    const offer = (id: string, restaurantId: string | null, title: string): AppOffer => ({
+      id, restaurantId, title, description: '', code: id.toUpperCase(), discountType: 'percent',
+      discountValue: 10, minimumSubtotal: 0, startsAt: '2026-09-01T00:00:00.000Z',
+      endsAt: '2026-10-01T00:00:00.000Z', maxRedemptions: null, redeemedCount: 0, active: true,
+    });
+    useAuthStore.setState({ identity: { ...identity, restaurantIds: [restaurant.id, secondRestaurant.id] } });
+    mocks.listStores.mockResolvedValue([restaurant, secondRestaurant]);
+    mocks.listOffers.mockResolvedValue([
+      offer('offer-one', restaurant.id, 'Oferta Donde Joel'),
+      offer('offer-two', secondRestaurant.id, 'Oferta Andá Paya'),
+      offer('offer-global', null, 'Oferta global'),
+    ]);
+
+    render(<OffersPage />);
+
+    expect(await screen.findByText('Oferta Donde Joel')).toBeInTheDocument();
+    expect(screen.getByText('Oferta global')).toBeInTheDocument();
+    expect(screen.queryByText('Oferta Andá Paya')).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText('Restaurante'), { target: { value: secondRestaurant.id } });
+    expect(await screen.findByText('Oferta Andá Paya')).toBeInTheDocument();
+    expect(screen.queryByText('Oferta Donde Joel')).not.toBeInTheDocument();
+  });
+
+  it('no inserta un repartidor de otra cuenta cuando una invitación termina tarde', async () => {
+    const invitation = deferred<RestaurantRider>();
+    useAuthStore.setState({ identity: { ...identity, restaurantIds: [restaurant.id, secondRestaurant.id] } });
+    mocks.listStores.mockResolvedValue([restaurant, secondRestaurant]);
+    mocks.inviteRider.mockReturnValue(invitation.promise);
+
+    render(<RidersOperationsPage />);
+    const selector = await screen.findByLabelText('Cuenta de restaurante');
+    fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: 'Rider anterior' } });
+    fireEvent.change(screen.getByLabelText('Correo de acceso'), { target: { value: 'old@example.test' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Invitar repartidor' }));
+    await waitFor(() => expect(mocks.inviteRider).toHaveBeenCalledTimes(1));
+
+    fireEvent.change(selector, { target: { value: secondRestaurant.id } });
+    fireEvent.change(screen.getByLabelText('Nombre completo'), { target: { value: 'Rider actual' } });
+    await act(async () => {
+      invitation.resolve({
+        id: 'rider-late', email: 'old@example.test', name: 'Rider anterior', phone: '',
+        status: 'offline', verifiedAt: null, vehicleType: 'Moto', vehicleColor: '',
+        vehiclePlate: '', rating: 5, deliveries: 0, active: true, createdAt: '2026-09-16T00:00:00.000Z',
+      });
+      await invitation.promise;
+    });
+
+    expect(screen.queryByText('old@example.test')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Nombre completo')).toHaveValue('Rider actual');
   });
 });
