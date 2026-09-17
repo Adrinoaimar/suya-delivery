@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import CashRegisterPage from '@/pages/backoffice/CashRegisterPage';
 import { useAuthStore } from '@/store/authStore';
@@ -168,5 +168,33 @@ describe('CashRegisterPage', () => {
     firstTables.resolve([]);
     await waitFor(() => expect(screen.getByRole('heading', { name: secondRestaurant.name })).toBeInTheDocument());
     expect(screen.getByText('Turno abierto')).toBeInTheDocument();
+  });
+
+  it('no vuelve a una cuenta anterior cuando un ajuste termina después del cambio de restaurante', async () => {
+    const adjustment = deferred<{ entryId: string; sessionId: string; amount: number; note: string }>();
+    useAuthStore.setState({ identity: { ...identity, restaurantIds: [restaurant.id, secondRestaurant.id] } });
+    mocks.listStores.mockResolvedValue([restaurant, secondRestaurant]);
+    mocks.listCash.mockResolvedValue([openSession]);
+    mocks.addAdjustment.mockReturnValue(adjustment.promise);
+
+    render(<CashRegisterPage />);
+    const selector = await screen.findByLabelText('Cuenta de restaurante');
+    expect(screen.getByText('Turno abierto')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Importe del ajuste'), { target: { value: '1' } });
+    fireEvent.change(screen.getByLabelText('Motivo del ajuste'), { target: { value: 'Ingreso manual' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar ajuste' }));
+    await waitFor(() => expect(mocks.addAdjustment).toHaveBeenCalledTimes(1));
+
+    fireEvent.change(selector, { target: { value: secondRestaurant.id } });
+    await waitFor(() => expect(useBackofficeContextStore.getState().activeRestaurantId).toBe(secondRestaurant.id));
+
+    await act(async () => {
+      adjustment.resolve({ entryId: 'entry-late', sessionId: openSession.id, amount: 1, note: 'Ingreso manual' });
+      await adjustment.promise;
+    });
+    expect(mocks.listCash).toHaveBeenCalledTimes(2);
+    expect(useBackofficeContextStore.getState().activeRestaurantId).toBe(secondRestaurant.id);
+    expect(mocks.notify).not.toHaveBeenCalledWith('Ajuste guardado en el libro de caja.', 'success');
   });
 });

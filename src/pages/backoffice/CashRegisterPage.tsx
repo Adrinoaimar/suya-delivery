@@ -120,6 +120,23 @@ export default function CashRegisterPage() {
   );
   const selectedStore = stores.find((store) => store.id === activeRestaurantId);
 
+  function isCurrentRestaurant(restaurantId: string): boolean {
+    return useBackofficeContextStore.getState().activeRestaurantId === restaurantId;
+  }
+
+  function finishOperation(operation: string) {
+    setBusy((current) => current === operation ? null : current);
+  }
+
+  useEffect(() => {
+    setOpeningFloat('0');
+    setDeclaredCash('');
+    setCloseNote('');
+    setAdjustmentAmount('');
+    setAdjustmentNote('');
+    setCashReceived({});
+  }, [activeRestaurantId]);
+
   async function reload() {
     setBusy('reload');
     setError(null);
@@ -142,15 +159,19 @@ export default function CashRegisterPage() {
       notificationService.notify('Escribe un fondo inicial válido.', 'warning');
       return;
     }
-    setBusy('open');
+    const restaurantId = activeRestaurantId;
+    const operation = 'open';
+    setBusy(operation);
     try {
-      const session = await cashRegisterService.open(activeRestaurantId, amount, requestId());
+      const session = await cashRegisterService.open(restaurantId, amount, requestId());
+      if (!isCurrentRestaurant(restaurantId)) return;
       setSessions((current) => [session, ...current.filter((row) => row.id !== session.id)]);
       notificationService.notify('Turno de caja abierto.', 'success');
     } catch (cause) {
+      if (!isCurrentRestaurant(restaurantId)) return;
       notificationService.notify(cause instanceof Error ? cause.message : 'No pudimos abrir la caja.', 'danger');
     } finally {
-      setBusy(null);
+      finishOperation(operation);
     }
   }
 
@@ -161,20 +182,25 @@ export default function CashRegisterPage() {
       notificationService.notify('El efectivo recibido no puede ser menor que el total.', 'warning');
       return;
     }
-    setBusy(`sale:${orderId}`);
+    const restaurantId = activeRestaurantId;
+    const operation = `sale:${orderId}`;
+    setBusy(operation);
     try {
       await cashRegisterService.recordSale(currentSession.id, orderId, received, requestId());
+      if (!isCurrentRestaurant(restaurantId)) return;
       setCashReceived((current) => {
         const next = { ...current };
         delete next[orderId];
         return next;
       });
-      await Promise.all([load(activeRestaurantId), refreshOrders()]);
+      await Promise.all([load(restaurantId), refreshOrders()]);
+      if (!isCurrentRestaurant(restaurantId)) return;
       notificationService.notify('Cobro registrado en el turno.', 'success');
     } catch (cause) {
+      if (!isCurrentRestaurant(restaurantId)) return;
       notificationService.notify(cause instanceof Error ? cause.message : 'No pudimos registrar el cobro.', 'danger');
     } finally {
-      setBusy(null);
+      finishOperation(operation);
     }
   }
 
@@ -185,20 +211,25 @@ export default function CashRegisterPage() {
       notificationService.notify('El efectivo recibido no puede ser menor que el total de la mesa.', 'warning');
       return;
     }
-    setBusy(`table:${table.sessionId}`);
+    const restaurantId = activeRestaurantId;
+    const operation = `table:${table.sessionId}`;
+    setBusy(operation);
     try {
       await tableService.pay(table.sessionId, received, 'cash', requestId());
+      if (!isCurrentRestaurant(restaurantId)) return;
       setCashReceived((current) => {
         const next = { ...current };
         delete next[`table:${table.sessionId}`];
         return next;
       });
-      await load(activeRestaurantId);
+      await load(restaurantId);
+      if (!isCurrentRestaurant(restaurantId)) return;
       notificationService.notify('Cobro de mesa registrado en el turno.', 'success');
     } catch (cause) {
+      if (!isCurrentRestaurant(restaurantId)) return;
       notificationService.notify(cause instanceof Error ? cause.message : 'No pudimos registrar el cobro de mesa.', 'danger');
     } finally {
-      setBusy(null);
+      finishOperation(operation);
     }
   }
 
@@ -209,17 +240,22 @@ export default function CashRegisterPage() {
       notificationService.notify('Indica un ajuste distinto de cero y explica el motivo.', 'warning');
       return;
     }
-    setBusy('adjustment');
+    const restaurantId = activeRestaurantId;
+    const operation = 'adjustment';
+    setBusy(operation);
     try {
       await cashRegisterService.addAdjustment(currentSession.id, amount, adjustmentNote, requestId());
+      if (!isCurrentRestaurant(restaurantId)) return;
       setAdjustmentAmount('');
       setAdjustmentNote('');
-      await load(activeRestaurantId);
+      await load(restaurantId);
+      if (!isCurrentRestaurant(restaurantId)) return;
       notificationService.notify('Ajuste guardado en el libro de caja.', 'success');
     } catch (cause) {
+      if (!isCurrentRestaurant(restaurantId)) return;
       notificationService.notify(cause instanceof Error ? cause.message : 'No pudimos guardar el ajuste.', 'danger');
     } finally {
-      setBusy(null);
+      finishOperation(operation);
     }
   }
 
@@ -235,17 +271,22 @@ export default function CashRegisterPage() {
       notificationService.notify('Explica la diferencia antes de cerrar la caja.', 'warning');
       return;
     }
-    setBusy('close');
+    const restaurantId = activeRestaurantId;
+    const operation = 'close';
+    setBusy(operation);
     try {
       await cashRegisterService.close(currentSession.id, amount, closeNote, requestId());
+      if (!isCurrentRestaurant(restaurantId)) return;
       setDeclaredCash('');
       setCloseNote('');
-      await load(activeRestaurantId);
+      await load(restaurantId);
+      if (!isCurrentRestaurant(restaurantId)) return;
       notificationService.notify('Turno cerrado y arqueo guardado.', 'success');
     } catch (cause) {
+      if (!isCurrentRestaurant(restaurantId)) return;
       notificationService.notify(cause instanceof Error ? cause.message : 'No pudimos cerrar la caja.', 'danger');
     } finally {
-      setBusy(null);
+      finishOperation(operation);
     }
   }
 
