@@ -549,5 +549,5 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 
 - La regresión reprodujo que `WalletsOperationsPage` conservaba candidatos de pago al cambiar de sede. También podían seguir visibles código en edición y el token temporal del dispositivo anterior.
 - El cambio de `activeRestaurantId` ahora invalida búsquedas pendientes, limpia candidatos, código, estado de verificación y token recién creado. Respuestas tardías de candidatos, verificación y guardado de código se descartan si el contexto ya cambió.
-- TDD: la regresión falló antes y pasa después; focal billeteras **11/11**; typecheck, lint y `git diff --check` pasan. El cambio está preparado para commit propio; los cambios ajenos en `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` y `output/` siguen fuera.
+- TDD: la regresión falló antes y pasa después; focal billeteras **11/11**; suite global posterior **73 archivos / 362 pruebas**, typecheck, lint y `git diff --check` pasan. Commit fuente: `5c83711` (`fix(wallet): reset state on restaurant switch`). Los cambios ajenos en `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` y `output/` siguen fuera.
 - U-03/A-09 permanecen en verificación hasta cambio de restaurante con backend/RLS real, concurrencia y permisos.
