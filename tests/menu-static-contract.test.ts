@@ -29,4 +29,14 @@ describe('Suya static menu delivery contract', () => {
     expect(app).not.toContain("credentials:'include'");
     expect(app).toContain("sessionStorage.setItem(AUTH_TOKEN_KEY,authToken)");
   });
+
+  it('does not expose a previous local menu when the configured API fails', () => {
+    const app = source('apps/menu/app.js');
+
+    expect(app).toContain('function clearMenuState()');
+    expect(app).toContain('if(!API)loadLocalState();');
+    expect(app).toContain('if(API)clearMenuState();');
+    expect(app).toContain("const local=JSON.parse(localStorage.getItem('suya-menu-state')||'null')");
+    expect(app).toContain('catch{clearMenuState()}');
+  });
 });

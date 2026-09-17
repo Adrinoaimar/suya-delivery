@@ -523,3 +523,10 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Ambos scripts ahora requieren el flag explícito `VITE_CULQI_GATEWAY_ENABLED=true|false`. Con `false` no exigen `VITE_CULQI_PUBLIC_KEY`; con `true` la exigen y validan como `pk_test_`/`pk_live_`. Una llave entregada nunca puede ser `sk_`, incluso si el modo está desactivado.
 - TDD: antes fallaban los casos de preflight/publicación manual y después pasan; `payment-readiness` + `cloudflare-config` **15/15**; suite global final **73 archivos / 358 pruebas**. El preflight Culqi sintético y el despliegue manual pasan sin red, cargos ni migraciones; `verify:production` valida **430 archivos**.
 - No habilita una pasarela ni modifica pagos; solo evita bloquear el modo sin pasarela. No hubo despliegue, pagos reales ni APK nueva. DB/RLS, E2E financiero, dispositivo, accesibilidad/offline, OTA y firma release siguen pendientes.
+
+## 85. Corrección A-10 — fail-closed del menú con API — 2026-09-16
+
+- La revisión encontró que, si el backend configurado fallaba o cambiaba de restaurante, `apps/menu` podía reutilizar un menú local o el estado anterior mientras mostraba un error. Ese fallback no es seguro para datos multi-restaurante.
+- `app.js` ahora limpia menú, platos, promociones y carrito cuando existe API; solo permite fallback local sin API, tolera JSON local corrupto y limpia también al abrir/cerrar el panel o si falla su carga.
+- TDD: contrato estático + seguridad del menú **7/7**; suite global **73 archivos / 359 pruebas**; typecheck, lint, secretos, diff, `build:apps` y smoke web **12/12** pasan tras levantar previews separados. No cambia pagos, APKs ni autoridad financiera.
+- DB/RLS oficial, E2E financiero, dispositivo, accesibilidad/offline físicos, OTA privado, firma release y pagos reales continúan pendientes; el goal permanece abierto.
