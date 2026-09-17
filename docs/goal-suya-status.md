@@ -555,5 +555,5 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 ## Corrección U-03/A-09 — Ofertas rechaza contexto global obsoleto — 2026-09-16
 
 - La regresión reprodujo que una recarga de Ofertas podía imponer un `activeRestaurantId` ya no visible sobre el formulario. La selección podía quedar vacía y depender solo del rechazo RLS al escribir.
-- `OffersPage` acepta el contexto global solo si pertenece a `stores` visibles; si no, fija la primera sede visible y sincroniza formulario/contexto. TDD focal Backoffice **12/12**; typecheck, lint y `git diff --check` pasan.
+- `OffersPage` acepta el contexto global solo si pertenece a `stores` visibles; si no, fija la primera sede visible y sincroniza formulario/contexto. TDD focal Backoffice **12/12**, suite global **73/363**; typecheck, lint y `git diff --check` pasan.
 - Commit fuente pendiente de registrar en el siguiente checkpoint; se preservan los cambios ajenos en `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` y `output/`. U-03/A-09 siguen en verificación con backend/RLS real.
