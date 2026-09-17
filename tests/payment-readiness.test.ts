@@ -42,6 +42,21 @@ describe('verify-payment-readiness', () => {
     expect(output).toContain('no se ejecutaron cargos');
   });
 
+  it('acepta despliegue manual sin secretos de Culqi', () => {
+    const {
+      VITE_CULQI_PUBLIC_KEY: _publicKey,
+      CULQI_SECRET_KEY: _culqiSecret,
+      CULQI_WEBHOOK_USERNAME: _webhookUser,
+      CULQI_WEBHOOK_PASSWORD: _webhookPassword,
+      ...manualEnv
+    } = { ...baseEnv, VITE_CULQI_GATEWAY_ENABLED: 'false' };
+    const output = execFileSync(process.execPath, [script, '--deployment'], {
+      env: manualEnv,
+      encoding: 'utf8',
+    });
+    expect(output).toContain('no se ejecutaron cargos');
+  });
+
   it('rechaza una clave secreta en la configuración pública de Culqi', () => {
     expect(() =>
       execFileSync(process.execPath, [script], {
