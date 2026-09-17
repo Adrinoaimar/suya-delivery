@@ -2,7 +2,7 @@ begin;
 select plan(8);
 
 select has_function(
-  'private', 'require_payment_attempt_receiver', array[],
+  'private', 'require_payment_attempt_receiver', array[]::text[],
   'la guardia de receptor de payment_attempts existe'
 );
 select ok(
