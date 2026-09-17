@@ -3,32 +3,19 @@ package com.suya.app;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import android.app.Notification;
-import android.os.Bundle;
-
 import org.junit.Test;
-
-import java.lang.reflect.Method;
 
 public class YapeNotificationListenerServiceTest {
 
     @Test
-    public void includesTextLinesWhenWalletSplitsNotificationContentAcrossLines() throws Exception {
-        Bundle extras = new Bundle();
-        extras.putCharSequence(Notification.EXTRA_TITLE, "Yape");
-        extras.putCharSequenceArray(
-                Notification.EXTRA_TEXT_LINES,
+    public void includesTextLinesWhenWalletSplitsNotificationContentAcrossLines() {
+        String[] fields = YapeNotificationListenerService.notificationTextFields(
+                new String[]{"Yape", null, null, null, null, null},
                 new CharSequence[]{"Recibiste S/ 30.00", "Código de operación: 482901"}
         );
 
-        Method method = YapeNotificationListenerService.class
-                .getDeclaredMethod("combinedNotificationText", Bundle.class);
-        method.setAccessible(true);
-
-        assertEquals(
-                "Yape Recibiste S/ 30.00 Código de operación: 482901",
-                method.invoke(null, extras)
-        );
+        assertEquals("Yape", fields[0]);
+        assertEquals("Recibiste S/ 30.00 Código de operación: 482901", fields[6]);
     }
 
     @Test

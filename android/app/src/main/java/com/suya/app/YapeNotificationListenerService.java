@@ -170,12 +170,17 @@ public final class YapeNotificationListenerService extends NotificationListenerS
                 Notification.EXTRA_INFO_TEXT,
                 Notification.EXTRA_SUMMARY_TEXT
         };
-        String[] values = new String[keys.length + 1];
+        String[] scalarValues = new String[keys.length];
         for (int index = 0; index < keys.length; index++) {
             CharSequence value = extras.getCharSequence(keys[index]);
-            values[index] = value == null ? null : value.toString();
+            scalarValues[index] = value == null ? null : value.toString();
         }
-        CharSequence[] lines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES);
+        return notificationTextFields(scalarValues, extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES));
+    }
+
+    static String[] notificationTextFields(String[] scalarValues, CharSequence[] lines) {
+        String[] safeScalarValues = scalarValues == null ? new String[0] : scalarValues;
+        String[] values = Arrays.copyOf(safeScalarValues, safeScalarValues.length + 1);
         if (lines != null && lines.length > 0) {
             StringBuilder lineText = new StringBuilder();
             for (CharSequence line : lines) {
@@ -183,7 +188,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
                 if (lineText.length() > 0) lineText.append(' ');
                 lineText.append(line);
             }
-            values[keys.length] = lineText.toString();
+            values[safeScalarValues.length] = lineText.toString();
         }
         return values;
     }
