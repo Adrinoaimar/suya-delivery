@@ -18,6 +18,10 @@ const cashMigration = readFileSync(
   resolve(process.cwd(), 'supabase/migrations/20260915130000_cash_register_closing.sql'),
   'utf8',
 );
+const receiverIntegrityMigration = readFileSync(
+  resolve(process.cwd(), 'supabase/migrations/20260916170000_payment_attempt_receiver_integrity.sql'),
+  'utf8',
+);
 
 const createStart = migration.indexOf('create or replace function public.create_payment_intent(');
 const refreshStart = migration.indexOf('create or replace function public.refresh_payment_intent(');
@@ -57,5 +61,23 @@ describe('contrato SQL de intención wallet', () => {
     expect(saleStart).toBeGreaterThanOrEqual(0);
     expect(adjustmentStart).toBeGreaterThan(saleStart);
     expect(saleSource.match(/actor_id uuid := \(select auth\.uid\(\)\);/g)).toHaveLength(1);
+  });
+
+  it('impide vincular un intento a un receptor activo de otro restaurante', () => {
+    expect(receiverIntegrityMigration).toContain(
+      'create trigger payment_attempts_receiver_integrity_guard',
+    );
+    expect(receiverIntegrityMigration).toContain(
+      'join public.orders order_row on order_row.id = new.order_id',
+    );
+    expect(receiverIntegrityMigration).toContain(
+      'and account.restaurant_id = order_row.restaurant_id',
+    );
+    expect(receiverIntegrityMigration).toContain(
+      'and account.active',
+    );
+    expect(receiverIntegrityMigration).toContain(
+      'before insert or update of receiver_account_id, order_id',
+    );
   });
 });
