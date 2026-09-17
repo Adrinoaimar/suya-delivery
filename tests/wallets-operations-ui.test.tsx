@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import WalletsOperationsPage from '@/pages/backoffice/WalletsOperationsPage';
 import { useAuthStore } from '@/store/authStore';
@@ -229,6 +229,43 @@ describe('WalletsOperationsPage', () => {
     expect(screen.getAllByRole('button', { name: 'Verificar pago' }).every((button) =>
       (button as HTMLButtonElement).disabled,
     )).toBe(true);
+  });
+
+  it('limpia la conciliación pendiente al cambiar de restaurante', async () => {
+    const secondRestaurant = { ...restaurant, id: 'restaurant-2', name: 'Andá Paya' };
+    useAuthStore.setState({
+      identity: { ...identity, restaurantIds: [restaurant.id, secondRestaurant.id] },
+    });
+    mocks.listStores.mockResolvedValue([restaurant, secondRestaurant]);
+    mocks.listPaymentCandidates.mockResolvedValue([
+      {
+        paymentAttemptId: 'attempt-1',
+        orderId: 'order-1',
+        orderCode: 'SUY-1',
+        customerName: 'Ana Uno',
+        checkoutReference: 'SUYA-1',
+        method: 'yape',
+        amount: 30,
+        createdAt: '2026-09-14T18:00:00.000Z',
+        expiresAt: '2026-09-14T19:00:00.000Z',
+        senderName: 'Ana Uno',
+      },
+    ]);
+
+    render(<WalletsOperationsPage />);
+
+    const selector = await screen.findByRole('combobox', { name: 'Cuenta de restaurante' });
+    await act(async () => {
+      fireEvent.click(await screen.findByRole('button', { name: 'Buscar pedido' }));
+    });
+    expect(await screen.findByText(/Pedido #SUY-1/)).toBeInTheDocument();
+
+    fireEvent.change(selector, { target: { value: secondRestaurant.id } });
+
+    await waitFor(() => {
+      expect(screen.queryByText(/Pedido #SUY-1/)).not.toBeInTheDocument();
+      expect(screen.queryByText('Pedidos compatibles')).not.toBeInTheDocument();
+    });
   });
 
   it('permite revocar un dispositivo sin borrar su evidencia histórica', async () => {

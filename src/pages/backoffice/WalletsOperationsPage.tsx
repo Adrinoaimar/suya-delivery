@@ -184,6 +184,17 @@ export default function WalletsOperationsPage() {
   }, [stores]);
 
   useEffect(() => {
+    // Un cambio de sede invalida cualquier conciliación o credencial visible de
+    // la sede anterior. El backend sigue siendo la autoridad, pero la UI no debe
+    // ofrecer una acción pendiente contra otro restaurante.
+    ++candidateRequestRef.current;
+    setCandidateObservationId(null);
+    setCandidates([]);
+    setCandidateLoading(false);
+    setVerifyingAttemptId(null);
+    setObservationCodeId(null);
+    setObservationCode('');
+    setNewDevice(null);
     if (!activeRestaurantId) {
       setPaymentAccounts([]);
       setAccountLabel('Cuenta principal');
@@ -321,12 +332,16 @@ export default function WalletsOperationsPage() {
 
   const findCandidates = async (observationId: string) => {
     const requestId = ++candidateRequestRef.current;
+    const restaurantAtStart = activeRestaurantId;
     setCandidateObservationId(observationId);
     setCandidateLoading(true);
     setCandidates([]);
     try {
       const nextCandidates = await walletObserverService.listPaymentCandidates(observationId);
-      if (requestId !== candidateRequestRef.current) return;
+      if (
+        requestId !== candidateRequestRef.current
+        || useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart
+      ) return;
       setCandidates(nextCandidates);
     } catch (cause) {
       if (requestId !== candidateRequestRef.current) return;
@@ -341,6 +356,7 @@ export default function WalletsOperationsPage() {
   };
 
   const verifyCandidate = async (observationId: string, paymentAttemptId: string) => {
+    const restaurantAtStart = activeRestaurantId;
     setVerifyingAttemptId(paymentAttemptId);
     try {
       const verified = await walletObserverService.verifyObservation(
@@ -348,6 +364,7 @@ export default function WalletsOperationsPage() {
         paymentAttemptId,
       );
       if (!verified) throw new Error('El servidor no verificó la operación.');
+      if (useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart) return;
       notificationService.notify('Pago verificado y vinculado al pedido.', 'success');
       setCandidateObservationId(null);
       setCandidates([]);
@@ -367,6 +384,7 @@ export default function WalletsOperationsPage() {
       notificationService.notify('Escribe el código visible en la constancia.', 'warning');
       return;
     }
+    const restaurantAtStart = activeRestaurantId;
     setSavingObservationCode(true);
     try {
       const saved = await walletObserverService.setObservationCode(
@@ -374,10 +392,12 @@ export default function WalletsOperationsPage() {
         observationCode,
       );
       if (!saved) throw new Error('El servidor no guardó el código de operación.');
+      if (useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart) return;
       setObservationCode('');
       setObservationCodeId(null);
       notificationService.notify('Código agregado. Buscando el pedido exacto…', 'success');
       await load();
+      if (useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart) return;
       await findCandidates(observationId);
     } catch (cause) {
       notificationService.notify(

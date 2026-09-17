@@ -544,3 +544,10 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - `YapeNotificationListenerService` ahora suma las líneas no vacías al texto combinado. La evidencia mantiene `verification: unverified`; no confirma pedidos ni autoriza cobros.
 - TDD: regresión nativa añadida para título + monto + código en `EXTRA_TEXT_LINES`; parser web focal **21/21** y `git diff --check` pasan. `bash android/gradlew test --no-daemon` fue intentado y quedó bloqueado porque no existe `java`/`JAVA_HOME` en este entorno. No se genera APK nueva.
 - P-05/P-08 permanecen en verificación hasta Android test/build, matriz real de billeteras y prueba física. Se preservan `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` y `output/`.
+
+## Corrección U-03/A-09 — limpiar conciliación al cambiar de restaurante — 2026-09-16
+
+- La regresión reprodujo que `WalletsOperationsPage` conservaba candidatos de pago al cambiar de sede. También podían seguir visibles código en edición y el token temporal del dispositivo anterior.
+- El cambio de `activeRestaurantId` ahora invalida búsquedas pendientes, limpia candidatos, código, estado de verificación y token recién creado. Respuestas tardías de candidatos, verificación y guardado de código se descartan si el contexto ya cambió.
+- TDD: la regresión falló antes y pasa después; focal billeteras **11/11**; typecheck, lint y `git diff --check` pasan. El cambio está preparado para commit propio; los cambios ajenos en `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` y `output/` siguen fuera.
+- U-03/A-09 permanecen en verificación hasta cambio de restaurante con backend/RLS real, concurrencia y permisos.
