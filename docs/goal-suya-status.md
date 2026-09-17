@@ -521,5 +521,5 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 
 - La verificación detectó que `verify:payments` y el gate Cloudflare exigían Culqi aunque el flujo aprobado puede cobrar directamente a la cuenta del restaurante mediante QR y conciliación asistida.
 - Ambos scripts ahora requieren el flag explícito `VITE_CULQI_GATEWAY_ENABLED=true|false`. Con `false` no exigen `VITE_CULQI_PUBLIC_KEY`; con `true` la exigen y validan como `pk_test_`/`pk_live_`. Una llave entregada nunca puede ser `sk_`, incluso si el modo está desactivado.
-- TDD: antes fallaban los casos de preflight/publicación manual y después pasan; `payment-readiness` + `cloudflare-config` **14/14**. El preflight Culqi sintético pasa sin red, cargos ni migraciones; `verify:production` valida **430 archivos**.
+- TDD: antes fallaban los casos de preflight/publicación manual y después pasan; `payment-readiness` + `cloudflare-config` **14/14**; suite global posterior **73 archivos / 357 pruebas**. El preflight Culqi sintético pasa sin red, cargos ni migraciones; `verify:production` valida **430 archivos**.
 - No habilita una pasarela ni modifica pagos; solo evita bloquear el modo sin pasarela. No hubo despliegue, pagos reales ni APK nueva. DB/RLS, E2E financiero, dispositivo, accesibilidad/offline, OTA y firma release siguen pendientes.
