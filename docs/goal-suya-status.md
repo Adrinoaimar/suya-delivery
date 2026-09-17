@@ -537,3 +537,10 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - Se añadió la migración forward-only `20260916170000_payment_attempt_receiver_integrity.sql`. La guardia privada, `SECURITY DEFINER` con `search_path` vacío, valida en INSERT/UPDATE que la cuenta exista, esté activa y pertenezca al restaurante del pedido; conserva históricos si luego la cuenta se desactiva. No concede escritura directa al cliente.
 - TDD: el contrato estático falló por migración ausente y después pasó **5/5**; la suite global pasa **73 archivos / 361 pruebas**; typecheck, lint, secretos (**943 archivos**), diff y revisión de permisos pasan. Se añadió pgTAP con **8 aserciones**, pendiente de ejecución por falta de CLI Supabase, Postgres oficial y Docker accesible.
 - Commit: `7930797` (`fix(payments): enforce receiver restaurant binding`). No cambia APKs, UI, cookies, rastreo ni autoridad bancaria. Siguen pendientes DB/RLS real, E2E financiero, dispositivo, accesibilidad/offline físicos, OTA privado, firma release y pagos reales; el goal permanece abierto.
+
+## Corrección P-05/P-08 — notificaciones Android con líneas expandidas — 2026-09-16
+
+- La revisión comparativa TS/Android detectó que el observador nativo no incorporaba `Notification.EXTRA_TEXT_LINES`; una billetera podía separar monto y código en esas líneas y la observación se descartaba antes de la conciliación.
+- `YapeNotificationListenerService` ahora suma las líneas no vacías al texto combinado. La evidencia mantiene `verification: unverified`; no confirma pedidos ni autoriza cobros.
+- TDD: regresión nativa añadida para título + monto + código en `EXTRA_TEXT_LINES`; parser web focal **21/21** y `git diff --check` pasan. `bash android/gradlew test --no-daemon` fue intentado y quedó bloqueado porque no existe `java`/`JAVA_HOME` en este entorno. No se genera APK nueva.
+- P-05/P-08 permanecen en verificación hasta Android test/build, matriz real de billeteras y prueba física. Se preservan `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` y `output/`.

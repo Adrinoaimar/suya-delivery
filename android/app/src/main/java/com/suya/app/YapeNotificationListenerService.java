@@ -170,10 +170,20 @@ public final class YapeNotificationListenerService extends NotificationListenerS
                 Notification.EXTRA_INFO_TEXT,
                 Notification.EXTRA_SUMMARY_TEXT
         };
-        String[] values = new String[keys.length];
+        String[] values = new String[keys.length + 1];
         for (int index = 0; index < keys.length; index++) {
             CharSequence value = extras.getCharSequence(keys[index]);
             values[index] = value == null ? null : value.toString();
+        }
+        CharSequence[] lines = extras.getCharSequenceArray(Notification.EXTRA_TEXT_LINES);
+        if (lines != null && lines.length > 0) {
+            StringBuilder lineText = new StringBuilder();
+            for (CharSequence line : lines) {
+                if (line == null || line.toString().trim().isEmpty()) continue;
+                if (lineText.length() > 0) lineText.append(' ');
+                lineText.append(line);
+            }
+            values[keys.length] = lineText.toString();
         }
         return values;
     }
