@@ -27,10 +27,10 @@ debe publicarse hasta que el guard de Auth y roles esté implementado y probado.
 ## Release canónico
 
 El workflow manual `cloudflare-pages.yml` solo despliega desde `main` y el environment protegido
-`cloudflare-production`. Requiere secrets `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN`,
-`VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_CULQI_GATEWAY_ENABLED=true` y `VITE_CULQI_PUBLIC_KEY`
-(`pk_test_...` durante pruebas); el gate rechaza publicar si Culqi no está configurado. Las demás
-variables están enumeradas en el workflow. El token debe tener solo permiso de edición de Pages en
+`cloudflare-production`. Requiere secrets `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` y
+`VITE_SUPABASE_PUBLISHABLE_KEY`. `VITE_CULQI_GATEWAY_ENABLED` debe ser explícitamente `false`
+para el modo manual directo, o `true` junto con `VITE_CULQI_PUBLIC_KEY` (`pk_test_...` durante
+pruebas) para activar el checkout opcional. Las demás variables están enumeradas en el workflow. El token debe tener solo permiso de edición de Pages en
 la cuenta elegida.
 
 `config/production.json` es la identidad canónica versionada. Suya usa el proyecto Supabase dedicado

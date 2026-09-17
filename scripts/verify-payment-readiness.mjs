@@ -19,7 +19,7 @@ const config = JSON.parse(await readFile(new URL('../config/production.json', im
 const supabaseUrl = required('VITE_SUPABASE_URL');
 const expectedProjectRef = required('VITE_EXPECTED_SUPABASE_PROJECT_REF');
 const publishableKey = required('VITE_SUPABASE_PUBLISHABLE_KEY');
-const publicCulqiKey = required('VITE_CULQI_PUBLIC_KEY');
+const publicCulqiKey = process.env.VITE_CULQI_PUBLIC_KEY?.trim() ?? '';
 const gatewayEnabled = required('VITE_CULQI_GATEWAY_ENABLED');
 const allowedOrigins = required('ALLOWED_ORIGINS');
 const mapProvider = required('VITE_MAP_PROVIDER');
@@ -35,8 +35,13 @@ if (expectedProjectRef !== config.supabaseProjectRef || actualProjectRef !== con
 if (!/^sb_(?:publishable|anon)_[A-Za-z0-9_-]+$/.test(publishableKey) && !/^eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(publishableKey)) {
   fail('VITE_SUPABASE_PUBLISHABLE_KEY no parece una clave pública válida.');
 }
-if (gatewayEnabled !== 'true') fail('VITE_CULQI_GATEWAY_ENABLED debe ser true.');
-if (!/^pk_(?:test|live)_[A-Za-z0-9_-]+$/.test(publicCulqiKey)) {
+if (!['true', 'false'].includes(gatewayEnabled)) {
+  fail('VITE_CULQI_GATEWAY_ENABLED debe ser true o false.');
+}
+if (gatewayEnabled !== 'false' && !publicCulqiKey) {
+  fail('VITE_CULQI_PUBLIC_KEY es requerida cuando Culqi está habilitado.');
+}
+if (publicCulqiKey && !/^pk_(?:test|live)_[A-Za-z0-9_-]+$/.test(publicCulqiKey)) {
   fail('VITE_CULQI_PUBLIC_KEY debe ser pk_test_ o pk_live_; nunca sk_.');
 }
 

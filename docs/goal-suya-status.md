@@ -499,7 +499,7 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 ## Revalidación de gates productivos — configuración sintética — 2026-09-16
 
 - Los comandos sin variables (`npm run verify:payments`, `npm run verify:production`) fallan cerrado porque no hay configuración productiva real en el entorno; no se rellenaron secretos ni endpoints.
-- Con una configuración pública sintética y sin red, `verify:payments` pasa el contrato de entorno (Supabase canónico, Culqi `pk_test`, orígenes exactos, OSM) y confirma que no ejecutó cargos, migraciones ni llamadas de red. `verify:production` valida **433 archivos** sin simulaciones ni secretos.
+- Con configuración sintética, `verify:payments` pasa tanto en modo manual directo (`VITE_CULQI_GATEWAY_ENABLED=false`, sin llave Culqi) como en modo Culqi (`true`, `pk_test_`); no ejecuta cargos, migraciones ni llamadas de red. `verify:production` valida **430 archivos** sin simulaciones ni secretos.
 - Esta comprobación solo cubre forma/configuración y no autoriza despliegue: siguen pendientes valores reales, DB/RLS, funciones, webhooks, E2E financiero, pagos autorizados, firma release y revisión de producción.
 
 ## Corrección A-05 — limpieza inmediata de pedidos al cerrar sesión — 2026-09-16
@@ -516,3 +516,10 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - `PaymentInstructions` ahora recibe `order.status` y corta carga, polling, declaración, checkout y renovación cuando el pedido es `cancelled`; tampoco muestra instrucciones aunque exista intento local/histórico. La autoridad continúa server-side.
 - TDD: la regresión falló antes y pasa después; focal pagos **20/20**, focal customer **41/41**; typecheck, lint y diff pasan. Commit `bc17fee` (`fix(payment-ui): hide cancelled order payment`).
 - No cambia APKs todavía. DB/RLS oficial, E2E financiero, dispositivo, accesibilidad/offline, OTA, firma release y pagos reales siguen pendientes.
+
+## Corrección de preflight — Culqi opcional y modo manual directo — 2026-09-16
+
+- La verificación detectó que `verify:payments` y el gate Cloudflare exigían Culqi aunque el flujo aprobado puede cobrar directamente a la cuenta del restaurante mediante QR y conciliación asistida.
+- Ambos scripts ahora requieren el flag explícito `VITE_CULQI_GATEWAY_ENABLED=true|false`. Con `false` no exigen `VITE_CULQI_PUBLIC_KEY`; con `true` la exigen y validan como `pk_test_`/`pk_live_`. Una llave entregada nunca puede ser `sk_`, incluso si el modo está desactivado.
+- TDD: antes fallaban los casos de preflight/publicación manual y después pasan; `payment-readiness` + `cloudflare-config` **14/14**. El preflight Culqi sintético pasa sin red, cargos ni migraciones; `verify:production` valida **430 archivos**.
+- No habilita una pasarela ni modifica pagos; solo evita bloquear el modo sin pasarela. No hubo despliegue, pagos reales ni APK nueva. DB/RLS, E2E financiero, dispositivo, accesibilidad/offline, OTA y firma release siguen pendientes.

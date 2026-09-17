@@ -136,6 +136,14 @@ describe('configuración Cloudflare productiva', () => {
     expect(invalidKey.stderr).not.toContain('sk_test_never_in_frontend');
   });
 
+  it('permite publicar el modo manual directo sin configurar Culqi', async () => {
+    const { VITE_CULQI_PUBLIC_KEY: _publicKey, ...manualDeploymentEnv } = {
+      ...validDeploymentEnv,
+      VITE_CULQI_GATEWAY_ENABLED: 'false',
+    };
+    expect((await run(['--deployment'], manualDeploymentEnv)).status).toBe(0);
+  });
+
   it('confirma que los tres proyectos existan antes de publicar', async () => {
     const directory = mkdtempSync(path.join(tmpdir(), 'suya-pages-'));
     const projects = path.join(directory, 'projects.json');

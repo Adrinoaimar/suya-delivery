@@ -22,6 +22,18 @@ const baseEnv = {
 };
 
 describe('verify-payment-readiness', () => {
+  it('acepta el modo manual directo sin configurar Culqi', () => {
+    const { VITE_CULQI_PUBLIC_KEY: _publicKey, ...manualEnv } = {
+      ...baseEnv,
+      VITE_CULQI_GATEWAY_ENABLED: 'false',
+    };
+    const output = execFileSync(process.execPath, [script], {
+      env: manualEnv,
+      encoding: 'utf8',
+    });
+    expect(output).toContain('no se ejecutaron cargos');
+  });
+
   it('valida configuración de prueba sin hacer llamadas de red', () => {
     const output = execFileSync(process.execPath, [script], {
       env: baseEnv,
