@@ -5,6 +5,7 @@ import OffersPage from '@/pages/backoffice/OffersPage';
 import RidersOperationsPage from '@/pages/backoffice/RidersOperationsPage';
 import TablesOperationsPage from '@/pages/backoffice/TablesOperationsPage';
 import { useAuthStore } from '@/store/authStore';
+import { useBackofficeContextStore } from '@/store/backofficeContextStore';
 import type { AuthIdentity } from '@/lib/auth/types';
 import type { Product, Store } from '@/types';
 import type { RestaurantRider } from '@/lib/services';
@@ -253,6 +254,19 @@ describe('operaciones con alcance de cuenta de restaurante', () => {
     render(<OffersPage />);
 
     await waitFor(() => expect(screen.getByLabelText('Restaurante')).toHaveValue(restaurant.id));
+  });
+
+  it('descarta un contexto obsoleto al recargar el formulario de ofertas', async () => {
+    render(<OffersPage />);
+
+    const selector = await screen.findByLabelText('Restaurante');
+    expect(selector).toHaveValue(restaurant.id);
+    useBackofficeContextStore.setState({ activeRestaurantId: 'stale-restaurant' });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Actualizar' }));
+
+    await waitFor(() => expect(mocks.listStores).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(selector).toHaveValue(restaurant.id));
   });
 
   it('normaliza el origen del enlace público del menú', async () => {

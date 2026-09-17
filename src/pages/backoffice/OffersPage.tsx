@@ -72,16 +72,13 @@ export default function OffersPage() {
       setOffers(rows);
       setStores(visibleStores);
       const contextRestaurantId = useBackofficeContextStore.getState().activeRestaurantId;
+      const nextRestaurantId = visibleStores.some((store) => store.id === contextRestaurantId)
+        ? contextRestaurantId
+        : visibleStores[0]?.id ?? '';
       setForm((current) => ({
         ...current,
-        restaurantId: visibleStores.some(
-          (store) => store.id === contextRestaurantId || store.id === current.restaurantId,
-        )
-          ? contextRestaurantId || current.restaurantId
-          : visibleStores[0]?.id ?? '',
+        restaurantId: nextRestaurantId,
       }));
-      const nextRestaurantId =
-        visibleStores.find((store) => store.id === contextRestaurantId)?.id ?? visibleStores[0]?.id ?? '';
       setActiveRestaurantId(nextRestaurantId);
     } catch (cause) {
       if (requestId !== loadRequestRef.current) return;

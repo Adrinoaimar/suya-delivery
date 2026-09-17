@@ -551,3 +551,9 @@ Estados usados: pendiente, en corrección, en verificación, verificado, bloquea
 - El cambio de `activeRestaurantId` ahora invalida búsquedas pendientes, limpia candidatos, código, estado de verificación y token recién creado. Respuestas tardías de candidatos, verificación y guardado de código se descartan si el contexto ya cambió.
 - TDD: la regresión falló antes y pasa después; focal billeteras **11/11**; suite global posterior **73 archivos / 362 pruebas**, typecheck, lint y `git diff --check` pasan. Commit fuente: `5c83711` (`fix(wallet): reset state on restaurant switch`). Los cambios ajenos en `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` y `output/` siguen fuera.
 - U-03/A-09 permanecen en verificación hasta cambio de restaurante con backend/RLS real, concurrencia y permisos.
+
+## Corrección U-03/A-09 — Ofertas rechaza contexto global obsoleto — 2026-09-16
+
+- La regresión reprodujo que una recarga de Ofertas podía imponer un `activeRestaurantId` ya no visible sobre el formulario. La selección podía quedar vacía y depender solo del rechazo RLS al escribir.
+- `OffersPage` acepta el contexto global solo si pertenece a `stores` visibles; si no, fija la primera sede visible y sincroniza formulario/contexto. TDD focal Backoffice **12/12**; typecheck, lint y `git diff --check` pasan.
+- Commit fuente pendiente de registrar en el siguiente checkpoint; se preservan los cambios ajenos en `src/lib/routePlanner.ts`, `tests/route-planner.test.ts` y `output/`. U-03/A-09 siguen en verificación con backend/RLS real.
