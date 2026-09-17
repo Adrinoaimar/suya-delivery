@@ -51,6 +51,10 @@ export default function CatalogPage() {
   const menuUrl = (slug: string) => `${customerOrigin()}/menu/${encodeURIComponent(slug)}`;
   const update = (id: string, patch: Partial<MenuSettings>) =>
     setSettings((current) => ({ ...current, [id]: { ...current[id], ...patch } }));
+  const isCurrentRestaurant = (restaurantId: string) =>
+    useBackofficeContextStore.getState().activeRestaurantId === restaurantId;
+  const finishSaving = (restaurantId: string) =>
+    setSaving((current) => current === restaurantId ? null : current);
 
   const load = useCallback(async (preferredRestaurantId = '') => {
     const requestId = ++loadRequestRef.current;
@@ -119,11 +123,14 @@ export default function CatalogPage() {
       const currentStore = stores.find((store) => store.id === storeId);
       if (currentStore?.logo !== next.logoUrl) {
         await storeService.saveStoreLogo(storeId, next.logoUrl);
-        setStores((current) =>
-          current.map((store) => (store.id === storeId ? { ...store, logo: next.logoUrl } : store)),
-        );
+        if (isCurrentRestaurant(storeId)) {
+          setStores((current) =>
+            current.map((store) => (store.id === storeId ? { ...store, logo: next.logoUrl } : store)),
+          );
+        }
       }
       const saved = await storeService.saveMenuSettings(next);
+      if (!isCurrentRestaurant(storeId)) return;
       update(storeId, saved);
       notifyCatalogInvalidated();
       notificationService.notify(
@@ -133,12 +140,13 @@ export default function CatalogPage() {
         'success',
       );
     } catch (cause) {
+      if (!isCurrentRestaurant(storeId)) return;
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No se pudo guardar el menú.',
         'danger',
       );
     } finally {
-      setSaving(null);
+      finishSaving(storeId);
     }
   };
 
@@ -147,15 +155,17 @@ export default function CatalogPage() {
     setSaving(storeId);
     try {
       const url = await storeService.uploadMenuImage(storeId, kind, file);
+      if (!isCurrentRestaurant(storeId)) return;
       update(storeId, kind === 'logo' ? { logoUrl: url } : { heroImageUrl: url });
       notificationService.notify('Imagen cargada. Guarda los cambios para publicarla.', 'success');
     } catch (cause) {
+      if (!isCurrentRestaurant(storeId)) return;
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No se pudo cargar la imagen.',
         'danger',
       );
     } finally {
-      setSaving(null);
+      finishSaving(storeId);
     }
   };
 
@@ -188,6 +198,7 @@ export default function CatalogPage() {
             <select
               value={selectedRestaurantId}
               onChange={(event) => {
+                setSaving(null);
                 setSelectedRestaurantId(event.target.value);
                 void load(event.target.value);
               }}

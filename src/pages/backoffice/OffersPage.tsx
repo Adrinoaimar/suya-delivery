@@ -236,8 +236,9 @@ export default function OffersPage() {
               className="h-12 rounded-btn border border-suya-mist bg-white px-3.5"
               value={form.restaurantId}
               onChange={(event) => {
-                update('restaurantId', event.target.value);
-                setActiveRestaurantId(event.target.value);
+                const nextRestaurantId = event.target.value;
+                setForm({ ...initialForm, restaurantId: nextRestaurantId });
+                setActiveRestaurantId(nextRestaurantId);
               }}
             >
               <option value="">{isPlatformAdmin ? 'Todos los restaurantes' : 'Selecciona…'}</option>

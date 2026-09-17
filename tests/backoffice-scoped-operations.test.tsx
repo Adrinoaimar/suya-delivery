@@ -8,12 +8,15 @@ import { useAuthStore } from '@/store/authStore';
 import { useBackofficeContextStore } from '@/store/backofficeContextStore';
 import type { AuthIdentity } from '@/lib/auth/types';
 import type { AppOffer, Product, Store } from '@/types';
-import type { RestaurantRider, TableSummary } from '@/lib/services';
+import type { MenuSettings, RestaurantRider, TableSummary } from '@/lib/services';
 
 const mocks = vi.hoisted(() => ({
   listStores: vi.fn(),
   listProducts: vi.fn(),
   getMenuSettings: vi.fn(),
+  saveMenuSettings: vi.fn(),
+  saveStoreLogo: vi.fn(),
+  uploadMenuImage: vi.fn(),
   listTables: vi.fn(),
   createTable: vi.fn(),
   regenerateQr: vi.fn(),
@@ -33,6 +36,9 @@ vi.mock('@/lib/services', async (importOriginal) => ({
     listStores: mocks.listStores,
     listProducts: mocks.listProducts,
     getMenuSettings: mocks.getMenuSettings,
+    saveMenuSettings: mocks.saveMenuSettings,
+    saveStoreLogo: mocks.saveStoreLogo,
+    uploadMenuImage: mocks.uploadMenuImage,
   },
   tableService: {
     list: mocks.listTables,
@@ -129,6 +135,9 @@ function reset() {
     accentColor: '#FF7A00',
     fontFamily: 'Inter',
   });
+  mocks.saveMenuSettings.mockImplementation((settings: MenuSettings) => Promise.resolve(settings));
+  mocks.saveStoreLogo.mockResolvedValue(undefined);
+  mocks.uploadMenuImage.mockResolvedValue('https://example.test/image.webp');
   mocks.listTables.mockResolvedValue([]);
   mocks.listRiders.mockResolvedValue([]);
   mocks.listOffers.mockResolvedValue([]);
@@ -441,5 +450,31 @@ describe('operaciones con alcance de cuenta de restaurante', () => {
 
     expect(screen.queryByText('old@example.test')).not.toBeInTheDocument();
     expect(screen.getByLabelText('Nombre completo')).toHaveValue('Rider actual');
+  });
+
+  it('no muestra como actual un guardado de catálogo que terminó en otra cuenta', async () => {
+    const save = deferred<MenuSettings>();
+    useAuthStore.setState({ identity: { ...identity, restaurantIds: [restaurant.id, secondRestaurant.id] } });
+    mocks.listStores.mockResolvedValue([restaurant, secondRestaurant]);
+    mocks.saveMenuSettings.mockReturnValue(save.promise);
+
+    render(<CatalogPage />);
+    const selector = await screen.findByLabelText('Cuenta de restaurante');
+    expect(await screen.findByText('Arroz con mariscos')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar y actualizar QR' }));
+    await waitFor(() => expect(mocks.saveMenuSettings).toHaveBeenCalledTimes(1));
+
+    fireEvent.change(selector, { target: { value: secondRestaurant.id } });
+    expect(await screen.findByRole('heading', { name: secondRestaurant.name })).toBeInTheDocument();
+    await act(async () => {
+      save.resolve({
+        restaurantId: restaurant.id, slug: 'donde-joel-menu', published: true, logoUrl: null,
+        heroImageUrl: null, primaryColor: '#0647A9', accentColor: '#FF7A00', fontFamily: 'Inter',
+      });
+      await save.promise;
+    });
+
+    expect(useBackofficeContextStore.getState().activeRestaurantId).toBe(secondRestaurant.id);
+    expect(mocks.notify).not.toHaveBeenCalledWith('Menú publicado y logo actualizado.', 'success');
   });
 });

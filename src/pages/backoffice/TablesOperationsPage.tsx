@@ -197,6 +197,7 @@ export default function TablesOperationsPage() {
             <select
               value={restaurantId}
               onChange={(event) => {
+                setTableNumber('');
                 setRestaurantId(event.target.value);
                 void load(event.target.value);
               }}

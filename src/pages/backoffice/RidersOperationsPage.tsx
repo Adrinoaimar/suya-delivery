@@ -209,6 +209,7 @@ export default function RidersOperationsPage() {
             <select
               value={restaurantId}
               onChange={(event) => {
+                setForm(emptyForm);
                 setRestaurantId(event.target.value);
                 void load(event.target.value);
               }}
