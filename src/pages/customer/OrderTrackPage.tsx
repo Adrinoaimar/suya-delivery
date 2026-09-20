@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, MapPin, XCircle } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
 import { Button, ButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
@@ -11,8 +11,10 @@ import { ExpandableSheet } from '@/components/common/BottomSheet';
 import { CodeDialog } from '@/components/order/CodeDialog';
 import { OrderCodes } from '@/components/order/OrderCodes';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
+import { LemonQrPayment } from '@/components/payment/LemonQrPayment';
 import { MapProvider } from '@/components/map/MapProvider';
 import { MapUnavailable as MapUnavailableCard } from '@/components/map/MapUnavailable';
+import { lemonQrImage, type LemonPaymentIntent } from '@/lib/payments/lemon';
 import { notificationService, safetyOperationsService } from '@/lib/services';
 import { useOrderStore } from '@/store/orderStore';
 import { orderRouteProgress, useOrderStatusNotifier } from '@/hooks/useOrders';
@@ -22,6 +24,10 @@ import type { LatLng } from '@/types';
 
 export default function OrderTrackPage() {
   const { id = '' } = useParams();
+  const location = useLocation();
+  const lemonPayment = (location.state as { lemonPayment?: LemonPaymentIntent } | null)
+    ?.lemonPayment;
+  const lemonQr = lemonQrImage();
   const order = useOrderStore((state) => state.getOrder(id));
   const status = useOrderStore((state) => state.status);
   const error = useOrderStore((state) => state.error);
@@ -118,6 +124,9 @@ export default function OrderTrackPage() {
 
   const detail = (
     <div className="space-y-4">
+      {lemonQr && (lemonPayment || order.paymentMethod === 'lemon') && (
+        <LemonQrPayment qrImage={lemonQr} amount={order.total} intent={lemonPayment} />
+      )}
       <OrderCodes order={order} />
 
       <TrackingTimeline order={order} compact />

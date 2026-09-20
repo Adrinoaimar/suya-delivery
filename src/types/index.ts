@@ -151,7 +151,7 @@ export const ORDER_FLOW: OrderStatus[] = [
   'delivered',
 ];
 
-export type PaymentMethod = 'cash' | 'yape' | 'card';
+export type PaymentMethod = 'cash' | 'yape' | 'lemon' | 'card';
 
 export interface OrderStatusEvent {
   status: OrderStatus;

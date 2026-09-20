@@ -236,11 +236,26 @@ describe('SupabaseOrderServiceImpl', () => {
     const { client, rpc, from } = createFakeClient();
 
     await expect(new SupabaseOrderServiceImpl(client).create(createInput(method))).rejects.toThrow(
-      'Solo el pago en efectivo está habilitado actualmente.',
+      'Este método de pago todavía no está habilitado.',
     );
 
     expect(rpc).not.toHaveBeenCalled();
     expect(from).not.toHaveBeenCalled();
+  });
+
+  it('acepta Lemon, crea pedido con RPC existente y conserva método del servidor', async () => {
+    const { client, rpc } = createFakeClient({
+      userId: 'customer-1',
+      rowResult: { data: buildRow({ payment_method: 'lemon' }), error: null },
+      rpc: async (name) => name === 'set_order_delivery_coordinates'
+        ? { data: true, error: null }
+        : { data: [{ order_id: buildRow().id, delivery_code: '1234', cancel_code: '5678' }], error: null },
+    });
+
+    const order = await new SupabaseOrderServiceImpl(client).create(createInput('lemon'));
+
+    expect(rpc).toHaveBeenCalledWith('create_cash_order', expect.any(Object));
+    expect(order.paymentMethod).toBe('lemon');
   });
 
   it('clasifica cancelación inexistente, cerrada y con código inválido', async () => {
