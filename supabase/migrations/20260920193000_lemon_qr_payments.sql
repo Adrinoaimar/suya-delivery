@@ -131,7 +131,7 @@ begin
   if v_order.status in ('cancelled', 'delivered') then raise exception 'order is closed'; end if;
 
   if v_order.customer_id is null then
-    select * into v_secret from private.order_secrets where order_id = v_order.id;
+    select os.* into v_secret from private.order_secrets os where os.order_id = v_order.id;
     if p_guest_access_token is null
        or v_secret.guest_access_token_hash is null
        or extensions.crypt(p_guest_access_token, v_secret.guest_access_token_hash)
