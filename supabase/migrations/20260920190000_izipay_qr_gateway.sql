@@ -215,7 +215,12 @@ begin
 end;
 $$;
 
-create or replace function public.get_payment_intent(
+-- The previous wallet RPC has a different OUT-parameter list (Izipay also
+-- returns provider_reference), so PostgreSQL requires dropping the signature
+-- before recreating it.
+drop function if exists public.get_payment_intent(uuid, text);
+
+create function public.get_payment_intent(
   p_order_id uuid,
   p_guest_access_token text default null
 )
