@@ -1,0 +1,25 @@
+name: Reconciliar pagos Izipay
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    env:
+      IZIPAY_RECONCILE_SECRET: ${{ secrets.IZIPAY_RECONCILE_SECRET }}
+      IZIPAY_RECONCILE_URL: https://cggxooilzhqlcnofgtmi.supabase.co/functions/v1/reconcile-izipay-payments
+    steps:
+      - name: Consultar pagos pendientes Izipay
+        run: |
+          if [[ -z "$IZIPAY_RECONCILE_SECRET" ]]; then
+            echo 'Reconciliación omitida: falta IZIPAY_RECONCILE_SECRET.'
+            exit 0
+          fi
+          curl --fail-with-body --silent --show-error --retry 2 \
+            -X POST "$IZIPAY_RECONCILE_URL" \
+            -H "Authorization: Bearer $IZIPAY_RECONCILE_SECRET" \
+            -H 'Content-Type: application/json' \
+            --data '{}'

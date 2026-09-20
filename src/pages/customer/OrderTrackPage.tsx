@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, MapPin, XCircle } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
 import { Button, ButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
@@ -11,8 +11,10 @@ import { ExpandableSheet } from '@/components/common/BottomSheet';
 import { CodeDialog } from '@/components/order/CodeDialog';
 import { OrderCodes } from '@/components/order/OrderCodes';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
+import { IzipayCheckout } from '@/components/payment/IzipayCheckout';
 import { MapProvider } from '@/components/map/MapProvider';
 import { MapUnavailable as MapUnavailableCard } from '@/components/map/MapUnavailable';
+import type { IzipayPaymentSession } from '@/lib/payments/izipay';
 import { notificationService, safetyOperationsService } from '@/lib/services';
 import { useOrderStore } from '@/store/orderStore';
 import { orderRouteProgress, useOrderStatusNotifier } from '@/hooks/useOrders';
@@ -22,6 +24,9 @@ import type { LatLng } from '@/types';
 
 export default function OrderTrackPage() {
   const { id = '' } = useParams();
+  const location = useLocation();
+  const izipaySession = (location.state as { izipaySession?: IzipayPaymentSession } | null)
+    ?.izipaySession;
   const order = useOrderStore((state) => state.getOrder(id));
   const status = useOrderStore((state) => state.status);
   const error = useOrderStore((state) => state.error);
@@ -118,6 +123,7 @@ export default function OrderTrackPage() {
 
   const detail = (
     <div className="space-y-4">
+      {izipaySession && <IzipayCheckout session={izipaySession} />}
       <OrderCodes order={order} />
 
       <TrackingTimeline order={order} compact />
