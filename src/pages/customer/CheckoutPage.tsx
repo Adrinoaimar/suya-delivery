@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Banknote, CircleUserRound, LocateFixed, MapPin, TicketPercent } from 'lucide-react';
+import { Banknote, CircleUserRound, LocateFixed, MapPin, QrCode, TicketPercent } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Button, ButtonLink } from '@/components/common/Button';
@@ -11,7 +11,10 @@ import { Input, Textarea } from '@/components/common/Input';
 import { Skeleton } from '@/components/common/Skeleton';
 import { track } from '@/lib/analytics';
 import { FREE_DELIVERY_THRESHOLD } from '@/lib/commerce';
+import { LemonQrPayment } from '@/components/payment/LemonQrPayment';
+import { createLemonPaymentIntent, isLemonPaymentEnabled, lemonQrImage, type LemonPaymentIntent } from '@/lib/payments/lemon';
 import { locationService, notificationService, offerService, paymentService } from '@/lib/services';
+import { getStoredGuestAccessToken } from '@/lib/services/SupabaseOrderService';
 import { useCatalogStore } from '@/store/catalogStore';
 import { cartTotals, useCartStore } from '@/store/cartStore';
 import { useOrderStore } from '@/store/orderStore';
@@ -60,7 +63,9 @@ export default function CheckoutPage() {
     address: identity?.defaultAddress ?? (isTableOrder ? `Mesa ${tableContext?.tableNumber ?? ''}`.trim() : ''),
     reference: identity?.defaultReference ?? '',
   });
-  const method: PaymentMethod = 'cash';
+  const lemonEnabled = isLemonPaymentEnabled();
+  const lemonQr = lemonQrImage();
+  const [method, setMethod] = useState<PaymentMethod>('cash');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [deliveryPosition, setDeliveryPosition] = useState<LatLng | null>(null);
@@ -211,7 +216,9 @@ export default function CheckoutPage() {
 
     setSubmitting(true);
     try {
-      const payment = await paymentService.authorize(method, total);
+      // The order is created first; server RPC then opens a Lemon attempt using
+      // the server total and guest token. No client amount is trusted.
+      const payment = await paymentService.authorize('cash', total);
       if (!payment.ok) {
         notificationService.notify(payment.message, 'danger');
         return;
@@ -246,6 +253,19 @@ export default function CheckoutPage() {
         offerCode: selectedOffer?.code,
       });
 
+      let lemonPayment: LemonPaymentIntent | undefined;
+      let lemonPaymentError = false;
+      if (method === 'lemon') {
+        try {
+          lemonPayment = await createLemonPaymentIntent({
+            orderId: order.id,
+            guestAccessToken: getStoredGuestAccessToken(order.id) ?? undefined,
+          });
+        } catch {
+          lemonPaymentError = true;
+        }
+      }
+
       track('order_created', {
         store_id: store.id,
         order_origin: tableContext?.tableId ? 'table_qr' : orderOrigin,
@@ -265,14 +285,22 @@ export default function CheckoutPage() {
         try { sessionStorage.setItem('suya.guestOrder', JSON.stringify(order)); } catch { /* storage unavailable */ }
       }
       notificationService.notify(
-        isMenuOrder
-          ? `Pedido confirmado. Pagarás ${formatPrice(order.total)} en efectivo.`
-          : `Pedido confirmado. Pagarás ${formatPrice(order.total)} en efectivo al recibirlo.`,
-        'success',
+        lemonPayment
+          ? `Pedido creado. Escanea el QR Lemon por ${formatPrice(order.total)}.`
+          : method === 'lemon' && lemonPaymentError
+            ? 'Pedido creado. El QR Lemon está disponible, pero falta registrar el intento en el servidor.'
+            : isMenuOrder
+              ? `Pedido confirmado. Pagarás ${formatPrice(order.total)} en efectivo.`
+              : `Pedido confirmado. Pagarás ${formatPrice(order.total)} en efectivo al recibirlo.`,
+        method === 'lemon' && lemonPaymentError ? 'warning' : 'success',
       );
       navigate(publicOrderPath ?? `/orders/${order.id}/track`, {
         replace: true,
-        state: publicOrderPath ? { guestOrder: order } : undefined,
+        state: publicOrderPath
+          ? { guestOrder: order, lemonPayment }
+          : lemonPayment
+            ? { lemonPayment }
+            : undefined,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'No pudimos crear el pedido. Inténtalo nuevamente.';
@@ -404,23 +432,50 @@ export default function CheckoutPage() {
 
           <Card>
             <h2 className="mb-3 font-display text-[15px] font-bold">Método de pago</h2>
-            <div className="flex items-center gap-3 rounded-btn border border-suya-green bg-suya-lime-soft p-3">
-              <Banknote aria-hidden="true" className="h-5 w-5 text-suya-green" />
-              <span>
-                <span className="block text-[15px] font-semibold">Efectivo</span>
-                <span className="block text-xs text-[#6B7076]">
-                  {isTableOrder
-                    ? 'Paga en caja o al solicitar la cuenta'
-                    : isDeliveryOrder
-                      ? 'Paga al recibir tu pedido'
-                      : 'Paga directamente en el local'}
+            <div className="grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                aria-pressed={method === 'cash'}
+                onClick={() => setMethod('cash')}
+                className={`flex items-center gap-3 rounded-btn border p-3 text-left transition ${method === 'cash' ? 'border-suya-green bg-suya-lime-soft' : 'border-suya-mist bg-white'}`}
+              >
+                <Banknote aria-hidden="true" className="h-5 w-5 shrink-0 text-suya-green" />
+                <span>
+                  <span className="block text-[15px] font-semibold">Efectivo</span>
+                  <span className="block text-xs text-[#6B7076]">
+                    {isTableOrder
+                      ? 'Paga en caja o al solicitar la cuenta'
+                      : isDeliveryOrder
+                        ? 'Paga al recibir tu pedido'
+                        : 'Paga directamente en el local'}
+                  </span>
                 </span>
-              </span>
+              </button>
+              {lemonEnabled && (
+                <button
+                  type="button"
+                  aria-pressed={method === 'lemon'}
+                  onClick={() => setMethod('lemon')}
+                  className={`flex items-center gap-3 rounded-btn border p-3 text-left transition ${method === 'lemon' ? 'border-[#1B66D1] bg-[#F4F8FF]' : 'border-suya-mist bg-white'}`}
+                >
+                  <QrCode aria-hidden="true" className="h-5 w-5 shrink-0 text-[#1B66D1]" />
+                  <span>
+                    <span className="block text-[15px] font-semibold">Lemon</span>
+                    <span className="block text-xs text-[#6B7076]">Escanea el QR y paga el monto exacto</span>
+                  </span>
+                </button>
+              )}
             </div>
-            <p className="mt-3 text-xs text-[#6B7076]">
-              Próximamente habilitaremos pagos digitales mediante una pasarela confirmada por el
-              servidor.
-            </p>
+            {method === 'lemon' && lemonQr && (
+              <div className="mt-4">
+                <LemonQrPayment qrImage={lemonQr} amount={total} />
+              </div>
+            )}
+            {!lemonEnabled && (
+              <p className="mt-3 text-xs text-[#6B7076]">
+                Lemon se habilita cuando Suya recibe un QR privado de prueba o del restaurante.
+              </p>
+            )}
           </Card>
         </div>
 

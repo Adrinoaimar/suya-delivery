@@ -77,6 +77,7 @@ interface GuestOrderRow {
   restaurant_id: string;
   origin: 'menu' | 'table_qr';
   status: OrderStatus;
+  payment_method?: Order['paymentMethod'];
   table_id: string | null;
   customer_name: string;
   customer_phone: string;
@@ -118,6 +119,10 @@ function saveGuestToken(orderId: string, token: string | null | undefined): void
 
 function guestToken(orderId: string): string | null {
   try { return sessionStorage.getItem(`${GUEST_TOKEN_PREFIX}${orderId}`); } catch { return null; }
+}
+
+export function getStoredGuestAccessToken(orderId: string): string | null {
+  return guestToken(orderId);
 }
 
 function requireClient(): SupabaseClient {
@@ -243,7 +248,7 @@ function mapGuestOrder(row: GuestOrderRow): Order {
     },
     deliveryPosition: null,
     storePosition: null,
-    paymentMethod: 'cash',
+    paymentMethod: row.payment_method ?? 'cash',
     riderId: null,
     etaMinutes: row.estimated_minutes,
     deliveryCode: row.delivery_code,
@@ -361,8 +366,8 @@ export class SupabaseOrderServiceImpl
   }
 
   async create(input: CreateOrderInput): Promise<Order> {
-    if (input.paymentMethod !== 'cash') {
-      throw new Error('Solo el pago en efectivo está habilitado actualmente.');
+    if (input.paymentMethod !== 'cash' && input.paymentMethod !== 'lemon') {
+      throw new Error('Este método de pago todavía no está habilitado.');
     }
     const { data: userData, error: userError } = await this.client.auth.getUser();
     if (userError && !isMissingSession(userError)) throw new Error(userError.message);

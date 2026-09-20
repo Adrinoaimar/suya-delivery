@@ -6,6 +6,8 @@ import { Button, ButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
 import { OrderCodes } from '@/components/order/OrderCodes';
+import { LemonQrPayment } from '@/components/payment/LemonQrPayment';
+import { lemonQrImage, type LemonPaymentIntent } from '@/lib/payments/lemon';
 import { orderService } from '@/lib/services';
 import { useOrderStore } from '@/store/orderStore';
 import { formatDateTime, formatPrice, orderStatusLabel } from '@/utils/format';
@@ -13,6 +15,7 @@ import type { Order } from '@/types';
 
 interface GuestOrderLocationState {
   guestOrder?: Order;
+  lemonPayment?: LemonPaymentIntent;
 }
 
 function savedGuestOrder(id: string): Order | null {
@@ -30,6 +33,8 @@ function savedGuestOrder(id: string): Order | null {
 export default function GuestOrderPage() {
   const { id = '', slug = '' } = useParams();
   const location = useLocation();
+  const lemonPayment = (location.state as GuestOrderLocationState | null)?.lemonPayment;
+  const lemonQr = lemonQrImage();
   const cached = useOrderStore((state) => state.getOrder(id));
   const [order, setOrder] = useState<Order | null>(
     (location.state as GuestOrderLocationState | null)?.guestOrder ?? cached ?? savedGuestOrder(id),
@@ -107,6 +112,10 @@ export default function GuestOrderPage() {
       </section>
 
       {!tableOrder && order.deliveryCode && <OrderCodes order={order} />}
+
+      {lemonQr && (lemonPayment || order.paymentMethod === 'lemon') && (
+        <LemonQrPayment qrImage={lemonQr} amount={order.total} intent={lemonPayment} />
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_300px] lg:items-start">
         <Card>
