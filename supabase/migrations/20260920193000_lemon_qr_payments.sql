@@ -142,11 +142,11 @@ begin
     raise exception 'order access denied';
   end if;
 
-  select * into v_attempt
-  from public.payment_attempts
-  where order_id = v_order.id and provider = 'lemon'
-    and status in ('pending', 'authorized')
-  order by created_at desc
+  select pa.* into v_attempt
+  from public.payment_attempts pa
+  where pa.order_id = v_order.id and pa.provider = 'lemon'
+    and pa.status in ('pending', 'authorized')
+  order by pa.created_at desc
   limit 1
   for update;
 
