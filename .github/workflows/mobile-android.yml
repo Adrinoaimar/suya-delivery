@@ -6,7 +6,6 @@ on:
     paths:
       - '.github/workflows/mobile-android.yml'
       - 'android/**'
-      - 'apps/**'
       - 'capacitor.config.ts'
       - 'package.json'
       - 'package-lock.json'
@@ -17,7 +16,6 @@ on:
     paths:
       - '.github/workflows/mobile-android.yml'
       - 'android/**'
-      - 'apps/**'
       - 'capacitor.config.ts'
       - 'package.json'
       - 'package-lock.json'
@@ -46,10 +44,6 @@ jobs:
       VITE_CUSTOMER_APP_URL: https://suyadelivery.com
       VITE_RIDER_APP_URL: https://rider.suyadelivery.com
       VITE_BACKOFFICE_APP_URL: https://panel.suyadelivery.com
-      VITE_CULQI_GATEWAY_ENABLED: ${{ secrets.VITE_CULQI_GATEWAY_ENABLED }}
-      VITE_CULQI_PUBLIC_KEY: ${{ secrets.VITE_CULQI_PUBLIC_KEY }}
-      VITE_IZIPAY_GATEWAY_ENABLED: ${{ vars.VITE_IZIPAY_GATEWAY_ENABLED || 'false' }}
-      VITE_IZIPAY_CHECKOUT_SCRIPT_URL: ${{ vars.VITE_IZIPAY_CHECKOUT_SCRIPT_URL || 'https://sandbox-checkout.izipay.pe/payments/v1/js/index.js' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -64,42 +58,35 @@ jobs:
           java-version: '21'
 
       - uses: android-actions/setup-android@v4
-        with:
-          # The action default still includes the removed legacy `tools` package.
-          # Install only the supported platform-tools here; the next step pins
-          # the exact platform and build-tools versions used by this project.
-          packages: platform-tools
 
       - name: Instalar SDK Android requerido
         run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;35.0.0"
 
       - run: npm ci
 
-      - name: Verificar secretos y compilar APKs por rol
+      - name: Verificar código y preparar bundle móvil
         run: |
           npm run security:secrets
-          npm run build:mobile:roles
+          npm run build:mobile
 
-      - name: Publicar APK de repartidor
+      - name: Compilar APK debug
+        run: bash android/gradlew -p android assembleDebug --no-daemon
+
+      - name: Publicar APK debug
         uses: actions/upload-artifact@v4
         with:
-          name: Suya-Rider-debug-${{ github.sha }}
-          path: output/android/Suya-Rider-debug.apk
+          name: Suya-Android-debug-${{ github.sha }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publicar APK de backoffice
-        uses: actions/upload-artifact@v4
-        with:
-          name: Suya-Backoffice-debug-${{ github.sha }}
-          path: output/android/Suya-Backoffice-debug.apk
-          if-no-files-found: error
-          retention-days: 14
+      - name: Compilar release sin firma
+        run: bash android/gradlew -p android assembleRelease --no-daemon
 
-      - name: Publicar APK de sincronización de caja
+      - name: Publicar APK release sin firma
         uses: actions/upload-artifact@v4
         with:
-          name: Suya-Wallet-Observer-debug-${{ github.sha }}
-          path: output/android/Suya-Wallet-Observer-debug.apk
+          name: Suya-Android-release-unsigned-${{ github.sha }}
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
           if-no-files-found: error
           retention-days: 14
