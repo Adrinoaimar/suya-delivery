@@ -231,7 +231,7 @@ as $$
       order by e.created_at) from public.order_events e where e.order_id = o.id), '[]'::jsonb)
   from public.orders o
   join private.order_secrets s on s.order_id = o.id
-  where o.id = p_order_id and o.customer_id is null and o.origin in ('menu', 'table_qr')
+  where o.id = p_order_id and o.customer_id is null and o.origin in ('menu','table_qr')
     and p_access_token is not null and length(p_access_token) between 32 and 128
     and s.guest_access_token_hash is not null
     and extensions.crypt(p_access_token, s.guest_access_token_hash) = s.guest_access_token_hash;
