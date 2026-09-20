@@ -83,8 +83,6 @@ export default function GuestOrderPage() {
   }
 
   const tableOrder = order.origin === 'table_qr';
-  const closed = order.status === 'delivered' || order.status === 'cancelled';
-
   return (
     <main id="contenido" className="shell max-w-3xl space-y-5 py-6 lg:py-10">
       <section className="rounded-card bg-suya-green p-6 text-white shadow-soft sm:p-8">
@@ -108,7 +106,7 @@ export default function GuestOrderPage() {
         </div>
       </section>
 
-      {!closed && !tableOrder && order.deliveryCode && <OrderCodes order={order} />}
+      {!tableOrder && order.deliveryCode && <OrderCodes order={order} />}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_300px] lg:items-start">
         <Card>

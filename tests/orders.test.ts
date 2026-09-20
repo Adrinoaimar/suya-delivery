@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { MockOrderServiceImpl } from '@/lib/services/MockOrderService';
 import { products } from '@/data';
 import type { CartItem } from '@/types';
+import { riderTrackingMessage } from '@/utils/format';
 
 function buildItems(): CartItem[] {
   const product = products.find((candidate) => candidate.storeId === 'anda-paya')!;
@@ -41,6 +42,13 @@ async function createOrder(service: MockOrderServiceImpl) {
 }
 
 describe('contrato de pedidos async', () => {
+  it('actualiza el mensaje GPS según la fase del pedido', () => {
+    expect(riderTrackingMessage('preparing')).toContain('cuando recoja');
+    expect(riderTrackingMessage('picked_up')).toContain('recogió el pedido');
+    expect(riderTrackingMessage('on_the_way')).toContain('está en camino');
+    expect(riderTrackingMessage('on_the_way')).not.toContain('cuando recoja');
+  });
+
   it('crea un pedido sin asignar repartidor aleatorio', async () => {
     const service = new MockOrderServiceImpl();
     const order = await service.create({

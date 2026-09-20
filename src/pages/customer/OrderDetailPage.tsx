@@ -10,7 +10,13 @@ import { CartLine } from '@/components/order/CartLine';
 import { OrderCodes } from '@/components/order/OrderCodes';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
 import { useOrderStore } from '@/store/orderStore';
-import { formatDateTime, formatPrice, orderStatusLabel, paymentLabel } from '@/utils/format';
+import {
+  formatDateTime,
+  formatPrice,
+  orderStatusLabel,
+  paymentLabel,
+  riderTrackingMessage,
+} from '@/utils/format';
 
 export default function OrderDetailPage() {
   const { id = '' } = useParams();
@@ -74,7 +80,7 @@ export default function OrderDetailPage() {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px] lg:items-start">
         <div className="space-y-4">
-          {isActive && <OrderCodes order={order} />}
+          <OrderCodes order={order} />
 
           <Card>
             <h2 className="mb-3 font-display text-[15px] font-bold">Seguimiento</h2>
@@ -109,7 +115,7 @@ export default function OrderDetailPage() {
             <Card>
               <h2 className="mb-3 font-display text-[15px] font-bold">Repartidor</h2>
               <p className="text-sm text-[#4A4F55]">
-                Repartidor asignado. Su GPS aparece cuando recoja el pedido.
+                {riderTrackingMessage(order.status)}
               </p>
             </Card>
           )}

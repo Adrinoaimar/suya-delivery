@@ -1,6 +1,6 @@
 # Estado de ejecución
 
-Actualizado: 12 de septiembre de 2026 (`America/Lima`)
+Actualizado: 19 de septiembre de 2026 (`America/Lima`)
 
 ## Objetivo
 
@@ -82,8 +82,8 @@ producción.
 
 ## Siguiente acción
 
-Validar inicio de sesión real en un dispositivo físico y resolver la firma Android release. Después
-de confirmar sede y logística, habilitar pedidos.
+Publicar F19 en Cloudflare Pages y validar Cliente en detalle/seguimiento. Después de confirmar sede
+y logística, habilitar pedidos.
 
 ## Gate productivo pendiente
 
@@ -101,6 +101,14 @@ La auditoría F18 queda documentada en `docs/execution/F18.md`. La activación d
 
 La máquina Windows no puede producir un `.ipa`. El proyecto Xcode y el build de simulador son
 verificables en CI; un artefacto instalable exige firma Apple externa.
+
+## F19: código de entrega persistente en Cliente
+
+- Cliente y seguimiento muestran código de entrega durante todo ciclo, incluidos `delivered` y `cancelled`.
+- Enlace público conserva código para pedidos a domicilio cerrados; pedidos de mesa no muestran código de entrega.
+- Mensaje GPS cambia según fase: asignado, recogido o en camino.
+- Gates locales: 38 archivos/194 pruebas, typecheck, lint, build y escaneo secretos correctos.
+- `verify:production` y `verify:cloudflare` quedan bloqueados localmente por variables de despliegue ausentes; CI debe inyectarlas desde `cloudflare-production`.
 
 
 
