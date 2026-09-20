@@ -2,6 +2,12 @@
 -- The client receives a short-lived checkout session only after the server
 -- locks the exact order total and creates one idempotent payment attempt.
 
+-- Keep this migration deployable on the public baseline as well as on the
+-- newer wallet/Culqi schema, where these columns already exist.
+alter table public.payment_attempts
+  add column if not exists receiver_account_id uuid,
+  add column if not exists gateway_qr_payload text;
+
 create or replace function public.create_izipay_payment_intent(
   p_order_id uuid,
   p_guest_access_token text default null
