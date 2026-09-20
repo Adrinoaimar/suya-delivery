@@ -432,3 +432,15 @@ enabled = true
 # declarative_schema_path = "./schemas"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# Izipay invokes the signed webhook without a Supabase JWT; the function validates HMAC.
+[functions.izipay-webhook]
+verify_jwt = false
+
+# Mobile/guest checkout supplies its own bearer or guest token; RPC enforces ownership.
+[functions.create-izipay-payment]
+verify_jwt = false
+
+# Scheduler authenticates with IZIPAY_RECONCILE_SECRET.
+[functions.reconcile-izipay-payments]
+verify_jwt = false
