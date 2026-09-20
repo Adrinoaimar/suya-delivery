@@ -154,4 +154,4 @@ jobs:
           IZIPAY_PUBLIC_KEY: ${{ secrets.IZIPAY_PUBLIC_KEY }}
           IZIPAY_TOKEN_URL: ${{ secrets.IZIPAY_TOKEN_URL }}
           IZIPAY_ORDER_QUERY_URL: ${{ secrets.IZIPAY_ORDER_QUERY_URL }}
-        run: node scripts/verify-izipay-sandbox.mjs
+        run: node supabase/scripts/verify-izipay-sandbox.mjs
