@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
 
-        assertEquals("com.suya.app", appContext.getPackageName());
+        assertEquals(com.suya.app.BuildConfig.APPLICATION_ID, appContext.getPackageName());
     }
 }

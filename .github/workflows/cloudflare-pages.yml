@@ -96,6 +96,7 @@ jobs:
         run: |
           npm run build:apps
           node scripts/build-apps.mjs mobile
+          node scripts/build-apps.mjs walletobserver
           npm run prepare:mobile-live-update
           npm run verify:production
 
