@@ -46,7 +46,14 @@ jobs:
           npm run security:secrets
           npm run typecheck
           npm run lint
-          npm run test
+          # The config contract tests intentionally start from a clean local env;
+          # production values are only needed by the deployment/build steps.
+          env -u VITE_CULQI_GATEWAY_ENABLED \
+            -u VITE_CULQI_PUBLIC_KEY \
+            -u VITE_CUSTOMER_APP_URL \
+            -u VITE_RIDER_APP_URL \
+            -u VITE_BACKOFFICE_APP_URL \
+            npm run test
 
       - name: Construir cliente real
         run: |
