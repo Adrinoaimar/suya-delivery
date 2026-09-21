@@ -85,9 +85,15 @@ async function checkFunction(path, expectedStatuses = [200, 204, 400, 401, 403, 
   }
 }
 
-await checkFunction('create-culqi-order');
-await checkFunction('charge-culqi-card');
-await checkFunction('culqi-webhook');
+if (network && gatewayEnabled === 'true') {
+  await checkFunction('create-culqi-order');
+  await checkFunction('charge-culqi-card');
+  await checkFunction('culqi-webhook');
+}
+
+// El rider depende de este proxy incluso cuando el checkout Culqi está desactivado.
+// Un 404 aquí deja la aplicación publicada con mapa, pero sin guía vial real.
+await checkFunction('route-driving/route/v1/driving/0,0;0.01,0', [200, 204]);
 
 if (failures.length) {
   console.error('Preflight de pagos no apto:');

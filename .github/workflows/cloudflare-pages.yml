@@ -47,8 +47,9 @@ jobs:
       VITE_RIDER_APP_URL: ${{ vars.VITE_RIDER_APP_URL }}
       VITE_BACKOFFICE_APP_URL: ${{ vars.VITE_BACKOFFICE_APP_URL }}
       VITE_OSM_TILE_URL: ${{ vars.VITE_OSM_TILE_URL }}
-      VITE_CULQI_GATEWAY_ENABLED: ${{ secrets.VITE_CULQI_GATEWAY_ENABLED }}
-      VITE_CULQI_PUBLIC_KEY: ${{ secrets.VITE_CULQI_PUBLIC_KEY }}
+      VITE_CULQI_GATEWAY_ENABLED: ${{ secrets.VITE_CULQI_GATEWAY_ENABLED || 'false' }}
+      VITE_CULQI_PUBLIC_KEY: ${{ secrets.VITE_CULQI_PUBLIC_KEY || '' }}
+      ALLOWED_ORIGINS: https://suyadelivery.com,https://rider.suyadelivery.com,https://panel.suyadelivery.com
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       SUYA_LIVE_UPDATE_PRIVATE_KEY: ${{ secrets.SUYA_LIVE_UPDATE_PRIVATE_KEY }}
@@ -73,6 +74,9 @@ jobs:
           npm run typecheck
           npm run lint
           npm run test
+
+      - name: Verificar Edge Functions de pagos y rutas
+        run: npm run verify:payments -- --network
 
       - name: Construir y rechazar simulaciones
         run: |
