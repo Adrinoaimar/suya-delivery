@@ -57,6 +57,8 @@ export function Thumb({
       <img
         src={resolved}
         alt={name}
+        width={variant === 'store' ? 640 : 512}
+        height={variant === 'store' ? 480 : 512}
         loading="lazy"
         decoding="async"
         referrerPolicy="no-referrer"

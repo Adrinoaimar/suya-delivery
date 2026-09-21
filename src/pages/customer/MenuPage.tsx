@@ -5,6 +5,7 @@ import { Link, useParams } from 'react-router-dom';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { ProductRowSkeleton } from '@/components/common/Skeleton';
+import { SeoHead } from '@/components/common/SeoHead';
 import { ProductCard } from '@/components/marketplace/ProductCard';
 import { ProductSheet } from '@/components/marketplace/ProductSheet';
 import { track } from '@/lib/analytics';
@@ -15,7 +16,7 @@ import { FREE_DELIVERY_THRESHOLD } from '@/lib/commerce';
 import { formatPrice } from '@/utils/format';
 import { isStoreAcceptingOrders } from '@/utils/schedule';
 import { assetUrl } from '@/utils/asset';
-import menuLogo from '@/assets/suya-menus-logo.png';
+import menuLogo from '@/assets/suya-menus-logo.webp';
 import type { Product } from '@/types';
 import type { PublishedMenu } from '@/lib/services';
 
@@ -142,10 +143,28 @@ export default function MenuPage() {
   } as CSSProperties;
 
   return (
-    <div
-      style={theme}
-      className="min-h-screen bg-[#F8F5EE] pb-28 font-sans text-suya-carbon lg:pb-10"
-    >
+    <>
+      <SeoHead
+        title={`Menú de ${store.name} en Sullana | Suya Delivery`}
+        description={`${store.description} Consulta la carta, precios y opciones disponibles de ${store.name} en Sullana.`}
+        path={`/menu/${slug}`}
+        image={heroImage ?? logoImage}
+        schema={{
+          '@context': 'https://schema.org',
+          '@type': 'Restaurant',
+          name: store.name,
+          description: store.description,
+          url: `https://suyadelivery.com/menu/${slug}`,
+          image: heroImage ? new URL(heroImage, 'https://suyadelivery.com').toString() : undefined,
+          address: store.address,
+          servesCuisine: store.tags,
+          areaServed: { '@type': 'City', name: 'Sullana' },
+        }}
+      />
+      <div
+        style={theme}
+        className="min-h-screen bg-[#F8F5EE] pb-28 font-sans text-suya-carbon lg:pb-10"
+      >
       <header className="sticky top-0 z-20 border-b border-suya-carbon/5 bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-[68px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link
@@ -157,6 +176,8 @@ export default function MenuPage() {
               src={menuLogo}
               alt="Suya Menús"
               referrerPolicy="no-referrer"
+              width={236}
+              height={64}
               className="h-10 w-auto object-contain sm:h-11"
             />
           </Link>
@@ -189,6 +210,8 @@ export default function MenuPage() {
                 src={heroImage}
                 alt={`Portada de ${store.name}`}
                 referrerPolicy="no-referrer"
+                width={1200}
+                height={720}
                 className="h-full w-full object-cover"
               />
             ) : (
@@ -198,6 +221,8 @@ export default function MenuPage() {
                     src={logoImage}
                     alt={`Marca de ${store.name}`}
                     referrerPolicy="no-referrer"
+                    width={256}
+                    height={256}
                     className="max-h-32 w-auto max-w-[78%] rounded-2xl bg-white/95 object-contain p-4 shadow-soft"
                   />
                 ) : (
@@ -219,6 +244,8 @@ export default function MenuPage() {
                   src={logoImage}
                   alt={`Logo de ${store.name}`}
                   referrerPolicy="no-referrer"
+                  width={256}
+                  height={256}
                   className="h-full w-full bg-white object-contain p-1"
                 />
               ) : (
@@ -356,6 +383,7 @@ export default function MenuPage() {
           }
         }}
       />
-    </div>
+      </div>
+    </>
   );
 }

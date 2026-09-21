@@ -3,7 +3,7 @@ import { assetUrl, normalizeAssetInput } from '@/utils/asset';
 
 describe('rutas de activos publicados', () => {
   it('resuelve rutas locales con la base pública de Vite', () => {
-    expect(assetUrl('/images/stores/donde-joel/logo.png')).toMatch(/images\/stores\/donde-joel\/logo\.png$/);
+    expect(assetUrl('/images/stores/donde-joel/logo.png')).toMatch(/images\/stores\/donde-joel\/logo\.webp$/);
   });
 
   it('conserva URLs remotas y datos embebidos', () => {

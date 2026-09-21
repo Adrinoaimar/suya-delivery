@@ -1,5 +1,5 @@
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://js.culqi.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https://suyadelivery.com https://*.supabase.co wss://*.supabase.co https://*.tile.openstreetmap.org https://checkoutview.culqi.com; frame-src https://checkoutview.culqi.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://js.culqi.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob: https:; connect-src 'self' https://suyadelivery.com https://*.supabase.co wss://*.supabase.co https://*.tile.openstreetmap.org https://checkoutview.culqi.com https://cloudflareinsights.com https://*.cloudflareinsights.com; frame-src https://checkoutview.culqi.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests
   Referrer-Policy: strict-origin-when-cross-origin
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY

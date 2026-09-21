@@ -16,6 +16,7 @@ import { ButtonLink } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Rating } from '@/components/common/Rating';
+import { SeoHead } from '@/components/common/SeoHead';
 import { ProductRowSkeleton, Skeleton } from '@/components/common/Skeleton';
 import { Thumb } from '@/components/common/Thumb';
 import { ProductCard } from '@/components/marketplace/ProductCard';
@@ -158,7 +159,25 @@ export default function StoreDetailPage() {
   const storeLogo = assetUrl(store.logo || store.gallery?.[0]?.src);
 
   return (
-    <div style={themeStyle(theme)} className="pb-24 lg:pb-8">
+    <>
+      <SeoHead
+        title={`${store.name} en Sullana | Suya Delivery`}
+        description={`${store.description} Pide en ${store.name} y recibe en Sullana con Suya Delivery.`}
+        path={`/store/${store.id}`}
+        image={store.image ?? storeLogo}
+        schema={{
+          '@context': 'https://schema.org',
+          '@type': 'Restaurant',
+          name: store.name,
+          description: store.description,
+          url: `https://suyadelivery.com/store/${store.id}`,
+          image: store.image ? new URL(store.image, 'https://suyadelivery.com').toString() : undefined,
+          address: store.address,
+          servesCuisine: store.tags,
+          areaServed: { '@type': 'City', name: 'Sullana' },
+        }}
+      />
+      <div style={themeStyle(theme)} className="pb-24 lg:pb-8">
       {/* Hero: con marca propia, el fondo usa la paleta del negocio en vez del genérico. */}
       <div
         className={cn(
@@ -214,6 +233,8 @@ export default function StoreDetailPage() {
               src={storeLogo}
               alt={`Logo de ${store.name}`}
               referrerPolicy="no-referrer"
+              width={256}
+              height={256}
               className="h-full w-full object-contain"
             />
           </span>
@@ -492,6 +513,7 @@ export default function StoreDetailPage() {
       )}
 
       <ProductSheet product={selected} onClose={() => setSelected(null)} />
-    </div>
+      </div>
+    </>
   );
 }

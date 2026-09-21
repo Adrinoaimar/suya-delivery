@@ -70,6 +70,8 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
             <img
               src={logoSrc}
               alt={`Logo de ${store.name}`}
+              width="96"
+              height="96"
               referrerPolicy="no-referrer"
               className="h-full w-full object-contain"
             />
