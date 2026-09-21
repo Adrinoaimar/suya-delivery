@@ -9,6 +9,10 @@ const corsHeaders = (origin: string | null) => ({
 // sustituye la autenticación: todas las solicitudes siguen necesitando una
 // sesión válida y un perfil de rider verificado.
 const NATIVE_APP_ORIGINS = new Set(['https://localhost', 'capacitor://localhost']);
+const ROUTE_CACHE_TTL_MS = 30_000;
+const ROUTE_CACHE_LIMIT = 100;
+type CachedRoute = { expiresAt: number; payload: unknown };
+const routeCache = new Map<string, CachedRoute>();
 
 function json(body: unknown, status: number, origin: string | null): Response {
   return new Response(JSON.stringify(body), {
@@ -72,6 +76,28 @@ function distanceKm(start: [number, number], end: [number, number]): number {
   return Math.sqrt(x * x + y * y) * 6371;
 }
 
+function routeCacheKey(start: [number, number], end: [number, number]): string {
+  return `${start[0]},${start[1]};${end[0]},${end[1]}`;
+}
+
+function readCachedRoute(key: string): unknown | null {
+  const cached = routeCache.get(key);
+  if (!cached) return null;
+  if (cached.expiresAt <= Date.now()) {
+    routeCache.delete(key);
+    return null;
+  }
+  return cached.payload;
+}
+
+function writeCachedRoute(key: string, payload: unknown): void {
+  if (!routeCache.has(key) && routeCache.size >= ROUTE_CACHE_LIMIT) {
+    const oldestKey = routeCache.keys().next().value;
+    if (oldestKey) routeCache.delete(oldestKey);
+  }
+  routeCache.set(key, { expiresAt: Date.now() + ROUTE_CACHE_TTL_MS, payload });
+}
+
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
@@ -111,6 +137,10 @@ Deno.serve(async (request) => {
     return json({ error: 'La ruta supera el límite permitido.' }, 422, origin);
   }
 
+  const cacheKey = routeCacheKey(coordinates.start, coordinates.end);
+  const cachedRoute = readCachedRoute(cacheKey);
+  if (cachedRoute !== null) return json(cachedRoute, 200, origin);
+
   const upstream = new URL(
     `https://router.project-osrm.org/route/v1/driving/${coordinates.start[0]},${coordinates.start[1]};${coordinates.end[0]},${coordinates.end[1]}`,
   );
@@ -128,6 +158,7 @@ Deno.serve(async (request) => {
     });
     if (!upstreamResponse.ok) return json({ error: 'El motor vial no está disponible.' }, 502, origin);
     const payload = await upstreamResponse.json();
+    writeCachedRoute(cacheKey, payload);
     return json(payload, 200, origin);
   } catch {
     return json({ error: 'El motor vial no respondió a tiempo.' }, 504, origin);

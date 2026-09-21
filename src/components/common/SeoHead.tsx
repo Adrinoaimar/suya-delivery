@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useLayoutEffect } from 'react';
 
 const SITE_ORIGIN = 'https://suyadelivery.com';
 const DEFAULT_IMAGE = `${SITE_ORIGIN}/brand/suya-logo.svg`;
@@ -41,7 +41,11 @@ export function SeoHead({
   image = DEFAULT_IMAGE,
   schema,
 }: SeoHeadProps) {
-  useEffect(() => {
+  // Los metadatos cambian cuando una ruta SPA termina de cargar. Aplicarlos en
+  // layout evita que una página inexistente llegue a pintar brevemente como
+  // indexable y mantiene el estado SEO sincronizado antes de la siguiente
+  // lectura del DOM.
+  useLayoutEffect(() => {
     const normalizedPath = path ?? window.location.pathname;
     const canonical = new URL(normalizedPath, SITE_ORIGIN).toString();
     const imageUrl = new URL(image, SITE_ORIGIN).toString();
