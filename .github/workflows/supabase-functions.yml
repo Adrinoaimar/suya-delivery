@@ -91,3 +91,11 @@ jobs:
         run: supabase functions deploy culqi-webhook --project-ref cggxooilzhqlcnofgtmi
       - name: Desplegar rutas viales autenticadas
         run: supabase functions deploy route-driving --project-ref cggxooilzhqlcnofgtmi
+      - name: Auditar migraciones y funciones live
+        env:
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$VITE_SUPABASE_PUBLISHABLE_KEY"
+          node scripts/verify-live-production.mjs --functions-only

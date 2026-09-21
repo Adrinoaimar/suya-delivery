@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 
 const config = JSON.parse(await readFile(new URL('../config/production.json', import.meta.url), 'utf8'));
 const failures = [];
+const functionsOnly = new Set(process.argv.slice(2)).has('--functions-only');
 const origin = config.apps.customer.origin;
 const culqiEnabled = process.env.VITE_CULQI_GATEWAY_ENABLED === 'true';
 
@@ -31,15 +32,17 @@ async function checkHttp(name, url, options, expectedContentType, bodyPattern, s
   }
 }
 
-for (const [app, details] of Object.entries(config.apps)) {
-  await checkHttp(`${app} raíz`, details.origin, undefined, 'text/html', /<!doctype html>/iu);
-  await checkHttp(
-    `${app} smoke`,
-    new URL(details.smokePath, details.origin),
-    undefined,
-    'text/html',
-    /<!doctype html>/iu,
-  );
+if (!functionsOnly) {
+  for (const [app, details] of Object.entries(config.apps)) {
+    await checkHttp(`${app} raíz`, details.origin, undefined, 'text/html', /<!doctype html>/iu);
+    await checkHttp(
+      `${app} smoke`,
+      new URL(details.smokePath, details.origin),
+      undefined,
+      'text/html',
+      /<!doctype html>/iu,
+    );
+  }
 }
 
 async function checkCustomerAnalyticsBundle() {
@@ -86,7 +89,7 @@ async function checkCustomerAnalyticsBundle() {
   }
 }
 
-await checkCustomerAnalyticsBundle();
+if (!functionsOnly) await checkCustomerAnalyticsBundle();
 
 async function checkCustomerAnalyticsRpc() {
   const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
@@ -126,8 +129,22 @@ async function checkCustomerAnalyticsRpc() {
 
 await checkCustomerAnalyticsRpc();
 
-await checkHttp(`${config.apps.customer.origin} robots.txt`, new URL('/robots.txt', origin), undefined, 'text/plain', /User-agent:\s*\*/iu);
-await checkHttp(`${config.apps.customer.origin} sitemap.xml`, new URL('/sitemap.xml', origin), undefined, 'application/xml', /<urlset\b[^>]*>/iu);
+if (!functionsOnly) {
+  await checkHttp(
+    `${config.apps.customer.origin} robots.txt`,
+    new URL('/robots.txt', origin),
+    undefined,
+    'text/plain',
+    /User-agent:\s*\*/iu,
+  );
+  await checkHttp(
+    `${config.apps.customer.origin} sitemap.xml`,
+    new URL('/sitemap.xml', origin),
+    undefined,
+    'application/xml',
+    /<urlset\b[^>]*>/iu,
+  );
+}
 
 const functionChecks = [
   ['route-driving', 'route-driving/route/v1/driving/0,0;0.01,0'],
@@ -175,4 +192,8 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('Auditoría live apta: webs, SEO y Edge Functions responden correctamente.');
+console.log(
+  functionsOnly
+    ? 'Auditoría live apta: RPC analítica y Edge Functions responden correctamente.'
+    : 'Auditoría live apta: webs, SEO y Edge Functions responden correctamente.',
+);
