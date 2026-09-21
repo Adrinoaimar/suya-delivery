@@ -94,7 +94,11 @@ describe('SupabasePaymentService', () => {
       qrPayload: null,
     };
     await expect(
-      new SupabasePaymentService(client).chargeCard(intent, 'tkn_test_12345678', 'cliente@suya.test'),
+      new SupabasePaymentService(client).chargeCard(
+        intent,
+        'tkn_test_12345678',
+        'cliente@suya.test',
+      ),
     ).resolves.toBe('chr_test_12345678');
     expect(invoke).toHaveBeenCalledWith('charge-culqi-card', {
       body: {
@@ -130,7 +134,11 @@ describe('SupabasePaymentService', () => {
       qrPayload: null,
     };
     await expect(
-      new SupabasePaymentService(client).chargeCard(intent, 'ype_test_yape123', 'cliente@suya.test'),
+      new SupabasePaymentService(client).chargeCard(
+        intent,
+        'ype_test_yape123',
+        'cliente@suya.test',
+      ),
     ).resolves.toBe('chr_test_yape123');
     expect(invoke).toHaveBeenCalledWith('charge-culqi-card', {
       body: {
@@ -173,7 +181,9 @@ describe('SupabasePaymentService', () => {
     const client = fakeClient({ data: true, error: null });
     const service = new SupabasePaymentService(client);
 
-    await expect(service.declarePayment('order-1', null, '  Otra Persona  ', 'guest-token')).resolves.toBe(true);
+    await expect(
+      service.declarePayment('order-1', null, '  Otra Persona  ', 'guest-token'),
+    ).resolves.toBe(true);
     expect(client.rpc).toHaveBeenCalledWith('declare_manual_payment', {
       p_order_id: 'order-1',
       p_code: null,
@@ -184,7 +194,13 @@ describe('SupabasePaymentService', () => {
 
   it('lee solo el estado público de revisión, nunca la huella del código', async () => {
     const client = fakeClient({
-      data: [{ declared_at: '2026-09-15T22:00:00.000Z', payer_display_name: 'Otra Persona', code_hmac: 'secret' }],
+      data: [
+        {
+          declared_at: '2026-09-15T22:00:00.000Z',
+          payer_display_name: 'Otra Persona',
+          code_hmac: 'secret',
+        },
+      ],
       error: null,
     });
     const declaration = await new SupabasePaymentService(client).getPaymentDeclaration('order-1');
@@ -206,6 +222,38 @@ describe('SupabasePaymentService', () => {
     expect(client.rpc).toHaveBeenCalledWith('set_wallet_observation_code', {
       p_observation_id: 'observation-1',
       p_code: '482913',
+    });
+  });
+
+  it('crea un emparejamiento de un solo uso sin devolver un token de dispositivo', async () => {
+    const client = fakeClient({
+      data: [
+        {
+          pairing_id: 'pairing-1',
+          pairing_code: 'AB12CD34',
+          expires_at: '2026-09-20T23:00:00.000Z',
+          restaurant_id: 'restaurant-1',
+          receiver_account_id: 'account-yape',
+          device_label: 'Caja principal',
+        },
+      ],
+      error: null,
+    });
+    const service = new SupabaseWalletObserverService(client);
+    await expect(
+      service.createPairing('restaurant-1', 'Caja principal', 'account-yape'),
+    ).resolves.toEqual({
+      pairingId: 'pairing-1',
+      pairingCode: 'AB12CD34',
+      expiresAt: '2026-09-20T23:00:00.000Z',
+      restaurantId: 'restaurant-1',
+      receiverAccountId: 'account-yape',
+      deviceLabel: 'Caja principal',
+    });
+    expect(client.rpc).toHaveBeenCalledWith('create_wallet_observer_pairing', {
+      p_restaurant_id: 'restaurant-1',
+      p_receiver_account_id: 'account-yape',
+      p_label: 'Caja principal',
     });
   });
 

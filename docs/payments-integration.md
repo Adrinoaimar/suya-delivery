@@ -55,7 +55,7 @@ El CSP de Pages permite únicamente el script de `js.culqi.com` y el frame/conex
 Activación requiere:
 
 - `VITE_CULQI_GATEWAY_ENABLED=true` y `VITE_CULQI_PUBLIC_KEY` en el build web/mobile.
-- Secretos Supabase: `CULQI_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CULQI_WEBHOOK_USERNAME`, `CULQI_WEBHOOK_PASSWORD` disponibles en Edge Functions y `ALLOWED_ORIGINS` con los tres dominios.
+- Secretos Supabase: `CULQI_SECRET_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `CULQI_WEBHOOK_USERNAME`, `CULQI_WEBHOOK_PASSWORD` disponibles en Edge Functions y `ALLOWED_ORIGINS` con los tres dominios web más `https://localhost` (Android Capacitor) y `capacitor://localhost` (iOS Capacitor).
 - En CulqiPanel, webhook `https://<project-ref>.supabase.co/functions/v1/culqi-webhook` con evento `order.status.changed`.
 - Probar primero con llaves `pk_test_`/`sk_test_`; cambiar a live solo después de validar monto, estado y conciliación.
 

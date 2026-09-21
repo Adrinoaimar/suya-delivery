@@ -66,8 +66,10 @@ export function Logo({ className, tone = 'brand', showCity = false, size = 'md',
     const masterSizes = { sm: 'h-8', md: 'h-10', lg: 'h-14' } as const;
     return (
       <img
-        src={assetUrl('/brand/suya-master-logo.png')}
+        src={assetUrl('/brand/suya-logo-horizontal.svg')}
         alt="Suya"
+        width="236"
+        height="64"
         className={cn('w-auto object-contain', masterSizes[size], className)}
       />
     );

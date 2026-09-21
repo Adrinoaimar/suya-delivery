@@ -255,12 +255,15 @@ export async function fetchDrivingRoute(
   start: LatLng,
   end: LatLng,
   signal?: AbortSignal,
+  authorization?: string | null,
 ): Promise<RoutePlan> {
   const baseUrl = routingEndpoint();
   if (!baseUrl) throw new Error(ROUTING_UNAVAILABLE_MESSAGE);
   const url = `${baseUrl}/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&steps=true&geometries=geojson&alternatives=true`;
+  const headers: HeadersInit = { Accept: 'application/json' };
+  if (authorization) headers.Authorization = `Bearer ${authorization}`;
   const response = await fetch(url, {
-    headers: { Accept: 'application/json' },
+    headers,
     signal,
   });
   if (!response.ok) throw new Error(`Routing HTTP ${response.status}`);

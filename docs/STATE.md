@@ -1,6 +1,31 @@
 # Estado de ejecución
 
-Actualizado: 16 de septiembre de 2026 (`America/Lima`)
+Actualizado: 21 de septiembre de 2026 (`America/Lima`)
+
+## Medidor propio de visitas — 21 de septiembre de 2026
+
+- Customer web registra visitantes únicos por día solo después de consentimiento explícito.
+- El navegador conserva un UUID aleatorio; Supabase recibe únicamente un digest SHA-256 limitado
+  al día local `America/Lima`. No se guardan IP, nombres, correos, rutas ni pedidos.
+- La migración `20260920170000_first_party_analytics.sql` está versionada y cubierta por CI; la
+  presencia remota de la RPC no se pudo consultar en esta auditoría por falta de acceso Supabase.
+- La RPC de registro es idempotente por visitante/día; la RPC agregada exige `platform_admin`.
+- El aviso de consentimiento queda activo en el bundle público; no existe histórico anterior porque
+  la analítica permanecía desactivada.
+
+La evidencia detallada está en `docs/execution/F31.md`.
+
+## Hotfix pairing de observador — 20 de septiembre de 2026
+
+- La RPC `create_wallet_observer_pairing` fallaba en producción por ambigüedad entre las
+  columnas `restaurant_id`/`receiver_account_id` y variables implícitas de `RETURNS TABLE`.
+- La migración `20260920160000_fix_wallet_observer_pairing_ambiguity.sql` califica las columnas con
+  el alias `pairing`; fue aplicada y registrada en Supabase producción.
+- Prueba transaccional con cuenta autorizada: genera identificador, código hexadecimal de 8
+  caracteres y expiración futura; la transacción se revierte, sin dejar datos de prueba.
+- Suite: 380/380 pruebas, typecheck, lint, secretos y `git diff --check` pasan. Build local queda
+  pendiente de variables productivas; el workflow de publicación debe ejecutar el build con su
+  entorno protegido.
 
 ## Objetivo
 

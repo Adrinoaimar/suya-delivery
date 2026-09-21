@@ -26,12 +26,14 @@ debe publicarse hasta que el guard de Auth y roles esté implementado y probado.
 
 ## Release canónico
 
-El workflow manual `cloudflare-pages.yml` solo despliega desde `main` y el environment protegido
-`cloudflare-production`. Requiere secrets `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` y
-`VITE_SUPABASE_PUBLISHABLE_KEY`. `VITE_CULQI_GATEWAY_ENABLED` debe ser explícitamente `false`
-para el modo manual directo, o `true` junto con `VITE_CULQI_PUBLIC_KEY` (`pk_test_...` durante
-pruebas) para activar el checkout opcional. Las demás variables están enumeradas en el workflow. El token debe tener solo permiso de edición de Pages en
-la cuenta elegida.
+El único workflow de publicación es `cloudflare-pages.yml`: se ejecuta desde `main` en el
+environment protegido `cloudflare-production` y publica las tres apps juntas. Antes de construir
+verifica código, configuración, pagos y el proxy vial; no permite publicar una web cuyo endpoint
+de rutas responda 404. Requiere secrets `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` y
+`VITE_SUPABASE_PUBLISHABLE_KEY`. `VITE_CULQI_GATEWAY_ENABLED` queda en `false` por defecto para
+el flujo manual Yape/Lemon; solo se activa con `true` junto con `VITE_CULQI_PUBLIC_KEY`
+(`pk_test_...` durante pruebas) y los secretos de servidor correspondientes. El token debe tener
+solo permiso de edición de Pages en la cuenta elegida.
 
 `config/production.json` es la identidad canónica versionada. Suya usa el proyecto Supabase dedicado
 `cggxooilzhqlcnofgtmi` en `us-east-1`.
@@ -44,6 +46,12 @@ cambio de `pages.dev` a dominio propio. Documentación oficial:
 <https://developers.cloudflare.com/pages/get-started/direct-upload/> y
 <https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/>.
 
-La entrega sube y prueba primero tres previews. Al promover, guarda los deployments productivos
-anteriores y ejecuta rollback por API si falla una app o el smoke final. La primera publicación no
-tiene snapshot y exige activar conscientemente `allow_initial_release`.
+La entrega sube y prueba primero tres previews. Además valida que el cliente entregue `robots.txt`
+como `text/plain` y `sitemap.xml` como `application/xml`; si alguno vuelve a caer en el fallback
+HTML de la SPA, la release se detiene. Al promover, guarda los deployments productivos anteriores
+y ejecuta rollback por API si falla una app o el smoke final. La primera publicación no tiene
+snapshot y exige activar conscientemente `allow_initial_release`.
+
+Para auditar el estado publicado sin mutar datos ni desplegar, ejecuta `npm run verify:live`.
+Comprueba las tres webs, SEO y `route-driving`; solo comprueba las funciones Culqi cuando
+`VITE_CULQI_GATEWAY_ENABLED=true`.

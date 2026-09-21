@@ -9,7 +9,7 @@ interface NativeWalletObserverStatus {
 }
 
 interface NativeWalletObserverPlugin {
-  configure(options: { deviceToken: string }): Promise<NativeWalletObserverStatus>;
+  pair(options: { pairingCode: string }): Promise<NativeWalletObserverStatus>;
   sync(): Promise<NativeWalletObserverStatus>;
   clear(): Promise<NativeWalletObserverStatus>;
   getStatus(): Promise<NativeWalletObserverStatus>;
@@ -22,8 +22,8 @@ export const nativeWalletObserver = {
   getStatus(): Promise<NativeWalletObserverStatus> {
     return plugin.getStatus();
   },
-  configure(deviceToken: string): Promise<NativeWalletObserverStatus> {
-    return plugin.configure({ deviceToken });
+  pair(pairingCode: string): Promise<NativeWalletObserverStatus> {
+    return plugin.pair({ pairingCode });
   },
   sync(): Promise<NativeWalletObserverStatus> {
     return plugin.sync();

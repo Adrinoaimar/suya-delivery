@@ -26,7 +26,14 @@ describe('seguimiento visual del mapa', () => {
     expect(map).toContain('Recorrido real');
     expect(map).toContain('fetchDrivingRoute');
     expect(map).toContain('Ruta alternativa');
-    expect(map).toContain('Guía vial no disponible');
+    expect(map).toContain('Ruta vial no disponible');
+    expect(map).not.toContain('drawFallbackRoute');
+    expect(map).toContain('sin inventar una línea recta');
+    expect(map).toContain('if (!navigation) {');
+    expect(map).toContain('lastRouteRequestRef.current = null');
+    expect(map).toContain('Una vista de cliente o de backoffice puede reutilizar el mismo componente');
+    expect(map).toContain('Activar modo noche');
+    expect(map).toContain('Activar modo día');
     expect(map).toContain('hasAppliedInitialViewRef');
     expect(map).toContain('const routingRiderLat = navigation ? riderLat : undefined;');
     expect(map).toContain('routingRiderLng');
@@ -44,6 +51,9 @@ describe('seguimiento visual del mapa', () => {
     expect(map).toContain('}, [interactive]);');
     expect(readFileSync(root('src/pages/rider/RiderCurrentPage.tsx'), 'utf8')).toContain(
       'navigation',
+    );
+    expect(readFileSync(root('src/pages/rider/RiderCurrentPage.tsx'), 'utf8')).toContain(
+      'tripTracking ? active.deliveryPosition : active.storePosition',
     );
     expect(readFileSync(root('src/pages/rider/RiderCurrentPage.tsx'), 'utf8')).toContain(
       'key={active.id}',

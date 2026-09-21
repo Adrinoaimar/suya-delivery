@@ -6,6 +6,7 @@ import { ButtonLink } from '@/components/common/Button';
 import { SectionHeader } from '@/components/common/Card';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Logo } from '@/components/common/Logo';
+import { SeoHead } from '@/components/common/SeoHead';
 import { SearchInput } from '@/components/common/SearchInput';
 import { StoreListSkeleton } from '@/components/common/Skeleton';
 import { CategoryRail } from '@/components/marketplace/CategoryRail';
@@ -74,7 +75,41 @@ export default function HomePage() {
   }
 
   return (
-    <div className="motion-enter lg:pb-8">
+    <>
+      <SeoHead
+        title="Delivery en Sullana: restaurantes y tiendas | Suya"
+        description="Pide comida y compras en restaurantes, tiendas y negocios locales de Sullana. Sigue tu pedido y recibe en tu puerta con Suya Delivery."
+        path="/"
+        schema={{
+          '@context': 'https://schema.org',
+          '@graph': [
+            {
+              '@type': 'Organization',
+              '@id': 'https://suyadelivery.com/#organization',
+              name: 'Suya Delivery',
+              url: 'https://suyadelivery.com/',
+              logo: 'https://suyadelivery.com/brand/suya-logo.svg',
+              areaServed: { '@type': 'City', name: 'Sullana' },
+            },
+            {
+              '@type': 'WebSite',
+              '@id': 'https://suyadelivery.com/#website',
+              name: 'Suya Delivery',
+              url: 'https://suyadelivery.com/',
+              inLanguage: 'es-PE',
+              publisher: { '@id': 'https://suyadelivery.com/#organization' },
+            },
+            {
+              '@type': 'Service',
+              name: 'Delivery de restaurantes y negocios locales en Sullana',
+              serviceType: 'Delivery de comida y compras',
+              provider: { '@id': 'https://suyadelivery.com/#organization' },
+              areaServed: { '@type': 'City', name: 'Sullana' },
+            },
+          ],
+        }}
+      />
+      <div className="motion-enter lg:pb-8">
       {/* Hero de escritorio */}
       <section className="hidden px-6 pt-8 lg:block">
         <div className="suya-lens shell grid grid-cols-[0.9fr_1.1fr] items-center gap-10 overflow-hidden rounded-promo px-10 py-12 xl:px-14">
@@ -364,6 +399,7 @@ export default function HomePage() {
           </div>
         </section>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

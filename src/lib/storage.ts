@@ -16,6 +16,8 @@ export const STORAGE_KEYS = {
   introSeen: 'suya_intro_seen',
   analyticsConsent: 'suya_analytics_consent',
   analyticsCampaign: 'suya_analytics_campaign',
+  analyticsVisitor: 'suya_analytics_visitor',
+  riderMapTheme: 'suya_rider_map_theme',
 } as const;
 
 export type StorageKey = (typeof STORAGE_KEYS)[keyof typeof STORAGE_KEYS];

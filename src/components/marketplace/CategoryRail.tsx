@@ -105,7 +105,9 @@ export function CategoryRail({ categories, loading = false, className }: Categor
             <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-suya-mist text-[#4A4F55] shadow-[inset_0_1px_0_rgba(255,255,255,.75)] transition-transform group-hover:scale-105">
               <LayoutGrid aria-hidden="true" className="h-5 w-5" />
             </span>
-            <span className="text-xs font-semibold leading-tight text-suya-carbon">Más</span>
+            <span className="text-xs font-semibold leading-tight text-suya-carbon">
+              Ver más categorías
+            </span>
           </Link>
         </li>
       </ul>

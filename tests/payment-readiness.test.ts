@@ -18,7 +18,7 @@ const baseEnv = {
   CULQI_WEBHOOK_USERNAME: 'suya-webhook-test',
   CULQI_WEBHOOK_PASSWORD: 'synthetic-webhook-password',
   ALLOWED_ORIGINS:
-    'https://suyadelivery.com,https://rider.suyadelivery.com,https://panel.suyadelivery.com',
+    'https://suyadelivery.com,https://rider.suyadelivery.com,https://panel.suyadelivery.com,https://localhost,capacitor://localhost',
 };
 
 describe('verify-payment-readiness', () => {

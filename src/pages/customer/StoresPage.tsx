@@ -6,6 +6,7 @@ import { Chip } from '@/components/common/Chip';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { SectionHeader } from '@/components/common/Card';
+import { SeoHead } from '@/components/common/SeoHead';
 import { StoreListSkeleton } from '@/components/common/Skeleton';
 import { StoreCard } from '@/components/marketplace/StoreCard';
 import { useCatalogStore } from '@/store/catalogStore';
@@ -67,15 +68,22 @@ export default function StoresPage() {
   const comingSoonStores = stores.filter((store) => store.isComingSoon);
 
   return (
-    <div className="shell space-y-5 py-4 lg:py-8">
-      <SectionHeader
-        title={categoryName ?? 'Todas las tiendas'}
-        subtitle={
-          storesStatus === 'ready'
-            ? `${stores.length} ${stores.length === 1 ? 'negocio' : 'negocios'} en Sullana`
-            : 'Cargando negocios…'
-        }
+    <>
+      <SeoHead
+        title="Restaurantes y tiendas en Sullana | Suya"
+        description="Explora restaurantes, tiendas y negocios locales de Sullana. Filtra por categoría, horario, calificación y costo de envío en Suya Delivery."
+        path="/stores"
       />
+      <div className="shell space-y-5 py-4 lg:py-8">
+        <SectionHeader
+          title={categoryName ?? 'Todas las tiendas'}
+          headingLevel="h1"
+          subtitle={
+            storesStatus === 'ready'
+              ? `${stores.length} ${stores.length === 1 ? 'negocio' : 'negocios'} en Sullana`
+              : 'Cargando negocios…'
+          }
+        />
 
       <div className="hide-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0">
         <Chip active={activeCategory === null} onClick={() => selectCategory(null)}>
@@ -163,6 +171,7 @@ export default function StoresPage() {
           )}
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }

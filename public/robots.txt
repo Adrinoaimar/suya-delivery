@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /checkout
+Disallow: /cart
+Disallow: /orders
+Disallow: /profile
+Disallow: /pedido/
+Disallow: /menu/*/pedido/
+Disallow: /table/
+Disallow: /rider
+Disallow: /backoffice
+Disallow: /walletobserver
+
+Sitemap: https://suyadelivery.com/sitemap.xml

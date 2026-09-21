@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, LifeBuoy, MessageSquare, ShieldCheck } from 'lucide-react';
 import { ButtonLink, ExternalButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
+import { SeoHead } from '@/components/common/SeoHead';
 import { cn } from '@/lib/cn';
 
 const FAQ = [
@@ -42,8 +43,14 @@ export default function HelpPage() {
   const [open, setOpen] = useState<number | null>(0);
 
   return (
-    <div className="shell max-w-3xl space-y-4 py-4 lg:py-8">
-      <h1 className="section-title">Centro de ayuda</h1>
+    <>
+      <SeoHead
+        title="Ayuda para pedidos y delivery en Sullana | Suya"
+        description="Encuentra respuestas sobre pedidos, pagos, seguimiento, privacidad y uso de Suya Delivery en Sullana."
+        path="/help"
+      />
+      <div className="shell max-w-3xl space-y-4 py-4 lg:py-8">
+        <h1 className="section-title">Centro de ayuda</h1>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Card>
@@ -118,6 +125,7 @@ export default function HelpPage() {
           revisa su detalle y estado. En una emergencia real usa los números oficiales 105 o 116.
         </p>
       </Card>
-    </div>
+      </div>
+    </>
   );
 }

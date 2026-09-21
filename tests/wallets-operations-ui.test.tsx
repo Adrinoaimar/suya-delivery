@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   listDevices: vi.fn(),
   listObservations: vi.fn(),
   listPaymentAccounts: vi.fn(),
+  createPairing: vi.fn(),
   createDevice: vi.fn(),
   setDeviceActive: vi.fn(),
   rotateDevice: vi.fn(),
@@ -28,6 +29,7 @@ vi.mock('@/lib/services', async (importOriginal) => ({
     listDevices: mocks.listDevices,
     listObservations: mocks.listObservations,
     listPaymentAccounts: mocks.listPaymentAccounts,
+    createPairing: mocks.createPairing,
     createDevice: mocks.createDevice,
     setDeviceActive: mocks.setDeviceActive,
     rotateDevice: mocks.rotateDevice,
@@ -83,6 +85,14 @@ beforeEach(() => {
   mocks.listStores.mockResolvedValue([restaurant]);
   mocks.listDevices.mockResolvedValue([]);
   mocks.listPaymentAccounts.mockResolvedValue([]);
+  mocks.createPairing.mockResolvedValue({
+    pairingId: 'pairing-1',
+    pairingCode: 'AB12CD34',
+    expiresAt: '2099-09-20T23:00:00.000Z',
+    restaurantId: restaurant.id,
+    receiverAccountId: 'account-yape',
+    deviceLabel: 'Caja principal',
+  });
   mocks.verifyObservationByName.mockResolvedValue(true);
   mocks.listObservations.mockResolvedValue([
     {
@@ -189,7 +199,7 @@ describe('WalletsOperationsPage', () => {
     expect(useBackofficeContextStore.getState().activeRestaurantId).toBe(restaurant.id);
   });
 
-  it('crea el dispositivo ligado a la cuenta receptora activa', async () => {
+  it('crea un código de emparejamiento ligado a la cuenta receptora activa', async () => {
     mocks.listPaymentAccounts.mockResolvedValue([
       {
         id: 'account-yape',
@@ -200,14 +210,6 @@ describe('WalletsOperationsPage', () => {
         active: true,
       },
     ]);
-    mocks.createDevice.mockResolvedValue({
-      id: 'device-1',
-      restaurantId: restaurant.id,
-      label: 'Caja principal',
-      active: true,
-      lastSeenAt: null,
-      deviceToken: 'a'.repeat(64),
-    });
     render(<WalletsOperationsPage />);
     await waitFor(() =>
       expect(screen.getByRole('combobox', { name: 'Cuenta de restaurante' })).toHaveValue(
@@ -215,13 +217,15 @@ describe('WalletsOperationsPage', () => {
       ),
     );
     await act(async () => {
-      screen.getByRole('button', { name: 'Crear dispositivo' }).click();
+      screen.getByRole('button', { name: 'Generar código' }).click();
     });
-    expect(mocks.createDevice).toHaveBeenCalledWith(
+    expect(mocks.createPairing).toHaveBeenCalledWith(
       restaurant.id,
       'Caja principal',
       'account-yape',
     );
+    expect(screen.getByText('AB12CD34')).toBeInTheDocument();
+    expect(screen.queryByText(/Token de acceso/)).not.toBeInTheDocument();
   });
 
   it('bloquea verificar cuando el sufijo coincide con varios pedidos', async () => {
@@ -260,11 +264,15 @@ describe('WalletsOperationsPage', () => {
 
     expect(await screen.findByText(/Hay 2 pedidos compatibles/)).toBeInTheDocument();
     expect(screen.getByText('Pista: el remitente coincide con el cliente.')).toBeInTheDocument();
-    expect(screen.getByText('Pista: confirma el código completo antes de verificar.')).toBeInTheDocument();
+    expect(
+      screen.getByText('Pista: confirma el código completo antes de verificar.'),
+    ).toBeInTheDocument();
     expect(screen.getAllByRole('button', { name: 'Verificar pago' })).toHaveLength(2);
-    expect(screen.getAllByRole('button', { name: 'Verificar pago' }).every((button) =>
-      (button as HTMLButtonElement).disabled,
-    )).toBe(true);
+    expect(
+      screen
+        .getAllByRole('button', { name: 'Verificar pago' })
+        .every((button) => (button as HTMLButtonElement).disabled),
+    ).toBe(true);
   });
 
   it('limpia la conciliación pendiente al cambiar de restaurante', async () => {
@@ -311,19 +319,45 @@ describe('WalletsOperationsPage', () => {
     });
     mocks.listStores.mockResolvedValue([restaurant, secondRestaurant]);
     mocks.listDevices.mockResolvedValue([
-      { id: 'device-1', restaurantId: restaurant.id, label: 'Caja Donde Joel', active: true, lastSeenAt: null },
-      { id: 'device-2', restaurantId: secondRestaurant.id, label: 'Caja Andá Paya', active: true, lastSeenAt: null },
+      {
+        id: 'device-1',
+        restaurantId: restaurant.id,
+        label: 'Caja Donde Joel',
+        active: true,
+        lastSeenAt: null,
+      },
+      {
+        id: 'device-2',
+        restaurantId: secondRestaurant.id,
+        label: 'Caja Andá Paya',
+        active: true,
+        lastSeenAt: null,
+      },
     ]);
     mocks.listObservations.mockResolvedValue([
       {
-        id: 'observation-1', restaurantId: restaurant.id, deviceId: 'device-1', provider: 'yape',
-        senderName: 'Pago Donde Joel', codeLast4: '1234', amountCents: 3000, currency: 'PEN',
-        observedAt: '2026-09-14T18:30:00.000Z', verification: 'unverified',
+        id: 'observation-1',
+        restaurantId: restaurant.id,
+        deviceId: 'device-1',
+        provider: 'yape',
+        senderName: 'Pago Donde Joel',
+        codeLast4: '1234',
+        amountCents: 3000,
+        currency: 'PEN',
+        observedAt: '2026-09-14T18:30:00.000Z',
+        verification: 'unverified',
       },
       {
-        id: 'observation-2', restaurantId: secondRestaurant.id, deviceId: 'device-2', provider: 'yape',
-        senderName: 'Pago Andá Paya', codeLast4: '5678', amountCents: 3000, currency: 'PEN',
-        observedAt: '2026-09-14T18:31:00.000Z', verification: 'unverified',
+        id: 'observation-2',
+        restaurantId: secondRestaurant.id,
+        deviceId: 'device-2',
+        provider: 'yape',
+        senderName: 'Pago Andá Paya',
+        codeLast4: '5678',
+        amountCents: 3000,
+        currency: 'PEN',
+        observedAt: '2026-09-14T18:31:00.000Z',
+        verification: 'unverified',
       },
     ]);
 
@@ -349,35 +383,52 @@ describe('WalletsOperationsPage', () => {
       identity: { ...identity, restaurantIds: [restaurant.id, secondRestaurant.id] },
     });
     mocks.listStores.mockResolvedValue([restaurant, secondRestaurant]);
-    mocks.listPaymentAccounts.mockImplementation((restaurantId: string) => Promise.resolve(
-      restaurantId === restaurant.id
-        ? [{
-            id: 'account-yape', restaurantId: restaurant.id, provider: 'yape',
-            accountLabel: 'Caja Yape', qrPayload: null, active: true,
-          }]
-        : [],
-    ));
-    let resolveDevice!: (value: unknown) => void;
-    mocks.createDevice.mockImplementation(() => new Promise((resolve) => {
-      resolveDevice = resolve;
-    }));
+    mocks.listPaymentAccounts.mockImplementation((restaurantId: string) =>
+      Promise.resolve(
+        restaurantId === restaurant.id
+          ? [
+              {
+                id: 'account-yape',
+                restaurantId: restaurant.id,
+                provider: 'yape',
+                accountLabel: 'Caja Yape',
+                qrPayload: null,
+                active: true,
+              },
+            ]
+          : [],
+      ),
+    );
+    let resolvePairing!: (value: unknown) => void;
+    mocks.createPairing.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolvePairing = resolve;
+        }),
+    );
 
     render(<WalletsOperationsPage />);
 
     const selector = await screen.findByRole('combobox', { name: 'Cuenta de restaurante' });
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Crear dispositivo' })).not.toBeDisabled());
-    fireEvent.click(screen.getByRole('button', { name: 'Crear dispositivo' }));
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Generar código' })).not.toBeDisabled(),
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Generar código' }));
     fireEvent.change(selector, { target: { value: secondRestaurant.id } });
 
     await act(async () => {
-      resolveDevice({
-        id: 'device-late', restaurantId: restaurant.id, label: 'Caja principal', active: true,
-        lastSeenAt: null, deviceToken: 'c'.repeat(64),
+      resolvePairing({
+        pairingId: 'pairing-late',
+        pairingCode: 'CDEF1234',
+        expiresAt: '2099-09-20T23:00:00.000Z',
+        restaurantId: restaurant.id,
+        receiverAccountId: 'account-yape',
+        deviceLabel: 'Caja principal',
       });
     });
 
-    expect(screen.queryByText('Token de acceso · muéstralo solo ahora')).not.toBeInTheDocument();
-    expect(screen.queryByText('c'.repeat(64))).not.toBeInTheDocument();
+    expect(screen.queryByText('Código de emparejamiento')).not.toBeInTheDocument();
+    expect(screen.queryByText('CDEF1234')).not.toBeInTheDocument();
   });
 
   it('descarta una cuenta guardada si el operador cambió de restaurante durante la petición', async () => {
@@ -388,22 +439,35 @@ describe('WalletsOperationsPage', () => {
     mocks.listStores.mockResolvedValue([restaurant, secondRestaurant]);
     mocks.listPaymentAccounts.mockResolvedValue([]);
     let resolveSave!: (value: unknown) => void;
-    mocks.savePaymentAccount.mockImplementation(() => new Promise((resolve) => {
-      resolveSave = resolve;
-    }));
+    mocks.savePaymentAccount.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
 
     render(<WalletsOperationsPage />);
 
-    const restaurantSelector = await screen.findByRole('combobox', { name: 'Cuenta de restaurante' });
-    fireEvent.change(screen.getByLabelText('Nombre visible'), { target: { value: 'Cuenta antigua' } });
+    const restaurantSelector = await screen.findByRole('combobox', {
+      name: 'Cuenta de restaurante',
+    });
+    fireEvent.change(screen.getByLabelText('Nombre visible'), {
+      target: { value: 'Cuenta antigua' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cuenta' }));
     fireEvent.change(restaurantSelector, { target: { value: secondRestaurant.id } });
-    await waitFor(() => expect(mocks.listPaymentAccounts).toHaveBeenCalledWith(secondRestaurant.id));
+    await waitFor(() =>
+      expect(mocks.listPaymentAccounts).toHaveBeenCalledWith(secondRestaurant.id),
+    );
 
     await act(async () => {
       resolveSave({
-        id: 'account-old', restaurantId: restaurant.id, provider: 'yape',
-        accountLabel: 'Cuenta antigua', qrPayload: null, active: true,
+        id: 'account-old',
+        restaurantId: restaurant.id,
+        provider: 'yape',
+        accountLabel: 'Cuenta antigua',
+        qrPayload: null,
+        active: true,
       });
     });
 
@@ -435,7 +499,7 @@ describe('WalletsOperationsPage', () => {
     expect(await screen.findByRole('button', { name: 'Reactivar' })).toBeInTheDocument();
   });
 
-  it('rota el token y muestra la credencial nueva una sola vez', async () => {
+  it('no expone acciones ni credenciales de token en Backoffice', async () => {
     mocks.listDevices.mockResolvedValue([
       {
         id: 'device-1',
@@ -445,53 +509,11 @@ describe('WalletsOperationsPage', () => {
         lastSeenAt: null,
       },
     ]);
-    mocks.rotateDevice.mockResolvedValue({
-      id: 'device-1',
-      restaurantId: restaurant.id,
-      label: 'Caja observadora',
-      active: true,
-      lastSeenAt: null,
-      deviceToken: 'b'.repeat(64),
-    });
     render(<WalletsOperationsPage />);
 
     expect(await screen.findByText('Caja observadora')).toBeInTheDocument();
-    await act(async () => {
-      screen.getByRole('button', { name: 'Rotar token' }).click();
-    });
-    expect(mocks.rotateDevice).toHaveBeenCalledWith('device-1');
-    expect(await screen.findByText('Token de acceso · muéstralo solo ahora')).toBeInTheDocument();
-    expect(screen.getByText('b'.repeat(64))).toBeInTheDocument();
-  });
-
-  it('no revela un token rotado después de cambiar a otra sede', async () => {
-    const secondRestaurant = { ...restaurant, id: 'restaurant-2', name: 'Andá Paya' };
-    useAuthStore.setState({
-      identity: { ...identity, restaurantIds: [restaurant.id, secondRestaurant.id] },
-    });
-    mocks.listStores.mockResolvedValue([restaurant, secondRestaurant]);
-    mocks.listDevices.mockResolvedValue([
-      { id: 'device-1', restaurantId: restaurant.id, label: 'Caja observadora', active: true, lastSeenAt: null },
-    ]);
-    let resolveRotation!: (value: unknown) => void;
-    mocks.rotateDevice.mockImplementation(() => new Promise((resolve) => {
-      resolveRotation = resolve;
-    }));
-    render(<WalletsOperationsPage />);
-
-    const restaurantSelector = await screen.findByRole('combobox', { name: 'Cuenta de restaurante' });
-    fireEvent.click(await screen.findByRole('button', { name: 'Rotar token' }));
-    fireEvent.change(restaurantSelector, { target: { value: secondRestaurant.id } });
-
-    await act(async () => {
-      resolveRotation({
-        id: 'device-1', restaurantId: restaurant.id, label: 'Caja observadora', active: true,
-        lastSeenAt: null, deviceToken: 'd'.repeat(64),
-      });
-    });
-
-    expect(screen.queryByText('Token de acceso · muéstralo solo ahora')).not.toBeInTheDocument();
-    expect(screen.queryByText('d'.repeat(64))).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Rotar token' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Token de acceso/)).not.toBeInTheDocument();
   });
 
   it('descarta una respuesta vieja al buscar candidatos en rápida sucesión', async () => {
@@ -601,7 +623,12 @@ describe('WalletsOperationsPage', () => {
         observedAt: '2026-09-14T18:30:00.000Z',
         verification: 'unverified',
       };
-      const newestObservation = { ...originalObservation, id: 'observation-new', senderName: 'Luis Dos', codeLast4: '5678' };
+      const newestObservation = {
+        ...originalObservation,
+        id: 'observation-new',
+        senderName: 'Luis Dos',
+        codeLast4: '5678',
+      };
       mocks.listObservations
         .mockResolvedValueOnce([originalObservation])
         .mockImplementationOnce(() => slowRequest)
@@ -669,7 +696,11 @@ describe('WalletsOperationsPage', () => {
         observedAt: '2026-09-14T18:30:00.000Z',
         verification: 'unverified',
       };
-      const refreshedObservation = { ...initialObservation, id: 'observation-refresh', senderName: 'Actualizada' };
+      const refreshedObservation = {
+        ...initialObservation,
+        id: 'observation-refresh',
+        senderName: 'Actualizada',
+      };
       mocks.listDevices.mockImplementationOnce(() => slowDevices);
       mocks.listObservations
         .mockImplementationOnce(() => slowInitialObservations)

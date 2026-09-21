@@ -66,32 +66,46 @@ describe('GuestOrderPage', () => {
 
   it('vuelve a consultar el pedido al pulsar Actualizar estado', async () => {
     render(
-      <MemoryRouter initialEntries={[{ pathname: '/pedido/order-refresh-1', state: { guestOrder } }]}>
+      <MemoryRouter
+        initialEntries={[{ pathname: '/pedido/order-refresh-1', state: { guestOrder } }]}
+      >
         <Routes>
           <Route path="/pedido/:id" element={<GuestOrderPage />} />
         </Routes>
       </MemoryRouter>,
     );
 
-    expect(await screen.findByRole('heading', { name: 'Pedido enviado a tu mesa' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Pedido enviado a tu mesa' }),
+    ).toBeInTheDocument();
     expect(mocks.get).toHaveBeenCalledTimes(1);
+    expect(document.head.querySelector('meta[name="robots"]')).toHaveAttribute(
+      'content',
+      'noindex,nofollow',
+    );
 
     fireEvent.click(screen.getByRole('button', { name: 'Actualizar estado' }));
 
     await waitFor(() => expect(mocks.get).toHaveBeenCalledTimes(2));
-    expect(await screen.findByRole('heading', { name: 'Pedido enviado a tu mesa' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Pedido enviado a tu mesa' }),
+    ).toBeInTheDocument();
   });
 
   it('actualiza al recuperar conexión y muestra la última actualización', async () => {
     render(
-      <MemoryRouter initialEntries={[{ pathname: '/pedido/order-refresh-1', state: { guestOrder } }]}>
+      <MemoryRouter
+        initialEntries={[{ pathname: '/pedido/order-refresh-1', state: { guestOrder } }]}
+      >
         <Routes>
           <Route path="/pedido/:id" element={<GuestOrderPage />} />
         </Routes>
       </MemoryRouter>,
     );
 
-    expect(await screen.findByRole('heading', { name: 'Pedido enviado a tu mesa' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Pedido enviado a tu mesa' }),
+    ).toBeInTheDocument();
     expect(screen.getByText(/Actualizado/)).toBeInTheDocument();
 
     window.dispatchEvent(new Event('online'));
@@ -102,14 +116,18 @@ describe('GuestOrderPage', () => {
 
   it('actualiza al volver al primer plano si el pedido estaba visible', async () => {
     render(
-      <MemoryRouter initialEntries={[{ pathname: '/pedido/order-refresh-1', state: { guestOrder } }]}>
+      <MemoryRouter
+        initialEntries={[{ pathname: '/pedido/order-refresh-1', state: { guestOrder } }]}
+      >
         <Routes>
           <Route path="/pedido/:id" element={<GuestOrderPage />} />
         </Routes>
       </MemoryRouter>,
     );
 
-    expect(await screen.findByRole('heading', { name: 'Pedido enviado a tu mesa' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { name: 'Pedido enviado a tu mesa' }),
+    ).toBeInTheDocument();
     expect(mocks.get).toHaveBeenCalledTimes(1);
 
     document.dispatchEvent(new Event('visibilitychange'));
@@ -121,14 +139,18 @@ describe('GuestOrderPage', () => {
     mocks.get.mockResolvedValueOnce(undefined);
 
     render(
-      <MemoryRouter initialEntries={[{ pathname: '/pedido/order-refresh-1', state: { guestOrder } }]}>
+      <MemoryRouter
+        initialEntries={[{ pathname: '/pedido/order-refresh-1', state: { guestOrder } }]}
+      >
         <Routes>
           <Route path="/pedido/:id" element={<GuestOrderPage />} />
         </Routes>
       </MemoryRouter>,
     );
 
-    expect(screen.queryByRole('heading', { name: 'Pedido enviado a tu mesa' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Pedido enviado a tu mesa' }),
+    ).not.toBeInTheDocument();
     expect(await screen.findByText('No encontramos este pedido')).toBeInTheDocument();
   });
 });

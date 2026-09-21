@@ -159,6 +159,11 @@ insert into public.products (
     '84000000-0000-0000-0000-000000000002',
     '83000000-0000-0000-0000-000000000002',
     'Platos', 'Producto ajeno', 8.00, '[]'::jsonb, true
+  ),
+  (
+    '84000000-0000-0000-0000-000000000003',
+    '83000000-0000-0000-0000-000000000003',
+    'Platos', 'Producto del restaurante cerrado', 8.00, '[]'::jsonb, true
   );
 
 set local request.jwt.claims =
@@ -295,7 +300,7 @@ select throws_ok(
   $$
     select * from public.create_cash_order(
       '83000000-0000-0000-0000-000000000003',
-      '[{"product_id":"84000000-0000-0000-0000-000000000001","quantity":1}]'::jsonb,
+      '[{"product_id":"84000000-0000-0000-0000-000000000003","quantity":1}]'::jsonb,
       '', '', '', '85000000-0000-0000-0000-000000000002'
     )
   $$,

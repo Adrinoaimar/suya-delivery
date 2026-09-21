@@ -34,13 +34,21 @@ interface SectionHeaderProps {
   action?: ReactNode;
   subtitle?: string;
   className?: string;
+  headingLevel?: 'h1' | 'h2';
 }
 
-export function SectionHeader({ title, subtitle, action, className }: SectionHeaderProps) {
+export function SectionHeader({
+  title,
+  subtitle,
+  action,
+  className,
+  headingLevel = 'h2',
+}: SectionHeaderProps) {
+  const Heading = headingLevel;
   return (
     <div className={cn('mb-3', className)}>
       <div className="flex items-center justify-between gap-3">
-        <h2 className="section-title">{title}</h2>
+        <Heading className="section-title">{title}</Heading>
         {action}
       </div>
       {subtitle && <p className="mt-0.5 max-w-[70ch] text-sm text-suya-muted">{subtitle}</p>}

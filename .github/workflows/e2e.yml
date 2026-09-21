@@ -21,6 +21,7 @@ jobs:
       VITE_MAP_PROVIDER: osm
       VITE_EXPECTED_SUPABASE_PROJECT_REF: local
       SMOKE_BUSINESS: 'true'
+      SMOKE_MANUAL_WALLETS: 'true'
       E2E_CUSTOMER_EMAIL: e2e.customer@suya.test
       E2E_CUSTOMER_PASSWORD: SuyaE2E!2026Local
       E2E_ADMIN_EMAIL: e2e.admin@suya.test

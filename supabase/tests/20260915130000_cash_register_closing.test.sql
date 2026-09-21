@@ -26,8 +26,8 @@ select ok(
   'cierre usa SECURITY DEFINER'
 );
 select is(
-  (select proconfig from pg_proc where oid = 'public.close_cash_register(uuid,numeric,text,uuid)'::regprocedure)::text,
-  '{search_path=}',
+  (select proconfig from pg_proc where oid = 'public.close_cash_register(uuid,numeric,text,uuid)'::regprocedure),
+  array['search_path=""']::text[],
   'cierre fija search_path vacío'
 );
 select ok(
@@ -62,8 +62,6 @@ values (
   'c3100000-0000-0000-0000-000000000001', 'authenticated', 'cashier@example.test',
   '{"role":"authenticated"}', '{"display_name":"Caja Uno"}', now(), now()
 );
-insert into public.profiles (id, display_name) values
-  ('c3100000-0000-0000-0000-000000000001', 'Caja Uno');
 insert into public.categories (id, slug, name, icon)
 values ('c3200000-0000-0000-0000-000000000001', 'cash-register-test', 'Caja', 'cash');
 insert into public.restaurants (id, slug, category_id, name, address, active, accepting_orders)
@@ -103,13 +101,14 @@ select is(
 
 select set_config('role', 'postgres', true);
 insert into public.orders (
-  id, code, customer_id, restaurant_id, status, payment_method, subtotal, delivery_fee,
+  id, code, customer_id, restaurant_id, idempotency_key, status, payment_method, subtotal, delivery_fee,
   discount, customer_name, customer_phone, delivery_address, estimated_minutes,
   delivery_verified_at
 ) values (
   'c3500000-0000-0000-0000-000000000001', 'CASH001',
   'c3100000-0000-0000-0000-000000000001',
-  'c3300000-0000-0000-0000-000000000001', 'delivered', 'cash', 25, 5, 0,
+  'c3300000-0000-0000-0000-000000000001', 'c3700000-0000-0000-0000-000000000001',
+  'delivered', 'cash', 25, 5, 0,
   'Cliente Caja', '900000001', 'Dirección de prueba', 30, now()
 );
 insert into public.restaurant_tables (

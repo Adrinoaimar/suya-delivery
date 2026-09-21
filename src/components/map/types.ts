@@ -16,4 +16,6 @@ export interface MapViewProps {
   interactive?: boolean;
   /** Activa la guía vial del repartidor con siguiente maniobra y recalculo. */
   navigation?: boolean;
+  /** Punto de destino de la guía activa; no altera los marcadores del pedido. */
+  navigationTarget?: LatLng;
 }

@@ -16,6 +16,8 @@ interface MountOptions {
   /** Starts the customer catalog while the intro is still visible. */
   preloadCatalog?: boolean;
   registerServiceWorker?: boolean;
+  /** Enables consented first-party visitor counting for the public customer site only. */
+  analyticsEnabled?: boolean;
 }
 
 export function mountApp(Routes: ComponentType, options: MountOptions = {}): void {
@@ -26,7 +28,7 @@ export function mountApp(Routes: ComponentType, options: MountOptions = {}): voi
   createRoot(container).render(
     <StrictMode>
       <BrowserRouter basename={basename}>
-        <AppShell>
+        <AppShell analyticsEnabled={options.analyticsEnabled}>
           {options.bootstrapAuth !== false && <AuthBootstrap />}
           {options.preloadCatalog && <CatalogBootstrap />}
           {options.Bootstrap && <options.Bootstrap />}

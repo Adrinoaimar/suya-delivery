@@ -247,9 +247,9 @@ begin
     return;
   end if;
 
-  select id into open_id
-  from public.cash_register_sessions
-  where restaurant_id = p_restaurant_id and status = 'open'
+  select s.id into open_id
+  from public.cash_register_sessions s
+  where s.restaurant_id = p_restaurant_id and s.status = 'open'
   for update;
   if open_id is not null then raise exception 'restaurant already has an open cash register'; end if;
 
@@ -298,16 +298,16 @@ begin
     raise exception 'received amount is insufficient';
   end if;
   select * into register_row
-  from public.cash_register_sessions
-  where restaurant_id = table_row.restaurant_id and status = 'open'
-  order by opened_at desc
+  from public.cash_register_sessions s
+  where s.restaurant_id = table_row.restaurant_id and s.status = 'open'
+  order by s.opened_at desc
   limit 1
   for update;
   if not found then raise exception 'open cash register required for cash table payment'; end if;
 
   select * into existing
-  from public.cash_register_entries
-  where session_id = register_row.id and request_id = p_request_id
+  from public.cash_register_entries e
+  where e.session_id = register_row.id and e.request_id = p_request_id
   for update;
   if found then
     if existing.table_session_id <> p_table_session_id
@@ -328,8 +328,8 @@ begin
   );
 exception when unique_violation then
   select * into existing
-  from public.cash_register_entries
-  where table_session_id = p_table_session_id
+  from public.cash_register_entries e
+  where e.table_session_id = p_table_session_id
   for update;
   if found and existing.session_id = register_row.id
      and round(existing.gross_received, 2) = round(p_received, 2) then
@@ -448,7 +448,9 @@ begin
   if register_row.status <> 'open' then raise exception 'cash register is closed'; end if;
 
   select * into existing from public.cash_register_entries
-  where session_id = p_session_id and request_id = p_request_id for update;
+  where public.cash_register_entries.session_id = p_session_id
+    and public.cash_register_entries.request_id = p_request_id
+  for update;
   if found then
     if existing.order_id <> p_order_id
        or round(existing.gross_received, 2) <> round(p_received, 2) then
@@ -486,8 +488,8 @@ begin
       'Cobro de pedido'
     ) returning id into new_entry_id;
   exception when unique_violation then
-    select * into existing from public.cash_register_entries
-    where order_id = order_row.id and entry_type = 'cash_sale' for update;
+    select * into existing from public.cash_register_entries e
+    where e.order_id = order_row.id and e.entry_type = 'cash_sale' for update;
     if found and existing.session_id = p_session_id
        and round(existing.gross_received, 2) = round(p_received, 2) then
       return query select existing.id, existing.session_id, existing.order_id,
@@ -539,7 +541,9 @@ begin
   end if;
   if register_row.status <> 'open' then raise exception 'cash register is closed'; end if;
   select * into existing from public.cash_register_entries
-  where session_id = p_session_id and request_id = p_request_id for update;
+  where public.cash_register_entries.session_id = p_session_id
+    and public.cash_register_entries.request_id = p_request_id
+  for update;
   if found then
     if round(existing.amount, 2) <> round(p_amount, 2) or existing.note <> clean_note then
       raise exception 'cash adjustment request conflict';

@@ -47,6 +47,39 @@ describe('planificador vial OSRM', () => {
     );
   });
 
+  it('envía la sesión del rider al proxy vial autorizado', async () => {
+    vi.stubEnv('VITE_ROUTING_URL', 'https://routing.suya.test/');
+    const request = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify({
+        code: 'Ok',
+        routes: [{
+          distance: 100,
+          duration: 40,
+          geometry: { coordinates: [[-80.69, -4.9], [-80.68, -4.91]] },
+          legs: [],
+        }],
+      }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } }),
+    );
+
+    await fetchDrivingRoute(
+      { lat: -4.9, lng: -80.69 },
+      { lat: -4.91, lng: -80.68 },
+      undefined,
+      'rider-session-token',
+    );
+
+    expect(request).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        headers: {
+          Accept: 'application/json',
+          Authorization: 'Bearer rider-session-token',
+        },
+      }),
+    );
+  });
+
   it('valida la geometría y convierte las maniobras a guía en español', () => {
     const plan = parseOsrmRoute({
       code: 'Ok',

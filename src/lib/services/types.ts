@@ -34,6 +34,15 @@ export interface StoreService {
   search(query: string): Promise<{ stores: Store[]; products: Product[] }>;
 }
 
+export interface AnalyticsDailyMetric {
+  visitDay: string;
+  uniqueVisitors: number;
+}
+
+export interface AnalyticsService {
+  listDaily(days?: number): Promise<AnalyticsDailyMetric[]>;
+}
+
 export interface CreateAppOfferInput {
   restaurantId: string | null;
   title: string;
@@ -162,6 +171,15 @@ export interface CreatedWalletObserverDevice extends WalletObserverDevice {
   deviceToken: string;
 }
 
+export interface WalletObserverPairing {
+  pairingId: string;
+  pairingCode: string;
+  expiresAt: string;
+  restaurantId: string;
+  receiverAccountId: string;
+  deviceLabel: string;
+}
+
 export interface WalletObservationOrigin {
   packageName: string | null;
   appLabel: string | null;
@@ -216,6 +234,11 @@ export interface RestaurantPaymentAccount {
 
 export interface WalletObserverService {
   listDevices(restaurantIds: string[]): Promise<WalletObserverDevice[]>;
+  createPairing(
+    restaurantId: string,
+    label: string,
+    receiverAccountId: string,
+  ): Promise<WalletObserverPairing>;
   createDevice(
     restaurantId: string,
     label: string,

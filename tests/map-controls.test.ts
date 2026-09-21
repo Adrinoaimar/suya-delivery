@@ -9,7 +9,7 @@ describe('controles accesibles del mapa', () => {
     expect(source).toContain('aria-label="Alejar mapa"');
     expect(source).toContain('aria-label={mapExpanded ? \'Salir del mapa completo\' : \'Ver mapa completo\'}');
     expect(source).not.toMatch(/className="[^"]*h-9 w-9/);
-    expect(source.match(/className="[^"]*h-11 w-11/g)?.length ?? 0).toBeGreaterThanOrEqual(4);
+    expect(source.match(/h-11 w-11/g)?.length ?? 0).toBeGreaterThanOrEqual(4);
   });
 
   it('reserva una columna visual para atribución y apila estados sin taparla', () => {

@@ -281,6 +281,7 @@ select ok(
   (select device_token ~ '^[0-9a-f-]{36}\.[0-9a-f]{64}$' from rotated_wallet_device),
   'el token rotado incluye identificador y secreto de alta entropía'
 );
+grant select on rotated_wallet_device to anon;
 select set_config('role', 'anon', true);
 select lives_ok(
   $$ select * from public.ingest_wallet_observation(

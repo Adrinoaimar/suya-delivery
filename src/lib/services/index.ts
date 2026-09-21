@@ -1,13 +1,9 @@
 /**
  * Contenedor de servicios de Suya Delivery.
  *
- * Toda la aplicación consume los servicios desde aquí. Para migrar a un backend real basta
- * con cambiar la implementación registrada en este archivo:
- *
- *   MockOrderService              → HttpOrderService
- *   MockStoreService              → HttpStoreService
- *   MockPaymentService            → GatewayPaymentService
- *   LocalNotificationService      → PushNotificationService
+ * Toda la aplicación consume los servicios desde aquí. En builds productivos la selección
+ * `VITE_BACKEND=supabase` registra contratos reales; los servicios mock solo se cargan de forma
+ * dinámica cuando el entorno local/pruebas no solicita Supabase.
  */
 import { SupabaseStoreServiceImpl } from './SupabaseStoreService';
 import { SupabaseOrderServiceImpl } from './SupabaseOrderService';
@@ -18,6 +14,7 @@ import { SupabaseOfferServiceImpl } from './SupabaseOfferService';
 import { SupabaseWalletObserverService } from './SupabaseWalletObserverService';
 import { SupabaseRestaurantAccountService } from './SupabaseRestaurantAccountService';
 import { SupabaseRestaurantRiderService } from './SupabaseRestaurantRiderService';
+import { SupabaseAnalyticsService } from './SupabaseAnalyticsService';
 import { CashPaymentServiceImpl } from './CashPaymentService';
 import { SupabasePaymentService } from './SupabasePaymentService';
 import { Capacitor } from '@capacitor/core';
@@ -37,7 +34,28 @@ import type {
   RestaurantRiderService,
   PaymentService,
   CashRegisterService,
+  AnalyticsService,
 } from './types';
+
+let resolvedAnalyticsService: Promise<AnalyticsService> | null = null;
+function resolveAnalyticsService(): Promise<AnalyticsService> {
+  if (resolvedAnalyticsService) return resolvedAnalyticsService;
+  resolvedAnalyticsService =
+    import.meta.env.VITE_BACKEND === 'supabase'
+      ? Promise.resolve(new SupabaseAnalyticsService())
+      : Promise.resolve({
+          async listDaily() {
+            return [];
+          },
+        });
+  return resolvedAnalyticsService;
+}
+
+export const analyticsService: AnalyticsService = {
+  async listDaily(days) {
+    return (await resolveAnalyticsService()).listDaily(days);
+  },
+};
 
 let resolvedRestaurantAccountService: Promise<RestaurantAccountService> | null = null;
 function resolveRestaurantAccountService(): Promise<RestaurantAccountService> {
@@ -119,6 +137,9 @@ function resolveWalletObserverService(): Promise<WalletObserverService> {
           async listDevices() {
             return [];
           },
+          async createPairing() {
+            throw new Error('La conexión de billeteras requiere Supabase.');
+          },
           async createDevice() {
             throw new Error('La conexión de billeteras requiere Supabase.');
           },
@@ -156,6 +177,13 @@ function resolveWalletObserverService(): Promise<WalletObserverService> {
 export const walletObserverService: WalletObserverService = {
   async listDevices(restaurantIds) {
     return (await resolveWalletObserverService()).listDevices(restaurantIds);
+  },
+  async createPairing(restaurantId, label, receiverAccountId) {
+    return (await resolveWalletObserverService()).createPairing(
+      restaurantId,
+      label,
+      receiverAccountId,
+    );
   },
   async createDevice(restaurantId, label, receiverAccountId) {
     return (await resolveWalletObserverService()).createDevice(

@@ -16,6 +16,7 @@ import { ButtonLink } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { Rating } from '@/components/common/Rating';
+import { SeoHead } from '@/components/common/SeoHead';
 import { ProductRowSkeleton, Skeleton } from '@/components/common/Skeleton';
 import { Thumb } from '@/components/common/Thumb';
 import { ProductCard } from '@/components/marketplace/ProductCard';
@@ -49,6 +50,14 @@ function themeStyle(theme: Store['theme']): CSSProperties | undefined {
 export default function StoreDetailPage() {
   const { id = '' } = useParams();
   const location = useLocation();
+  const unavailableSeo = (
+    <SeoHead
+      title="Negocio no encontrado | Suya Delivery"
+      description="Este negocio no está disponible en Suya Delivery."
+      path={`/store/${id}`}
+      noIndex
+    />
+  );
   const store = useCatalogStore((state) => state.stores.find((entry) => entry.id === id));
   const storeStatus = useCatalogStore((state) => state.storeStatus[id] ?? 'idle');
   const storeError = useCatalogStore((state) => state.storeError[id] ?? null);
@@ -89,8 +98,7 @@ export default function StoreDetailPage() {
         restaurantId?: unknown;
       } | null;
       const hasTable = typeof value?.tableId === 'string' && value.tableId.length > 0;
-      const belongsToStore =
-        typeof value?.restaurantId !== 'string' || value.restaurantId === id;
+      const belongsToStore = typeof value?.restaurantId !== 'string' || value.restaurantId === id;
       tableOrder = fromTableQr && hasTable && belongsToStore;
       if (hasTable && !tableOrder) sessionStorage.removeItem('suya.tableContext');
     } catch {
@@ -102,43 +110,52 @@ export default function StoreDetailPage() {
   if (!store) {
     if (storeError) {
       return (
-        <div className="shell py-10">
-          <ErrorState
-            description={storeError}
-            onRetry={() => {
-              void loadStore(id, true);
-              void loadProducts(id, true);
-            }}
-          />
-        </div>
+        <>
+          {unavailableSeo}
+          <div className="shell py-10">
+            <ErrorState
+              description={storeError}
+              onRetry={() => {
+                void loadStore(id, true);
+                void loadProducts(id, true);
+              }}
+            />
+          </div>
+        </>
       );
     }
 
     if (storeStatus !== 'ready') {
       return (
-        <div className="shell space-y-4 py-10" role="status" aria-busy="true">
-          <span className="sr-only">Cargando el negocio…</span>
-          <Skeleton className="h-44 w-full rounded-promo sm:h-56" />
-          <Skeleton className="h-6 w-1/2" />
-          <Skeleton className="h-4 w-2/3" />
-          <div className="space-y-3">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <ProductRowSkeleton key={index} />
-            ))}
+        <>
+          {unavailableSeo}
+          <div className="shell space-y-4 py-10" role="status" aria-busy="true">
+            <span className="sr-only">Cargando el negocio…</span>
+            <Skeleton className="h-44 w-full rounded-promo sm:h-56" />
+            <Skeleton className="h-6 w-1/2" />
+            <Skeleton className="h-4 w-2/3" />
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <ProductRowSkeleton key={index} />
+              ))}
+            </div>
           </div>
-        </div>
+        </>
       );
     }
 
     return (
-      <div className="shell py-10">
-        <EmptyState
-          icon={<StoreIcon className="h-6 w-6" />}
-          title="No encontramos este negocio"
-          description="Puede que ya no esté disponible en Suya Delivery."
-          action={<ButtonLink to="/stores">Ver todas las tiendas</ButtonLink>}
-        />
-      </div>
+      <>
+        {unavailableSeo}
+        <div className="shell py-10">
+          <EmptyState
+            icon={<StoreIcon className="h-6 w-6" />}
+            title="No encontramos este negocio"
+            description="Puede que ya no esté disponible en Suya Delivery."
+            action={<ButtonLink to="/stores">Ver todas las tiendas</ButtonLink>}
+          />
+        </div>
+      </>
     );
   }
 
@@ -158,340 +175,363 @@ export default function StoreDetailPage() {
   const storeLogo = assetUrl(store.logo || store.gallery?.[0]?.src);
 
   return (
-    <div style={themeStyle(theme)} className="pb-24 lg:pb-8">
-      {/* Hero: con marca propia, el fondo usa la paleta del negocio en vez del genérico. */}
-      <div
-        className={cn(
-          'motion-enter relative h-44 overflow-hidden sm:h-56 lg:h-64',
-          theme ? 'bg-[var(--store-primary)]' : 'bg-suya-ivory',
-        )}
-      >
-        {store.image ? (
-          // Foto real del local a sangre; el logotipo ya aparece en la ficha de abajo.
-          <img
-            src={assetUrl(store.image)}
-            alt={`Local de ${store.name}`}
-            referrerPolicy="no-referrer"
-            className="h-full w-full object-cover"
-            width={1200}
-            height={720}
-          />
-        ) : theme ? (
-          <div className="flex h-full items-center justify-center gap-4 bg-gradient-to-br from-[var(--store-primary)] to-[var(--store-accent)] px-6">
-            <span className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-2 shadow-soft sm:h-28 sm:w-28">
-              <Thumb
-                name={store.name}
-                src={storeLogo}
-                variant="store"
-                fit="contain"
-                rounded="rounded-full"
-              />
-            </span>
-            <span className="hidden text-left text-[var(--store-on-primary)] sm:block">
-              <span className="block font-display text-3xl font-bold leading-none">
-                {store.name}
-              </span>
-              <span className="mt-1.5 block text-sm opacity-90">{store.tags.join(' · ')}</span>
-            </span>
-          </div>
-        ) : (
-          <Thumb
-            name={store.name}
-            src={storeLogo}
-            variant="store"
-            fit={store.logo ? 'contain' : 'cover'}
-            rounded="rounded-none"
-            textClassName="text-6xl"
-          />
-        )}
+    <>
+      <SeoHead
+        title={`${store.name} en Sullana | Suya Delivery`}
+        description={`${store.description} Pide en ${store.name} y recibe en Sullana con Suya Delivery.`}
+        path={`/store/${store.id}`}
+        image={store.image ?? storeLogo}
+        schema={{
+          '@context': 'https://schema.org',
+          '@type': 'Restaurant',
+          name: store.name,
+          description: store.description,
+          url: `https://suyadelivery.com/store/${store.id}`,
+          image: store.image
+            ? new URL(store.image, 'https://suyadelivery.com').toString()
+            : undefined,
+          address: store.address,
+          servesCuisine: store.tags,
+          areaServed: { '@type': 'City', name: 'Sullana' },
+        }}
+      />
+      <div style={themeStyle(theme)} className="pb-24 lg:pb-8">
+        {/* Hero: con marca propia, el fondo usa la paleta del negocio en vez del genérico. */}
         <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-t from-suya-carbon/70 via-suya-carbon/10 to-transparent"
-        />
-        {store.image && storeLogo && (
-          <span className="absolute bottom-4 left-4 z-[1] flex h-20 w-36 items-center justify-center overflow-hidden bg-transparent p-0 drop-shadow-[0_2px_8px_rgba(0,0,0,.45)] sm:bottom-5 sm:left-6 sm:h-24 sm:w-44">
-            <img
-              src={storeLogo}
-              alt={`Logo de ${store.name}`}
-              referrerPolicy="no-referrer"
-              className="h-full w-full object-contain"
-            />
-          </span>
-        )}
-        <Link
-          to="/stores"
-          aria-label="Volver a tiendas"
-          className="press absolute left-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-suya-carbon shadow-card"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <button
-          type="button"
-          onClick={() => toggleFavorite(store.id)}
-          aria-pressed={isFavorite}
-          aria-label={isFavorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}
-          className="press absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-suya-carbon shadow-card"
-        >
-          <Heart className={cn('h-5 w-5', isFavorite && 'fill-suya-danger text-suya-danger')} />
-        </button>
-      </div>
-
-      <div className="shell">
-        {/* Ficha del negocio. `relative z-10`: sin él, el degradado posicionado del hero
-            se pinta encima de esta tarjeta y oculta el nombre del negocio. */}
-        <section
           className={cn(
-            'motion-enter relative z-10 -mt-10 rounded-card border bg-white p-4 shadow-soft',
-            theme ? 'border-[var(--store-primary)]/30' : 'border-suya-mist',
+            'motion-enter relative h-44 overflow-hidden sm:h-56 lg:h-64',
+            theme ? 'bg-[var(--store-primary)]' : 'bg-suya-ivory',
           )}
         >
-          <div className="flex items-start gap-3">
-            <div className="h-20 w-[6.5rem] shrink-0 overflow-hidden bg-transparent sm:h-24 sm:w-36">
-              <Thumb
-                name={store.name}
-                src={storeLogo}
-                variant="store"
-                fit={store.logo ? 'contain' : 'cover'}
-                rounded="rounded-none"
-                className={store.logo ? '!p-0' : undefined}
-              />
+          {store.image ? (
+            // Foto real del local a sangre; el logotipo ya aparece en la ficha de abajo.
+            <img
+              src={assetUrl(store.image)}
+              alt={`Local de ${store.name}`}
+              referrerPolicy="no-referrer"
+              className="h-full w-full object-cover"
+              width={1200}
+              height={720}
+            />
+          ) : theme ? (
+            <div className="flex h-full items-center justify-center gap-4 bg-gradient-to-br from-[var(--store-primary)] to-[var(--store-accent)] px-6">
+              <span className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white p-2 shadow-soft sm:h-28 sm:w-28">
+                <Thumb
+                  name={store.name}
+                  src={storeLogo}
+                  variant="store"
+                  fit="contain"
+                  rounded="rounded-full"
+                />
+              </span>
+              <span className="hidden text-left text-[var(--store-on-primary)] sm:block">
+                <span className="block font-display text-3xl font-bold leading-none">
+                  {store.name}
+                </span>
+                <span className="mt-1.5 block text-sm opacity-90">{store.tags.join(' · ')}</span>
+              </span>
             </div>
-            <div className="min-w-0 flex-1">
-              <h1 className="font-display text-xl font-bold leading-tight">{store.name}</h1>
-              <p className="mt-0.5 text-sm text-[#6B7076]">{store.tags.join(' · ')}</p>
-              <div className="mt-2 flex flex-wrap gap-1">
-                <Badge tone={open ? 'lime' : 'neutral'}>
-                  {open
-                    ? 'Abierto'
-                    : comingSoon
-                      ? 'Próximamente'
-                      : informationalOnly
-                        ? 'Carta informativa'
-                        : 'Cerrado'}
-                </Badge>
-                {store.isBeta && <Badge tone="green">Beta</Badge>}
+          ) : (
+            <Thumb
+              name={store.name}
+              src={storeLogo}
+              variant="store"
+              fit={store.logo ? 'contain' : 'cover'}
+              rounded="rounded-none"
+              textClassName="text-6xl"
+            />
+          )}
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-gradient-to-t from-suya-carbon/70 via-suya-carbon/10 to-transparent"
+          />
+          {store.image && storeLogo && (
+            <span className="absolute bottom-4 left-4 z-[1] flex h-20 w-36 items-center justify-center overflow-hidden bg-transparent p-0 drop-shadow-[0_2px_8px_rgba(0,0,0,.45)] sm:bottom-5 sm:left-6 sm:h-24 sm:w-44">
+              <img
+                src={storeLogo}
+                alt={`Logo de ${store.name}`}
+                referrerPolicy="no-referrer"
+                width={256}
+                height={256}
+                className="h-full w-full object-contain"
+              />
+            </span>
+          )}
+          <Link
+            to="/stores"
+            aria-label="Volver a tiendas"
+            className="press absolute left-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-suya-carbon shadow-card"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <button
+            type="button"
+            onClick={() => toggleFavorite(store.id)}
+            aria-pressed={isFavorite}
+            aria-label={isFavorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}
+            className="press absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full bg-white/95 text-suya-carbon shadow-card"
+          >
+            <Heart className={cn('h-5 w-5', isFavorite && 'fill-suya-danger text-suya-danger')} />
+          </button>
+        </div>
+
+        <div className="shell">
+          {/* Ficha del negocio. `relative z-10`: sin él, el degradado posicionado del hero
+            se pinta encima de esta tarjeta y oculta el nombre del negocio. */}
+          <section
+            className={cn(
+              'motion-enter relative z-10 -mt-10 rounded-card border bg-white p-4 shadow-soft',
+              theme ? 'border-[var(--store-primary)]/30' : 'border-suya-mist',
+            )}
+          >
+            <div className="flex items-start gap-3">
+              <div className="h-20 w-[6.5rem] shrink-0 overflow-hidden bg-transparent sm:h-24 sm:w-36">
+                <Thumb
+                  name={store.name}
+                  src={storeLogo}
+                  variant="store"
+                  fit={store.logo ? 'contain' : 'cover'}
+                  rounded="rounded-none"
+                  className={store.logo ? '!p-0' : undefined}
+                />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h1 className="font-display text-xl font-bold leading-tight">{store.name}</h1>
+                <p className="mt-0.5 text-sm text-[#6B7076]">{store.tags.join(' · ')}</p>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  <Badge tone={open ? 'lime' : 'neutral'}>
+                    {open
+                      ? 'Abierto'
+                      : comingSoon
+                        ? 'Próximamente'
+                        : informationalOnly
+                          ? 'Carta informativa'
+                          : 'Cerrado'}
+                  </Badge>
+                  {store.isBeta && <Badge tone="green">Beta</Badge>}
+                </div>
               </div>
             </div>
-          </div>
 
-          <p className="mt-3 text-sm text-[#4A4F55]">{store.description}</p>
+            <p className="mt-3 text-sm text-[#4A4F55]">{store.description}</p>
 
-          <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-suya-mist pt-3 text-sm sm:grid-cols-4">
-            <div>
-              <dt className="text-xs text-[#6B7076]">Calificación</dt>
-              <dd className="mt-0.5">
-                <Rating value={store.rating} reviews={store.reviews} />
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-[#6B7076]">Tiempo estimado</dt>
-              <dd
+            <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-suya-mist pt-3 text-sm sm:grid-cols-4">
+              <div>
+                <dt className="text-xs text-[#6B7076]">Calificación</dt>
+                <dd className="mt-0.5">
+                  <Rating value={store.rating} reviews={store.reviews} />
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-[#6B7076]">Tiempo estimado</dt>
+                <dd
+                  className={cn(
+                    'mt-0.5 inline-flex items-center gap-1 font-medium',
+                    theme && 'text-[var(--store-primary)]',
+                  )}
+                >
+                  <Clock
+                    aria-hidden="true"
+                    className={cn(
+                      'h-4 w-4',
+                      theme ? 'text-[var(--store-primary)]' : 'text-suya-green',
+                    )}
+                  />
+                  {informationalOnly ? 'Por confirmar' : formatEta(store.etaMin, store.etaMax)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-[#6B7076]">Envío</dt>
+                <dd
+                  className={cn(
+                    'mt-0.5 inline-flex items-center gap-1 font-medium',
+                    theme && 'text-[var(--store-primary)]',
+                  )}
+                >
+                  <Bike
+                    aria-hidden="true"
+                    className={cn(
+                      'h-4 w-4',
+                      theme ? 'text-[var(--store-primary)]' : 'text-suya-green',
+                    )}
+                  />
+                  {informationalOnly ? 'Por confirmar' : formatPrice(store.deliveryFee)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs text-[#6B7076]">Horario</dt>
+                <dd className="mt-0.5 font-medium">
+                  {informationalOnly ? 'Por confirmar' : scheduleLabel(store.schedule)}
+                </dd>
+              </div>
+            </dl>
+
+            <p className="mt-3 flex items-center gap-1.5 text-xs text-[#6B7076]">
+              <MapPin aria-hidden="true" className="h-3.5 w-3.5" />
+              {store.address}
+            </p>
+
+            {store.promoLabel && (
+              <div
                 className={cn(
-                  'mt-0.5 inline-flex items-center gap-1 font-medium',
-                  theme && 'text-[var(--store-primary)]',
+                  'mt-3 flex items-center gap-2 rounded-btn px-3 py-2.5',
+                  theme ? 'bg-[var(--store-surface)]' : 'bg-suya-sun-soft',
                 )}
               >
-                <Clock
+                <Info
                   aria-hidden="true"
                   className={cn(
-                    'h-4 w-4',
+                    'h-4 w-4 shrink-0',
+                    theme ? 'text-[var(--store-primary)]' : 'text-[#8A6100]',
+                  )}
+                />
+                <p className="text-sm font-medium text-suya-carbon">{store.promoLabel}</p>
+              </div>
+            )}
+
+            {store.dataNote && (
+              <div className="mt-3 flex items-start gap-2 rounded-btn border border-suya-mist bg-suya-ivory px-3 py-2.5">
+                <Info
+                  aria-hidden="true"
+                  className={cn(
+                    'mt-0.5 h-4 w-4 shrink-0',
                     theme ? 'text-[var(--store-primary)]' : 'text-suya-green',
                   )}
                 />
-                {informationalOnly ? 'Por confirmar' : formatEta(store.etaMin, store.etaMax)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-[#6B7076]">Envío</dt>
-              <dd
-                className={cn(
-                  'mt-0.5 inline-flex items-center gap-1 font-medium',
-                  theme && 'text-[var(--store-primary)]',
-                )}
-              >
-                <Bike
-                  aria-hidden="true"
-                  className={cn(
-                    'h-4 w-4',
-                    theme ? 'text-[var(--store-primary)]' : 'text-suya-green',
-                  )}
-                />
-                {informationalOnly ? 'Por confirmar' : formatPrice(store.deliveryFee)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs text-[#6B7076]">Horario</dt>
-              <dd className="mt-0.5 font-medium">
-                {informationalOnly ? 'Por confirmar' : scheduleLabel(store.schedule)}
-              </dd>
-            </div>
-          </dl>
+                <p className="text-sm text-[#4A4F55]">{store.dataNote}</p>
+              </div>
+            )}
+          </section>
 
-          <p className="mt-3 flex items-center gap-1.5 text-xs text-[#6B7076]">
-            <MapPin aria-hidden="true" className="h-3.5 w-3.5" />
-            {store.address}
-          </p>
-
-          {store.promoLabel && (
-            <div
-              className={cn(
-                'mt-3 flex items-center gap-2 rounded-btn px-3 py-2.5',
-                theme ? 'bg-[var(--store-surface)]' : 'bg-suya-sun-soft',
-              )}
-            >
-              <Info
-                aria-hidden="true"
-                className={cn(
-                  'h-4 w-4 shrink-0',
-                  theme ? 'text-[var(--store-primary)]' : 'text-[#8A6100]',
-                )}
-              />
-              <p className="text-sm font-medium text-suya-carbon">{store.promoLabel}</p>
+          {store.gallery && (
+            <div className="motion-enter">
+              <StoreGallery gallery={store.gallery} storeName={store.name} />
             </div>
           )}
 
-          {store.dataNote && (
-            <div className="mt-3 flex items-start gap-2 rounded-btn border border-suya-mist bg-suya-ivory px-3 py-2.5">
-              <Info
-                aria-hidden="true"
-                className={cn(
-                  'mt-0.5 h-4 w-4 shrink-0',
-                  theme ? 'text-[var(--store-primary)]' : 'text-suya-green',
-                )}
-              />
-              <p className="text-sm text-[#4A4F55]">{store.dataNote}</p>
-            </div>
-          )}
-        </section>
-
-        {store.gallery && (
-          <div className="motion-enter">
-            <StoreGallery gallery={store.gallery} storeName={store.name} />
-          </div>
-        )}
-
-        {/* Categorías internas */}
-        <nav
-          aria-label="Categorías del negocio"
-          className="sticky top-[var(--header-h)] z-20 -mx-4 border-y border-suya-mist/70 bg-suya-ivory/95 px-4 py-3 backdrop-blur lg:top-[72px] lg:mx-0 lg:px-0"
-        >
-          <div className="hide-scrollbar flex gap-2 overflow-x-auto">
-            <button
-              type="button"
-              onClick={() => setSection(null)}
-              aria-pressed={section === null}
-              className={cn(
-                'press h-11 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors',
-                section === null
-                  ? theme
-                    ? 'border-[var(--store-primary)] bg-[var(--store-primary)] text-[var(--store-on-primary)]'
-                    : 'border-suya-green bg-suya-green text-white'
-                  : 'border-suya-mist bg-white text-suya-carbon',
-              )}
-            >
-              Todo
-            </button>
-            {sections.map((name) => (
+          {/* Categorías internas */}
+          <nav
+            aria-label="Categorías del negocio"
+            className="sticky top-[var(--header-h)] z-20 -mx-4 border-y border-suya-mist/70 bg-suya-ivory/95 px-4 py-3 backdrop-blur lg:top-[72px] lg:mx-0 lg:px-0"
+          >
+            <div className="hide-scrollbar flex gap-2 overflow-x-auto">
               <button
-                key={name}
                 type="button"
-                onClick={() => setSection(name)}
-                aria-pressed={section === name}
+                onClick={() => setSection(null)}
+                aria-pressed={section === null}
                 className={cn(
                   'press h-11 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors',
-                  section === name
+                  section === null
                     ? theme
                       ? 'border-[var(--store-primary)] bg-[var(--store-primary)] text-[var(--store-on-primary)]'
                       : 'border-suya-green bg-suya-green text-white'
                     : 'border-suya-mist bg-white text-suya-carbon',
                 )}
               >
-                {name}
+                Todo
               </button>
-            ))}
-          </div>
-        </nav>
-
-        {/* Productos */}
-        <div className="space-y-7 pb-6">
-          {productsError ? (
-            <ErrorState
-              title="No pudimos cargar el menú"
-              description={productsError}
-              onRetry={() => void loadProducts(id, true)}
-            />
-          ) : productsLoading ? (
-            <div className="space-y-3" role="status" aria-busy="true">
-              <span className="sr-only">Cargando el menú…</span>
-              {Array.from({ length: 4 }).map((_, index) => (
-                <ProductRowSkeleton key={index} />
+              {sections.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => setSection(name)}
+                  aria-pressed={section === name}
+                  className={cn(
+                    'press h-11 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors',
+                    section === name
+                      ? theme
+                        ? 'border-[var(--store-primary)] bg-[var(--store-primary)] text-[var(--store-on-primary)]'
+                        : 'border-suya-green bg-suya-green text-white'
+                      : 'border-suya-mist bg-white text-suya-carbon',
+                  )}
+                >
+                  {name}
+                </button>
               ))}
             </div>
-          ) : visibleSections.length > 0 ? (
-            visibleSections.map((name) => (
-              <section key={name} aria-labelledby={`seccion-${name}`} className="motion-enter">
-                <h2 id={`seccion-${name}`} className="section-title mb-3">
-                  {name}
-                </h2>
-                <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
-                  {products
-                    .filter((product) => product.section === name)
-                    .map((product) => (
-                      <ProductCard
-                        key={product.id}
-                        product={product}
-                        disabled={!open}
-                        onSelect={setSelected}
-                        accentClassName={
-                          theme
-                            ? 'bg-[var(--store-primary)] hover:bg-[var(--store-accent)]'
-                            : undefined
-                        }
-                      />
-                    ))}
-                </div>
-              </section>
-            ))
-          ) : (
-            <EmptyState
-              icon={<ShoppingBag className="h-6 w-6" />}
-              title="Carta sin productos"
-              description="Este negocio todavía no publicó platos disponibles."
-            />
-          )}
+          </nav>
 
-          {!open && !productsLoading && !productsError && (
-            <p className="rounded-card border border-suya-mist bg-white p-4 text-sm text-[#6B7076]">
-              {comingSoon
-                ? 'Esta ficha estará disponible próximamente. El restaurante está terminando de configurar su carta y condiciones de entrega.'
-                : informationalOnly
-                  ? 'Esta carta sirve para consulta. Los pedidos se habilitarán cuando el negocio confirme sede, horario, cobertura y condiciones de entrega.'
-                  : `Este negocio está cerrado ahora. Su horario es ${scheduleLabel(store.schedule)}; podrás pedir cuando vuelva a abrir.`}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Barra flotante del carrito */}
-      {cartMatchesStore && (
-        <div className="fixed inset-x-0 bottom-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom))] z-20 px-4 pb-3 lg:bottom-6">
-          <Link
-            to="/cart"
-            className={cn(
-              'press mx-auto flex max-w-md items-center justify-between gap-3 rounded-btn px-4 py-3.5 text-white shadow-soft',
-              theme ? 'bg-[var(--store-primary)]' : 'bg-suya-green',
+          {/* Productos */}
+          <div className="space-y-7 pb-6">
+            {productsError ? (
+              <ErrorState
+                title="No pudimos cargar el menú"
+                description={productsError}
+                onRetry={() => void loadProducts(id, true)}
+              />
+            ) : productsLoading ? (
+              <div className="space-y-3" role="status" aria-busy="true">
+                <span className="sr-only">Cargando el menú…</span>
+                {Array.from({ length: 4 }).map((_, index) => (
+                  <ProductRowSkeleton key={index} />
+                ))}
+              </div>
+            ) : visibleSections.length > 0 ? (
+              visibleSections.map((name) => (
+                <section key={name} aria-labelledby={`seccion-${name}`} className="motion-enter">
+                  <h2 id={`seccion-${name}`} className="section-title mb-3">
+                    {name}
+                  </h2>
+                  <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+                    {products
+                      .filter((product) => product.section === name)
+                      .map((product) => (
+                        <ProductCard
+                          key={product.id}
+                          product={product}
+                          disabled={!open}
+                          onSelect={setSelected}
+                          accentClassName={
+                            theme
+                              ? 'bg-[var(--store-primary)] hover:bg-[var(--store-accent)]'
+                              : undefined
+                          }
+                        />
+                      ))}
+                  </div>
+                </section>
+              ))
+            ) : (
+              <EmptyState
+                icon={<ShoppingBag className="h-6 w-6" />}
+                title="Carta sin productos"
+                description="Este negocio todavía no publicó platos disponibles."
+              />
             )}
-          >
-            <span className="flex items-center gap-2 font-display font-semibold">
-              <ShoppingBag className="h-5 w-5" aria-hidden="true" />
-              Ver carrito ({totals.count})
-            </span>
-            <span className="font-display font-bold">{formatPrice(totals.total)}</span>
-          </Link>
-        </div>
-      )}
 
-      <ProductSheet product={selected} onClose={() => setSelected(null)} />
-    </div>
+            {!open && !productsLoading && !productsError && (
+              <p className="rounded-card border border-suya-mist bg-white p-4 text-sm text-[#6B7076]">
+                {comingSoon
+                  ? 'Esta ficha estará disponible próximamente. El restaurante está terminando de configurar su carta y condiciones de entrega.'
+                  : informationalOnly
+                    ? 'Esta carta sirve para consulta. Los pedidos se habilitarán cuando el negocio confirme sede, horario, cobertura y condiciones de entrega.'
+                    : `Este negocio está cerrado ahora. Su horario es ${scheduleLabel(store.schedule)}; podrás pedir cuando vuelva a abrir.`}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Barra flotante del carrito */}
+        {cartMatchesStore && (
+          <div className="fixed inset-x-0 bottom-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom))] z-20 px-4 pb-3 lg:bottom-6">
+            <Link
+              to="/cart"
+              className={cn(
+                'press mx-auto flex max-w-md items-center justify-between gap-3 rounded-btn px-4 py-3.5 text-white shadow-soft',
+                theme ? 'bg-[var(--store-primary)]' : 'bg-suya-green',
+              )}
+            >
+              <span className="flex items-center gap-2 font-display font-semibold">
+                <ShoppingBag className="h-5 w-5" aria-hidden="true" />
+                Ver carrito ({totals.count})
+              </span>
+              <span className="font-display font-bold">{formatPrice(totals.total)}</span>
+            </Link>
+          </div>
+        )}
+
+        <ProductSheet product={selected} onClose={() => setSelected(null)} />
+      </div>
+    </>
   );
 }
