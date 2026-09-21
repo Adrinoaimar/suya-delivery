@@ -23,6 +23,8 @@ Alcance: `https://suyadelivery.com/`, web cliente, rutas públicas de menú y ap
 
 Los valores de rendimiento corresponden a la medición móvil simulada de Lighthouse. No se reporta FID; la métrica vigente es INP y, en esta auditoría, TBT se usa como diagnóstico de carga.
 
+La revalidación de `/` en el dominio publicado antes del PR #45 registró 47 de rendimiento, 100 de accesibilidad, 92 de buenas prácticas y 83 de SEO (FCP 4.7 s, LCP 7.4 s, CLS 0.012, TBT 440 ms). Por tanto, estos valores describen la versión aún publicada y no la versión corregida del PR.
+
 ## Correcciones realizadas en el repositorio
 
 - Metadatos estáticos y dinámicos para título, descripción, canonical, robots, Open Graph y Twitter.

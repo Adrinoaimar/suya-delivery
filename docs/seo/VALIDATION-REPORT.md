@@ -22,6 +22,10 @@ Fecha: 2026-09-21
 
 Lighthouse local confirmó SEO 100, accesibilidad 100 y buenas prácticas 96 sobre el HTML construido. La puntuación de rendimiento local no es representativa porque el backend Supabase local no estaba levantado y el navegador registró rechazos de conexión; no se usa como resultado productivo.
 
+La revalidación del dominio publicado, antes de aplicar el PR #45, registró rendimiento 47, accesibilidad 100, buenas prácticas 92 y SEO 83 en móvil (FCP 4.7 s, LCP 7.4 s, CLS 0.012, TBT 440 ms). Esto confirma que el dominio todavía sirve la versión anterior; no se presenta como resultado de la tanda SEO.
+
+En el HTML estático generado localmente, `/stores` y `/help` obtuvieron SEO 100. La ruta de menú probada cae en `noindex` cuando Supabase no está disponible, comportamiento intencional para evitar indexar un menú inexistente; debe repetirse con catálogo productivo después de publicar.
+
 ## Verificación productiva
 
 `npm run verify:production` no puede ejecutarse con garantías desde este entorno porque no están cargadas las variables productivas de Supabase. No se sustituyeron por credenciales ni se publicaron secretos.
