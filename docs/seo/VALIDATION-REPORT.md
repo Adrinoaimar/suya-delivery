@@ -36,6 +36,16 @@ En el HTML estático generado localmente, `/stores` y `/help` obtuvieron SEO 100
 
 ## Verificación productiva
 
+PR #54 se fusionó y `Desplegar Cloudflare Pages` terminó correctamente. `verify:live` confirmó las
+tres webs, `robots.txt`, sitemap, `llms.txt`, RPC first-party y Edge Function de rutas. La auditoría
+HTTP posterior confirmó doce URLs públicas con `200`, canonical exacto, `index,follow`, un `h1` y
+JSON-LD; las rutas privadas/dinámicas conservaron su URL con `200 text/html`, `noindex,nofollow`, y
+una URL desconocida respondió `404` real.
+
+Lighthouse móvil en producción: portada 53/100 rendimiento, 100 accesibilidad, 100 buenas prácticas
+y 100 SEO; `/stores/`: 56 rendimiento y 100 SEO. Portada: FCP 4.7 s, LCP 5.2 s, TBT 650 ms, CLS 0.
+Tiendas: FCP 3.1 s, LCP 10.2 s, TBT 500 ms, CLS 0.
+
 `npm run verify:production` pasa sobre los artefactos candidatos con configuración pública sintética:
 697 archivos, sin simulaciones ni secretos. Esto valida el contenido del build; no demuestra el estado
 del backend ni sustituye una publicación real con el entorno protegido.

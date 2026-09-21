@@ -48,6 +48,13 @@ La revalidación más reciente de `/` en el dominio publicado antes del PR #45 r
   comprobados.
 - `llms.txt` y controles de release que comprueban `robots.txt`, sitemap, HTML estático y tipos MIME.
 - La animación inicial dejó de bloquear la web y se conserva únicamente en la aplicación nativa.
+- Las rutas funcionales y dinámicas conservan su URL original en Cloudflare mediante un shell interno
+  HTML sin extensión; entregan `200`, `text/html`, `noindex,nofollow` y sin canonical falso. Esto
+  evita duplicados de portada y conserva login, checkout, carrito, pedidos, fichas, QR y comprobantes.
+- Las URLs inexistentes entregan `404` real con `noindex,nofollow`; los cinco menús públicos se
+  mantienen `200`, `index,follow`, canonical final y Schema específico.
+- El auditor de release recorre los chunks JavaScript importados, evitando falsos rollbacks cuando el
+  registro first-party de visitas queda en un chunk lazy.
 - Fuentes latinas locales precargadas, con caché inmutable, y contraste AA corregido en el footer.
 
 ## Competencia observada para búsquedas locales
@@ -57,6 +64,20 @@ En consultas de referencia como «delivery Sullana», «delivery en Sullana», �
 resultados visibles favorecieron agregadores, directorios, redes sociales y páginas locales con más
 contenido y autoridad histórica. La implementación resuelve la brecha on-page y técnica; superar esa
 autoridad requiere señales externas auténticas y tiempo de rastreo.
+
+## Medición final publicada
+
+Tras el merge del PR #54, el workflow `Desplegar Cloudflare Pages` terminó correctamente y la
+auditoría live fue apta. La verificación HTTP sobre las doce URLs del sitemap confirmó `200`,
+canonical exacto, `index,follow`, un único `h1` y JSON-LD válido. Las rutas funcionales conservaron
+su URL y entregaron `200 text/html`, `noindex,nofollow`, sin canonical ni Schema público. Una URL
+inexistente respondió `404` real.
+
+Lighthouse móvil directo a producción obtuvo en la portada: rendimiento 53, accesibilidad 100,
+buenas prácticas 100 y SEO 100; FCP 4.7 s, LCP 5.2 s, TBT 650 ms y CLS 0. En `/stores/` obtuvo
+rendimiento 56 y SEO 100; FCP 3.1 s, LCP 10.2 s, TBT 500 ms y CLS 0. La variación de rendimiento
+está dominada por la red móvil simulada, el bundle de React y las imágenes reales del catálogo; no
+se observaron fallos SEO, accesibilidad ni buenas prácticas.
 
 ## Medición del candidato local
 
