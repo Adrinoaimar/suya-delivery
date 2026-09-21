@@ -2,10 +2,14 @@
 
 **Tu ciudad. Tus tiendas. Llegamos a ti.**
 
-**Sitio legado durante migración:** <https://adrinoaimar.github.io/suya-delivery/>
+Aplicaciones publicadas:
 
-> El sitio legado todavía contiene simulaciones y no es producción. La rama de trabajo migra todas
-> las funciones a servicios reales; ningún mock quedará habilitado en el lanzamiento funcional.
+- Cliente: <https://suyadelivery.com>
+- Repartidor: <https://rider.suyadelivery.com>
+- Backoffice: <https://panel.suyadelivery.com>
+
+> Los bundles productivos usan Supabase y rechazan configuración incompleta o proveedores mock.
+> Los mocks solo se cargan en desarrollo y pruebas explícitas.
 
 Marketplace de delivery local de **Sullana, Piura, Perú**. Web app responsive **mobile-first**
 construida con React + TypeScript + Vite + Tailwind CSS. El producto está en migración desde una
@@ -55,15 +59,19 @@ volver a verla).
 
 ## Despliegue
 
-El repositorio se publica solo en **GitHub Pages** con el workflow
-[`.github/workflows/deploy.yml`](.github/workflows/deploy.yml): en cada push a `main` verifica
-tipos, estilo y pruebas, construye y despliega.
+La publicación productiva usa **Cloudflare Pages** y está separada de la verificación de PR:
 
-- El sitio vive bajo `/<repo>/`, por eso el build recibe `VITE_BASE=/suya-delivery/` y la app usa
-  `import.meta.env.BASE_URL` (router, service worker, placeholders y enlace de seguimiento).
-- `scripts/prepare-pages.mjs` copia `index.html` a `404.html` para que las rutas profundas
-  (`/orders`, `/rider/safety`, `/share/:token`) funcionen al recargar.
-- Para servirlo en la raíz de un dominio propio, construye sin `VITE_BASE` (o con `/`).
+- `.github/workflows/deploy.yml` ejecuta typecheck, lint, secretos, pruebas y E2E en cada PR.
+- `.github/workflows/cloudflare-pages.yml` publica desde `main`, primero en previews, valida las
+  tres apps, SEO y rollback antes de promover.
+- `.github/workflows/supabase-functions.yml` se ejecuta manualmente desde `main`; aplica
+  migraciones y publica Edge Functions solo con los secretos protegidos de Supabase.
+- `.github/workflows/mobile-android.yml` genera APK debug por rol; no son releases firmadas para
+  Play Store.
+
+El build de cliente genera rutas SEO estáticas, `robots.txt`, `sitemap.xml` y `404.html`.
+La release no es apta si `npm run verify:live` reporta funciones, MIME SEO o configuración remota
+incompleta.
 
 ---
 
@@ -107,22 +115,17 @@ tipos, estilo y pruebas, construye y despliega.
 
 ---
 
-## Modo demostración: qué se está simulando
+## Desarrollo local y modo demostración
 
-| Función                       | Cómo funciona hoy                                                                                                                                                                                                  |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Datos de negocios y productos | JSON locales en `src/data/` (**DEMO DATA**)                                                                                                                                                                        |
-| Pedidos y carrito             | `localStorage` (`suya_cart`, `suya_orders`)                                                                                                                                                                        |
-| Estados del pedido            | Simulación local: 0 s confirmado → 8 s preparando → 18 s recogido → 28 s en camino. **La entrega no se cierra sola**: la confirma el repartidor con el código del cliente                                          |
-| Códigos del pedido            | Cada pedido genera dos PIN de 4 dígitos: `deliveryCode` (el cliente se lo da al repartidor para cerrar la entrega) y `cancelCode` (hay que escribirlo para cancelar)                                               |
-| Ubicación del repartidor      | Obligatoria mientras está disponible: el panel mantiene el rastreo durante todo el turno y retira la disponibilidad si se pierde el permiso                                                                        |
-| Movimiento del repartidor     | Interpolación sobre una polilínea de Sullana (`src/data/route.json`)                                                                                                                                               |
-| Mapa                          | Mapa real con calles (Leaflet + OpenStreetMap) por defecto, con ruta trazada y el repartidor moviéndose sobre ella. Sin conexión cae al `MockMap` en SVG; el adaptador de Google Maps queda listo para una API key |
-| Pagos                         | Efectivo local; Yape/Lemon manuales crean un intento con monto del pedido, referencia única y código de constancia que Back Office debe verificar. Culqi añade QR Yape dinámico y tarjeta con webhook. No se guardan secretos ni datos de tarjeta. |
-| Notificaciones                | Toasts locales, no push                                                                                                                                                                                            |
-| Compartir ubicación           | `BroadcastChannel` + `localStorage`: sincroniza **entre pestañas del mismo navegador**, no entre dispositivos                                                                                                      |
-| SOS                           | Registra hora y estado en el dispositivo y avisa visualmente en `/share/:token`. **No contacta a la policía ni a emergencias**                                                                                     |
-| Cuentas                       | Sin credenciales: se elige perfil cliente o repartidor desde `/profile`                                                                                                                                            |
+| Función              | Estado actual |
+| -------------------- | ------------- |
+| Backend `supabase`   | Catálogo, pedidos, auth, RLS, realtime, pagos manuales, caja y observador de billeteras. |
+| Backend de desarrollo | Sin `VITE_BACKEND=supabase`, los servicios mock se cargan únicamente para pruebas/local. |
+| Mapa                 | Leaflet + OpenStreetMap; el rider solicita geometría e indicaciones al proxy autenticado `route-driving`. No se dibuja una línea recta como ruta vial. |
+| Pagos                | Efectivo y Yape/Lemon manuales con intento server-side, QR público del negocio y verificación por evidencia; Culqi solo cuando está configurado. |
+| Observador           | APK Android opt-in; captura notificaciones permitidas, cifra la cola en Android Keystore y nunca marca un pedido como pagado por sí sola. |
+| Ubicación y seguridad | GPS real, rastreo autorizado, SOS e incidentes persistentes en Supabase. |
+| Analítica             | First-party, opt-in, un visitante único por día mediante digest; agregados visibles solo a `platform_admin`. |
 
 ### Probar el módulo de seguridad
 
@@ -134,21 +137,17 @@ tipos, estilo y pruebas, construye y despliega.
 
 ---
 
-## Pendiente para producción
+## Pendientes de publicación
 
-Nada de esto está implementado y la arquitectura ya deja el lugar donde va:
+El código y las pruebas están preparados, pero la auditoría live actual aún requiere:
 
-- Backend y base de datos (pedidos, catálogos, comercios, repartidores, administradores).
-- Autenticación real y roles.
-- Pasarela autorizada para tarjeta y QR Yape dinámico; sin Culqi, Yape/Lemon usan QR público
-  opcional del negocio más código de constancia y verificación manual auditable.
-- WebSockets o push para estados de pedido y ubicación en tiempo real entre dispositivos.
-- Google Maps con API key y rutas reales.
-- Panel de comercios y de operaciones.
-- Apps nativas iOS y Android tomando esta experiencia como referencia.
+- aplicar la migración de analítica y las Edge Functions en el proyecto Supabase de producción;
+- corregir la publicación productiva de `robots.txt`/`sitemap.xml` (hoy el dominio devuelve el
+  fallback HTML) y confirmar que `route-driving` responda;
+- configurar los secretos protegidos de Supabase/Cloudflare antes de ejecutar la release;
+- ejecutar pruebas físicas en un teléfono Android y firmar APK release antes de distribuirlas.
 
-Los puntos de conexión están marcados en el código con `// FUTURE:` y concentrados en
-`src/lib/services/`.
+La evidencia se actualiza en `docs/STATE.md` y `docs/execution/F31.md`.
 
 ---
 

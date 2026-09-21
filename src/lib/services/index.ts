@@ -1,13 +1,9 @@
 /**
  * Contenedor de servicios de Suya Delivery.
  *
- * Toda la aplicación consume los servicios desde aquí. Para migrar a un backend real basta
- * con cambiar la implementación registrada en este archivo:
- *
- *   MockOrderService              → HttpOrderService
- *   MockStoreService              → HttpStoreService
- *   MockPaymentService            → GatewayPaymentService
- *   LocalNotificationService      → PushNotificationService
+ * Toda la aplicación consume los servicios desde aquí. En builds productivos la selección
+ * `VITE_BACKEND=supabase` registra contratos reales; los servicios mock solo se cargan de forma
+ * dinámica cuando el entorno local/pruebas no solicita Supabase.
  */
 import { SupabaseStoreServiceImpl } from './SupabaseStoreService';
 import { SupabaseOrderServiceImpl } from './SupabaseOrderService';
