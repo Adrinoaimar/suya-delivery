@@ -32,8 +32,11 @@ import android.security.keystore.KeyProperties;
  */
 @CapacitorPlugin(name = "SuyaSecureStorage")
 public final class SuyaSecureStoragePlugin extends Plugin {
-    private static final String PREFERENCES = "suya_secure_auth_v1";
-    private static final String KEY_ALIAS = "suya.auth.aes.v1";
+    // Rotate the storage namespace after the first release. This prevents an
+    // invalidated Keystore entry left by an older install from rejecting a
+    // valid login before a new session can be persisted.
+    private static final String PREFERENCES = "suya_secure_auth_v2";
+    private static final String KEY_ALIAS = "suya.auth.aes.v2";
     private static final String KEY_PREFIX = "auth:";
     private static final String KEYSTORE = "AndroidKeyStore";
     private static final int IV_LENGTH_BYTES = 12;
