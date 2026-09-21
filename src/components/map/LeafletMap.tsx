@@ -48,7 +48,7 @@ function storedMapTheme(): MapTheme {
 /**
  * Proveedor de mapa real sobre OpenStreetMap (Leaflet), con la misma lectura que un
  * mapa de ubicaciones: calles, puntos confirmados, ruta vial y repartidor. Si el motor
- * vial no responde, conserva un trazo de referencia claramente diferenciado.
+ * vial no responde, conserva los puntos sin inventar una ruta.
  */
 export default function LeafletMap({
   points,
@@ -60,6 +60,7 @@ export default function LeafletMap({
   label,
   interactive = true,
   navigation = false,
+  navigationTarget,
 }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -98,6 +99,8 @@ export default function LeafletMap({
   const destinationLat = destination?.lat;
   const destinationLng = destination?.lng;
   const destinationLabel = destination?.label;
+  const navigationTargetLat = navigationTarget?.lat;
+  const navigationTargetLng = navigationTarget?.lng;
   const routingRiderLat = navigation ? riderLat : undefined;
   const routingRiderLng = navigation ? riderLng : undefined;
 
@@ -285,8 +288,10 @@ export default function LeafletMap({
         ? { lat: routingRiderLat, lng: routingRiderLng }
         : null;
     const currentDestination =
-      destinationLat !== undefined && destinationLng !== undefined
-        ? { lat: destinationLat, lng: destinationLng }
+      navigationTargetLat !== undefined && navigationTargetLng !== undefined
+        ? { lat: navigationTargetLat, lng: navigationTargetLng }
+        : destinationLat !== undefined && destinationLng !== undefined
+          ? { lat: destinationLat, lng: destinationLng }
         : null;
     const routingStart = navigation && currentRider ? currentRider : points[0];
     const routingEnd = currentDestination ?? points.at(-1);
@@ -352,7 +357,17 @@ export default function LeafletMap({
     // pero la misma ruta pendiente debe poder terminar. El controlador solo se cancela
     // cuando comienza otra ruta o al desmontar el mapa.
     return undefined;
-  }, [destinationLat, destinationLng, navigation, points, routeAuthorization, routingRiderLat, routingRiderLng]);
+  }, [
+    destinationLat,
+    destinationLng,
+    navigation,
+    navigationTargetLat,
+    navigationTargetLng,
+    points,
+    routeAuthorization,
+    routingRiderLat,
+    routingRiderLng,
+  ]);
 
   // Redibuja solo las capas de ruta, no el mapa completo ni sus marcadores.
   useEffect(() => {

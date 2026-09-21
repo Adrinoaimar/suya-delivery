@@ -148,6 +148,9 @@ export default function RiderCurrentPage() {
             riderTrail={riderTrail}
             label="Ubicaciones de entrega"
             navigation
+            navigationTarget={
+              (tripTracking ? active.deliveryPosition : active.storePosition) ?? undefined
+            }
           />
         ) : (
           <MapUnavailable

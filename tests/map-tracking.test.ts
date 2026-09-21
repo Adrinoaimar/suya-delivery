@@ -51,6 +51,9 @@ describe('seguimiento visual del mapa', () => {
       'navigation',
     );
     expect(readFileSync(root('src/pages/rider/RiderCurrentPage.tsx'), 'utf8')).toContain(
+      'tripTracking ? active.deliveryPosition : active.storePosition',
+    );
+    expect(readFileSync(root('src/pages/rider/RiderCurrentPage.tsx'), 'utf8')).toContain(
       'key={active.id}',
     );
     expect(readFileSync(root('src/pages/rider/RiderCurrentPage.tsx'), 'utf8')).toContain(
