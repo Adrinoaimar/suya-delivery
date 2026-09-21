@@ -344,8 +344,8 @@ export default function HomePage() {
             </div>
           ) : (
             <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {featured.map((store) => (
-                <StoreCard key={store.id} store={store} />
+              {featured.map((store, index) => (
+                <StoreCard key={store.id} store={store} priorityImage={index < 2} />
               ))}
             </div>
           )}

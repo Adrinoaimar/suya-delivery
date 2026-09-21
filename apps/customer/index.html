@@ -27,6 +27,28 @@
       type="font/woff2"
       crossorigin
     />
+    <!-- Portadas destacadas se cargan después de consultar catálogo; adelanta solo activos above-the-fold conocidos. -->
+    <link
+      rel="preload"
+      href="/images/stores/donde-joel/cover.webp"
+      as="image"
+      type="image/webp"
+      fetchpriority="high"
+    />
+    <link
+      rel="preload"
+      href="/images/stores/anda-paya/cover-restaurante-background.webp"
+      as="image"
+      type="image/webp"
+      fetchpriority="high"
+    />
+    <link
+      rel="preload"
+      href="/images/stores/anda-paya/cover-cevicheria-background.webp"
+      as="image"
+      type="image/webp"
+      fetchpriority="high"
+    />
     <link rel="icon" type="image/svg+xml" href="/brand/suya-icon.svg" />
     <link rel="canonical" href="https://suyadelivery.com/" />
     <link rel="manifest" href="/manifest/manifest.webmanifest" />

@@ -283,7 +283,8 @@ function replaceOrThrow(html, pattern, replacement, label) {
 
 function renderRoute(template, metadata) {
   const canonical = `${siteOrigin}/${metadata.route}/`;
-  let html = template;
+  // Las portadas destacadas solo son críticas en Inicio; no precargarlas en rutas secundarias.
+  let html = template.replace(/\s*<link\s+rel="preload"\s+href="\/images\/stores\/[^>]+>/g, '');
   html = replaceOrThrow(html, /<title>[^<]*<\/title>/, `<title>${metadata.title}</title>`, 'title');
   html = replaceOrThrow(
     html,
@@ -354,7 +355,7 @@ function renderNoIndexShell(template, { notFound = false } = {}) {
     ? 'La página solicitada no existe. Regresa al inicio de Suya Delivery.'
     : 'Área funcional de Suya Delivery no disponible para indexación pública.';
   const heading = notFound ? 'Página no encontrada' : 'Cargando Suya Delivery';
-  let html = template;
+  let html = template.replace(/\s*<link\s+rel="preload"\s+href="\/images\/stores\/[^>]+>/g, '');
   html = replaceOrThrow(html, /<title>[^<]*<\/title>/, `<title>${title}</title>`, 'title noindex');
   html = replaceOrThrow(
     html,

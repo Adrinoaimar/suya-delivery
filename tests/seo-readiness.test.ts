@@ -28,6 +28,18 @@ describe('SEO local de Suya Delivery', () => {
     expect(content).toContain('política de privacidad');
   });
 
+  it('prioriza las dos primeras portadas del listado visible de inicio', () => {
+    const home = source('src/pages/customer/HomePage.tsx');
+    const template = source('apps/customer/index.html');
+    const generator = source('scripts/prepare-customer-seo.mjs');
+
+    expect(home).toContain('featured.map((store, index) =>');
+    expect(home).toContain('priorityImage={index < 2}');
+    expect(template).toContain('cover-cevicheria-background.webp');
+    expect(template).toContain('fetchpriority="high"');
+    expect(generator).toContain('no precargarlas en rutas secundarias');
+  });
+
   it('publica sitemap, robots y guía para rastreadores de IA', () => {
     const sitemap = source('public/sitemap.xml');
     const robots = source('public/robots.txt');
