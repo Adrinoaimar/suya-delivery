@@ -40,6 +40,17 @@ const forbiddenByApp = {
     'MockStoreService',
     'MockPaymentService',
   ],
+  walletobserver: [
+    'BackofficePage',
+    'BackofficeLayout',
+    'RiderCurrentPage',
+    'RiderHomePage',
+    'RiderSafetyPage',
+    'CheckoutPage',
+    'MockOrderService',
+    'MockStoreService',
+    'MockPaymentService',
+  ],
   mobile: [
     'MockOrderService',
     'MockStoreService',

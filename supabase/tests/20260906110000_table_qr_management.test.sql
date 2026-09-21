@@ -12,7 +12,7 @@ select ok(has_function_privilege('authenticated','public.create_restaurant_table
 select ok(has_function_privilege('authenticated','public.regenerate_restaurant_table_qr(uuid)','execute'), 'authenticated can rotate QR via RPC');
 select ok(has_function_privilege('authenticated','public.set_restaurant_table_active(uuid,boolean)','execute'), 'authenticated can toggle table via RPC');
 select ok(has_function_privilege('authenticated','public.list_restaurant_tables(uuid[])','execute'), 'authenticated can list tables via RPC');
-select ok(has_function_privilege('authenticated','public.create_table_cash_order(uuid,jsonb,text,text,text,uuid,uuid,uuid)','execute'), 'authenticated can create table order via RPC');
+select ok(has_function_privilege('authenticated','public.create_table_cash_order(uuid,jsonb,text,text,text,uuid,uuid,uuid,text)','execute'), 'authenticated can create table order via RPC');
 select ok((select pg_get_constraintdef(oid) like '%table_qr%' from pg_constraint where conrelid='public.orders'::regclass and conname='orders_origin_check'), 'table_qr origin is allowed by server constraint');
 select * from finish();
 rollback;

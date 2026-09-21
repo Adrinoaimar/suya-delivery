@@ -1,14 +1,22 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
-import type { CartItem, Order, OrderStatus, ProductExtra } from '@/types';
+import type { CartItem, Order, OrderStatus, PaymentIntent, PaymentIntentStatus, PaymentMethod, ProductExtra } from '@/types';
 import type {
   AvailableRider,
   CodeResult,
   CreateOrderInput,
   DispatchService,
   OrderService,
+  OrderListOptions,
   RiderOperationsService,
 } from './types';
+import { SupabasePaymentService } from './SupabasePaymentService';
+import {
+  createGuestOrderAccessToken,
+  isGuestOrderAccessToken,
+  readGuestOrderToken,
+  saveGuestOrderToken,
+} from './guestOrderAccess';
 
 interface OrderItemRow {
   id: string;
@@ -23,6 +31,20 @@ interface OrderItemRow {
 
 interface OrderEventRow {
   status: OrderStatus;
+  created_at: string;
+}
+
+interface PaymentAttemptRow {
+  id: string;
+  order_id: string;
+  provider: string;
+  provider_reference: string | null;
+  method: PaymentMethod;
+  status: PaymentIntentStatus;
+  amount: number | string;
+  checkout_reference: string;
+  expires_at: string;
+  gateway_qr_payload?: string | null;
   created_at: string;
 }
 
@@ -47,12 +69,16 @@ interface OrderRow {
   delivery_reference: string;
   delivery_latitude: number | null;
   delivery_longitude: number | null;
+  cash_register_session_id?: string | null;
+  cash_collected_at?: string | null;
   estimated_minutes: number;
   created_at: string;
-  restaurants: { name: string; latitude: number | null; longitude: number | null } |
-    { name: string; latitude: number | null; longitude: number | null }[];
+  restaurants:
+    | { name: string; latitude: number | null; longitude: number | null }
+    | { name: string; latitude: number | null; longitude: number | null }[];
   order_items: OrderItemRow[];
   order_events: OrderEventRow[];
+  payment_attempts?: PaymentAttemptRow[];
 }
 
 interface OrderCodes {
@@ -77,6 +103,7 @@ interface GuestOrderRow {
   restaurant_id: string;
   origin: 'menu' | 'table_qr';
   status: OrderStatus;
+  payment_method: Order['paymentMethod'];
   table_id: string | null;
   customer_name: string;
   customer_phone: string;
@@ -100,24 +127,41 @@ const ORDER_SELECT = `
   subtotal, delivery_fee, discount, total, customer_name, customer_phone,
   delivery_address, delivery_reference, estimated_minutes, created_at,
   delivery_latitude, delivery_longitude,
+  cash_register_session_id, cash_collected_at,
   restaurants!inner(name, latitude, longitude),
   order_items(id, product_id, product_name, unit_price, quantity, extras, note, image_url),
-  order_events(status, created_at)
+  order_events(status, created_at),
+  payment_attempts(id, order_id, provider, provider_reference, method, status, amount, checkout_reference, expires_at, gateway_qr_payload, created_at)
+`;
+const ORDER_LIST_SELECT = `
+  id, code, customer_id, restaurant_id, rider_id, status, origin, table_id, payment_method, cancellation_reason,
+  subtotal, delivery_fee, discount, total, customer_name, customer_phone,
+  delivery_address, delivery_reference, estimated_minutes, created_at,
+  delivery_latitude, delivery_longitude,
+  cash_register_session_id, cash_collected_at,
+  restaurants!inner(name, latitude, longitude),
+  order_items(id, product_id, product_name, unit_price, quantity, extras, note, image_url),
+  order_events(status, created_at),
+  payment_attempts(id, order_id, provider, provider_reference, method, status, amount, checkout_reference, expires_at, created_at)
 `;
 const PENDING_REQUEST_KEY = 'suya.pending-cash-order';
-const GUEST_TOKEN_PREFIX = 'suya.guest-order-token:';
+const DEFAULT_ORDER_PAGE_SIZE = 50;
+const MAX_ORDER_PAGE_SIZE = 50;
+
+function normalizeOrderListOptions(options?: OrderListOptions): { offset: number; limit: number } {
+  const offset = Number.isInteger(options?.offset) && (options?.offset ?? 0) >= 0
+    ? options!.offset!
+    : 0;
+  const requestedLimit = Number.isInteger(options?.limit) && (options?.limit ?? 0) > 0
+    ? options!.limit!
+    : DEFAULT_ORDER_PAGE_SIZE;
+  return { offset, limit: Math.min(requestedLimit, MAX_ORDER_PAGE_SIZE) };
+}
 
 function isMissingSession(error: { message?: string } | null | undefined): boolean {
-  return Boolean(error?.message && /auth session missing|session not found|jwt/i.test(error.message));
-}
-
-function saveGuestToken(orderId: string, token: string | null | undefined): void {
-  if (!token) return;
-  try { sessionStorage.setItem(`${GUEST_TOKEN_PREFIX}${orderId}`, token); } catch { /* storage unavailable */ }
-}
-
-function guestToken(orderId: string): string | null {
-  try { return sessionStorage.getItem(`${GUEST_TOKEN_PREFIX}${orderId}`); } catch { return null; }
+  return Boolean(
+    error?.message && /auth session missing|session not found|jwt/i.test(error.message),
+  );
 }
 
 function requireClient(): SupabaseClient {
@@ -129,6 +173,24 @@ function amount(value: number | string): number {
   const parsed = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(parsed)) throw new Error('Supabase devolvió un monto de pedido inválido.');
   return parsed;
+}
+
+function paymentIntentFromAttempts(rows: PaymentAttemptRow[] | undefined): PaymentIntent | null {
+  const row = [...(rows ?? [])].sort((a, b) => b.created_at.localeCompare(a.created_at))[0];
+  if (!row) return null;
+  return {
+    attemptId: row.id,
+    orderId: row.order_id,
+    method: row.method,
+    status: row.status,
+    amount: amount(row.amount),
+    currency: 'PEN',
+    checkoutReference: row.checkout_reference,
+    expiresAt: row.expires_at,
+    provider: row.provider,
+    providerReference: row.provider_reference,
+    qrPayload: row.gateway_qr_payload ?? null,
+  };
 }
 
 function extras(value: unknown): ProductExtra[] {
@@ -181,8 +243,11 @@ function mapOrder(row: OrderRow, codes?: OrderCodes): Order {
     total: amount(row.total),
     createdAt: row.created_at,
     status: row.status,
-    origin: row.origin === 'menu' ? 'suya_menu' : row.origin === 'table_qr' ? 'table_qr' : 'delivery',
+    origin:
+      row.origin === 'menu' ? 'suya_menu' : row.origin === 'table_qr' ? 'table_qr' : 'delivery',
     tableId: row.table_id ?? null,
+    cashRegisterSessionId: row.cash_register_session_id ?? null,
+    cashCollectedAt: row.cash_collected_at ?? null,
     history,
     customer: {
       name: row.customer_name,
@@ -201,10 +266,11 @@ function mapOrder(row: OrderRow, codes?: OrderCodes): Order {
     deliveryCode: codes?.delivery_code ?? '',
     cancelCode: codes?.cancel_code ?? '',
     cancellationReason: row.cancellation_reason,
+    paymentIntent: paymentIntentFromAttempts(row.payment_attempts),
   };
 }
 
-function mapGuestOrder(row: GuestOrderRow): Order {
+function mapGuestOrder(row: GuestOrderRow, paymentIntent: PaymentIntent | null = null): Order {
   const items: CartItem[] = (row.items ?? []).map((item) => ({
     lineId: item.id,
     productId: item.product_id ?? item.id,
@@ -243,12 +309,13 @@ function mapGuestOrder(row: GuestOrderRow): Order {
     },
     deliveryPosition: null,
     storePosition: null,
-    paymentMethod: 'cash',
+    paymentMethod: row.payment_method,
     riderId: null,
     etaMinutes: row.estimated_minutes,
     deliveryCode: row.delivery_code,
     cancelCode: row.cancel_code,
     cancellationReason: row.cancellation_reason,
+    paymentIntent,
   };
 }
 
@@ -256,9 +323,15 @@ function first<T>(value: T | T[] | null): T | null {
   return Array.isArray(value) ? (value[0] ?? null) : value;
 }
 
-function fingerprint(input: CreateOrderInput): string {
+function fingerprintPayload(input: CreateOrderInput): string {
   return JSON.stringify({
     storeId: input.storeId,
+    origin: input.origin ?? 'delivery',
+    paymentMethod: input.paymentMethod,
+    tableId: input.tableId ?? null,
+    tableSessionId: input.tableSessionId ?? null,
+    offerCode: input.offerCode?.trim().toUpperCase() ?? null,
+    customerName: input.customer.name.trim(),
     phone: input.customer.phone.trim(),
     address: input.customer.address.trim(),
     reference: input.customer.reference.trim(),
@@ -272,22 +345,61 @@ function fingerprint(input: CreateOrderInput): string {
   });
 }
 
-function requestIdFor(input: CreateOrderInput): string {
-  const signature = fingerprint(input);
+async function fingerprintDigest(input: CreateOrderInput): Promise<string | null> {
+  const subtle = globalThis.crypto?.subtle;
+  if (!subtle) return null;
   try {
-    const saved = JSON.parse(sessionStorage.getItem(PENDING_REQUEST_KEY) ?? 'null') as {
-      signature?: string;
-      requestId?: string;
-    } | null;
-    if (saved?.signature === signature && typeof saved.requestId === 'string') {
-      return saved.requestId;
+    const digest = await subtle.digest(
+      'SHA-256',
+      new TextEncoder().encode(fingerprintPayload(input)),
+    );
+    return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, '0')).join('');
+  } catch {
+    // No persistimos el payload si la plataforma no expone Web Crypto.
+    return null;
+  }
+}
+
+interface PendingOrderRequest {
+  signature?: string;
+  requestId?: string;
+  guestAccessToken?: string;
+}
+
+async function requestIdFor(
+  input: CreateOrderInput,
+  needsGuestAccess: boolean,
+): Promise<{ requestId: string; guestAccessToken: string | null }> {
+  const signature = await fingerprintDigest(input);
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(PENDING_REQUEST_KEY) ?? 'null') as
+      | PendingOrderRequest
+      | null;
+    const savedGuestAccessToken = isGuestOrderAccessToken(saved?.guestAccessToken)
+      ? saved.guestAccessToken
+      : null;
+    if (
+      signature &&
+      saved?.signature === signature &&
+      typeof saved.requestId === 'string' &&
+      (!needsGuestAccess || savedGuestAccessToken)
+    ) {
+      return { requestId: saved.requestId, guestAccessToken: savedGuestAccessToken };
     }
   } catch {
     // Entrada dañada: se reemplaza con una solicitud nueva.
   }
   const requestId = crypto.randomUUID();
-  sessionStorage.setItem(PENDING_REQUEST_KEY, JSON.stringify({ signature, requestId }));
-  return requestId;
+  const guestAccessToken = needsGuestAccess ? createGuestOrderAccessToken() : null;
+  try {
+    sessionStorage.setItem(
+      PENDING_REQUEST_KEY,
+      JSON.stringify({ ...(signature ? { signature } : {}), requestId, guestAccessToken }),
+    );
+  } catch {
+    // El token sigue vivo durante este intento; sin almacenamiento no hay recuperación tras un cierre.
+  }
+  return { requestId, guestAccessToken };
 }
 
 function clearRequest(requestId: string): void {
@@ -302,17 +414,20 @@ function clearRequest(requestId: string): void {
 }
 
 export class SupabaseOrderServiceImpl
-  implements OrderService, DispatchService, RiderOperationsService {
+  implements OrderService, DispatchService, RiderOperationsService
+{
   private readonly client: SupabaseClient;
+  private readonly payments: SupabasePaymentService;
 
   constructor(client: SupabaseClient = requireClient()) {
     this.client = client;
+    this.payments = new SupabasePaymentService(client);
   }
 
   private async codes(orderId: string): Promise<OrderCodes | undefined> {
     const { data, error } = await this.client.rpc('get_order_codes', { target_order: orderId });
     if (error) throw new Error(error.message);
-    return (first(data as OrderCodes[] | OrderCodes | null) ?? undefined);
+    return first(data as OrderCodes[] | OrderCodes | null) ?? undefined;
   }
 
   private async row(id: string): Promise<OrderRow | undefined> {
@@ -334,18 +449,23 @@ export class SupabaseOrderServiceImpl
     return row ?? undefined;
   }
 
-  async list(): Promise<Order[]> {
-    const [{ data: userData, error: userError }, { data, error }] = await Promise.all([
+  async list(options?: OrderListOptions): Promise<Order[]> {
+    const { offset, limit } = normalizeOrderListOptions(options);
+    const [{ error: userError }, { data, error }] = await Promise.all([
       this.client.auth.getUser(),
-      this.client.from('orders').select(ORDER_SELECT).order('created_at', { ascending: false }),
+      this.client
+        .from('orders')
+        .select(ORDER_LIST_SELECT)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(offset, offset + limit - 1),
     ]);
     if (userError && !isMissingSession(userError)) throw new Error(userError.message);
     if (error) throw new Error(error.message);
-    const userId = userData.user?.id;
     const rows = (data ?? []) as unknown as OrderRow[];
-    return Promise.all(rows.map(async (row) =>
-      mapOrder(row, userId === row.customer_id ? await this.codes(row.id) : undefined),
-    ));
+    // La lista no necesita secretos/códigos y no debe disparar una RPC por fila.
+    // Los códigos se recuperan únicamente en el detalle del pedido autenticado.
+    return rows.map((row) => mapOrder(row));
   }
 
   async get(id: string): Promise<Order | undefined> {
@@ -353,23 +473,21 @@ export class SupabaseOrderServiceImpl
     if (userError && !isMissingSession(userError)) throw new Error(userError.message);
     const row = await this.row(id);
     if (!row) {
-      const guest = await this.guestRow(id, guestToken(id) ?? '');
-      return guest ? mapGuestOrder(guest) : undefined;
+      const guest = await this.guestRow(id, readGuestOrderToken(id) ?? '');
+      if (!guest) return undefined;
+      return mapGuestOrder(guest, await this.payments.getIntent(guest.order_id));
     }
     const codes = userData.user?.id === row.customer_id ? await this.codes(row.id) : undefined;
-    return mapOrder(row, codes);
+    return { ...mapOrder(row, codes), paymentIntent: await this.payments.getIntent(row.id) };
   }
 
   async create(input: CreateOrderInput): Promise<Order> {
-    if (input.paymentMethod !== 'cash') {
-      throw new Error('Solo el pago en efectivo está habilitado actualmente.');
-    }
     const { data: userData, error: userError } = await this.client.auth.getUser();
     if (userError && !isMissingSession(userError)) throw new Error(userError.message);
     const user = userData.user ?? null;
     const publicMenuChannel = input.origin === 'suya_menu' || Boolean(input.tableId);
     if (!user && !publicMenuChannel) throw new Error('Inicia sesión para confirmar el pedido.');
-    if (user) {
+    if (user && !input.tableId) {
       const { error: profileError } = await this.client
         .from('profiles')
         .update({
@@ -382,12 +500,20 @@ export class SupabaseOrderServiceImpl
       if (profileError) throw new Error(profileError.message);
     }
 
-    const requestId = requestIdFor(input);
-    const rpcName = input.tableId
-      ? 'create_table_cash_order_with_customer'
-      : input.origin === 'suya_menu'
-        ? 'create_menu_order_with_customer'
-        : 'create_cash_order';
+    const needsGuestAccess = !user && publicMenuChannel;
+    const { requestId, guestAccessToken } = await requestIdFor(input, needsGuestAccess);
+    const walletCheckout = input.paymentMethod === 'yape' || input.paymentMethod === 'lemon';
+    const rpcName = walletCheckout
+      ? input.tableId
+        ? 'create_table_order_with_payment'
+        : input.origin === 'suya_menu'
+          ? 'create_menu_order_with_payment'
+          : 'create_delivery_order_with_payment'
+      : input.tableId
+        ? 'create_table_cash_order_with_customer'
+        : input.origin === 'suya_menu'
+          ? 'create_menu_order_with_customer'
+          : 'create_cash_order';
     const rpcPayload: Record<string, unknown> = {
       p_restaurant_id: input.storeId,
       p_items: input.items.map((item) => ({
@@ -401,51 +527,53 @@ export class SupabaseOrderServiceImpl
       p_delivery_reference: input.customer.reference,
       p_request_id: requestId,
       ...(publicMenuChannel ? { p_customer_name: input.customer.name } : {}),
-      ...(input.tableId ? { p_table_id: input.tableId, p_table_session_id: input.tableSessionId ?? null } : {}),
+      ...(input.tableId
+        ? { p_table_id: input.tableId, p_table_session_id: input.tableSessionId ?? null }
+        : {}),
       ...(input.offerCode ? { p_offer_code: input.offerCode.trim().toUpperCase() } : {}),
+      ...(guestAccessToken ? { p_guest_access_token: guestAccessToken } : {}),
+      ...(!input.tableId
+        ? {
+            p_delivery_latitude: input.deliveryPosition?.lat ?? null,
+            p_delivery_longitude: input.deliveryPosition?.lng ?? null,
+          }
+        : {}),
+      ...(walletCheckout
+        ? {
+            p_method: input.paymentMethod,
+          }
+        : {}),
     };
     const { data, error } = await this.client.rpc(rpcName, rpcPayload);
     if (error) throw new Error(error.message);
-    const result = first(data as ({ order_id: string } & OrderCodes & { guest_access_token?: string | null })[] | null);
+    const result = first(
+      data as ({ order_id: string } & OrderCodes & { guest_access_token?: string | null })[] | null,
+    );
     if (!result) throw new Error('Supabase no devolvió el pedido creado.');
-    saveGuestToken(result.order_id, result.guest_access_token);
-    const accessToken = result.guest_access_token ?? guestToken(result.order_id);
-    if (input.deliveryPosition && accessToken) {
-      const { data: positioned, error: positionError } = await this.client.rpc(
-        'set_guest_order_delivery_coordinates',
-        {
-          p_order_id: result.order_id,
-          p_access_token: accessToken,
-          p_latitude: input.deliveryPosition.lat,
-          p_longitude: input.deliveryPosition.lng,
-        },
-      );
-      if (positionError) throw new Error(positionError.message);
-      if (positioned !== true) throw new Error('No pudimos confirmar el punto de entrega.');
-    } else if (input.deliveryPosition) {
-      const { data: positioned, error: positionError } = await this.client.rpc(
-        'set_order_delivery_coordinates',
-        {
-          target_order: result.order_id,
-          latitude: input.deliveryPosition.lat,
-          longitude: input.deliveryPosition.lng,
-        },
-      );
-      if (positionError) throw new Error(positionError.message);
-      if (positioned !== true) throw new Error('No pudimos confirmar el punto de entrega.');
-    } else if (!input.tableId) {
-      throw new Error('No pudimos confirmar el punto de entrega.');
-    }
+    saveGuestOrderToken(result.order_id, result.guest_access_token ?? guestAccessToken);
+    const accessToken =
+      result.guest_access_token ?? guestAccessToken ?? readGuestOrderToken(result.order_id);
+    const paymentIntent =
+      input.paymentMethod === 'cash'
+        ? null
+        : walletCheckout
+          ? await this.payments.getIntent(result.order_id, accessToken)
+        : await this.payments.createIntent(
+            result.order_id,
+            input.paymentMethod,
+            accessToken,
+            input.customer.email,
+          );
     if (accessToken) {
       const guest = await this.guestRow(result.order_id, accessToken);
       if (!guest) throw new Error('El pedido fue creado, pero no pudo recuperarse. Reintenta.');
       clearRequest(requestId);
-      return mapGuestOrder(guest);
+      return mapGuestOrder(guest, paymentIntent);
     }
     const row = await this.row(result.order_id);
     if (!row) throw new Error('El pedido fue creado, pero no pudo recuperarse. Reintenta.');
     clearRequest(requestId);
-    return mapOrder(row, result);
+    return { ...mapOrder(row, result), paymentIntent };
   }
 
   async createMenuOrder(input: CreateOrderInput): Promise<Order> {
@@ -499,7 +627,10 @@ export class SupabaseOrderServiceImpl
   }
 
   async cancelByRider(id: string, reason: string): Promise<boolean> {
-    const { data, error } = await this.client.rpc('cancel_order_by_rider', { target_order: id, reason });
+    const { data, error } = await this.client.rpc('cancel_order_by_rider', {
+      target_order: id,
+      reason,
+    });
     if (error) throw new Error(error.message);
     return data === true;
   }
@@ -508,8 +639,11 @@ export class SupabaseOrderServiceImpl
     const channel = this.client
       .channel(`orders-${crypto.randomUUID()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, listener)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payment_attempts' }, listener)
       .subscribe();
-    return () => { void this.client.removeChannel(channel); };
+    return () => {
+      void this.client.removeChannel(channel);
+    };
   }
 
   async listAvailableRiders(restaurantId: string): Promise<AvailableRider[]> {

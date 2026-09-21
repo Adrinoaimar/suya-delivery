@@ -10,7 +10,7 @@ import {
   ShoppingBag,
   Store as StoreIcon,
 } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
 import { ButtonLink } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -48,6 +48,7 @@ function themeStyle(theme: Store['theme']): CSSProperties | undefined {
 
 export default function StoreDetailPage() {
   const { id = '' } = useParams();
+  const location = useLocation();
   const store = useCatalogStore((state) => state.stores.find((entry) => entry.id === id));
   const storeStatus = useCatalogStore((state) => state.storeStatus[id] ?? 'idle');
   const storeError = useCatalogStore((state) => state.storeError[id] ?? null);
@@ -77,17 +78,26 @@ export default function StoreDetailPage() {
   // Entrar desde el catálogo general siempre es el canal Delivery. Un contexto
   // QR de mesa explícito conserva su canal y permite checkout invitado.
   useEffect(() => {
+    const fromTableQr =
+      typeof location.state === 'object' &&
+      location.state !== null &&
+      (location.state as { fromTableQr?: unknown }).fromTableQr === true;
     let tableOrder = false;
     try {
       const value = JSON.parse(sessionStorage.getItem('suya.tableContext') ?? 'null') as {
         tableId?: unknown;
+        restaurantId?: unknown;
       } | null;
-      tableOrder = typeof value?.tableId === 'string' && value.tableId.length > 0;
+      const hasTable = typeof value?.tableId === 'string' && value.tableId.length > 0;
+      const belongsToStore =
+        typeof value?.restaurantId !== 'string' || value.restaurantId === id;
+      tableOrder = fromTableQr && hasTable && belongsToStore;
+      if (hasTable && !tableOrder) sessionStorage.removeItem('suya.tableContext');
     } catch {
       tableOrder = false;
     }
     if (!tableOrder) setOrigin('delivery');
-  }, [id, setOrigin]);
+  }, [id, location.state, setOrigin]);
 
   if (!store) {
     if (storeError) {

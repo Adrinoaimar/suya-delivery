@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, MapPin, XCircle } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
@@ -19,6 +19,7 @@ import { orderRouteProgress, useOrderStatusNotifier } from '@/hooks/useOrders';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
 import { formatPrice, orderStatusLabel, riderTrackingMessage } from '@/utils/format';
 import type { LatLng } from '@/types';
+import { appendTrail, mergeTrails } from '@/utils/locationTrail';
 
 export default function OrderTrackPage() {
   const { id = '' } = useParams();
@@ -30,32 +31,77 @@ export default function OrderTrackPage() {
   const [expanded, setExpanded] = useState(true);
   const [confirmCancel, setConfirmCancel] = useState(false);
   const [riderPosition, setRiderPosition] = useState<LatLng | null>(null);
+  const [riderTrail, setRiderTrail] = useState<LatLng[]>([]);
   const isDesktop = useIsDesktop();
 
   const progress = orderRouteProgress(order);
   useOrderStatusNotifier(order);
 
+  // Las referencias estables evitan que Leaflet reconstruya el mapa cada vez que
+  // llega una nueva posición del repartidor.
+  const mapReady = order?.storePosition != null || order?.deliveryPosition != null;
+  const mapPoints = useMemo(
+    () =>
+      [order?.storePosition, order?.deliveryPosition].filter(
+        (point): point is LatLng => point != null,
+      ),
+    [order?.storePosition, order?.deliveryPosition],
+  );
+  const mapOrigin = useMemo(
+    () => (order?.storePosition ? { ...order.storePosition, label: order.storeName } : undefined),
+    [order?.storePosition, order?.storeName],
+  );
+  const mapDestination = useMemo(
+    () =>
+      order?.deliveryPosition
+        ? { ...order.deliveryPosition, label: 'Punto de entrega' }
+        : undefined,
+    [order?.deliveryPosition],
+  );
+
   useEffect(() => {
     if (!order?.riderId || !['picked_up', 'on_the_way'].includes(order.status)) {
       setRiderPosition(null);
+      setRiderTrail([]);
       return undefined;
     }
     let active = true;
+    setRiderTrail([]);
+    const appendPosition = (position: LatLng) => {
+      if (!active) return;
+      setRiderTrail((trail) => appendTrail(trail, position));
+    };
+    void safetyOperationsService
+      .locationHistory(order.id)
+      .then((history) => {
+        if (!active) return;
+        setRiderTrail((trail) => mergeTrails(history, trail));
+      })
+      .catch(() => undefined);
     void safetyOperationsService
       .latestLocation(order.id)
       .then((position) => {
-        if (active) setRiderPosition(position);
+        if (active && position) {
+          setRiderPosition(position);
+          appendPosition(position);
+        }
       })
       .catch(() => undefined);
     const unsubscribe = safetyOperationsService.subscribeLocation(order.id, (position) => {
-      if (active) setRiderPosition(position);
+      if (active) {
+        setRiderPosition(position);
+        appendPosition(position);
+      }
     });
     // Fallback para redes donde WebSocket/realtime está bloqueado: conserva ubicación visible.
     const poll = window.setInterval(() => {
       void safetyOperationsService
         .latestLocation(order.id)
         .then((position) => {
-          if (active && position) setRiderPosition(position);
+          if (active && position) {
+            setRiderPosition(position);
+            appendPosition(position);
+          }
         })
         .catch(() => undefined);
     }, 8_000);
@@ -94,10 +140,6 @@ export default function OrderTrackPage() {
     );
   }
 
-  const mapReady = order.storePosition !== null || order.deliveryPosition !== null;
-  const mapPoints = [order.storePosition, order.deliveryPosition].filter(
-    (point): point is NonNullable<typeof point> => point !== null,
-  );
   const delivered = order.status === 'delivered';
   const cancelled = order.status === 'cancelled';
   const etaMinutes = Math.max(1, Math.round(order.etaMinutes * (1 - progress)));
@@ -172,21 +214,15 @@ export default function OrderTrackPage() {
       {/* Se monta un solo mapa: dos instancias de Leaflet a la vez duplicarían los tiles. */}
       {!isDesktop && (
         <div className="flex h-[calc(100dvh-var(--header-h)-var(--bottom-nav-h))] flex-col lg:hidden">
-          <div className="relative h-[45%] shrink-0 overflow-hidden bg-suya-ivory">
+          <div className="relative h-[54%] shrink-0 overflow-hidden bg-suya-ivory">
             {mapReady ? (
               <MapProvider
+                key={order.id}
                 points={mapPoints}
-                origin={
-                  order.storePosition
-                    ? { ...order.storePosition, label: order.storeName }
-                    : undefined
-                }
-                destination={
-                  order.deliveryPosition
-                    ? { ...order.deliveryPosition, label: 'Punto de entrega' }
-                    : undefined
-                }
+                origin={mapOrigin}
+                destination={mapDestination}
                 rider={cancelled ? null : riderPosition}
+                riderTrail={cancelled ? [] : riderTrail}
                 label={`Ubicaciones del pedido ${order.code}`}
               />
             ) : (
@@ -241,18 +277,12 @@ export default function OrderTrackPage() {
             <div className="sticky top-24 h-[calc(100dvh-140px)] overflow-hidden rounded-card border border-suya-mist bg-white">
               {mapReady ? (
                 <MapProvider
+                  key={order.id}
                   points={mapPoints}
-                  origin={
-                    order.storePosition
-                      ? { ...order.storePosition, label: order.storeName }
-                      : undefined
-                  }
-                  destination={
-                    order.deliveryPosition
-                      ? { ...order.deliveryPosition, label: 'Punto de entrega' }
-                      : undefined
-                  }
+                  origin={mapOrigin}
+                  destination={mapDestination}
                   rider={cancelled ? null : riderPosition}
+                  riderTrail={cancelled ? [] : riderTrail}
                   label={`Ubicaciones del pedido ${order.code}`}
                 />
               ) : (

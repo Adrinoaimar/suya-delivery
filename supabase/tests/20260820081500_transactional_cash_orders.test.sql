@@ -8,7 +8,7 @@ select plan(22);
 select has_function(
   'public',
   'create_cash_order',
-  array['uuid', 'jsonb', 'text', 'text', 'text', 'uuid'],
+  array['uuid', 'jsonb', 'text', 'text', 'text', 'uuid', 'text', 'double precision', 'double precision'],
   'create_cash_order existe'
 );
 
@@ -23,7 +23,7 @@ select ok(
   (
     select prosecdef and proconfig = array['search_path=""']::text[]
     from pg_catalog.pg_proc
-    where oid = 'public.create_cash_order(uuid,jsonb,text,text,text,uuid)'::pg_catalog.regprocedure
+    where oid = 'public.create_cash_order(uuid,jsonb,text,text,text,uuid,text,double precision,double precision)'::pg_catalog.regprocedure
   ),
   'create_cash_order usa SECURITY DEFINER con search_path vacío'
 );
@@ -40,12 +40,12 @@ select ok(
 select ok(
   pg_catalog.has_function_privilege(
     'authenticated',
-    'public.create_cash_order(uuid,jsonb,text,text,text,uuid)',
+    'public.create_cash_order(uuid,jsonb,text,text,text,uuid,text,double precision,double precision)',
     'EXECUTE'
   )
   and not pg_catalog.has_function_privilege(
     'anon',
-    'public.create_cash_order(uuid,jsonb,text,text,text,uuid)',
+    'public.create_cash_order(uuid,jsonb,text,text,text,uuid,text,double precision,double precision)',
     'EXECUTE'
   ),
   'solo authenticated puede crear pedidos mediante RPC'
@@ -238,22 +238,19 @@ select is(
   'extra queda canonicalizado desde catálogo'
 );
 
-select is(
-  (
-    select order_id
+select throws_ok(
+  $$
+    select *
     from public.create_cash_order(
       '83000000-0000-0000-0000-000000000001',
       '[{"product_id":"84000000-0000-0000-0000-000000000001","quantity":99}]'::jsonb,
       '+51 900 000 000', 'Otra dirección válida', '',
       '85000000-0000-0000-0000-000000000001'
     )
-  ),
-  (
-    select id
-    from public.orders
-    where idempotency_key = '85000000-0000-0000-0000-000000000001'
-  ),
-  'misma request_id devuelve mismo pedido'
+  $$,
+  'P0001',
+  'idempotency key payload conflict',
+  'reutilizar request_id con otro payload se rechaza'
 );
 
 select is(
@@ -271,8 +268,17 @@ select is(
     select concat_ws(':', delivery_code, cancel_code)
     from public.create_cash_order(
       '83000000-0000-0000-0000-000000000001',
-      '[{"product_id":"84000000-0000-0000-0000-000000000001","quantity":1}]'::jsonb,
-      '', '', '', '85000000-0000-0000-0000-000000000001'
+      '[{
+        "product_id":"84000000-0000-0000-0000-000000000001",
+        "quantity":2,
+        "extra_ids":["extra-cheese"],
+        "extras":[{"id":"extra-cheese","label":"Falso","price":0.01}],
+        "note":"  sin cubiertos  ",
+        "unit_price":0.01,
+        "subtotal":0.02,
+        "price":0.01
+      }]'::jsonb,
+      '', '', '  puerta azul  ', '85000000-0000-0000-0000-000000000001'
     )
   ),
   (

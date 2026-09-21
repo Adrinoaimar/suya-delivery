@@ -1,7 +1,9 @@
 import { Capacitor } from '@capacitor/core';
 import { Browser } from '@capacitor/browser';
 
-export const NATIVE_OAUTH_CALLBACK_URL = 'com.suya.app://auth/callback';
+const nativeOAuthScheme = import.meta.env.VITE_NATIVE_OAUTH_SCHEME?.trim() || 'com.suya.app';
+
+export const NATIVE_OAUTH_CALLBACK_URL = `${nativeOAuthScheme}://auth/callback`;
 
 const OAUTH_RETURN_PATH_KEY = 'suya.oauth.return-path';
 const DEFAULT_RETURN_PATH = '/profile';
@@ -48,7 +50,7 @@ export function parseNativeOAuthCallback(url: string): NativeOAuthCallback | nul
     return null;
   }
 
-  if (parsed.protocol !== 'com.suya.app:' || parsed.hostname !== 'auth' || parsed.pathname !== '/callback') {
+  if (parsed.protocol !== `${nativeOAuthScheme}:` || parsed.hostname !== 'auth' || parsed.pathname !== '/callback') {
     return null;
   }
 

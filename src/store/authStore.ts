@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { authService } from '@/lib/auth/SupabaseAuthService';
 import type { AuthCredentials, AuthIdentity, ProfileUpdate, SignUpInput } from '@/lib/auth/types';
+import { useBackofficeContextStore } from '@/store/backofficeContextStore';
+import { useOrderStore } from '@/store/orderStore';
 
 type AuthStatus = 'idle' | 'loading' | 'anonymous' | 'authenticated' | 'error';
 let authRevision = 0;
@@ -110,7 +112,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   async signOut() {
     authRevision += 1;
+    // Borra datos privados antes de esperar red: una transición de sesión nunca debe
+    // dejar pedidos del usuario anterior disponibles en una pantalla ya montada.
+    useOrderStore.getState().reset();
     await authService.signOut();
+    useBackofficeContextStore.getState().reset();
     set({ identity: null, status: 'anonymous', error: null });
   },
 

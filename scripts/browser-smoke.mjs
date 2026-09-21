@@ -7,6 +7,7 @@ const targets = [
   { app: 'backoffice', url: process.env.SMOKE_BACKOFFICE_URL ?? 'http://127.0.0.1:4175/orders', heading: 'Acceso de operaciones', path: '/login' },
 ];
 const viewports = [
+  { width: 360, height: 800, name: 'narrow-mobile' },
   { width: 390, height: 844, name: 'mobile' },
   { width: 768, height: 1024, name: 'tablet' },
   { width: 1440, height: 900, name: 'desktop' },
@@ -46,6 +47,10 @@ for (const viewport of viewports) {
           path: location.pathname,
           overflow: document.documentElement.scrollWidth > window.innerWidth + 1,
           unnamed,
+          cookies: document.cookie,
+          externalScripts: [...document.scripts]
+            .map((script) => script.src)
+            .filter((src) => src && new URL(src, location.href).origin !== location.origin),
         };
       });
       if (!response?.ok()) failures.push(`${target.app}/${viewport.name}: HTTP ${response?.status()}`);
@@ -53,6 +58,8 @@ for (const viewport of viewports) {
       if (state.path !== target.path) failures.push(`${target.app}/${viewport.name}: ruta ${state.path}`);
       if (state.overflow) failures.push(`${target.app}/${viewport.name}: overflow horizontal`);
       if (state.unnamed.length) failures.push(`${target.app}/${viewport.name}: controles sin nombre`);
+      if (state.cookies) failures.push(`${target.app}/${viewport.name}: cookies presentes`);
+      if (state.externalScripts.length) failures.push(`${target.app}/${viewport.name}: scripts externos`);
       if (pageErrors.length) failures.push(`${target.app}/${viewport.name}: pageerror ${pageErrors.join(' | ')}`);
       console.log(`${target.app}/${viewport.name}: HTTP ${response?.status()} h1=${state.heading} path=${state.path}`);
     } catch (error) {
@@ -157,6 +164,9 @@ if (process.env.SMOKE_BUSINESS === 'true') {
     // Al asignarse un pedido el backend puede marcar al rider como ocupado;
     // ambas etiquetas confirman que la pantalla de disponibilidad cargó.
     await riderPage.getByRole('main').getByText(/^(Disponible|No disponible)$/, { exact: true }).waitFor({ timeout: 20_000 });
+    await riderPage
+      .getByRole('img', { name: 'Mapa de tu ubicación y zona de reparto' })
+      .waitFor({ timeout: 20_000 });
     await riderPage.goto(`${riderOrigin}/rider/current`, { waitUntil: 'networkidle', timeout: 20_000 });
     await riderPage.getByRole('heading', { name: 'Viaje actual' }).waitFor();
     await riderPage.getByRole('button', { name: 'Recogí el pedido' }).click();

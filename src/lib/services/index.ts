@@ -13,15 +13,20 @@ import { SupabaseStoreServiceImpl } from './SupabaseStoreService';
 import { SupabaseOrderServiceImpl } from './SupabaseOrderService';
 import { SupabaseSafetyServiceImpl } from './SupabaseSafetyService';
 import { SupabaseTableService } from './SupabaseTableService';
+import { SupabaseCashRegisterService } from './SupabaseCashRegisterService';
 import { SupabaseOfferServiceImpl } from './SupabaseOfferService';
 import { SupabaseWalletObserverService } from './SupabaseWalletObserverService';
 import { SupabaseRestaurantAccountService } from './SupabaseRestaurantAccountService';
+import { SupabaseRestaurantRiderService } from './SupabaseRestaurantRiderService';
+import { CashPaymentServiceImpl } from './CashPaymentService';
+import { SupabasePaymentService } from './SupabasePaymentService';
 import { Capacitor } from '@capacitor/core';
 import { CapacitorLocationService } from './CapacitorLocationService';
 import { BrowserLocationService } from './BrowserLocationService';
 import type {
   DispatchService,
   OrderService,
+  OrderListOptions,
   RiderOperationsService,
   SafetyOperationsService,
   StoreService,
@@ -29,103 +34,338 @@ import type {
   OfferService,
   WalletObserverService,
   RestaurantAccountService,
+  RestaurantRiderService,
+  PaymentService,
+  CashRegisterService,
 } from './types';
 
 let resolvedRestaurantAccountService: Promise<RestaurantAccountService> | null = null;
 function resolveRestaurantAccountService(): Promise<RestaurantAccountService> {
   if (resolvedRestaurantAccountService) return resolvedRestaurantAccountService;
-  resolvedRestaurantAccountService = import.meta.env.VITE_BACKEND === 'supabase'
-    ? Promise.resolve(new SupabaseRestaurantAccountService())
-    : Promise.resolve({
-      async list() { return []; },
-      async saveContact() { throw new Error('La gestión de cuentas requiere Supabase.'); },
-      async invite() { throw new Error('La gestión de cuentas requiere Supabase.'); },
-      async activate() { throw new Error('La gestión de cuentas requiere Supabase.'); },
-    });
+  resolvedRestaurantAccountService =
+    import.meta.env.VITE_BACKEND === 'supabase'
+      ? Promise.resolve(new SupabaseRestaurantAccountService())
+      : Promise.resolve({
+          async list() {
+            return [];
+          },
+          async saveContact() {
+            throw new Error('La gestión de cuentas requiere Supabase.');
+          },
+          async invite() {
+            throw new Error('La gestión de cuentas requiere Supabase.');
+          },
+          async activate() {
+            throw new Error('La gestión de cuentas requiere Supabase.');
+          },
+        });
   return resolvedRestaurantAccountService;
 }
 
 export const restaurantAccountService: RestaurantAccountService = {
-  async list() { return (await resolveRestaurantAccountService()).list(); },
-  async saveContact(input) { return (await resolveRestaurantAccountService()).saveContact(input); },
-  async invite(restaurantId) { return (await resolveRestaurantAccountService()).invite(restaurantId); },
-  async activate(restaurantId) { return (await resolveRestaurantAccountService()).activate(restaurantId); },
+  async list() {
+    return (await resolveRestaurantAccountService()).list();
+  },
+  async saveContact(input) {
+    return (await resolveRestaurantAccountService()).saveContact(input);
+  },
+  async invite(restaurantId) {
+    return (await resolveRestaurantAccountService()).invite(restaurantId);
+  },
+  async activate(restaurantId) {
+    return (await resolveRestaurantAccountService()).activate(restaurantId);
+  },
+};
+
+let resolvedRestaurantRiderService: Promise<RestaurantRiderService> | null = null;
+function resolveRestaurantRiderService(): Promise<RestaurantRiderService> {
+  if (resolvedRestaurantRiderService) return resolvedRestaurantRiderService;
+  resolvedRestaurantRiderService =
+    import.meta.env.VITE_BACKEND === 'supabase'
+      ? Promise.resolve(new SupabaseRestaurantRiderService())
+      : Promise.resolve({
+          async list() {
+            return [];
+          },
+          async invite() {
+            throw new Error('La gestión de repartidores requiere Supabase.');
+          },
+          async setActive() {
+            throw new Error('La gestión de repartidores requiere Supabase.');
+          },
+        });
+  return resolvedRestaurantRiderService;
+}
+
+export const restaurantRiderService: RestaurantRiderService = {
+  async list(restaurantId) {
+    return (await resolveRestaurantRiderService()).list(restaurantId);
+  },
+  async invite(input) {
+    return (await resolveRestaurantRiderService()).invite(input);
+  },
+  async setActive(restaurantId, riderId, active) {
+    return (await resolveRestaurantRiderService()).setActive(restaurantId, riderId, active);
+  },
 };
 
 let resolvedWalletObserverService: Promise<WalletObserverService> | null = null;
 function resolveWalletObserverService(): Promise<WalletObserverService> {
   if (resolvedWalletObserverService) return resolvedWalletObserverService;
-  resolvedWalletObserverService = import.meta.env.VITE_BACKEND === 'supabase'
-    ? Promise.resolve(new SupabaseWalletObserverService())
-    : Promise.resolve({
-      async listDevices() { return []; },
-      async createDevice() { throw new Error('La conexión de billeteras requiere Supabase.'); },
-      async listObservations() { return []; },
-    });
+  resolvedWalletObserverService =
+    import.meta.env.VITE_BACKEND === 'supabase'
+      ? Promise.resolve(new SupabaseWalletObserverService())
+      : Promise.resolve({
+          async listDevices() {
+            return [];
+          },
+          async createDevice() {
+            throw new Error('La conexión de billeteras requiere Supabase.');
+          },
+          async setDeviceActive() {
+            throw new Error('La conexión de billeteras requiere Supabase.');
+          },
+          async rotateDevice() {
+            throw new Error('La conexión de billeteras requiere Supabase.');
+          },
+          async listObservations() {
+            return [];
+          },
+          async listPaymentCandidates() {
+            return [];
+          },
+          async setObservationCode() {
+            throw new Error('La conexión de billeteras requiere Supabase.');
+          },
+          async verifyObservation() {
+            throw new Error('La verificación de billeteras requiere Supabase.');
+          },
+          async verifyObservationByName() {
+            throw new Error('La verificación manual de billeteras requiere Supabase.');
+          },
+          async listPaymentAccounts() {
+            return [];
+          },
+          async savePaymentAccount() {
+            throw new Error('La configuración de billeteras requiere Supabase.');
+          },
+        });
   return resolvedWalletObserverService;
 }
 
 export const walletObserverService: WalletObserverService = {
-  async listDevices(restaurantIds) { return (await resolveWalletObserverService()).listDevices(restaurantIds); },
-  async createDevice(restaurantId, label) { return (await resolveWalletObserverService()).createDevice(restaurantId, label); },
-  async listObservations(restaurantIds) { return (await resolveWalletObserverService()).listObservations(restaurantIds); },
+  async listDevices(restaurantIds) {
+    return (await resolveWalletObserverService()).listDevices(restaurantIds);
+  },
+  async createDevice(restaurantId, label, receiverAccountId) {
+    return (await resolveWalletObserverService()).createDevice(
+      restaurantId,
+      label,
+      receiverAccountId,
+    );
+  },
+  async setDeviceActive(deviceId, active) {
+    return (await resolveWalletObserverService()).setDeviceActive(deviceId, active);
+  },
+  async rotateDevice(deviceId) {
+    return (await resolveWalletObserverService()).rotateDevice(deviceId);
+  },
+  async listObservations(restaurantIds) {
+    return (await resolveWalletObserverService()).listObservations(restaurantIds);
+  },
+  async listPaymentCandidates(observationId) {
+    return (await resolveWalletObserverService()).listPaymentCandidates(observationId);
+  },
+  async setObservationCode(observationId, code) {
+    return (await resolveWalletObserverService()).setObservationCode(observationId, code);
+  },
+  async verifyObservation(observationId, paymentAttemptId) {
+    return (await resolveWalletObserverService()).verifyObservation(
+      observationId,
+      paymentAttemptId,
+    );
+  },
+  async verifyObservationByName(observationId, payerName) {
+    return (await resolveWalletObserverService()).verifyObservationByName(
+      observationId,
+      payerName,
+    );
+  },
+  async listPaymentAccounts(restaurantId) {
+    return (await resolveWalletObserverService()).listPaymentAccounts(restaurantId);
+  },
+  async savePaymentAccount(input) {
+    return (await resolveWalletObserverService()).savePaymentAccount(input);
+  },
 };
 
 let resolvedOfferService: Promise<OfferService> | null = null;
 function resolveOfferService(): Promise<OfferService> {
   if (resolvedOfferService) return resolvedOfferService;
-  resolvedOfferService = import.meta.env.VITE_BACKEND === 'supabase'
-    ? Promise.resolve(new SupabaseOfferServiceImpl())
-    : Promise.resolve({
-      async listActive() { return []; },
-      async listManageable() { return []; },
-      async create() { throw new Error('Las ofertas requieren Supabase.'); },
-      async setActive() { throw new Error('Las ofertas requieren Supabase.'); },
-    });
+  resolvedOfferService =
+    import.meta.env.VITE_BACKEND === 'supabase'
+      ? Promise.resolve(new SupabaseOfferServiceImpl())
+      : Promise.resolve({
+          async listActive() {
+            return [];
+          },
+          async listManageable() {
+            return [];
+          },
+          async create() {
+            throw new Error('Las ofertas requieren Supabase.');
+          },
+          async setActive() {
+            throw new Error('Las ofertas requieren Supabase.');
+          },
+        });
   return resolvedOfferService;
 }
 
 export const offerService: OfferService = {
-  async listActive() { return (await resolveOfferService()).listActive(); },
-  async listManageable() { return (await resolveOfferService()).listManageable(); },
-  async create(input) { return (await resolveOfferService()).create(input); },
-  async setActive(id, active) { return (await resolveOfferService()).setActive(id, active); },
+  async listActive() {
+    return (await resolveOfferService()).listActive();
+  },
+  async listManageable() {
+    return (await resolveOfferService()).listManageable();
+  },
+  async create(input) {
+    return (await resolveOfferService()).create(input);
+  },
+  async setActive(id, active) {
+    return (await resolveOfferService()).setActive(id, active);
+  },
 };
 
 let resolvedTableService: Promise<TableService> | null = null;
 function resolveTableService(): Promise<TableService> {
   if (resolvedTableService) return resolvedTableService;
-  resolvedTableService = import.meta.env.VITE_BACKEND === 'supabase'
+  resolvedTableService =
+    import.meta.env.VITE_BACKEND === 'supabase'
       ? Promise.resolve(new SupabaseTableService())
       : Promise.resolve({
-        async resolve() { return null; },
-        async openGuest() { throw new Error('Las mesas QR requieren Supabase.'); },
-        async open() { throw new Error('Las mesas QR requieren Supabase.'); },
-        async list() { return []; },
-        async create() { throw new Error('Las mesas QR requieren Supabase.'); },
-        async regenerateQr() { throw new Error('Las mesas QR requieren Supabase.'); },
-        async setActive() { throw new Error('Las mesas QR requieren Supabase.'); },
-      });
+          async resolve() {
+            return null;
+          },
+          async openGuest() {
+            throw new Error('Las mesas QR requieren Supabase.');
+          },
+          async open() {
+            throw new Error('Las mesas QR requieren Supabase.');
+          },
+          async pay() {
+            throw new Error('El cobro de mesas requiere Supabase.');
+          },
+          async list() {
+            return [];
+          },
+          async create() {
+            throw new Error('Las mesas QR requieren Supabase.');
+          },
+          async regenerateQr() {
+            throw new Error('Las mesas QR requieren Supabase.');
+          },
+          async setActive() {
+            throw new Error('Las mesas QR requieren Supabase.');
+          },
+        });
   return resolvedTableService;
 }
 
 export const tableService: TableService = {
-  async resolve(token) { return (await resolveTableService()).resolve(token); },
-  async openGuest(token) { return (await resolveTableService()).openGuest(token); },
-  async open(tableId) { return (await resolveTableService()).open(tableId); },
-  async list(restaurantIds) { return (await resolveTableService()).list(restaurantIds); },
-  async create(restaurantId, tableNumber) { return (await resolveTableService()).create(restaurantId, tableNumber); },
-  async regenerateQr(tableId) { return (await resolveTableService()).regenerateQr(tableId); },
-  async setActive(tableId, active) { return (await resolveTableService()).setActive(tableId, active); },
+  async resolve(token) {
+    return (await resolveTableService()).resolve(token);
+  },
+  async openGuest(token) {
+    return (await resolveTableService()).openGuest(token);
+  },
+  async open(tableId) {
+    return (await resolveTableService()).open(tableId);
+  },
+  async pay(sessionId, received, method, requestId) {
+    return (await resolveTableService()).pay(sessionId, received, method, requestId);
+  },
+  async list(restaurantIds) {
+    return (await resolveTableService()).list(restaurantIds);
+  },
+  async create(restaurantId, tableNumber) {
+    return (await resolveTableService()).create(restaurantId, tableNumber);
+  },
+  async regenerateQr(tableId) {
+    return (await resolveTableService()).regenerateQr(tableId);
+  },
+  async setActive(tableId, active) {
+    return (await resolveTableService()).setActive(tableId, active);
+  },
+};
+
+let resolvedCashRegisterService: Promise<CashRegisterService> | null = null;
+function resolveCashRegisterService(): Promise<CashRegisterService> {
+  if (resolvedCashRegisterService) return resolvedCashRegisterService;
+  resolvedCashRegisterService =
+    import.meta.env.VITE_BACKEND === 'supabase'
+      ? Promise.resolve(new SupabaseCashRegisterService())
+      : Promise.resolve({
+          async list() {
+            return [];
+          },
+          async open() {
+            throw new Error('El cierre de caja requiere Supabase.');
+          },
+          async recordSale() {
+            throw new Error('El cobro de caja requiere Supabase.');
+          },
+          async addAdjustment() {
+            throw new Error('Los ajustes de caja requieren Supabase.');
+          },
+          async close() {
+            throw new Error('El cierre de caja requiere Supabase.');
+          },
+        });
+  return resolvedCashRegisterService;
+}
+
+export const cashRegisterService: CashRegisterService = {
+  async list(restaurantIds) {
+    return (await resolveCashRegisterService()).list(restaurantIds);
+  },
+  async open(restaurantId, openingFloat, requestId) {
+    return (await resolveCashRegisterService()).open(restaurantId, openingFloat, requestId);
+  },
+  async recordSale(sessionId, orderId, received, requestId) {
+    return (await resolveCashRegisterService()).recordSale(
+      sessionId,
+      orderId,
+      received,
+      requestId,
+    );
+  },
+  async addAdjustment(sessionId, amount, note, requestId) {
+    return (await resolveCashRegisterService()).addAdjustment(
+      sessionId,
+      amount,
+      note,
+      requestId,
+    );
+  },
+  async close(sessionId, declaredCash, note, requestId) {
+    return (await resolveCashRegisterService()).close(
+      sessionId,
+      declaredCash,
+      note,
+      requestId,
+    );
+  },
 };
 
 let resolvedStoreService: Promise<StoreService> | null = null;
 
 function resolveStoreService(): Promise<StoreService> {
   if (resolvedStoreService) return resolvedStoreService;
-  resolvedStoreService = import.meta.env.VITE_BACKEND === 'supabase'
-    ? Promise.resolve(new SupabaseStoreServiceImpl())
-    : import('./MockStoreService').then(({ MockStoreService }) => MockStoreService);
+  resolvedStoreService =
+    import.meta.env.VITE_BACKEND === 'supabase'
+      ? Promise.resolve(new SupabaseStoreServiceImpl())
+      : import('./MockStoreService').then(({ MockStoreService }) => MockStoreService);
   return resolvedStoreService;
 }
 
@@ -171,20 +411,33 @@ let resolvedOrderService: Promise<OperationalOrderService> | null = null;
 
 function resolveOrderService(): Promise<OperationalOrderService> {
   if (resolvedOrderService) return resolvedOrderService;
-  resolvedOrderService = import.meta.env.VITE_BACKEND === 'supabase'
-    ? Promise.resolve(new SupabaseOrderServiceImpl())
-    : import('./MockOrderService').then(({ MockOrderService }) => MockOrderService);
+  resolvedOrderService =
+    import.meta.env.VITE_BACKEND === 'supabase'
+      ? Promise.resolve(new SupabaseOrderServiceImpl())
+      : import('./MockOrderService').then(({ MockOrderService }) => MockOrderService);
   return resolvedOrderService;
 }
 
 /** Router asíncrono: pedidos demo nunca entran al bundle Supabase. */
 export const orderService: OrderService = {
-  async list() { return (await resolveOrderService()).list(); },
-  async get(id) { return (await resolveOrderService()).get(id); },
-  async create(input) { return (await resolveOrderService()).create(input); },
-  async createMenuOrder(input) { return (await resolveOrderService()).createMenuOrder(input); },
-  async updateStatus(id, status) { return (await resolveOrderService()).updateStatus(id, status); },
-  async cancel(id, code) { return (await resolveOrderService()).cancel(id, code); },
+  async list(options?: OrderListOptions) {
+    return (await resolveOrderService()).list(options);
+  },
+  async get(id) {
+    return (await resolveOrderService()).get(id);
+  },
+  async create(input) {
+    return (await resolveOrderService()).create(input);
+  },
+  async createMenuOrder(input) {
+    return (await resolveOrderService()).createMenuOrder(input);
+  },
+  async updateStatus(id, status) {
+    return (await resolveOrderService()).updateStatus(id, status);
+  },
+  async cancel(id, code) {
+    return (await resolveOrderService()).cancel(id, code);
+  },
   async confirmDelivery(id, code) {
     return (await resolveOrderService()).confirmDelivery(id, code);
   },
@@ -240,9 +493,10 @@ export const riderOperationsService: RiderOperationsService = {
 let resolvedSafetyService: Promise<SafetyOperationsService> | null = null;
 function resolveSafetyService(): Promise<SafetyOperationsService> {
   if (resolvedSafetyService) return resolvedSafetyService;
-  resolvedSafetyService = import.meta.env.VITE_BACKEND === 'supabase'
-    ? Promise.resolve(new SupabaseSafetyServiceImpl())
-    : Promise.reject(new Error('Seguridad operativa real requiere Supabase.'));
+  resolvedSafetyService =
+    import.meta.env.VITE_BACKEND === 'supabase'
+      ? Promise.resolve(new SupabaseSafetyServiceImpl())
+      : Promise.reject(new Error('Seguridad operativa real requiere Supabase.'));
   return resolvedSafetyService;
 }
 export const safetyOperationsService: SafetyOperationsService = {
@@ -258,19 +512,72 @@ export const safetyOperationsService: SafetyOperationsService = {
   async latestLocation(orderId) {
     return (await resolveSafetyService()).latestLocation(orderId);
   },
+  async locationHistory(orderId) {
+    return (await resolveSafetyService()).locationHistory(orderId);
+  },
   subscribeLocation(orderId, listener) {
     let unsubscribe: () => void = () => undefined;
     let cancelled = false;
-    void resolveSafetyService().then((service) => {
-      if (!cancelled) unsubscribe = service.subscribeLocation(orderId, listener);
-    }).catch(() => undefined);
-    return () => { cancelled = true; unsubscribe(); };
+    void resolveSafetyService()
+      .then((service) => {
+        if (!cancelled) unsubscribe = service.subscribeLocation(orderId, listener);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   },
 };
-export { CashPaymentService as paymentService } from './CashPaymentService';
+let resolvedPaymentService: PaymentService | null = null;
+function resolvePaymentService(): PaymentService {
+  if (resolvedPaymentService) return resolvedPaymentService;
+  resolvedPaymentService =
+    import.meta.env.VITE_BACKEND === 'supabase'
+      ? new SupabasePaymentService()
+      : new CashPaymentServiceImpl();
+  return resolvedPaymentService;
+}
+export const paymentService: PaymentService = {
+  authorize(method, amount) {
+    return resolvePaymentService().authorize(method, amount);
+  },
+  createIntent(orderId, method, guestAccessToken, customerEmail) {
+    return resolvePaymentService().createIntent(orderId, method, guestAccessToken, customerEmail);
+  },
+  submitEvidence(orderId, code, guestAccessToken) {
+    return resolvePaymentService().submitEvidence(orderId, code, guestAccessToken);
+  },
+  declarePayment(orderId, code, payerDisplayName, guestAccessToken) {
+    return resolvePaymentService().declarePayment(orderId, code, payerDisplayName, guestAccessToken);
+  },
+  confirmWalletPayment(orderId, payerDisplayName, guestAccessToken) {
+    return resolvePaymentService().confirmWalletPayment(
+      orderId,
+      payerDisplayName,
+      guestAccessToken,
+    );
+  },
+  getPaymentDeclaration(orderId, guestAccessToken) {
+    return resolvePaymentService().getPaymentDeclaration(orderId, guestAccessToken);
+  },
+  chargeCard(intent, tokenId, customerEmail, guestAccessToken) {
+    return resolvePaymentService().chargeCard(intent, tokenId, customerEmail, guestAccessToken);
+  },
+  getIntent(orderId, guestAccessToken) {
+    return resolvePaymentService().getIntent(orderId, guestAccessToken);
+  },
+};
 export { LocalNotificationService as notificationService } from './LocalNotificationService';
 export { BrowserLocationService } from './BrowserLocationService';
+export { nativeWalletObserver } from './NativeWalletObserverService';
 export const locationService = Capacitor.isNativePlatform()
   ? CapacitorLocationService
   : BrowserLocationService;
 export * from './types';
+export {
+  consumeGuestOrderTokenFromHash,
+  guestOrderAccessFragment,
+  readGuestOrderToken,
+  saveGuestOrderToken,
+} from './guestOrderAccess';

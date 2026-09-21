@@ -30,35 +30,35 @@ select ok(
 );
 
 select has_function(
-  'public', 'create_cash_order', array['uuid','jsonb','text','text','text','uuid','text'],
+  'public', 'create_cash_order', array['uuid','jsonb','text','text','text','uuid','text','double precision','double precision'],
   'Delivery tiene RPC con oferta'
 );
 select has_function(
-  'public', 'create_menu_order_with_customer', array['uuid','jsonb','text','text','text','text','uuid','text'],
+  'public', 'create_menu_order_with_customer', array['uuid','jsonb','text','text','text','text','uuid','text','text','double precision','double precision'],
   'Menús tiene RPC con oferta'
 );
 select has_function(
-  'public', 'create_table_cash_order_with_customer', array['uuid','jsonb','text','text','text','text','uuid','uuid','uuid','text'],
+  'public', 'create_table_cash_order_with_customer', array['uuid','jsonb','text','text','text','text','uuid','uuid','uuid','text','text'],
   'Mesa QR tiene RPC con oferta'
 );
 select ok(
   (select prosecdef and proconfig = array['search_path=""']::text[]
-   from pg_proc where oid = 'public.create_cash_order(uuid,jsonb,text,text,text,uuid,text)'::pg_catalog.regprocedure),
+   from pg_proc where oid = 'public.create_cash_order(uuid,jsonb,text,text,text,uuid,text,double precision,double precision)'::pg_catalog.regprocedure),
   'RPC Delivery con oferta es SECURITY DEFINER'
 );
 select ok(
-  has_function_privilege('authenticated', 'public.create_cash_order(uuid,jsonb,text,text,text,uuid,text)', 'execute')
-  and not has_function_privilege('anon', 'public.create_cash_order(uuid,jsonb,text,text,text,uuid,text)', 'execute'),
+  has_function_privilege('authenticated', 'public.create_cash_order(uuid,jsonb,text,text,text,uuid,text,double precision,double precision)', 'execute')
+  and not has_function_privilege('anon', 'public.create_cash_order(uuid,jsonb,text,text,text,uuid,text,double precision,double precision)', 'execute'),
   'RPC Delivery con oferta queda cerrada a anon'
 );
 select ok(
-  has_function_privilege('anon', 'public.create_menu_order_with_customer(uuid,jsonb,text,text,text,text,uuid,text)', 'execute')
-  and has_function_privilege('authenticated', 'public.create_menu_order_with_customer(uuid,jsonb,text,text,text,text,uuid,text)', 'execute'),
+  has_function_privilege('anon', 'public.create_menu_order_with_customer(uuid,jsonb,text,text,text,text,uuid,text,text,double precision,double precision)', 'execute')
+  and has_function_privilege('authenticated', 'public.create_menu_order_with_customer(uuid,jsonb,text,text,text,text,uuid,text,text,double precision,double precision)', 'execute'),
   'RPC Menús con oferta conserva acceso guest'
 );
 select ok(
-  has_function_privilege('anon', 'public.create_table_cash_order_with_customer(uuid,jsonb,text,text,text,text,uuid,uuid,uuid,text)', 'execute')
-  and has_function_privilege('authenticated', 'public.create_table_cash_order_with_customer(uuid,jsonb,text,text,text,text,uuid,uuid,uuid,text)', 'execute'),
+  has_function_privilege('anon', 'public.create_table_cash_order_with_customer(uuid,jsonb,text,text,text,text,uuid,uuid,uuid,text,text)', 'execute')
+  and has_function_privilege('authenticated', 'public.create_table_cash_order_with_customer(uuid,jsonb,text,text,text,text,uuid,uuid,uuid,text,text)', 'execute'),
   'RPC Mesa QR con oferta conserva acceso guest'
 );
 select ok(

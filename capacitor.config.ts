@@ -10,10 +10,14 @@ n1z2nBPm56x96spZ8c+UCcxxeiVvm+5VjWgIpydl2//WP4VWuSJYs+eb0Br45HFQ
 9wIDAQAB
 -----END PUBLIC KEY-----`;
 
+const mobileAppId = process.env.SUYA_MOBILE_APP_ID?.trim() || 'com.suya.app';
+const mobileAppName = process.env.SUYA_MOBILE_APP_NAME?.trim() || 'Suya';
+const mobileWebDir = process.env.SUYA_MOBILE_WEB_DIR?.trim() || 'dist/mobile';
+
 const config: CapacitorConfig = {
-  appId: 'com.suya.app',
-  appName: 'Suya',
-  webDir: 'dist/mobile',
+  appId: mobileAppId,
+  appName: mobileAppName,
+  webDir: mobileWebDir,
   server: {
     androidScheme: 'https',
   },

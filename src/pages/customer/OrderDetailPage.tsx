@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/common/Skeleton';
 import { CartLine } from '@/components/order/CartLine';
 import { OrderCodes } from '@/components/order/OrderCodes';
 import { TrackingTimeline } from '@/components/order/TrackingTimeline';
+import { PaymentInstructions } from '@/components/payment/PaymentInstructions';
 import { useOrderStore } from '@/store/orderStore';
 import {
   formatDateTime,
@@ -80,7 +81,8 @@ export default function OrderDetailPage() {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px] lg:items-start">
         <div className="space-y-4">
-          <OrderCodes order={order} />
+          {isActive && <OrderCodes order={order} />}
+          <PaymentInstructions order={order} />
 
           <Card>
             <h2 className="mb-3 font-display text-[15px] font-bold">Seguimiento</h2>

@@ -217,7 +217,6 @@ token_refresh = 150
 sign_in_sign_ups = 30
 # Number of OTP / Magic link verifications that can be made in a 5 minute interval per IP address.
 token_verifications = 30
-# Number of Web3 logins that can be made in a 5 minute interval per IP address.
 web3 = 30
 
 # Configure one of the supported captcha providers: `hcaptcha`, `turnstile`.
@@ -432,3 +431,14 @@ enabled = true
 # declarative_schema_path = "./schemas"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# Culqi calls the webhook without a Supabase JWT. Each function validates its own request;
+# the webhook verifies the event again against Culqi using server-only CULQI_SECRET_KEY.
+[functions.create-culqi-order]
+verify_jwt = false
+
+[functions.charge-culqi-card]
+verify_jwt = false
+
+[functions.culqi-webhook]
+verify_jwt = false

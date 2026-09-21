@@ -1,5 +1,10 @@
 import { supabase } from '@/lib/supabase/client';
-import type { TableQrResolution, TableService, TableSummary } from './types';
+import type {
+  TablePaymentResult,
+  TableQrResolution,
+  TableService,
+  TableSummary,
+} from './types';
 
 type TableRow = {
   table_id: string;
@@ -62,6 +67,35 @@ export class SupabaseTableService implements TableService {
     const { data, error } = await supabase.rpc('open_table_session', { p_table_id: tableId });
     if (error) throw new Error(error.message);
     return data as string;
+  }
+
+  async pay(
+    sessionId: string,
+    received: number,
+    method: 'cash',
+    requestId: string,
+  ): Promise<TablePaymentResult> {
+    if (!supabase) throw new Error('Supabase no está configurado.');
+    const { data, error } = await supabase.rpc('register_table_payment', {
+      p_session_id: sessionId,
+      p_received: received,
+      p_method: method,
+      p_request_id: requestId,
+    });
+    if (error) throw new Error(error.message);
+    const row = firstRow(data) as (TableRow & {
+      total?: number | string;
+      received?: number | string;
+      change?: number | string;
+      session_id?: string;
+    }) | null;
+    if (!row?.session_id) throw new Error('Supabase no devolvió el cobro de mesa.');
+    return {
+      sessionId: String(row.session_id),
+      total: Number(row.total ?? 0),
+      received: Number(row.received ?? 0),
+      change: Number(row.change ?? 0),
+    };
   }
 
   async list(restaurantIds: string[]): Promise<TableSummary[]> {

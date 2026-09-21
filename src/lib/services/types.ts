@@ -13,6 +13,7 @@ import type {
   Order,
   OrderStatus,
   PaymentMethod,
+  PaymentIntent,
   Product,
   Store,
   IncidentCategory,
@@ -54,11 +55,7 @@ export interface OfferService {
 }
 
 export type RestaurantAccountStatus =
-  | 'pending_contact'
-  | 'ready_to_invite'
-  | 'invited'
-  | 'active'
-  | 'suspended';
+  'pending_contact' | 'ready_to_invite' | 'invited' | 'active' | 'suspended';
 
 export interface RestaurantAccount {
   restaurantId: string;
@@ -139,6 +136,12 @@ export interface TableService {
   /** Opens/reuses table session after server validates public QR token. */
   openGuest(token: string): Promise<string>;
   open(tableId: string): Promise<string>;
+  pay(
+    sessionId: string,
+    received: number,
+    method: 'cash',
+    requestId: string,
+  ): Promise<TablePaymentResult>;
   list(restaurantIds: string[]): Promise<TableSummary[]>;
   create(restaurantId: string, tableNumber: string): Promise<TableSummary>;
   regenerateQr(tableId: string): Promise<TableSummary>;
@@ -159,6 +162,20 @@ export interface CreatedWalletObserverDevice extends WalletObserverDevice {
   deviceToken: string;
 }
 
+export interface WalletObservationOrigin {
+  packageName: string | null;
+  appLabel: string | null;
+  channelId: string | null;
+  category: string | null;
+  groupKey: string | null;
+  tag: string | null;
+  notificationId: number | null;
+  flags: number | null;
+  contentFingerprint: string | null;
+  operationKind: string | null;
+  notificationWhen: string | null;
+}
+
 export interface WalletObservation {
   id: string;
   restaurantId: string;
@@ -169,13 +186,90 @@ export interface WalletObservation {
   amountCents: number;
   currency: string;
   observedAt: string;
+  /** Hora en que el servidor recibió la observación; no es la hora bancaria. */
+  receivedAt?: string | null;
   verification: string;
+  origin: WalletObservationOrigin;
+}
+
+export interface WalletPaymentCandidate {
+  paymentAttemptId: string;
+  orderId: string;
+  orderCode: string;
+  customerName: string;
+  checkoutReference: string;
+  method: PaymentMethod;
+  amount: number;
+  createdAt: string;
+  expiresAt: string;
+  senderName: string | null;
+}
+
+export interface RestaurantPaymentAccount {
+  id: string;
+  restaurantId: string;
+  provider: 'yape' | 'lemon';
+  accountLabel: string;
+  qrPayload: string | null;
+  active: boolean;
 }
 
 export interface WalletObserverService {
   listDevices(restaurantIds: string[]): Promise<WalletObserverDevice[]>;
-  createDevice(restaurantId: string, label: string): Promise<CreatedWalletObserverDevice>;
+  createDevice(
+    restaurantId: string,
+    label: string,
+    receiverAccountId?: string | null,
+  ): Promise<CreatedWalletObserverDevice>;
+  setDeviceActive(deviceId: string, active: boolean): Promise<boolean>;
+  rotateDevice(deviceId: string): Promise<CreatedWalletObserverDevice>;
   listObservations(restaurantIds: string[]): Promise<WalletObservation[]>;
+  listPaymentCandidates(observationId: string): Promise<WalletPaymentCandidate[]>;
+  setObservationCode(observationId: string, code: string): Promise<boolean>;
+  verifyObservation(observationId: string, paymentAttemptId: string): Promise<boolean>;
+  verifyObservationByName(observationId: string, payerName: string): Promise<boolean>;
+  listPaymentAccounts(restaurantId: string): Promise<RestaurantPaymentAccount[]>;
+  savePaymentAccount(input: {
+    restaurantId: string;
+    provider: 'yape' | 'lemon';
+    accountLabel: string;
+    qrPayload: string | null;
+    active: boolean;
+  }): Promise<RestaurantPaymentAccount>;
+}
+
+export type ManagedRiderStatus = 'offline' | 'available' | 'busy' | 'suspended';
+
+export interface RestaurantRider {
+  id: string;
+  email: string;
+  name: string;
+  phone: string;
+  status: ManagedRiderStatus;
+  verifiedAt: string | null;
+  vehicleType: string;
+  vehicleColor: string;
+  vehiclePlate: string;
+  rating: number;
+  deliveries: number;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface InviteRestaurantRiderInput {
+  restaurantId: string;
+  email: string;
+  displayName: string;
+  phone: string;
+  vehicleType: string;
+  vehicleColor: string;
+  vehiclePlate: string;
+}
+
+export interface RestaurantRiderService {
+  list(restaurantId: string): Promise<RestaurantRider[]>;
+  invite(input: InviteRestaurantRiderInput): Promise<RestaurantRider>;
+  setActive(restaurantId: string, riderId: string, active: boolean): Promise<boolean>;
 }
 
 export interface TableSummary {
@@ -190,7 +284,75 @@ export interface TableSummary {
   active: boolean;
 }
 
+export interface TablePaymentResult {
+  sessionId: string;
+  total: number;
+  received: number;
+  change: number;
+}
+
+export type CashRegisterStatus = 'open' | 'closed';
+
+export interface CashRegisterSession {
+  id: string;
+  restaurantId: string;
+  status: CashRegisterStatus;
+  openingFloat: number;
+  expectedCash: number;
+  declaredCash: number | null;
+  difference: number | null;
+  openedAt: string;
+  closedAt: string | null;
+  entryCount: number;
+}
+
+export interface CashRegisterSale {
+  entryId: string;
+  sessionId: string;
+  orderId: string;
+  amount: number;
+  received: number;
+  change: number;
+}
+
+export interface CashRegisterAdjustment {
+  entryId: string;
+  sessionId: string;
+  amount: number;
+  note: string;
+}
+
+export interface CashRegisterService {
+  list(restaurantIds: string[]): Promise<CashRegisterSession[]>;
+  open(restaurantId: string, openingFloat: number, requestId: string): Promise<CashRegisterSession>;
+  recordSale(
+    sessionId: string,
+    orderId: string,
+    received: number,
+    requestId: string,
+  ): Promise<CashRegisterSale>;
+  addAdjustment(
+    sessionId: string,
+    amount: number,
+    note: string,
+    requestId: string,
+  ): Promise<CashRegisterAdjustment>;
+  close(
+    sessionId: string,
+    declaredCash: number,
+    note: string,
+    requestId: string,
+  ): Promise<CashRegisterSession>;
+}
+
 export type CodeFailure = 'not_found' | 'invalid_code' | 'already_closed' | 'invalid_status';
+
+export interface OrderListOptions {
+  /** Zero-based offset for the next page. */
+  offset?: number;
+  /** Requested page size; implementations cap this to a safe server-side maximum. */
+  limit?: number;
+}
 
 export type CodeResult = { ok: true; order: Order } | { ok: false; reason: CodeFailure };
 
@@ -202,7 +364,7 @@ export const CODE_ERROR_MESSAGES: Record<CodeFailure, string> = {
 };
 
 export interface OrderService {
-  list(): Promise<Order[]>;
+  list(options?: OrderListOptions): Promise<Order[]>;
   get(id: string): Promise<Order | undefined>;
   create(input: CreateOrderInput): Promise<Order>;
   createMenuOrder(input: CreateOrderInput): Promise<Order>;
@@ -249,6 +411,7 @@ export interface SafetyOperationsService {
   }): Promise<string>;
   resolveSos(incidentId: string): Promise<boolean>;
   latestLocation(orderId: string): Promise<LatLng | null>;
+  locationHistory(orderId: string): Promise<LatLng[]>;
   subscribeLocation(orderId: string, listener: (position: LatLng) => void): () => void;
 }
 
@@ -277,9 +440,57 @@ export interface PaymentResult {
   message: string;
 }
 
+export interface PaymentDeclaration {
+  declaredAt: string;
+  payerDisplayName: string | null;
+}
+
+export type WalletPaymentConfirmationStatus = 'pending' | 'authorized' | 'ambiguous';
+
+export interface WalletPaymentConfirmation {
+  status: WalletPaymentConfirmationStatus;
+  attemptId: string;
+  observationId: string | null;
+  observedAt: string | null;
+  payerDisplayName: string | null;
+}
+
 export interface PaymentService {
   /** La confirmación final de pagos digitales siempre proviene del backend/webhook. */
   authorize(method: PaymentMethod, amount: number): Promise<PaymentResult>;
+  createIntent(
+    orderId: string,
+    method: PaymentMethod,
+    guestAccessToken?: string | null,
+    customerEmail?: string | null,
+  ): Promise<PaymentIntent>;
+  submitEvidence(
+    orderId: string,
+    code: string,
+    guestAccessToken?: string | null,
+  ): Promise<boolean>;
+  declarePayment(
+    orderId: string,
+    code?: string | null,
+    payerDisplayName?: string | null,
+    guestAccessToken?: string | null,
+  ): Promise<boolean>;
+  confirmWalletPayment(
+    orderId: string,
+    payerDisplayName: string,
+    guestAccessToken?: string | null,
+  ): Promise<WalletPaymentConfirmation>;
+  getPaymentDeclaration(
+    orderId: string,
+    guestAccessToken?: string | null,
+  ): Promise<PaymentDeclaration | null>;
+  chargeCard(
+    intent: PaymentIntent,
+    tokenId: string,
+    customerEmail?: string | null,
+    guestAccessToken?: string | null,
+  ): Promise<string>;
+  getIntent(orderId: string, guestAccessToken?: string | null): Promise<PaymentIntent | null>;
 }
 
 export type NotificationLevel = 'info' | 'success' | 'warning' | 'danger';

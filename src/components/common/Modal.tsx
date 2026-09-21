@@ -57,7 +57,7 @@ export function Modal({
         aria-describedby={description ? descriptionId : undefined}
         tabIndex={-1}
         className={cn(
-          'relative z-10 flex max-h-[92dvh] w-full flex-col overflow-hidden border border-suya-border bg-white/95 shadow-soft',
+          'relative z-10 flex max-h-[92dvh] w-full flex-col overflow-hidden border border-suya-border bg-white shadow-soft',
           'animate-sheet-up rounded-t-sheet sm:animate-slide-up sm:rounded-card',
           SIZES[size],
         )}

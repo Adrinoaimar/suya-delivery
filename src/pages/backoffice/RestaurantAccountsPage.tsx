@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Building2, CheckCircle2, Clock3, Mail, RefreshCw, Save, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
@@ -29,12 +29,15 @@ export default function RestaurantAccountsPage() {
   const [inviting, setInviting] = useState<string | null>(null);
   const [activating, setActivating] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const loadRequestRef = useRef(0);
 
   const load = useCallback(async () => {
+    const requestId = ++loadRequestRef.current;
     setLoading(true);
     setError(null);
     try {
       const rows = await restaurantAccountService.list();
+      if (requestId !== loadRequestRef.current) return;
       setAccounts(rows);
       setDrafts(Object.fromEntries(rows.map((row) => [row.restaurantId, {
         contactName: row.contactName,
@@ -42,9 +45,10 @@ export default function RestaurantAccountsPage() {
         notes: row.notes,
       }])));
     } catch (cause) {
+      if (requestId !== loadRequestRef.current) return;
       setError(cause instanceof Error ? cause.message : 'No se pudieron cargar las cuentas de restaurantes.');
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestRef.current) setLoading(false);
     }
   }, []);
 

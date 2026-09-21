@@ -34,6 +34,15 @@ describe('configuración de build productivo', () => {
     expect(result.failures).toContain('VITE_SUPABASE_PUBLISHABLE_KEY pública válida');
   });
 
+  it('rechaza el router OSRM público para no exponer GPS preciso', () => {
+    const unsafeRouting = {
+      ...valid,
+      VITE_ROUTING_URL: 'https://router.project-osrm.org',
+    };
+    const result = inspectProductionBuildConfig(unsafeRouting);
+    expect(result.failures).toContain('VITE_ROUTING_URL no puede usar el router OSRM público');
+  });
+
   it('acepta Supabase local solo en E2E explícito', () => {
     const local = {
       ...valid,

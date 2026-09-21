@@ -10,6 +10,7 @@ describe('wallet notification adapters', () => {
   it('parses verified Lemon package with PEN amount and operation reference', () => {
     const result = parseWalletNotification({
       packageName: 'com.applemoncash',
+      notificationAppLabel: 'Lemon',
       title: 'Lemon',
       text: 'Recibiste S/ 35.90. Operación: LEMON-482',
       postedAt: '2026-09-06T12:00:00.000Z',
@@ -23,6 +24,35 @@ describe('wallet notification adapters', () => {
       code: 'LEMON-482',
       verification: 'unverified',
     });
+    expect(result?.origin).toMatchObject({
+      packageName: 'com.applemoncash',
+      appLabel: 'Lemon',
+      operationKind: 'incoming_payment',
+    });
+  });
+
+  it('keeps notification provenance metadata separate from payment identity', () => {
+    const result = parseWalletNotification({
+      packageName: 'com.applemoncash',
+      title: 'Lemon',
+      text: 'Recibiste S/ 1.00',
+      notificationChannel: 'payments',
+      notificationCategory: 'msg',
+      notificationGroup: 'wallet-events',
+      notificationId: 42,
+      notificationTag: 'payment',
+    });
+
+    expect(result?.origin).toMatchObject({
+      packageName: 'com.applemoncash',
+      channelId: 'payments',
+      category: 'msg',
+      groupKey: 'wallet-events',
+      notificationId: 42,
+      tag: 'payment',
+      operationKind: 'incoming_payment',
+    });
+    expect(result?.origin.contentFingerprint).toBeNull();
   });
 
   it('keeps Lemon USD observations unverified', () => {
@@ -34,6 +64,33 @@ describe('wallet notification adapters', () => {
 
     expect(result).toMatchObject({ provider: 'lemon', amountCents: 125000, currency: 'USD', code: '123456' });
     expect(result?.verification).toBe('unverified');
+  });
+
+  it('captures an English sender label and keeps the reference separate', () => {
+    const result = parseWalletNotification({
+      packageName: 'com.applemoncash',
+      title: 'Lemon received',
+      text: 'You received S/ 20.00 from Juan Pérez. Reference: LM-123',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({
+      provider: 'lemon',
+      amountCents: 2000,
+      senderName: 'Juan Pérez',
+      code: 'LM-123',
+    });
+  });
+
+  it('keeps the wallet title separate from a sender before the verb', () => {
+    const result = parseWalletNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Yape',
+      text: 'Ana María Torres te envió S/ 30.00',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({ provider: 'yape', amountCents: 3000, senderName: 'Ana María Torres' });
   });
 
   it('rejects unverified package IDs even when message says Lemon', () => {
@@ -62,6 +119,24 @@ describe('wallet notification adapters', () => {
 
     expect(result).toMatchObject({ provider: 'mercado_pago', amountCents: 2250, currency: 'PEN', code: 'MP-123' });
     expect(result?.verification).toBe('unverified');
+  });
+
+  it('keeps the same fingerprint when the wallet later expands the notification with a code', () => {
+    const first = parseWalletNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Yape recibido',
+      text: 'Recibiste S/ 30.00',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+    const expanded = parseWalletNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Yape recibido',
+      text: 'Recibiste S/ 30.00. Código de operación: 842911',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(expanded?.code).toBe('842911');
+    expect(expanded?.fingerprint).toBe(first?.fingerprint);
   });
 
   it('supports future wallets only through explicit package allowlist', () => {

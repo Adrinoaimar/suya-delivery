@@ -1,0 +1,332 @@
+begin;
+
+select plan(40);
+
+select has_function('public', 'create_delivery_order_with_payment',
+  array['uuid', 'jsonb', 'text', 'text', 'text', 'uuid', 'text', 'text', 'double precision', 'double precision'],
+  'checkout delivery wallet atómico existe');
+select has_function('public', 'create_menu_order_with_payment',
+  array['uuid', 'jsonb', 'text', 'text', 'text', 'text', 'uuid', 'text', 'text', 'double precision', 'double precision', 'text'],
+  'checkout menu wallet atómico existe');
+select has_function('public', 'create_table_order_with_payment',
+  array['uuid', 'jsonb', 'text', 'text', 'text', 'text', 'uuid', 'uuid', 'uuid', 'text', 'text', 'text'],
+  'checkout mesa wallet atómico existe');
+select has_function('public', 'create_wallet_observer_device_for_account',
+  array['uuid', 'uuid', 'text'], 'dispositivo ligado a cuenta receptora existe');
+
+select ok((select exists (select 1 from information_schema.columns
+  where table_schema = 'public' and table_name = 'payment_attempts' and column_name = 'receiver_account_id')),
+  'intento conserva cuenta receptora');
+select ok((select exists (select 1 from information_schema.columns
+  where table_schema = 'public' and table_name = 'wallet_observer_devices' and column_name = 'receiver_account_id')),
+  'dispositivo conserva cuenta receptora');
+select ok((select exists (select 1 from information_schema.columns
+  where table_schema = 'public' and table_name = 'wallet_observations' and column_name = 'receiver_account_id')),
+  'observación conserva cuenta receptora');
+select ok((select exists (select 1 from pg_indexes
+  where schemaname = 'public' and indexname = 'payment_attempts_observed_wallet_uidx')),
+  'una observación no puede autorizar dos intentos');
+select ok((select pg_get_functiondef('public.create_menu_order_with_payment(uuid,jsonb,text,text,text,text,uuid,text,text,double precision,double precision,text)'::regprocedure)
+  like '%create_payment_intent%'), 'menu atómico crea el intento dentro de su RPC');
+select ok((select pg_get_functiondef('public.create_menu_order_with_payment(uuid,jsonb,text,text,text,text,uuid,text,text,double precision,double precision,text)'::regprocedure)
+  like '%apply_app_offer%'), 'menu atómico aplica la oferta antes del cobro');
+select ok((select pg_get_functiondef('public.get_payment_intent(uuid,text)'::regprocedure)
+  like '%v_attempt.receiver_account_id%'), 'consulta de pago conserva la cuenta receptora');
+select ok((select pg_get_function_result('public.get_payment_intent(uuid,text)'::regprocedure)
+  like '%provider_reference%'), 'consulta de pago conserva la referencia del proveedor');
+
+insert into auth.users (
+  instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+  raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+) values (
+  '00000000-0000-0000-0000-000000000000', 'b7000000-0000-0000-0000-000000000001',
+  'authenticated', 'authenticated', 'receiver-binding@example.test', '', now(),
+  '{"provider":"email","providers":["email"]}', '{"display_name":"Caja binding"}', now(), now()
+);
+insert into public.categories (id, slug, name, icon)
+values ('b7100000-0000-0000-0000-000000000001', 'receiver-binding', 'Binding', 'wallet');
+insert into public.restaurants (id, slug, category_id, name, address, active, accepting_orders)
+values ('b7200000-0000-0000-0000-000000000001', 'receiver-binding',
+  'b7100000-0000-0000-0000-000000000001', 'Receiver Binding', 'Sullana', true, true);
+insert into public.restaurant_members (restaurant_id, user_id, role)
+values ('b7200000-0000-0000-0000-000000000001', 'b7000000-0000-0000-0000-000000000001', 'owner');
+insert into public.restaurant_payment_accounts (id, restaurant_id, provider, account_label, active)
+values ('b7300000-0000-0000-0000-000000000001', 'b7200000-0000-0000-0000-000000000001', 'yape', 'Caja Yape', true),
+       ('b7300000-0000-0000-0000-000000000002', 'b7200000-0000-0000-0000-000000000001', 'lemon', 'Caja Lemon', true);
+insert into public.wallet_observer_devices (
+  id, restaurant_id, receiver_account_id, label, token_hash, token_last4
+) values (
+  'b7400000-0000-0000-0000-000000000001', 'b7200000-0000-0000-0000-000000000001',
+  'b7300000-0000-0000-0000-000000000001', 'Caja binding',
+  extensions.crypt('receiver-binding-device-token', extensions.gen_salt('bf')), 'babe'
+);
+insert into public.orders (
+  id, code, customer_id, restaurant_id, status, payment_method, subtotal, delivery_fee,
+  customer_name, customer_phone, delivery_address, estimated_minutes, idempotency_key
+) values
+  ('b7500000-0000-0000-0000-000000000001', 'BINDING1', 'b7000000-0000-0000-0000-000000000001',
+   'b7200000-0000-0000-0000-000000000001', 'confirmed', 'yape', 30, 0, 'Cliente Binding',
+   '999999999', 'Calle Binding 1', 30, 'b7600000-0000-0000-0000-000000000001'),
+  ('b7500000-0000-0000-0000-000000000002', 'BINDING2', 'b7000000-0000-0000-0000-000000000001',
+   'b7200000-0000-0000-0000-000000000001', 'confirmed', 'yape', 30, 0, 'Cliente Binding 2',
+   '999999998', 'Calle Binding 2', 30, 'b7600000-0000-0000-0000-000000000002');
+
+insert into public.payment_attempts (
+  id, order_id, receiver_account_id, provider, method, status, amount, idempotency_key,
+  payer_code_last4, payer_code_digest, checkout_reference, expires_at
+) values
+  ('b7700000-0000-0000-0000-000000000001', 'b7500000-0000-0000-0000-000000000001',
+   'b7300000-0000-0000-0000-000000000001', 'wallet_observer', 'yape', 'pending', 30,
+   'b7800000-0000-0000-0000-000000000001', '1234', encode(extensions.digest('same-code', 'sha256'), 'hex'),
+   'SUYA-BIND001', now() + interval '30 minutes'),
+  ('b7700000-0000-0000-0000-000000000002', 'b7500000-0000-0000-0000-000000000002',
+   'b7300000-0000-0000-0000-000000000001', 'wallet_observer', 'yape', 'pending', 30,
+   'b7800000-0000-0000-0000-000000000002', '1234', encode(extensions.digest('same-code', 'sha256'), 'hex'),
+   'SUYA-BIND002', now() + interval '30 minutes');
+insert into public.wallet_observations (
+  id, device_id, restaurant_id, receiver_account_id, event_id, provider, code_last4,
+  code_fingerprint, amount_cents, currency, observed_at
+) values (
+  'b7900000-0000-0000-0000-000000000001', 'b7400000-0000-0000-0000-000000000001',
+  'b7200000-0000-0000-0000-000000000001', 'b7300000-0000-0000-0000-000000000001',
+  'receiver-binding-event', 'yape', '1234', encode(extensions.digest('same-code', 'sha256'), 'hex'),
+  3000, 'PEN', now()
+);
+
+set local request.jwt.claims = '{"sub":"b7000000-0000-0000-0000-000000000001","role":"authenticated"}';
+set local role authenticated;
+select is((select count(*) from public.list_wallet_payment_candidates('b7900000-0000-0000-0000-000000000001')),
+  2::bigint, 'el listado muestra la colisión de código completo');
+select throws_ok(
+  $$ select public.verify_wallet_payment('b7900000-0000-0000-0000-000000000001', 'b7700000-0000-0000-0000-000000000001') $$,
+  'payment identity is ambiguous; full operation code required',
+  'la colisión de código completo no se autoriza');
+reset role;
+delete from public.payment_attempts where id = 'b7700000-0000-0000-0000-000000000002';
+set local role authenticated;
+select lives_ok(
+  $$ select public.verify_wallet_payment('b7900000-0000-0000-0000-000000000001', 'b7700000-0000-0000-0000-000000000001') $$,
+  'una coincidencia única sí se verifica');
+select is((select status::text from public.payment_attempts where id = 'b7700000-0000-0000-0000-000000000001'),
+  'authorized', 'la autorización actualiza el intento exacto');
+
+select ok(
+  exists (
+    select 1 from pg_proc
+    where pronamespace = 'private'::regnamespace
+      and proname = 'prevent_wallet_evidence_reuse'
+  ),
+  'guardia privada contra reutilización de evidencia existe'
+);
+select ok(
+  exists (
+    select 1 from pg_trigger
+    where tgrelid = 'public.payment_attempts'::regclass
+      and tgname = 'payment_attempts_wallet_evidence_reuse_guard'
+      and not tgisinternal
+  ),
+  'payment_attempts tiene trigger de reutilización de evidencia'
+);
+select ok(
+  exists (
+    select 1 from pg_trigger
+    where tgrelid = 'public.wallet_observer_devices'::regclass
+      and tgname = 'wallet_observer_devices_active_receiver_guard'
+      and not tgisinternal
+  ),
+  'dispositivos observadores exigen cuenta receptora activa'
+);
+select ok(
+  exists (
+    select 1 from pg_trigger
+    where tgrelid = 'public.wallet_observations'::regclass
+      and tgname = 'wallet_observations_active_receiver_guard'
+      and not tgisinternal
+  ),
+  'observaciones exigen cuenta receptora activa'
+);
+select has_function('public', 'set_wallet_observer_device_active',
+  array['uuid', 'boolean'], 'revocación de dispositivo existe');
+select has_function('public', 'rotate_wallet_observer_device',
+  array['uuid'], 'rotación de token existe');
+select ok((select pg_get_function_result('public.rotate_wallet_observer_device(uuid)'::regprocedure)
+  like '%device_active%'), 'la rotación conserva el estado activo del dispositivo');
+select ok((select exists (select 1 from pg_indexes
+  where schemaname = 'public' and indexname = 'wallet_observations_device_created_idx')),
+  'ingesta tiene índice por dispositivo y fecha');
+select ok((select pg_get_functiondef('public.ingest_wallet_observation(text,text,text,text,text,bigint,text,timestamptz)'::regprocedure)
+  like '%split_part%'), 'tokens nuevos localizan el dispositivo por UUID');
+select ok((select pg_get_functiondef('public.ingest_wallet_observation(text,text,text,text,text,bigint,text,timestamptz)'::regprocedure)
+  like '%device observation rate limit exceeded%'), 'ingesta aplica límite por dispositivo');
+
+select set_config('role', 'postgres', true);
+insert into public.orders (
+  id, code, customer_id, restaurant_id, status, payment_method, subtotal, delivery_fee,
+  customer_name, customer_phone, delivery_address, estimated_minutes, idempotency_key
+) values (
+  'b7500000-0000-0000-0000-000000000003', 'BINDING3', 'b7000000-0000-0000-0000-000000000001',
+  'b7200000-0000-0000-0000-000000000001', 'confirmed', 'yape', 30, 0, 'Cliente Binding 3',
+  '999999997', 'Calle Binding 3', 30, 'b7600000-0000-0000-0000-000000000003'
+);
+insert into public.payment_attempts (
+  id, order_id, receiver_account_id, provider, method, status, amount, idempotency_key,
+  payer_code_last4, payer_code_digest, checkout_reference, expires_at
+) values (
+  'b7700000-0000-0000-0000-000000000003', 'b7500000-0000-0000-0000-000000000003',
+  'b7300000-0000-0000-0000-000000000001', 'wallet_observer', 'yape', 'pending', 30,
+  'b7800000-0000-0000-0000-000000000003', '1234', encode(extensions.digest('same-code', 'sha256'), 'hex'),
+  'SUYA-BIND003', now() + interval '30 minutes'
+);
+insert into public.wallet_observations (
+  id, device_id, restaurant_id, receiver_account_id, event_id, provider, code_last4,
+  code_fingerprint, amount_cents, currency, observed_at
+) values (
+  'b7900000-0000-0000-0000-000000000002', 'b7400000-0000-0000-0000-000000000001',
+  'b7200000-0000-0000-0000-000000000001', 'b7300000-0000-0000-0000-000000000001',
+  'receiver-binding-event-2', 'yape', '1234', encode(extensions.digest('same-code', 'sha256'), 'hex'),
+  3000, 'PEN', now()
+);
+select set_config('role', 'authenticated', true);
+select throws_ok(
+  $$ select public.verify_wallet_payment('b7900000-0000-0000-0000-000000000002', 'b7700000-0000-0000-0000-000000000003') $$,
+  'P0001', 'wallet evidence already consumed; review duplicate',
+  'un segundo dispositivo no puede reutilizar evidencia ya consumida'
+);
+select is(
+  (select status::text from public.payment_attempts where id = 'b7700000-0000-0000-0000-000000000003'),
+  'pending', 'el intento duplicado permanece pendiente'
+);
+select is(
+  (select verification_status from public.wallet_observations where id = 'b7900000-0000-0000-0000-000000000002'),
+  'unverified', 'la evidencia duplicada permanece para revisión'
+);
+
+-- Same suffix, different complete fingerprint: it is a different payment and
+-- must not be rejected by the reuse guard.
+select set_config('role', 'postgres', true);
+insert into public.orders (
+  id, code, customer_id, restaurant_id, status, payment_method, subtotal, delivery_fee,
+  customer_name, customer_phone, delivery_address, estimated_minutes, idempotency_key
+) values (
+  'b7500000-0000-0000-0000-000000000004', 'BINDING4', 'b7000000-0000-0000-0000-000000000001',
+  'b7200000-0000-0000-0000-000000000001', 'confirmed', 'yape', 30, 0, 'Cliente Binding 4',
+  '999999996', 'Calle Binding 4', 30, 'b7600000-0000-0000-0000-000000000004'
+);
+insert into public.payment_attempts (
+  id, order_id, receiver_account_id, provider, method, status, amount, idempotency_key,
+  payer_code_last4, payer_code_digest, checkout_reference, expires_at
+) values (
+  'b7700000-0000-0000-0000-000000000004', 'b7500000-0000-0000-0000-000000000004',
+  'b7300000-0000-0000-0000-000000000001', 'wallet_observer', 'yape', 'pending', 30,
+  'b7800000-0000-0000-0000-000000000004', '1234', encode(extensions.digest('different-code', 'sha256'), 'hex'),
+  'SUYA-BIND004', now() + interval '30 minutes'
+);
+insert into public.wallet_observations (
+  id, device_id, restaurant_id, receiver_account_id, event_id, provider, code_last4,
+  code_fingerprint, amount_cents, currency, observed_at
+) values (
+  'b7900000-0000-0000-0000-000000000003', 'b7400000-0000-0000-0000-000000000001',
+  'b7200000-0000-0000-0000-000000000001', 'b7300000-0000-0000-0000-000000000001',
+  'receiver-binding-event-3', 'yape', '1234', encode(extensions.digest('different-code', 'sha256'), 'hex'),
+  3000, 'PEN', now()
+);
+select set_config('role', 'authenticated', true);
+select lives_ok(
+  $$ select public.verify_wallet_payment('b7900000-0000-0000-0000-000000000003', 'b7700000-0000-0000-0000-000000000004') $$,
+  'un sufijo compartido no bloquea un código completo diferente'
+);
+select is(
+  (select status::text from public.payment_attempts where id = 'b7700000-0000-0000-0000-000000000004'),
+  'authorized', 'el pago con identidad completa distinta se autoriza para revisión'
+);
+
+select set_config('role', 'postgres', true);
+update public.wallet_observer_devices
+set token_hash = extensions.crypt(
+  'receiver-binding-device-token-123456789012345678901234567890',
+  extensions.gen_salt('bf')
+), token_last4 = '7890'
+where id = 'b7400000-0000-0000-0000-000000000001';
+select set_config('role', 'authenticated', true);
+select lives_ok(
+  $$ select public.set_wallet_observer_device_active(
+    'b7400000-0000-0000-0000-000000000001', false
+  ) $$,
+  'el operador puede revocar un dispositivo'
+);
+select set_config('role', 'anon', true);
+select throws_ok(
+  $$ select * from public.ingest_wallet_observation(
+    'receiver-binding-device-token-123456789012345678901234567890',
+    'revoked-device-event', 'yape', null, null, 3000, 'PEN', now()
+  ) $$,
+  'P0001', 'invalid device token',
+  'el token revocado ya no puede ingresar evidencia'
+);
+select set_config('role', 'authenticated', true);
+select lives_ok(
+  $$ select public.set_wallet_observer_device_active(
+    'b7400000-0000-0000-0000-000000000001', true
+  ) $$,
+  'el operador puede reactivar un dispositivo'
+);
+select lives_ok(
+  $$ create temporary table rotated_wallet_device as
+    select * from public.rotate_wallet_observer_device(
+      'b7400000-0000-0000-0000-000000000001'
+    ) $$,
+  'el operador puede rotar el token'
+);
+select ok(
+  (select device_token ~ '^[0-9a-f-]{36}\.[0-9a-f]{64}$' from rotated_wallet_device),
+  'el token rotado incluye identificador y secreto de alta entropía'
+);
+select set_config('role', 'anon', true);
+select lives_ok(
+  $$ select * from public.ingest_wallet_observation(
+    (select device_token from rotated_wallet_device),
+    'rotated-device-event', 'yape', null, null, 3000, 'PEN', now()
+  ) $$,
+  'el token rotado funciona en la ingesta'
+);
+
+select set_config('role', 'postgres', true);
+update public.restaurant_payment_accounts
+set active = false
+where id = 'b7300000-0000-0000-0000-000000000001';
+select set_config('role', 'anon', true);
+select throws_ok(
+  $$ select * from public.ingest_wallet_observation(
+    (select device_token from rotated_wallet_device),
+    'inactive-receiver-ingest', 'yape', null, null, 3000, 'PEN', now()
+  ) $$,
+  'P0001', 'receiver payment account is inactive',
+  'la API de ingesta rechaza un receptor inactivo'
+);
+select set_config('role', 'authenticated', true);
+select throws_ok(
+  $$ select * from public.create_wallet_observer_device_for_account(
+    'b7200000-0000-0000-0000-000000000001',
+    'b7300000-0000-0000-0000-000000000001',
+    'Caja inactiva'
+  ) $$,
+  'P0001', 'receiver payment account is inactive',
+  'no se crea un dispositivo para una cuenta receptora inactiva'
+);
+select set_config('role', 'postgres', true);
+select throws_ok(
+  $$ insert into public.wallet_observations (
+    device_id, restaurant_id, receiver_account_id, event_id, provider,
+    code_last4, amount_cents, currency, observed_at
+  ) values (
+    'b7400000-0000-0000-0000-000000000001',
+    'b7200000-0000-0000-0000-000000000001',
+    'b7300000-0000-0000-0000-000000000001',
+    'inactive-receiver-event', 'yape', '5678', 3000, 'PEN', now()
+  ) $$,
+  'P0001', 'receiver payment account is inactive',
+  'no se ingresa evidencia para una cuenta receptora inactiva'
+);
+
+select * from finish();
+rollback;

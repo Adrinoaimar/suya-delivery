@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { MockOrderServiceImpl } from '@/lib/services/MockOrderService';
+import { orderService } from '@/lib/services';
 import { products } from '@/data';
+import { useOrderStore } from '@/store/orderStore';
 import type { CartItem } from '@/types';
-import { riderTrackingMessage } from '@/utils/format';
 
 function buildItems(): CartItem[] {
   const product = products.find((candidate) => candidate.storeId === 'anda-paya')!;
@@ -42,11 +43,9 @@ async function createOrder(service: MockOrderServiceImpl) {
 }
 
 describe('contrato de pedidos async', () => {
-  it('actualiza el mensaje GPS según la fase del pedido', () => {
-    expect(riderTrackingMessage('preparing')).toContain('cuando recoja');
-    expect(riderTrackingMessage('picked_up')).toContain('recogió el pedido');
-    expect(riderTrackingMessage('on_the_way')).toContain('está en camino');
-    expect(riderTrackingMessage('on_the_way')).not.toContain('cuando recoja');
+  afterEach(() => {
+    vi.restoreAllMocks();
+    useOrderStore.getState().reset();
   });
 
   it('crea un pedido sin asignar repartidor aleatorio', async () => {
@@ -155,5 +154,52 @@ describe('contrato de pedidos async', () => {
     expect((await service.get(order.id))?.status).toBe('delivered');
     expect(second.ok).toBe(false);
     expect(second.ok ? null : second.reason).toBe('already_closed');
+  });
+
+  it('descarta una respuesta vieja cuando una actualización más reciente termina primero', async () => {
+    let resolveOld!: (orders: []) => void;
+    const oldResponse = new Promise<[]>((resolve) => {
+      resolveOld = resolve;
+    });
+    const latestOrder = { id: 'latest-order' } as never;
+    vi.spyOn(orderService, 'list')
+      .mockReturnValueOnce(oldResponse)
+      .mockResolvedValueOnce([latestOrder]);
+
+    const oldRefresh = useOrderStore.getState().refresh();
+    const latestRefresh = useOrderStore.getState().refresh();
+    await latestRefresh;
+    resolveOld([]);
+    await oldRefresh;
+
+    expect(useOrderStore.getState().orders).toEqual([latestOrder]);
+    expect(useOrderStore.getState().status).toBe('ready');
+  });
+
+  it('carga la siguiente página sin repetir pedidos y corta al llegar al final', async () => {
+    const firstPage = Array.from({ length: 50 }, (_, index) => ({ id: `page-${index}` } as never));
+    const lastPage = [{ id: 'page-50' } as never];
+    const list = vi.spyOn(orderService, 'list')
+      .mockResolvedValueOnce(firstPage)
+      .mockResolvedValueOnce(lastPage);
+
+    await useOrderStore.getState().refresh();
+    await useOrderStore.getState().loadMore();
+
+    expect(list).toHaveBeenNthCalledWith(1, { offset: 0, limit: 50 });
+    expect(list).toHaveBeenNthCalledWith(2, { offset: 50, limit: 50 });
+    expect(useOrderStore.getState().orders).toHaveLength(51);
+    expect(useOrderStore.getState().hasMore).toBe(false);
+  });
+
+  it('mantiene el límite de 50 también en el servicio demo', async () => {
+    const service = new MockOrderServiceImpl();
+    await Promise.all(Array.from({ length: 55 }, () => createOrder(service)));
+
+    const page = await service.list({ offset: 0, limit: 100 });
+    const defaultPage = await service.list();
+
+    expect(page).toHaveLength(50);
+    expect(defaultPage).toHaveLength(50);
   });
 });

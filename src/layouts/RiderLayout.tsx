@@ -130,7 +130,7 @@ export function RiderLayout() {
         {/* Navegación inferior móvil */}
         <nav
           aria-label="Navegación del repartidor"
-          className="suya-lens-dark fixed inset-x-3 bottom-[calc(var(--rider-nav-gap)+env(safe-area-inset-bottom,0px))] z-30 rounded-card lg:hidden"
+          className="rider-bottom-nav suya-lens-dark fixed inset-x-3 bottom-[calc(var(--rider-nav-gap)+env(safe-area-inset-bottom,0px))] z-30 rounded-card lg:hidden"
         >
           <ul className="mx-auto flex max-w-md">
             {PRIMARY.map((item) => (

@@ -33,23 +33,31 @@ export function useGeolocation(enabled: boolean) {
   }, [enabled]);
 
   useEffect(() => {
+    let cancelled = false;
     if (!enabled) {
       stopRef.current?.();
       stopRef.current = null;
-      setState((prev) => ({ ...prev, active: false }));
-      return undefined;
+      setState((prev) => ({ ...prev, reading: null, error: null, active: false }));
+      return () => {
+        cancelled = true;
+      };
     }
 
     const service = locationService;
     setState((prev) => ({ ...prev, error: null, active: true }));
 
     const stop = service.watch(
-      (reading) => setState((prev) => ({ ...prev, reading, error: null, active: true })),
-      (message) => setState((prev) => ({ ...prev, error: message, active: false })),
+      (reading) => {
+        if (!cancelled) setState((prev) => ({ ...prev, reading, error: null, active: true }));
+      },
+      (message) => {
+        if (!cancelled) setState((prev) => ({ ...prev, reading: null, error: message, active: false }));
+      },
     );
     stopRef.current = stop;
 
     return () => {
+      cancelled = true;
       stop();
       stopRef.current = null;
     };

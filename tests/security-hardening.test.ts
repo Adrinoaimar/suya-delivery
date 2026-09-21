@@ -34,11 +34,55 @@ describe('Suya hardening guards', () => {
     expect(gradle).toMatch(/minifyEnabled true/);
     expect(gradle).toMatch(/shrinkResources true/);
     expect(listener).toMatch(/AES\/GCM\/NoPadding/);
+    expect(listener).toMatch(/ingest_wallet_observation/);
+    expect(listener).toMatch(/configureDeviceToken/);
+    expect(listener).toMatch(/getPostTime\(\)/);
+    expect(listener).toMatch(/getKey\(\)/);
+    expect(listener).toMatch(/EXTRA_SUB_TEXT/);
+    expect(listener).toMatch(/EXTRA_INFO_TEXT/);
+    expect(listener).toMatch(/EXTRA_SUMMARY_TEXT/);
+    expect(listener).toMatch(/The stable event/);
+    expect(listener).toMatch(/mergeEvidenceField/);
+    expect(listener).toMatch(/scheduleSyncJob/);
+    expect(listener).toMatch(/pass < 2/);
+    expect(listener).toMatch(/optBoolean\("synced", false\)/);
+    expect(listener).not.toContain('service_role');
     expect(listener).not.toContain('putString(EVENTS_KEY, next.toString())');
+    expect(source('android/app/src/main/java/com/suya/app/SuyaWalletSyncJobService.java')).toMatch(/jobFinished/);
+    const manifest = source('android/app/src/main/AndroidManifest.xml');
+    expect(manifest).toMatch(/RECEIVE_BOOT_COMPLETED/);
+    expect(gradle).toMatch(/suyaWalletObserverEnabled = suyaAndroidAppId == 'com\.suya\.walletobserver'/);
+    expect(manifest).toMatch(/android:enabled="\$\{suyaWalletObserverEnabled\}"/);
+  });
+
+  it('derives Android queue health from the encrypted event state', () => {
+    const listener = source('android/app/src/main/java/com/suya/app/YapeNotificationListenerService.java');
+    const match = listener.match(/static boolean isQueueFull\(Context context\) \{([\s\S]*?)\n    \}/);
+    expect(match?.[1]).toMatch(/new JSONArray\(decryptEvents\(/);
+    expect(match?.[1]).toMatch(/isPendingCapacityReached\(events, bindingId\)/);
+    expect(match?.[1]).toMatch(/putBoolean\(QUEUE_FULL_KEY, queueFull\)/);
+  });
+
+  it('scopes observer queue health to the active binding without dropping old evidence', () => {
+    const listener = source('android/app/src/main/java/com/suya/app/YapeNotificationListenerService.java');
+    expect(listener).toMatch(/pendingCountForBinding\(current, bindingId\)/);
+    expect(listener).toMatch(/return pendingCountForBinding\(events, bindingId\);/);
+    expect(listener).toMatch(/isPendingCapacityReached\(events, bindingId\)/);
+    expect(listener).toMatch(/bindingId\.equals\(event\.optString\("bindingId", null\)\)/);
+    expect(listener).toMatch(/int syncedLimit = Math\.max\(0, MAX_EVENTS - 1 - pendingCount\);/);
+    expect(listener).toMatch(/if \(wantSynced && count - pendingCount >= syncedLimit\) continue;/);
   });
 
   it('ships defensive headers with every static Pages bundle', () => {
-    expect(source('public/_headers')).toMatch(/frame-ancestors 'none'/);
-    expect(source('public/_headers')).toMatch(/X-Content-Type-Options: nosniff/);
+    const headers = source('public/_headers');
+    expect(headers).toMatch(/frame-ancestors 'none'/);
+    expect(headers).toMatch(/X-Content-Type-Options: nosniff/);
+    expect(headers).toMatch(/script-src[^\n]*https:\/\/js\.culqi\.com/);
+    expect(headers).toMatch(/connect-src[^\n]*https:\/\/checkoutview\.culqi\.com/);
+    expect(headers).toMatch(/connect-src[^\n]*https:\/\/suyadelivery\.com/);
+    expect(headers).not.toMatch(/googletagmanager|google-analytics|region1\.google-analytics/iu);
+    expect(headers).toMatch(/frame-src https:\/\/checkoutview\.culqi\.com/);
+    expect(headers).toMatch(/\/mobile-updates\/latest\.json[\s\S]*Content-Type: application\/json[\s\S]*Cache-Control: no-store/);
+    expect(headers).toMatch(/\/mobile-updates\/\*\.zip[\s\S]*Content-Type: application\/zip[\s\S]*Cache-Control: public, max-age=31536000, immutable/);
   });
 });

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { Capacitor } from '@capacitor/core';
+import { secureSessionStorage, usesAndroidSecureStorage } from './secureStorage';
 
 const url = import.meta.env.VITE_SUPABASE_URL?.trim();
 const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
@@ -23,7 +24,10 @@ export const isSupabaseConfigured = Boolean(
 export const supabase = isSupabaseConfigured
   ? createClient(url!, publishableKey!, {
       auth: {
-        persistSession: true,
+        // Android usa AES-GCM con una clave no exportable del Keystore. No se
+        // guarda la sesión en Web Storage ni se inventa soporte seguro para iOS.
+        persistSession: !Capacitor.isNativePlatform() || usesAndroidSecureStorage(),
+        ...(usesAndroidSecureStorage() ? { storage: secureSessionStorage } : {}),
         autoRefreshToken: true,
         detectSessionInUrl: !Capacitor.isNativePlatform(),
         flowType: 'pkce',

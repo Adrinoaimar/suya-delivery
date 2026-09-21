@@ -12,6 +12,19 @@ const baseUrl = process.env.SUYA_LIVE_UPDATE_BASE_URL ?? 'https://suyadelivery.c
 const privateKey = process.env.SUYA_LIVE_UPDATE_PRIVATE_KEY;
 
 if (!privateKey) throw new Error('Falta SUYA_LIVE_UPDATE_PRIVATE_KEY para firmar el bundle móvil.');
+if (!/^[a-zA-Z0-9._-]{1,128}$/.test(bundleId)) {
+  throw new Error('GITHUB_SHA/SUYA bundleId no tiene un formato seguro.');
+}
+
+let parsedBaseUrl;
+try {
+  parsedBaseUrl = new URL(baseUrl);
+} catch {
+  throw new Error('SUYA_LIVE_UPDATE_BASE_URL debe ser una URL HTTPS de Suya.');
+}
+if (parsedBaseUrl.origin !== 'https://suyadelivery.com' || parsedBaseUrl.pathname !== '/') {
+  throw new Error('SUYA_LIVE_UPDATE_BASE_URL debe ser exactamente https://suyadelivery.com.');
+}
 
 await rm(outputDir, { recursive: true, force: true });
 await mkdir(outputDir, { recursive: true });

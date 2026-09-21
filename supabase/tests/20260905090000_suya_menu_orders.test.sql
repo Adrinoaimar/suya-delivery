@@ -4,12 +4,12 @@ select has_column('public','orders','origin','orders has server-controlled origi
 select col_default_is('public','orders','origin','delivery','delivery remains default channel');
 select has_table('public','restaurant_menu_settings','menu settings table exists');
 select has_pk('public','restaurant_menu_settings','menu settings keyed by restaurant');
-select has_function('public','create_menu_order',array['uuid','jsonb','text','text','text','uuid'],'menu order RPC exists');
-select function_returns('public','create_menu_order',array['uuid','jsonb','text','text','text','uuid'],'setof record','RPC returns order result');
+select has_function('public','create_menu_order',array['uuid','jsonb','text','text','text','uuid','text','double precision','double precision'],'menu order RPC exists');
+select function_returns('public','create_menu_order',array['uuid','jsonb','text','text','text','uuid','text','double precision','double precision'],'setof record','RPC returns order result');
 select is((select p.prosecdef from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname='create_menu_order' limit 1), true, 'RPC is security definer');
 select is_empty($$select 1 from information_schema.role_table_grants where table_schema='public' and table_name='orders' and grantee in ('anon','authenticated') and privilege_type in ('INSERT','DELETE')$$,'clients cannot mutate orders directly');
 select ok(
-  has_function_privilege('anon', 'public.create_menu_order(uuid,jsonb,text,text,text,uuid)', 'execute'),
+  has_function_privilege('anon', 'public.create_menu_order(uuid,jsonb,text,text,text,uuid,text,double precision,double precision)', 'execute'),
   'anon puede ejecutar menu order RPC; el servidor valida menú publicado'
 );
 select * from finish();

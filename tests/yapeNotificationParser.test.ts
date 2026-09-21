@@ -13,6 +13,7 @@ describe('parseYapeNotification', () => {
     expect(result).toMatchObject({
       amountCents: 2550,
       currency: 'PEN',
+      senderName: null,
       code: '482',
       verification: 'unverified',
     });
@@ -28,6 +29,148 @@ describe('parseYapeNotification', () => {
     });
 
     expect(result).toMatchObject({ amountCents: 125000, code: '987654321' });
+  });
+
+  it('does not truncate an ungrouped four-digit amount', () => {
+    const result = parseYapeNotification({
+      packageName: 'com.bcp.yape.app',
+      title: 'Yape recibido',
+      text: 'Recibiste S/ 1000.00',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({ amountCents: 100000, currency: 'PEN' });
+  });
+
+  it('treats the short sol prefix without a slash as PEN like Android', () => {
+    const result = parseYapeNotification({
+      packageName: 'com.bcp.yape.app',
+      title: 'Yape recibido',
+      text: 'Recibiste S 30.00',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({ amountCents: 3000, currency: 'PEN' });
+  });
+
+  it.each(['Recibiste S/ 1,000.00', 'Recibiste S/ 1.000,00'])('accepts an unambiguous grouped decimal amount: %s', (text) => {
+    expect(parseYapeNotification({
+      packageName: 'com.bcp.yape.app',
+      title: 'Yape recibido',
+      text,
+      postedAt: '2026-09-06T12:00:00.000Z',
+    })).toMatchObject({ amountCents: 100000, currency: 'PEN' });
+  });
+
+  it.each([
+    'Recibiste S/ 30.5',
+    'Recibiste S/ 30,5',
+    'Recibiste S/ 1,2345',
+  ])('rejects malformed monetary tokens instead of partially parsing them: %s', (text) => {
+    expect(parseYapeNotification({
+      packageName: 'com.bcp.yape.app',
+      title: 'Yape recibido',
+      text,
+      postedAt: '2026-09-06T12:00:00.000Z',
+    })).toBeNull();
+  });
+
+  it('rejects observations above the server amount contract', () => {
+    expect(parseYapeNotification({
+      packageName: 'com.bcp.yape.app',
+      title: 'Yape recibido',
+      text: 'Recibiste S/ 1000000.01',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    })).toBeNull();
+  });
+
+  it('does not treat a negative amount as an incoming payment', () => {
+    const result = parseYapeNotification({
+      packageName: 'com.bcp.yape.app',
+      title: 'Yape recibido',
+      text: 'Reversión -S/ 30.00',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it.each([
+    'Saldo disponible: S/ 30.00',
+    'Enviaste S/ 30.00',
+    'Solicitud de pago: S/ 30.00',
+    'Reversión de S/ 30.00',
+  ])('ignora notificaciones que no representan un ingreso: %s', (text) => {
+    expect(parseYapeNotification({
+      packageName: 'com.bcp.yape.app',
+      title: 'Yape',
+      text,
+      postedAt: '2026-09-06T12:00:00.000Z',
+    })).toBeNull();
+  });
+
+  it('uses the stable notification key to separate same-time equal payments', () => {
+    const input = {
+      packageName: 'com.bcp.yape.app',
+      title: 'Yape recibido',
+      text: 'Recibiste S/ 30.00',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    };
+
+    const first = parseYapeNotification({ ...input, notificationKey: 'notification-1' });
+    const second = parseYapeNotification({ ...input, notificationKey: 'notification-2' });
+
+    expect(first?.fingerprint).not.toBe(second?.fingerprint);
+  });
+
+  it('captures the visible sender when the wallet notification includes it', () => {
+    const result = parseYapeNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Yape',
+      text: 'Recibiste S/ 30.00 de Ana María Torres',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({ amountCents: 3000, senderName: 'Ana María Torres' });
+  });
+
+  it('captures the sender when Yape places the name before the verb', () => {
+    const result = parseYapeNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Ana María Torres',
+      text: 'te envió S/ 30.00',
+      infoText: 'Yape',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({ amountCents: 3000, senderName: 'Ana María Torres' });
+  });
+
+  it('captures sender labels with punctuation without swallowing the operation code', () => {
+    const result = parseYapeNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Yape',
+      text: 'Recibiste S/ 30.00. De: Ana María Torres. Código de operación: 482901',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({
+      amountCents: 3000,
+      senderName: 'Ana María Torres',
+      code: '482901',
+    });
+  });
+
+  it('reads an identifier placed in a secondary notification field', () => {
+    const result = parseYapeNotification({
+      packageName: 'com.bcp.innovacxion.yapeapp',
+      title: 'Yape recibido',
+      text: 'Recibiste S/ 30.00',
+      subText: 'Código de operación: 842911',
+      postedAt: '2026-09-06T12:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({ amountCents: 3000, code: '842911' });
   });
 
   it('ignores other apps and messages without a monetary amount', () => {

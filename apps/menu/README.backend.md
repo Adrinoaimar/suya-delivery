@@ -13,4 +13,10 @@ Functions:
 - `admin-catalog?table=...`: CRUD protegido por RLS usando JWT Supabase.
 - `upload-url`: URL firmada para subir imágenes; valida dueño de tienda.
 
+Contrato de sesión del menú estático:
+
+- `/auth/login` debe responder JSON con `access_token` (o `session.access_token`) para que el navegador envíe `Authorization: Bearer …`.
+- El frontend usa `credentials: omit`, no persiste cookies y elimina el bearer al cerrar sesión. El backend no debe depender de una cookie de sesión ni emitir `Set-Cookie` para este flujo.
+- El modo sin API es una demo local-first: sus datos quedan en el dispositivo y no constituye autenticación ni almacenamiento multiusuario.
+
 Autenticación email/password, recuperación y verificación de correo se configuran en Supabase Auth; frontend debe usar `signUp`, `signInWithPassword`, `resetPasswordForEmail` y escuchar `onAuthStateChange`.

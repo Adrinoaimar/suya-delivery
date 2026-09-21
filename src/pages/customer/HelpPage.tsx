@@ -13,7 +13,7 @@ const FAQ = [
   {
     question: '¿Cómo pago?',
     answer:
-      'Por ahora solo aceptamos efectivo al recibir. Los pagos digitales seguirán deshabilitados hasta integrar confirmación segura del proveedor.',
+      'Puedes elegir efectivo, Yape o Lemon. En pagos digitales Suya crea una referencia única, muestra el monto exacto y el restaurante verifica el movimiento y la constancia antes de aceptarlo. Si hay un canal electrónico autorizado, el servidor actualiza el estado cuando recibe su confirmación.',
   },
   {
     question: '¿Puedo seguir mi pedido?',
@@ -81,7 +81,10 @@ export default function HelpPage() {
           {FAQ.map((item, index) => {
             const expanded = open === index;
             return (
-              <li key={item.question} className="overflow-hidden rounded-card border border-suya-mist bg-white">
+              <li
+                key={item.question}
+                className="overflow-hidden rounded-card border border-suya-mist bg-white"
+              >
                 <button
                   type="button"
                   onClick={() => setOpen(expanded ? null : index)}
