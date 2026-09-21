@@ -104,10 +104,15 @@ async function smoke(origin, path) {
 }
 
 async function smokeAsset(origin, path, expectedContentType, bodyPattern) {
-  const target = new URL(path, origin).href;
+  const targetUrl = new URL(path, origin);
+  // Pages can take a few seconds to attach the new deployment to a custom
+  // domain. A release-specific query also prevents a cached 404 from hiding
+  // an asset that is already present in the new deployment.
+  targetUrl.searchParams.set('_suya_release_smoke', sha.slice(0, 12).toLowerCase());
+  const target = targetUrl.href;
   let lastStatus;
   let lastContentType = '';
-  for (let attempt = 0; attempt < 6; attempt += 1) {
+  for (let attempt = 0; attempt < 15; attempt += 1) {
     try {
       const response = await fetch(target, { redirect: 'follow' });
       lastStatus = response.status;
@@ -123,7 +128,7 @@ async function smokeAsset(origin, path, expectedContentType, bodyPattern) {
     } catch {
       lastStatus = 'sin conexión';
     }
-    if (attempt < 5) await new Promise((resolve) => setTimeout(resolve, 2_000));
+    if (attempt < 14) await new Promise((resolve) => setTimeout(resolve, 4_000));
   }
   throw new Error(
     `Smoke falló en ${target}: HTTP ${lastStatus}, content-type ${lastContentType || 'ausente'}.`,
