@@ -51,3 +51,7 @@ como `text/plain` y `sitemap.xml` como `application/xml`; si alguno vuelve a cae
 HTML de la SPA, la release se detiene. Al promover, guarda los deployments productivos anteriores
 y ejecuta rollback por API si falla una app o el smoke final. La primera publicación no tiene
 snapshot y exige activar conscientemente `allow_initial_release`.
+
+Para auditar el estado publicado sin mutar datos ni desplegar, ejecuta `npm run verify:live`.
+Comprueba las tres webs, SEO y `route-driving`; solo comprueba las funciones Culqi cuando
+`VITE_CULQI_GATEWAY_ENABLED=true`.
