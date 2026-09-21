@@ -31,8 +31,12 @@ writeFileSync(
 );
 afterAll(() => rmSync(fixtureDirectory, { recursive: true, force: true }));
 
+const testBaseEnv = { ...process.env };
+delete testBaseEnv.VITE_CULQI_GATEWAY_ENABLED;
+delete testBaseEnv.VITE_CULQI_PUBLIC_KEY;
+
 const validEnv = {
-  ...process.env,
+  ...testBaseEnv,
   SUYA_PRODUCTION_CONFIG: canonicalConfig,
   VITE_SUPABASE_URL: 'https://abcdefghijklmnopqrst.supabase.co',
   VITE_EXPECTED_SUPABASE_PROJECT_REF: 'abcdefghijklmnopqrst',
