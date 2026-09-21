@@ -1,4 +1,4 @@
-name: Deploy Suya customer web
+name: Deploy Suya customer and backoffice web
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: suya-customer-production
+  group: suya-web-production
   cancel-in-progress: false
 
 jobs:
@@ -55,9 +55,10 @@ jobs:
             -u VITE_BACKOFFICE_APP_URL \
             npm run test
 
-      - name: Construir cliente real
+      - name: Construir cliente y Backoffice reales
         run: |
           npm run build:customer
+          npm run build:backoffice
           npm run verify:production
 
       - name: Publicar cliente en producción
@@ -68,7 +69,16 @@ jobs:
           --commit-hash=${{ github.sha }}
           --commit-dirty=false
 
+      - name: Publicar Backoffice en producción
+        run: >-
+          npx --yes wrangler@4.123.0 pages deploy dist/backoffice
+          --project-name=suya-backoffice
+          --branch=main
+          --commit-hash=${{ github.sha }}
+          --commit-dirty=false
+
       - name: Smoke público
         run: |
           curl --fail --silent --show-error --location --retry 5 --retry-delay 2 https://suyadelivery.com/ >/dev/null
           curl --fail --silent --show-error --location --retry 5 --retry-delay 2 https://suyadelivery.com/help >/dev/null
+          curl --fail --silent --show-error --location --retry 5 --retry-delay 2 https://panel.suyadelivery.com/login >/dev/null

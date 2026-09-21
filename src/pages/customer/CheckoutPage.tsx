@@ -335,10 +335,12 @@ export default function CheckoutPage() {
           ? isMenuOrder
             ? `Pedido confirmado. Pagarás ${formatPrice(order.total)} en efectivo.`
             : `Pedido confirmado. Pagarás ${formatPrice(order.total)} en efectivo al recibirlo.`
-          : `Pedido creado. Paga ${formatPrice(order.total)} con ${paymentLabel(method)} y espera la verificación.`,
+          : `Pedido reservado. Completa el pago de ${formatPrice(order.total)} con ${paymentLabel(method)}; se liberará a operaciones al validarlo.`,
         'success',
       );
-      navigate(publicOrderUrl ?? `/orders/${order.id}/track`, {
+      const customerOrderPath =
+        method === 'cash' ? `/orders/${order.id}/track` : `/orders/${order.id}`;
+      navigate(publicOrderUrl ?? customerOrderPath, {
         replace: true,
         state: publicOrderPath ? { guestOrder: order } : undefined,
       });

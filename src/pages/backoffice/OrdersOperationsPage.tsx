@@ -8,6 +8,7 @@ import { Input } from '@/components/common/Input';
 import { LoadMoreOrders } from '@/components/order/LoadMoreOrders';
 import { dispatchService, notificationService } from '@/lib/services';
 import type { AvailableRider } from '@/lib/services';
+import { isOperationalOrder } from '@/lib/orderOperations';
 import { useOrderStore } from '@/store/orderStore';
 import { formatPrice, orderStatusLabel, paymentLabel } from '@/utils/format';
 
@@ -21,37 +22,44 @@ export default function OrdersOperationsPage() {
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [busyOrder, setBusyOrder] = useState<string | null>(null);
   const [channel, setChannel] = useState<'all' | 'delivery' | 'suya_menu' | 'table_qr'>('all');
+  const operationalOrders = useMemo(() => orders.filter(isOperationalOrder), [orders]);
   const restaurantIds = useMemo(
-    () => [...new Set(orders.map((order) => order.storeId))],
-    [orders],
+    () => [...new Set(operationalOrders.map((order) => order.storeId))],
+    [operationalOrders],
   );
   const visibleOrders = useMemo(
-    () => channel === 'all'
-      ? orders
-      : orders.filter((order) => (order.origin ?? 'delivery') === channel),
-    [channel, orders],
+    () =>
+      channel === 'all'
+        ? operationalOrders
+        : operationalOrders.filter((order) => (order.origin ?? 'delivery') === channel),
+    [channel, operationalOrders],
   );
-  const channelLabel = (origin: typeof channel) => origin === 'suya_menu'
-    ? 'Suya Menús'
-    : origin === 'table_qr'
-      ? 'Mesa QR'
-      : 'Delivery';
+  const channelLabel = (origin: typeof channel) =>
+    origin === 'suya_menu' ? 'Suya Menús' : origin === 'table_qr' ? 'Mesa QR' : 'Delivery';
 
   useEffect(() => {
     let active = true;
-    void Promise.all(restaurantIds.map(async (restaurantId) => [
-      restaurantId,
-      await dispatchService.listAvailableRiders(restaurantId),
-    ] as const)).then((entries) => {
-      if (active) setRiders(Object.fromEntries(entries));
-    }).catch((cause) => {
-      if (!active) return;
-      notificationService.notify(
-        cause instanceof Error ? cause.message : 'No pudimos cargar los repartidores disponibles.',
-        'danger',
-      );
-    });
-    return () => { active = false; };
+    void Promise.all(
+      restaurantIds.map(
+        async (restaurantId) =>
+          [restaurantId, await dispatchService.listAvailableRiders(restaurantId)] as const,
+      ),
+    )
+      .then((entries) => {
+        if (active) setRiders(Object.fromEntries(entries));
+      })
+      .catch((cause) => {
+        if (!active) return;
+        notificationService.notify(
+          cause instanceof Error
+            ? cause.message
+            : 'No pudimos cargar los repartidores disponibles.',
+          'danger',
+        );
+      });
+    return () => {
+      active = false;
+    };
   }, [restaurantIds]);
 
   async function assign(orderId: string, riderId: string | null) {
@@ -59,7 +67,10 @@ export default function OrdersOperationsPage() {
     try {
       await dispatchService.assignRider(orderId, riderId);
       await refresh();
-      notificationService.notify(riderId ? 'Repartidor asignado.' : 'Asignación retirada.', 'success');
+      notificationService.notify(
+        riderId ? 'Repartidor asignado.' : 'Asignación retirada.',
+        'success',
+      );
     } catch (cause) {
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No pudimos actualizar la asignación.',
@@ -108,9 +119,13 @@ export default function OrdersOperationsPage() {
 
   if (error) return <ErrorState description={error} onRetry={() => void refresh()} />;
   if (status === 'loading' && orders.length === 0) {
-    return <p role="status" className="text-sm text-[#68716C]">Cargando pedidos reales…</p>;
+    return (
+      <p role="status" className="text-sm text-[#68716C]">
+        Cargando pedidos reales…
+      </p>
+    );
   }
-  if (orders.length === 0) {
+  if (operationalOrders.length === 0) {
     return (
       <EmptyState
         icon={<UtensilsCrossed className="h-6 w-6" />}
@@ -125,17 +140,36 @@ export default function OrdersOperationsPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl font-bold">Pedidos</h1>
-          <p className="text-sm text-[#68716C]">Preparación, asignación y cancelación auditadas por canal.</p>
+          <p className="text-sm text-[#68716C]">
+            Preparación, asignación y cancelación auditadas por canal.
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <label className="flex items-center gap-2 rounded-btn border border-[#CDD4D0] bg-white px-3 text-sm font-medium">
             <Filter className="h-4 w-4 text-[#68716C]" aria-hidden="true" />
             <span className="sr-only">Filtrar pedidos por canal</span>
-            <select aria-label="Filtrar pedidos por canal" value={channel} onChange={(event) => setChannel(event.target.value as typeof channel)} className="h-10 bg-transparent pr-2 outline-none">
-              <option value="all">Todos ({orders.length})</option>
-              <option value="delivery">Delivery ({orders.filter((order) => (order.origin ?? 'delivery') === 'delivery').length})</option>
-              <option value="suya_menu">Suya Menús ({orders.filter((order) => order.origin === 'suya_menu').length})</option>
-              <option value="table_qr">Mesa QR ({orders.filter((order) => order.origin === 'table_qr').length})</option>
+            <select
+              aria-label="Filtrar pedidos por canal"
+              value={channel}
+              onChange={(event) => setChannel(event.target.value as typeof channel)}
+              className="h-10 bg-transparent pr-2 outline-none"
+            >
+              <option value="all">Todos ({operationalOrders.length})</option>
+              <option value="delivery">
+                Delivery (
+                {
+                  operationalOrders.filter((order) => (order.origin ?? 'delivery') === 'delivery')
+                    .length
+                }
+                )
+              </option>
+              <option value="suya_menu">
+                Suya Menús (
+                {operationalOrders.filter((order) => order.origin === 'suya_menu').length})
+              </option>
+              <option value="table_qr">
+                Mesa QR ({operationalOrders.filter((order) => order.origin === 'table_qr').length})
+              </option>
             </select>
           </label>
           <Button variant="secondary" onClick={() => void refresh()}>
@@ -145,33 +179,47 @@ export default function OrdersOperationsPage() {
         </div>
       </div>
 
-      {visibleOrders.length === 0 && <Card className="border-dashed py-10 text-center text-sm text-[#68716C]">No hay pedidos en el canal seleccionado.</Card>}
+      {visibleOrders.length === 0 && (
+        <Card className="border-dashed py-10 text-center text-sm text-[#68716C]">
+          No hay pedidos en el canal seleccionado.
+        </Card>
+      )}
       {visibleOrders.map((order) => {
         const open = order.status !== 'delivered' && order.status !== 'cancelled';
         const assignable = order.status === 'confirmed' || order.status === 'preparing';
         const isCompleted = order.status === 'delivered' || order.status === 'cancelled';
         const itemCount = order.items.reduce((total, item) => total + item.quantity, 0);
-        const paymentPending = order.paymentMethod !== 'cash' && order.paymentIntent?.status !== 'authorized';
-        const paymentStatus = order.paymentMethod === 'cash'
-          ? 'Efectivo'
-          : order.paymentIntent?.status === 'authorized'
-            ? 'Pago verificado'
-            : 'Pago pendiente';
+        const paymentPending =
+          order.paymentMethod !== 'cash' && order.paymentIntent?.status !== 'authorized';
+        const paymentStatus =
+          order.paymentMethod === 'cash'
+            ? 'Efectivo'
+            : order.paymentIntent?.status === 'authorized'
+              ? 'Pago verificado'
+              : 'Pago pendiente';
         return (
           <Card key={order.id} className="space-y-3">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="font-display font-bold">#{order.code} · {order.storeName}</p>
-                <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${order.origin === 'table_qr' ? 'bg-suya-green/10 text-suya-green-dark' : order.origin === 'suya_menu' ? 'bg-suya-sun/25 text-suya-green-dark' : 'bg-[#E9EEEB] text-[#52605A]'}`}>
+                <p className="font-display font-bold">
+                  #{order.code} · {order.storeName}
+                </p>
+                <span
+                  className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${order.origin === 'table_qr' ? 'bg-suya-green/10 text-suya-green-dark' : order.origin === 'suya_menu' ? 'bg-suya-sun/25 text-suya-green-dark' : 'bg-[#E9EEEB] text-[#52605A]'}`}
+                >
                   {channelLabel(order.origin ?? 'delivery')}
                 </span>
                 <p className="text-sm text-[#68716C]">
                   {order.customer.name} · {order.customer.address}
                 </p>
-                <p className={`mt-1 text-xs font-semibold ${paymentPending ? 'text-[#8A6100]' : 'text-suya-green-dark'}`}>
+                <p
+                  className={`mt-1 text-xs font-semibold ${paymentPending ? 'text-[#8A6100]' : 'text-suya-green-dark'}`}
+                >
                   Pago: {paymentLabel(order.paymentMethod)} · {paymentStatus}
                   {order.paymentIntent?.providerReference && (
-                    <span className="ml-1 font-mono">· {order.paymentIntent.providerReference.slice(-8)}</span>
+                    <span className="ml-1 font-mono">
+                      · {order.paymentIntent.providerReference.slice(-8)}
+                    </span>
                   )}
                 </p>
               </div>
@@ -190,11 +238,15 @@ export default function OrdersOperationsPage() {
               aria-label={`${isCompleted ? 'Detalle' : 'Preparación'} del pedido ${order.code}`}
             >
               <div className="flex items-center justify-between gap-2">
-                <h2 className={`flex items-center gap-2 font-display text-sm font-bold ${isCompleted ? 'text-[#47544E]' : 'text-suya-green-dark'}`}>
+                <h2
+                  className={`flex items-center gap-2 font-display text-sm font-bold ${isCompleted ? 'text-[#47544E]' : 'text-suya-green-dark'}`}
+                >
                   <UtensilsCrossed className="h-4 w-4" aria-hidden="true" />
                   {isCompleted ? 'Detalle del pedido' : 'Para preparar'}
                 </h2>
-                <span className={`text-xs font-medium ${isCompleted ? 'text-[#68716C]' : 'text-suya-green-dark'}`}>
+                <span
+                  className={`text-xs font-medium ${isCompleted ? 'text-[#68716C]' : 'text-suya-green-dark'}`}
+                >
                   {itemCount} {itemCount === 1 ? 'artículo' : 'artículos'}
                 </span>
               </div>
@@ -202,11 +254,23 @@ export default function OrdersOperationsPage() {
                 {order.items.map((item) => (
                   <li key={item.lineId} className="py-2 first:pt-0 last:pb-0">
                     <div className="flex items-start justify-between gap-3">
-                      <span><strong>{item.quantity} ×</strong> {item.name}</span>
-                      <span className="shrink-0 font-medium">{formatPrice(item.unitPrice * item.quantity)}</span>
+                      <span>
+                        <strong>{item.quantity} ×</strong> {item.name}
+                      </span>
+                      <span className="shrink-0 font-medium">
+                        {formatPrice(item.unitPrice * item.quantity)}
+                      </span>
                     </div>
-                    {item.extras.length > 0 && <p className="mt-0.5 text-xs text-[#68716C]">Extras: {item.extras.map((extra) => extra.label).join(', ')}</p>}
-                    {item.note && <p className="mt-0.5 text-xs font-medium text-suya-green-dark">Nota: {item.note}</p>}
+                    {item.extras.length > 0 && (
+                      <p className="mt-0.5 text-xs text-[#68716C]">
+                        Extras: {item.extras.map((extra) => extra.label).join(', ')}
+                      </p>
+                    )}
+                    {item.note && (
+                      <p className="mt-0.5 text-xs font-medium text-suya-green-dark">
+                        Nota: {item.note}
+                      </p>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -224,7 +288,9 @@ export default function OrdersOperationsPage() {
                     onChange={(event) => void assign(order.id, event.target.value || null)}
                   >
                     <option value="">Sin asignar</option>
-                    {order.riderId && <option value={order.riderId}>Asignado · {order.riderId.slice(0, 8)}</option>}
+                    {order.riderId && (
+                      <option value={order.riderId}>Asignado · {order.riderId.slice(0, 8)}</option>
+                    )}
                     {(riders[order.storeId] ?? []).map((rider) => (
                       <option key={rider.id} value={rider.id}>
                         {rider.name} · {rider.vehicleType || 'Vehículo por confirmar'}
@@ -255,10 +321,12 @@ export default function OrdersOperationsPage() {
                 <Input
                   label="Motivo si necesitas cancelar"
                   value={reasons[order.id] ?? ''}
-                  onChange={(event) => setReasons((current) => ({
-                    ...current,
-                    [order.id]: event.target.value,
-                  }))}
+                  onChange={(event) =>
+                    setReasons((current) => ({
+                      ...current,
+                      [order.id]: event.target.value,
+                    }))
+                  }
                 />
                 <Button
                   variant="danger"
