@@ -130,6 +130,19 @@ async function smokeAsset(origin, path, expectedContentType, bodyPattern) {
   );
 }
 
+async function smokeMobileUpdateManifests(origin) {
+  const roles = ['customer', 'rider', 'backoffice', 'walletobserver', 'unified'];
+  for (const role of roles) {
+    await smokeAsset(
+      origin,
+      `/mobile-updates/${role}/latest.json`,
+      'application/json',
+      new RegExp(`"role"\\s*:\\s*"${role}"`),
+    );
+  }
+  await smokeAsset(origin, '/mobile-updates/latest.json', 'application/json', /"role"\s*:\s*"customer"/);
+}
+
 async function rollback() {
   const failures = [];
   for (const app of [...published].reverse()) {
@@ -167,6 +180,7 @@ const candidateCustomerOrigin =
 await smokeAsset(candidateCustomerOrigin, '/robots.txt', 'text/plain', /User-agent:\s*\*/iu);
 await smokeAsset(candidateCustomerOrigin, '/sitemap.xml', 'application/xml', /<urlset\b[^>]*>/iu);
 await smokeAsset(candidateCustomerOrigin, '/llms.txt', 'text/plain', /# Suya Delivery/iu);
+await smokeMobileUpdateManifests(candidateCustomerOrigin);
 
 try {
   for (const app of appOrder) {
@@ -179,6 +193,7 @@ try {
   await smokeAsset(config.apps.customer.origin, '/robots.txt', 'text/plain', /User-agent:\s*\*/iu);
   await smokeAsset(config.apps.customer.origin, '/sitemap.xml', 'application/xml', /<urlset\b[^>]*>/iu);
   await smokeAsset(config.apps.customer.origin, '/llms.txt', 'text/plain', /# Suya Delivery/iu);
+  await smokeMobileUpdateManifests(config.apps.customer.origin);
   await verifyLive();
 } catch (error) {
   try {

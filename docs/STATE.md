@@ -446,6 +446,20 @@ verificables en CI; un artefacto instalable exige firma Apple externa.
 - Runs posteriores sobre el checkpoint documental `fd2cd67` (sin cambios de código) repitieron la cobertura y quedaron verdes: `34924109652`, `34924108958` y `34924108804`.
 - No hay `adb` ni emulador local; sigue pendiente smoke visual físico y configuración productiva de pagos.
 
+## F34 — Login Android y actualizaciones por rol (2026-09-21)
+
+- PR #55 continúa en `fix/android-auth-keystore-session`. La causa del login fallido quedó
+  aislada en `SuyaSecureStoragePlugin`: el IV manual era rechazado por Android Keystore al
+  persistir la sesión. `SecureAuthCipher` usa ahora el IV generado por Keystore, conserva
+  AES-GCM/clave no exportable y no agrega fallback en texto plano.
+- Se añadieron regresión instrumentada Android y mensaje seguro accionable en `authStore`.
+- La OTA se separó por rol (`customer`, `rider`, `backoffice`, `walletobserver`, `unified`),
+  con validación exacta de rol/origen/ruta/checksum/firma y espejo raíz para APKs antiguas.
+- Evidencia local: typecheck, lint, secretos, build, bundles aislados y `verify-production-build`
+  pasan; focal 14/14 y suite global 77/391. No hay JDK/adb local, por lo que Android físico,
+  emulador y APK no se declaran hasta CI. No se publicó producción.
+- Detalle: `docs/execution/F34.md`.
+
 
 
 

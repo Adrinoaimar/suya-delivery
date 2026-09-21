@@ -69,7 +69,7 @@ for (const name of requested) {
   run(npxCommand, ['--no-install', 'cap', 'sync', 'android'], targetEnv);
   if (!nativeTestsRan) {
     console.log('==> Ejecutando regresiones nativas del observador');
-    run('bash', ['android/gradlew', '-p', 'android', 'test', '--no-daemon'], targetEnv);
+    run('bash', ['android/gradlew', '-p', 'android', ':app:test', '--no-daemon'], targetEnv);
     nativeTestsRan = true;
   }
   run('bash', ['android/gradlew', '-p', 'android', 'assembleDebug', '--no-daemon'], targetEnv);

@@ -75,4 +75,16 @@ describe('authStore con Google', () => {
     await expect(useAuthStore.getState().completeOAuthCallback('https://evil.example/callback')).resolves.toBeNull();
     expect(useAuthStore.getState().identity).toBeNull();
   });
+
+  it('expone una guía accionable si falla el almacenamiento seguro nativo', async () => {
+    service.signIn.mockRejectedValueOnce(new Error('No se pudo guardar la sesión segura.'));
+
+    await expect(useAuthStore.getState().signIn({ email: 'ana@example.test', password: 'secret' })).rejects.toThrow(
+      'No se pudo guardar la sesión segura',
+    );
+
+    expect(useAuthStore.getState().error).toBe(
+      'No se pudo guardar la sesión segura. Actualiza Suya y vuelve a intentarlo.',
+    );
+  });
 });

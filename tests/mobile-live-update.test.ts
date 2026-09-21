@@ -13,12 +13,14 @@ describe('actualizaciones nativas por rol', () => {
     const iosProject = readFileSync(root('ios/App/App.xcodeproj/project.pbxproj'), 'utf8');
 
     expect(liveUpdate).toContain('VITE_MOBILE_ROLE');
-    expect(liveUpdate).toContain("mobileRole !== 'customer'");
+    expect(liveUpdate).toContain("!mobileRole || !MOBILE_ROLES.has(mobileRole)");
     expect(liveUpdate).toContain("const mobileRole = import.meta.env.VITE_MOBILE_ROLE?.trim();");
     expect(liveUpdate).not.toContain("|| 'customer'");
     expect(liveUpdate).toContain('new URL');
     expect(liveUpdate).toContain('AbortController');
     expect(liveUpdate).toContain('UPDATE_TIMEOUT_MS');
+    expect(liveUpdate).toContain('manifest.role === expectedRole');
+    expect(liveUpdate).toContain('expectedRole}/');
     expect(apkBuilder).toContain('VITE_MOBILE_ROLE: target.build');
     expect(appBuilder).toContain("const mobileRole = app === 'mobile' ? 'unified' : app;");
     expect(appBuilder).toContain("'import.meta.env.VITE_MOBILE_ROLE'");
@@ -33,5 +35,7 @@ describe('actualizaciones nativas por rol', () => {
     expect(prepare).toContain("parsedBaseUrl.origin !== 'https://suyadelivery.com'");
     expect(prepare).toContain("parsedBaseUrl.pathname !== '/'");
     expect(prepare).toContain("/^[a-zA-Z0-9._-]{1,128}$/");
+    expect(prepare).toContain("['customer', 'rider', 'backoffice', 'walletobserver', 'unified']");
+    expect(prepare).toContain("path.join(outputDir, 'latest.json')");
   });
 });

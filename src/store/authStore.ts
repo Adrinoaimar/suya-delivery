@@ -15,6 +15,9 @@ function safeAuthMessage(error: unknown, fallback: string): string {
   if (/provider.*not enabled|unsupported provider/i.test(message)) return 'Acceso con Google aún no está habilitado.';
   if (/cancel|access_denied/i.test(message)) return 'Acceso con Google cancelado.';
   if (/rate limit|too many/i.test(message)) return 'Demasiados intentos. Espera unos minutos.';
+  if (/sesión segura|secure session|secure storage/i.test(message)) {
+    return 'No se pudo guardar la sesión segura. Actualiza Suya y vuelve a intentarlo.';
+  }
   return fallback;
 }
 

@@ -88,6 +88,14 @@ jobs:
           test -n "$aapt2_path"
           npm run verify:android-apks -- --aapt2 "$aapt2_path"
 
+      - name: Regresión Android Keystore en emulador API 35
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          script: bash android/gradlew -p android :app:connectedDebugAndroidTest --no-daemon
+
       - name: Publicar APK de repartidor
         uses: actions/upload-artifact@v4
         with:

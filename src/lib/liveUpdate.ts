@@ -1,19 +1,21 @@
 import { Capacitor } from '@capacitor/core';
 
-const UPDATE_MANIFEST_URL = 'https://suyadelivery.com/mobile-updates/latest.json';
+const UPDATE_BASE_URL = 'https://suyadelivery.com/mobile-updates';
 const UPDATE_ORIGIN = 'https://suyadelivery.com';
 const UPDATE_PATH_PREFIX = '/mobile-updates/';
 const UPDATE_TIMEOUT_MS = 10_000;
+const MOBILE_ROLES = new Set(['customer', 'rider', 'backoffice', 'walletobserver', 'unified']);
 
 interface MobileUpdateManifest {
   version: 1;
+  role: string;
   bundleId: string;
   url: string;
   checksum: string;
   signature: string;
 }
 
-function isManifest(value: unknown): value is MobileUpdateManifest {
+function isManifest(value: unknown, expectedRole: string): value is MobileUpdateManifest {
   if (!value || typeof value !== 'object') return false;
   const manifest = value as Partial<MobileUpdateManifest>;
   let artifactUrl: URL;
@@ -25,11 +27,11 @@ function isManifest(value: unknown): value is MobileUpdateManifest {
 
   return (
     manifest.version === 1 &&
+    manifest.role === expectedRole &&
     typeof manifest.bundleId === 'string' &&
     /^[a-zA-Z0-9._-]{1,128}$/.test(manifest.bundleId) &&
     artifactUrl.origin === UPDATE_ORIGIN &&
-    artifactUrl.pathname.startsWith(UPDATE_PATH_PREFIX) &&
-    artifactUrl.pathname.endsWith('.zip') &&
+    artifactUrl.pathname === `${UPDATE_PATH_PREFIX}${expectedRole}/${manifest.bundleId}.zip` &&
     !artifactUrl.search &&
     !artifactUrl.hash &&
     typeof manifest.checksum === 'string' &&
@@ -40,8 +42,9 @@ function isManifest(value: unknown): value is MobileUpdateManifest {
 }
 
 /**
- * Checks for a signed web bundle and stages it for the next app launch.
- * Native code stays in the APK; HTML/CSS/JS changes arrive from Pages.
+ * Checks for a signed web bundle for this native role and stages it for the
+ * next app launch. Native code stays in the APK; HTML/CSS/JS changes arrive
+ * from Pages. A role can never install another role's bundle.
  */
 export async function syncMobileLiveUpdate(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
@@ -50,16 +53,13 @@ export async function syncMobileLiveUpdate(): Promise<void> {
     const { LiveUpdate } = await import('@capawesome/capacitor-live-update');
     await LiveUpdate.ready();
 
-    // El manifiesto publicado hoy contiene únicamente el bundle de Suya Cliente.
-    // Los roles nativos no deben instalarlo como siguiente bundle: al reiniciar
-    // Rider o Back Office eso los convertiría en la app del cliente.
     const mobileRole = import.meta.env.VITE_MOBILE_ROLE?.trim();
-    if (mobileRole !== 'customer') return;
+    if (!mobileRole || !MOBILE_ROLES.has(mobileRole)) return;
 
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), UPDATE_TIMEOUT_MS);
     try {
-      const response = await fetch(`${UPDATE_MANIFEST_URL}?t=${Date.now()}`, {
+      const response = await fetch(`${UPDATE_BASE_URL}/${mobileRole}/latest.json?t=${Date.now()}`, {
         cache: 'no-store',
         headers: { Accept: 'application/json' },
         signal: controller.signal,
@@ -68,7 +68,7 @@ export async function syncMobileLiveUpdate(): Promise<void> {
       if (!(response.headers.get('content-type') ?? '').toLowerCase().includes('application/json')) return;
 
       const manifest: unknown = await response.json();
-      if (!isManifest(manifest)) return;
+      if (!isManifest(manifest, mobileRole)) return;
 
       const { bundleId: currentBundleId } = await LiveUpdate.getCurrentBundle();
       if (currentBundleId === manifest.bundleId) return;
