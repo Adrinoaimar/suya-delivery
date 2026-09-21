@@ -212,6 +212,9 @@ export default function StoreDetailPage() {
               className="h-full w-full object-cover"
               width={1200}
               height={720}
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
             />
           ) : theme ? (
             <div className="flex h-full items-center justify-center gap-4 bg-gradient-to-br from-[var(--store-primary)] to-[var(--store-accent)] px-6">
@@ -253,6 +256,8 @@ export default function StoreDetailPage() {
                 referrerPolicy="no-referrer"
                 width={256}
                 height={256}
+                loading="eager"
+                decoding="async"
                 className="h-full w-full object-contain"
               />
             </span>
