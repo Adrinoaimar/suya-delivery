@@ -42,7 +42,9 @@ jobs:
           for origin in \
             https://suyadelivery.com \
             https://rider.suyadelivery.com \
-            https://panel.suyadelivery.com; do
+            https://panel.suyadelivery.com \
+            https://localhost \
+            capacitor://localhost; do
             case ",${ALLOWED_ORIGINS}," in
               *,${origin},*) ;;
               *) echo "Falta origen permitido: ${origin}" >&2; exit 1 ;;
