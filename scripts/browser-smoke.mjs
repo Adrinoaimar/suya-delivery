@@ -36,7 +36,7 @@ async function exerciseManualWalletCheckout(page, customerOrigin, method) {
   await page.getByRole('button', { name: 'Usar mi ubicación' }).click();
   await page.getByText('Punto confirmado:', { exact: false }).waitFor({ timeout: 10_000 });
   const methodLabel = method === 'yape' ? /Yape QR/ : /Lemon Billetera/;
-  await page.getByRole('checkbox', { name: methodLabel }).check();
+  await page.getByRole('button', { name: methodLabel }).click();
   await page.getByRole('button', { name: /Continuar con pago ·/ }).click();
   await page.waitForURL(/\/orders\/[^/]+\/track$/, { timeout: 20_000 });
   await page.getByRole('heading', { name: `Paga con ${method === 'yape' ? 'Yape' : 'Lemon'}` }).waitFor({
