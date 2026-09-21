@@ -67,12 +67,33 @@ async function checkCustomerAnalyticsBundle() {
     }
 
     const bundles = [];
-    for (const scriptUrl of scriptSources) {
+    const pending = [...scriptSources];
+    const inspected = new Set();
+    while (pending.length > 0 && inspected.size < 300) {
+      const scriptUrl = pending.shift();
+      if (!scriptUrl || inspected.has(scriptUrl)) continue;
+      inspected.add(scriptUrl);
       const scriptResponse = await fetch(scriptUrl, {
         redirect: 'follow',
         signal: AbortSignal.timeout(10_000),
       });
-      if (scriptResponse.ok) bundles.push(await scriptResponse.text());
+      if (!scriptResponse.ok) continue;
+      const source = await scriptResponse.text();
+      bundles.push(source);
+
+      // Vite divide el cliente en chunks importados desde el bundle de entrada.
+      // La analítica puede quedar en cualquiera de ellos, por lo que inspeccionar
+      // solo los <script> del HTML produce falsos negativos durante un release.
+      for (const match of source.matchAll(/["']([^"']+\.js(?:\?[^"']*)?)["']/giu)) {
+        try {
+          const dependency = new URL(match[1], scriptUrl);
+          if (dependency.origin === new URL(origin).origin && !inspected.has(dependency.toString())) {
+            pending.push(dependency.toString());
+          }
+        } catch {
+          // Una cadena terminada en .js que no sea URL no es una dependencia.
+        }
+      }
     }
     const bundle = bundles.join('\n');
     if (!bundle.includes('analyticsConsent')) {
