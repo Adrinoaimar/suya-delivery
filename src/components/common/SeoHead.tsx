@@ -49,7 +49,11 @@ export function SeoHead({
   // lectura del DOM.
   useLayoutEffect(() => {
     const normalizedPath = path ?? window.location.pathname;
-    const canonical = new URL(normalizedPath, SITE_ORIGIN).toString();
+    const canonicalPath =
+      normalizedPath === '/' || normalizedPath.endsWith('/')
+        ? normalizedPath
+        : `${normalizedPath}/`;
+    const canonical = new URL(canonicalPath, SITE_ORIGIN).toString();
     const imageUrl = new URL(image, SITE_ORIGIN).toString();
 
     document.title = title;

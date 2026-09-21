@@ -44,7 +44,7 @@ function breadcrumbs(route, name) {
         '@type': 'ListItem',
         position: 2,
         name,
-        item: `${siteOrigin}/${route}`,
+        item: `${siteOrigin}/${route}/`,
       },
     ],
   };
@@ -148,7 +148,7 @@ const publicInfoRoutes = [
         '@type': page.type,
         name: page.name,
         description: page.description,
-        url: `${siteOrigin}/${page.route}`,
+        url: `${siteOrigin}/${page.route}/`,
         isPartOf: { '@id': `${siteOrigin}/#website` },
         inLanguage: 'es-PE',
       },
@@ -181,7 +181,7 @@ const routeMetadata = [
           name: 'Restaurantes y tiendas en Sullana',
           description:
             'Directorio de restaurantes, tiendas y negocios locales disponibles en Sullana.',
-          url: `${siteOrigin}/stores`,
+          url: `${siteOrigin}/stores/`,
           isPartOf: { '@id': `${siteOrigin}/#website` },
           about: { '@type': 'City', name: 'Sullana' },
         },
@@ -217,7 +217,7 @@ const routeMetadata = [
           name: 'Centro de ayuda de Suya Delivery',
           description:
             'Ayuda sobre pedidos, pagos, seguimiento y privacidad en Suya Delivery.',
-          url: `${siteOrigin}/help`,
+          url: `${siteOrigin}/help/`,
           isPartOf: { '@id': `${siteOrigin}/#website` },
         },
         breadcrumbs('help', 'Centro de ayuda'),
@@ -253,7 +253,7 @@ const routeMetadata = [
           name: `Menú de ${name} en Sullana`,
           description:
             `Carta digital de ${name} disponible en Sullana mediante Suya Delivery.`,
-          url: `${siteOrigin}/menu/${slug}`,
+          url: `${siteOrigin}/menu/${slug}/`,
           isPartOf: { '@id': `${siteOrigin}/#website` },
           about: { '@type': 'Restaurant', name },
         },
@@ -282,7 +282,7 @@ function replaceOrThrow(html, pattern, replacement, label) {
 }
 
 function renderRoute(template, metadata) {
-  const canonical = `${siteOrigin}/${metadata.route}`;
+  const canonical = `${siteOrigin}/${metadata.route}/`;
   let html = template;
   html = replaceOrThrow(html, /<title>[^<]*<\/title>/, `<title>${metadata.title}</title>`, 'title');
   html = replaceOrThrow(
@@ -348,6 +348,65 @@ function renderRoute(template, metadata) {
   return html;
 }
 
+function renderNoIndexShell(template, { notFound = false } = {}) {
+  const title = notFound ? 'Página no encontrada | Suya Delivery' : 'Área privada | Suya Delivery';
+  const description = notFound
+    ? 'La página solicitada no existe. Regresa al inicio de Suya Delivery.'
+    : 'Área funcional de Suya Delivery no disponible para indexación pública.';
+  const heading = notFound ? 'Página no encontrada' : 'Cargando Suya Delivery';
+  let html = template;
+  html = replaceOrThrow(html, /<title>[^<]*<\/title>/, `<title>${title}</title>`, 'title noindex');
+  html = replaceOrThrow(
+    html,
+    /<meta\s+name="description"\s+content="[^"]*"\s*\/>/,
+    `<meta name="description" content="${description}" />`,
+    'description noindex',
+  );
+  html = replaceOrThrow(
+    html,
+    /<meta\s+name="robots"\s+content="[^"]*"\s*\/>/,
+    '<meta name="robots" content="noindex,nofollow" />',
+    'robots noindex',
+  );
+  html = html.replace(/\s*<link\s+rel="canonical"\s+href="[^"]*"\s*\/>/, '');
+  html = html.replace(/\s*<meta\s+property="og:url"\s+content="[^"]*"\s*\/>/, '');
+  html = replaceOrThrow(
+    html,
+    /<meta\s+property="og:title"\s+content="[^"]*"\s*\/>/,
+    `<meta property="og:title" content="${title}" />`,
+    'og:title noindex',
+  );
+  html = replaceOrThrow(
+    html,
+    /<meta\s+property="og:description"\s+content="[^"]*"\s*\/>/,
+    `<meta property="og:description" content="${description}" />`,
+    'og:description noindex',
+  );
+  html = replaceOrThrow(
+    html,
+    /<meta\s+name="twitter:title"\s+content="[^"]*"\s*\/>/,
+    `<meta name="twitter:title" content="${title}" />`,
+    'twitter:title noindex',
+  );
+  html = replaceOrThrow(
+    html,
+    /<meta\s+name="twitter:description"\s+content="[^"]*"\s*\/>/,
+    `<meta name="twitter:description" content="${description}" />`,
+    'twitter:description noindex',
+  );
+  html = html.replace(
+    /\s*<script\s+type="application\/ld\+json"\s+id="suya-seo-schema">[\s\S]*?<\/script>/,
+    '',
+  );
+  html = replaceOrThrow(
+    html,
+    /<div id="root">[\s\S]*?<\/div>\s*<noscript>/,
+    `<div id="root"><main class="shell py-8"><h1>${heading}</h1><p>${description}</p></main></div>\n    <noscript>`,
+    'contenido noindex',
+  );
+  return html;
+}
+
 const template = await readFile(path.join(customerDist, 'index.html'), 'utf8');
 for (const metadata of routeMetadata) {
   const output = path.join(customerDist, metadata.route, 'index.html');
@@ -355,4 +414,11 @@ for (const metadata of routeMetadata) {
   await writeFile(output, renderRoute(template, metadata));
 }
 
-console.log(`SEO estático generado para ${routeMetadata.length} rutas públicas del cliente.`);
+const privateShell = path.join(customerDist, '_private', 'index.html');
+await mkdir(path.dirname(privateShell), { recursive: true });
+await writeFile(privateShell, renderNoIndexShell(template));
+await writeFile(path.join(customerDist, '404.html'), renderNoIndexShell(template, { notFound: true }));
+
+console.log(
+  `SEO estático generado para ${routeMetadata.length} rutas públicas, rutas privadas noindex y 404 real.`,
+);

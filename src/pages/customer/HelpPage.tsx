@@ -56,7 +56,7 @@ export default function HelpPage() {
               name: 'Centro de ayuda de Suya Delivery',
               description:
                 'Ayuda sobre pedidos, pagos, seguimiento y privacidad en Suya Delivery.',
-              url: 'https://suyadelivery.com/help',
+              url: 'https://suyadelivery.com/help/',
               isPartOf: { '@id': 'https://suyadelivery.com/#website' },
               inLanguage: 'es-PE',
             },
@@ -73,7 +73,7 @@ export default function HelpPage() {
                   '@type': 'ListItem',
                   position: 2,
                   name: 'Centro de ayuda',
-                  item: 'https://suyadelivery.com/help',
+                  item: 'https://suyadelivery.com/help/',
                 },
               ],
             },

@@ -34,7 +34,7 @@ describe('SEO local de Suya Delivery', () => {
     const llms = source('public/llms.txt');
 
     for (const route of ['/nosotros', '/contacto', '/privacidad', '/terminos']) {
-      expect(sitemap).toContain(`https://suyadelivery.com${route}`);
+      expect(sitemap).toContain(`https://suyadelivery.com${route}/`);
     }
     expect(sitemap).toContain('<lastmod>2026-09-21</lastmod>');
     expect(robots).toContain('Sitemap: https://suyadelivery.com/sitemap.xml');
@@ -48,6 +48,21 @@ describe('SEO local de Suya Delivery', () => {
     expect(generator).toContain('contenido SEO estático');
     expect(generator).toContain("title: `Menú de ${name} en Sullana | Suya Delivery`");
     expect(generator).toContain("breadcrumbs('stores', 'Restaurantes y tiendas en Sullana')");
+    expect(generator).toContain('renderNoIndexShell');
+    expect(generator).toContain("path.join(customerDist, '404.html')");
+    expect(generator).toContain('const canonical = `${siteOrigin}/${metadata.route}/`');
+  });
+
+  it('separa las rutas privadas y dinámicas del contenido indexable', () => {
+    const redirects = source('public/_redirects');
+    const store = source('src/pages/customer/StoreDetailPage.tsx');
+
+    for (const route of ['/login', '/checkout', '/cart', '/orders', '/profile', '/search']) {
+      expect(redirects).toContain(`${route} /_private/index.html 200`);
+    }
+    expect(redirects).toContain('/store/:id /_private/index.html 200');
+    expect(redirects).toContain('/menu/:slug/pedido/:id /_private/index.html 200');
+    expect(store).toMatch(/path={`\/store\/\${store\.id}`}\s+noIndex/);
   });
 
   it('evita que la animación de entrada bloquee la primera visita web', () => {
