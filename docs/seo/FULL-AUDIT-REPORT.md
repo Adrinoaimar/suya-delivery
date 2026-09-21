@@ -27,10 +27,13 @@ La revalidación más reciente de `/` en el dominio publicado antes del PR #45 r
 
 ## Estado productivo revalidado
 
-Después de PR #54, Lighthouse móvil registró `/` con rendimiento 76, SEO 100, accesibilidad 100,
-buenas prácticas 100, FCP 3.4 s, LCP 3.8 s, TBT 220 ms y CLS 0. `/stores/` registró rendimiento
-58, SEO 100, FCP 4.2 s, LCP 7.8 s, TBT 340 ms y CLS 0. Son mediciones puntuales; el dato oficial
+La medición productiva más reciente registró `/` con rendimiento 61, SEO 100, accesibilidad 100,
+buenas prácticas 100, FCP 3.7 s, LCP 4.3 s, TBT 570 ms y CLS 0.011. `/stores/` registró rendimiento
+56, SEO 100, FCP 3.5 s, LCP 8.4 s, TBT 480 ms y CLS 0. Son mediciones puntuales; el dato oficial
 de Core Web Vitals requiere percentil 75 de usuarios reales.
+
+El candidato de PR #57 medido en `/stores/` obtuvo rendimiento 79, SEO/accesibilidad/buenas prácticas
+100, FCP 2.6 s, LCP 3.0 s, TBT 440 ms y CLS 0.
 
 ## Correcciones realizadas en el repositorio
 

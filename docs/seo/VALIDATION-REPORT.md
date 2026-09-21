@@ -30,12 +30,13 @@ La repetición posterior a la auditoría de imágenes obtuvo 74 de rendimiento, 
 dentro de la variación de Lighthouse local. El auditor estático confirmó 16 imágenes, ninguna sin
 alt, dimensiones, política de carga o decodificación.
 
-La revalidación del dominio publicado después de PR #54 registró en móvil: `/` rendimiento 76,
-accesibilidad 100, buenas prácticas 100, SEO 100, FCP 3.4 s, LCP 3.8 s, TBT 220 ms y CLS 0;
-`/stores/` rendimiento 58, SEO 100, FCP 4.2 s, LCP 7.8 s, TBT 340 ms y CLS 0. Lighthouse
-varía según red, caché y catálogo; LCP de `/stores/` sigue siendo la mejora técnica prioritaria.
+La revalidación productiva más reciente registró en móvil: `/` rendimiento 61, accesibilidad 100,
+buenas prácticas 100, SEO 100, FCP 3.7 s, LCP 4.3 s, TBT 570 ms y CLS 0.011; `/stores/`
+rendimiento 56, SEO 100, FCP 3.5 s, LCP 8.4 s, TBT 480 ms y CLS 0. Lighthouse varía según red,
+caché y catálogo; LCP de `/stores/` sigue siendo la mejora técnica prioritaria.
 
-El build candidato de PR #57 añade `fetchpriority="high"`, carga eager en las dos primeras tarjetas
+El build candidato de PR #57, medido en `/stores/`, obtuvo rendimiento 79, SEO/accesibilidad/buenas
+prácticas 100, FCP 2.6 s, LCP 3.0 s, TBT 440 ms y CLS 0. Añade `fetchpriority="high"`, carga eager en las dos primeras tarjetas
 visibles y precarga de portadas destacadas solo en Inicio. Las rutas secundarias eliminan esas
 precargas. No cambia diseño ni comportamiento.
 
