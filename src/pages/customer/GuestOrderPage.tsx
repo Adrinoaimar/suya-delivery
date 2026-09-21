@@ -94,6 +94,7 @@ export default function GuestOrderPage() {
   }
 
   const tableOrder = order.origin === 'table_qr';
+  const closed = order.status === 'delivered' || order.status === 'cancelled';
   return (
     <main id="contenido" className="shell max-w-3xl space-y-5 py-6 lg:py-10">
       <section className="rounded-card bg-suya-green p-6 text-white shadow-soft sm:p-8">
