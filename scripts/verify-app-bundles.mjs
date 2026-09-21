@@ -108,6 +108,9 @@ for (const app of apps) {
 
     const publicRoutes = [
       'index.html',
+      path.join('delivery-sullana', 'index.html'),
+      path.join('comida-a-domicilio-sullana', 'index.html'),
+      path.join('restaurantes-delivery-sullana', 'index.html'),
       path.join('stores', 'index.html'),
       path.join('help', 'index.html'),
       path.join('nosotros', 'index.html'),

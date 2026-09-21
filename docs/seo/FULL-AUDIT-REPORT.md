@@ -51,10 +51,12 @@ El candidato de PR #57 medido en `/stores/` obtuvo rendimiento 79, SEO/accesibil
   sin inventar cobertura, tiempos, reseñas, teléfonos ni direcciones.
 - Shell HTML inicial ampliado con contenido local factual, pasos de pedido, pagos, seguimiento,
   H2 y enlaces internos para que los rastreadores reciban contexto antes de ejecutar React.
+- Tres páginas locales de intención: `/delivery-sullana/`, `/comida-a-domicilio-sullana/` y
+  `/restaurantes-delivery-sullana/`, con contenido factual, Schema y enlaces internos.
 - Páginas públicas de confianza para Sobre Suya, Contacto, Privacidad y Términos, enlazadas desde un
   footer visible en móvil y escritorio.
-- HTML estático específico para doce documentos públicos (la portada y once rutas derivadas), incluidas las cinco cartas publicadas y las
-  páginas de confianza; cada ruta declara título, descripción, canonical, `h1` y JSON-LD propios.
+- HTML estático específico para quince documentos públicos (la portada y catorce rutas derivadas), incluidas las tres páginas locales,
+  cinco cartas publicadas y las páginas de confianza; cada ruta declara título, descripción, canonical, `h1` y JSON-LD propios.
 - Schema de `Organization`, `WebSite`, `WebPage`, `Service`, `CollectionPage`, `Restaurant` y
   `BreadcrumbList` donde corresponde. No se añadió marcado de reseñas ni datos comerciales no
   comprobados.
@@ -74,7 +76,7 @@ autoridad requiere señales externas auténticas y tiempo de rastreo.
 
 ## Revalidación posterior
 
-La auditoría HTTP posterior recorrió las 12 URLs del sitemap: todas devuelven 200, canonical propio,
+La auditoría HTTP posterior recorrió las 15 URLs del sitemap candidato: todas devuelven 200, canonical propio,
 `index,follow`, un H1 y JSON-LD parseable. Rutas privadas conservan `noindex,nofollow`, sin canonical;
 una ruta desconocida devuelve 404. No quedan errores críticos o altos técnicos en el alcance revisado.
 

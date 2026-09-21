@@ -12,6 +12,7 @@
 8. Generar HTML estático con metadatos y Schema específicos para `/stores`, `/help` y los menús públicos.
 9. Priorizar portadas visibles y precargar activos destacados solo en Inicio para reducir descubrimiento tardío de LCP.
 10. Ampliar el shell HTML público con respuestas locales y enlaces internos, sin duplicar datos comerciales no verificados.
+11. Añadir páginas locales de intención para `delivery en Sullana`, `comida a domicilio en Sullana` y `restaurantes con delivery en Sullana`, con contenido factual y enlazado interno.
 
 ## P1 — inmediatamente después de publicar
 

@@ -45,7 +45,15 @@ describe('SEO local de Suya Delivery', () => {
     const robots = source('public/robots.txt');
     const llms = source('public/llms.txt');
 
-    for (const route of ['/nosotros', '/contacto', '/privacidad', '/terminos']) {
+    for (const route of [
+      '/delivery-sullana',
+      '/comida-a-domicilio-sullana',
+      '/restaurantes-delivery-sullana',
+      '/nosotros',
+      '/contacto',
+      '/privacidad',
+      '/terminos',
+    ]) {
       expect(sitemap).toContain(`https://suyadelivery.com${route}/`);
     }
     expect(sitemap).toContain('<lastmod>2026-09-21</lastmod>');
@@ -60,6 +68,9 @@ describe('SEO local de Suya Delivery', () => {
     expect(generator).toContain('contenido SEO estático');
     expect(generator).toContain("title: `Menú de ${name} en Sullana | Suya Delivery`");
     expect(generator).toContain("breadcrumbs('stores', 'Restaurantes y tiendas en Sullana')");
+    expect(generator).toContain("route: 'delivery-sullana'");
+    expect(generator).toContain("route: 'comida-a-domicilio-sullana'");
+    expect(generator).toContain("route: 'restaurantes-delivery-sullana'");
     expect(generator).toContain('renderNoIndexShell');
     expect(generator).toContain("path.join(customerDist, '404.html')");
     expect(generator).toContain('const canonical = `${siteOrigin}/${metadata.route}/`');

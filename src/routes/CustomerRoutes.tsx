@@ -17,6 +17,7 @@ const OrderDetailPage = lazy(() => import('@/pages/customer/OrderDetailPage'));
 const OrderTrackPage = lazy(() => import('@/pages/customer/OrderTrackPage'));
 const ProfilePage = lazy(() => import('@/pages/customer/ProfilePage'));
 const HelpPage = lazy(() => import('@/pages/customer/HelpPage'));
+const LocalLandingPage = lazy(() => import('@/pages/customer/LocalLandingPage'));
 const AboutPage = lazy(() =>
   import('@/pages/customer/PublicInfoPages').then((module) => ({ default: module.AboutPage })),
 );
@@ -96,6 +97,9 @@ export function CustomerRoutes() {
           <Route path="search" element={<SearchPage />} />
           <Route path="cart" element={<CartPage />} />
           <Route path="help" element={<HelpPage />} />
+          <Route path="delivery-sullana" element={<LocalLandingPage kind="delivery" />} />
+          <Route path="comida-a-domicilio-sullana" element={<LocalLandingPage kind="food" />} />
+          <Route path="restaurantes-delivery-sullana" element={<LocalLandingPage kind="restaurants" />} />
           <Route path="nosotros" element={<AboutPage />} />
           <Route path="contacto" element={<ContactPage />} />
           <Route path="privacidad" element={<PrivacyPage />} />

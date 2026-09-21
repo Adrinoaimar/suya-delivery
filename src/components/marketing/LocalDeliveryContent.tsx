@@ -57,6 +57,11 @@ export function LocalDeliveryContent() {
           mismo lugar. El catálogo cambia según los horarios y la información publicada por cada
           negocio.
         </p>
+        <nav aria-label="Guías de delivery local" className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm font-semibold text-suya-green">
+          <Link to="/delivery-sullana" className="hover:underline">Delivery en Sullana</Link>
+          <Link to="/comida-a-domicilio-sullana" className="hover:underline">Comida a domicilio</Link>
+          <Link to="/restaurantes-delivery-sullana" className="hover:underline">Restaurantes con delivery</Link>
+        </nav>
       </div>
 
       <div>

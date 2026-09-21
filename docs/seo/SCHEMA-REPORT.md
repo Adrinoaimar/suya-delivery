@@ -16,6 +16,6 @@
 ## Validación
 
 El HTML construido contiene JSON-LD, canonical, Open Graph y Twitter Card. La auditoría HTTP de las
-12 URLs del sitemap confirmó un bloque JSON-LD parseable por URL, URLs absolutas y respuesta 200. No
+15 URLs del sitemap candidato confirmaron un bloque JSON-LD parseable por URL, URLs absolutas y respuesta 200. No
 se encontraron tipos inválidos, JSON roto ni datos inventados. La validación final con Rich Results
 Test debe hacerse después de publicar cualquier cambio de PR #57.

@@ -13,8 +13,8 @@ Fecha: 2026-09-21
 - `npm run build:apps` con configuración local de E2E: pasa; bundles aislados de cliente, rider y backoffice.
 - HTML construido: canonical, robots, OG, Twitter, JSON-LD, sitemap y robots presentes.
 - Rutas privadas, URLs con tokens y estados de negocio/menú inexistentes mantienen `noindex,nofollow`; tests de Table QR, comprobante invitado y menú lo verifican.
-- Build genera doce entradas HTML públicas con canonical/OG/JSON-LD y contenido propios: `/`,
-  `/stores`, `/help`, cuatro páginas institucionales y cinco menús del sitemap.
+- Build genera quince entradas HTML públicas con canonical/OG/JSON-LD y contenido propios: `/`,
+  tres páginas locales de intención, `/stores`, `/help`, cuatro páginas institucionales y cinco menús del sitemap.
 - Suite Supabase en CI: pasa con 632 pruebas, incluida la migración del contador anónimo y el reemplazo de assets públicos.
 - Contrato de migración: Donde Joel no conserva URLs raw de GitHub.
 - Gates CI del PR #57: frontend, E2E multiapp, Android, iOS y simulador pasan.
@@ -52,12 +52,14 @@ El medidor propio de visitas ya está publicado en producción: es first-party, 
 
 ## Resultado de auditoría posterior
 
-- 12 URLs del sitemap responden 200, todas con canonical propio, `index,follow`, exactamente un H1 y JSON-LD válido.
+- 15 URLs del sitemap del candidato responden 200, todas con canonical propio, `index,follow`, exactamente un H1 y JSON-LD válido.
 - Robots y sitemap responden 200 con tipos MIME correctos.
 - Rutas privadas mantienen 200 HTML con `noindex,nofollow` sin canonical; rutas desconocidas responden 404.
 - No quedan errores críticos o altos técnicos detectados. La autoridad externa no se puede validar desde el repositorio.
 - El shell SEO inicial se amplió sin alterar la UI hidratada: Inicio 441 palabras; `/stores/` 207;
   `/help/` 191; cada menú público 189, con H2, pasos, pagos, seguimiento y enlaces internos.
+- Se añadieron `/delivery-sullana/`, `/comida-a-domicilio-sullana/` y
+  `/restaurantes-delivery-sullana/` con contenido local factual, Schema y enlaces internos.
 
 ## Pendientes externos
 
