@@ -456,8 +456,9 @@ verificables en CI; un artefacto instalable exige firma Apple externa.
 - La OTA se separó por rol (`customer`, `rider`, `backoffice`, `walletobserver`, `unified`),
   con validación exacta de rol/origen/ruta/checksum/firma y espejo raíz para APKs antiguas.
 - Evidencia local: typecheck, lint, secretos, build, bundles aislados y `verify-production-build`
-  pasan; focal 14/14 y suite global 77/391. No hay JDK/adb local, por lo que Android físico,
-  emulador y APK no se declaran hasta CI. No se publicó producción.
+  pasan; focal 14/14 y suite global 77/391. CI Android API 35 pasó la regresión Keystore y
+  publicó tres APK debug como artefactos. No hay JDK/adb local para instalación física y no se
+  publicó producción.
 - Detalle: `docs/execution/F34.md`.
 
 
