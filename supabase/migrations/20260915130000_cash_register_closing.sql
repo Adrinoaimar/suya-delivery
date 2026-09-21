@@ -448,7 +448,9 @@ begin
   if register_row.status <> 'open' then raise exception 'cash register is closed'; end if;
 
   select * into existing from public.cash_register_entries
-  where session_id = p_session_id and request_id = p_request_id for update;
+  where public.cash_register_entries.session_id = p_session_id
+    and public.cash_register_entries.request_id = p_request_id
+  for update;
   if found then
     if existing.order_id <> p_order_id
        or round(existing.gross_received, 2) <> round(p_received, 2) then
@@ -539,7 +541,9 @@ begin
   end if;
   if register_row.status <> 'open' then raise exception 'cash register is closed'; end if;
   select * into existing from public.cash_register_entries
-  where session_id = p_session_id and request_id = p_request_id for update;
+  where public.cash_register_entries.session_id = p_session_id
+    and public.cash_register_entries.request_id = p_request_id
+  for update;
   if found then
     if round(existing.amount, 2) <> round(p_amount, 2) or existing.note <> clean_note then
       raise exception 'cash adjustment request conflict';
