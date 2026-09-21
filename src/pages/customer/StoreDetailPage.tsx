@@ -180,13 +180,14 @@ export default function StoreDetailPage() {
         title={`${store.name} en Sullana | Suya Delivery`}
         description={`${store.description} Pide en ${store.name} y recibe en Sullana con Suya Delivery.`}
         path={`/store/${store.id}`}
+        noIndex
         image={store.image ?? storeLogo}
         schema={{
           '@context': 'https://schema.org',
           '@type': 'Restaurant',
           name: store.name,
           description: store.description,
-          url: `https://suyadelivery.com/store/${store.id}`,
+          url: `https://suyadelivery.com/store/${store.id}/`,
           image: store.image
             ? new URL(store.image, 'https://suyadelivery.com').toString()
             : undefined,

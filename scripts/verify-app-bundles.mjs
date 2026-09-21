@@ -99,7 +99,7 @@ for (const app of apps) {
       }
     }
   } else {
-    const requiredAssets = ['robots.txt', 'sitemap.xml', 'llms.txt'];
+    const requiredAssets = ['robots.txt', 'sitemap.xml', 'llms.txt', '_redirects', '404.html'];
     for (const asset of requiredAssets) {
       if (!files.includes(path.join(output, asset))) {
         failures.push(`customer: falta activo SEO ${asset}`);
@@ -130,6 +130,23 @@ for (const app of apps) {
       for (const marker of ['rel="canonical"', 'application/ld+json', 'data-static-seo=', '<h1']) {
         if (!html.includes(marker)) failures.push(`customer: ${route} no contiene ${marker}`);
       }
+    }
+
+    const privateShell = path.join(output, '_private', 'index.html');
+    if (!files.includes(privateShell)) {
+      failures.push('customer: falta HTML noindex para rutas funcionales privadas');
+    } else {
+      const html = await readFile(privateShell, 'utf8');
+      if (!html.includes('noindex,nofollow')) failures.push('customer: shell privado indexable');
+      if (html.includes('rel="canonical"')) failures.push('customer: shell privado con canonical falso');
+      if (html.includes('application/ld+json')) failures.push('customer: shell privado con schema público');
+    }
+
+    const notFound = path.join(output, '404.html');
+    if (files.includes(notFound)) {
+      const html = await readFile(notFound, 'utf8');
+      if (!html.includes('noindex,nofollow')) failures.push('customer: 404 indexable');
+      if (!html.includes('Página no encontrada')) failures.push('customer: 404 sin contenido explícito');
     }
   }
 }

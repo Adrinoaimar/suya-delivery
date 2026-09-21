@@ -168,7 +168,7 @@ export default function MenuPage() {
           '@type': 'Restaurant',
           name: store.name,
           description: store.description,
-          url: `https://suyadelivery.com/menu/${slug}`,
+          url: `https://suyadelivery.com/menu/${slug}/`,
           image: heroImage ? new URL(heroImage, 'https://suyadelivery.com').toString() : undefined,
           address: store.address,
           servesCuisine: store.tags,

@@ -3,11 +3,11 @@
 
 ## Páginas principales
 - [Delivery en Sullana](https://suyadelivery.com/): Catálogo local, flujo de pedido, pagos habilitados y seguimiento.
-- [Restaurantes y tiendas](https://suyadelivery.com/stores): Directorio de negocios incorporados disponibles en Sullana.
-- [Centro de ayuda](https://suyadelivery.com/help): Información sobre pedidos, pagos, seguimiento, privacidad y uso desde el celular.
-- [Sobre Suya](https://suyadelivery.com/nosotros): Propósito, alcance y principios de la plataforma.
-- [Privacidad](https://suyadelivery.com/privacidad): Datos usados para operar pedidos y medición anónima de visitas.
-- [Términos](https://suyadelivery.com/terminos): Condiciones de uso de catálogo, pedidos y entregas.
+- [Restaurantes y tiendas](https://suyadelivery.com/stores/): Directorio de negocios incorporados disponibles en Sullana.
+- [Centro de ayuda](https://suyadelivery.com/help/): Información sobre pedidos, pagos, seguimiento, privacidad y uso desde el celular.
+- [Sobre Suya](https://suyadelivery.com/nosotros/): Propósito, alcance y principios de la plataforma.
+- [Privacidad](https://suyadelivery.com/privacidad/): Datos usados para operar pedidos y medición anónima de visitas.
+- [Términos](https://suyadelivery.com/terminos/): Condiciones de uso de catálogo, pedidos y entregas.
 
 ## Hechos verificables
 - Suya Delivery está enfocada en Sullana, Piura, Perú.

@@ -81,7 +81,7 @@ export default function StoresPage() {
               name: 'Restaurantes y tiendas en Sullana',
               description:
                 'Directorio de restaurantes, tiendas y negocios locales disponibles en Sullana.',
-              url: 'https://suyadelivery.com/stores',
+              url: 'https://suyadelivery.com/stores/',
               isPartOf: { '@id': 'https://suyadelivery.com/#website' },
               about: { '@type': 'City', name: 'Sullana' },
               inLanguage: 'es-PE',
@@ -99,7 +99,7 @@ export default function StoresPage() {
                   '@type': 'ListItem',
                   position: 2,
                   name: 'Restaurantes y tiendas en Sullana',
-                  item: 'https://suyadelivery.com/stores',
+                  item: 'https://suyadelivery.com/stores/',
                 },
               ],
             },
