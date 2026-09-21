@@ -307,6 +307,7 @@ export default function LeafletMap({
     setRoutePlan(null);
     setNextInstruction(null);
     setRouteStatus('idle');
+    if (!navigation) return undefined;
 
     if (!routingStart || !routingEnd || distanceKm(routingStart, routingEnd) < 0.01) {
       return undefined;
