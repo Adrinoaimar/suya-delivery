@@ -13,7 +13,7 @@ select is(
 );
 
 select is(
-  (select logo_url from public.restaurant_menu_settings settings
+  (select settings.logo_url from public.restaurant_menu_settings settings
    join public.restaurants restaurant on restaurant.id = settings.restaurant_id
    where restaurant.slug = 'donde-joel'),
   '/images/stores/donde-joel/logo.png',
