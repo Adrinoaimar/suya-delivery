@@ -442,3 +442,6 @@ verify_jwt = false
 
 [functions.culqi-webhook]
 verify_jwt = false
+
+[functions.route-driving]
+verify_jwt = false

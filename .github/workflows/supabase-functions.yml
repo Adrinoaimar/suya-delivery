@@ -78,3 +78,5 @@ jobs:
         run: supabase functions deploy charge-culqi-card --project-ref cggxooilzhqlcnofgtmi
       - name: Desplegar webhook Culqi
         run: supabase functions deploy culqi-webhook --project-ref cggxooilzhqlcnofgtmi
+      - name: Desplegar rutas viales autenticadas
+        run: supabase functions deploy route-driving --project-ref cggxooilzhqlcnofgtmi

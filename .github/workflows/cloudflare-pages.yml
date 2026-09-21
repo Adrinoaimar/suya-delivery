@@ -38,6 +38,8 @@ jobs:
       VITE_BACKEND: supabase
       VITE_MAP_PROVIDER: osm
       VITE_ANALYTICS_PROVIDER: suya
+      VITE_ROUTING_URL: https://cggxooilzhqlcnofgtmi.supabase.co/functions/v1/route-driving
+      VITE_OSM_DARK_TILE_URL: https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png
       VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
       VITE_EXPECTED_SUPABASE_PROJECT_REF: ${{ vars.VITE_EXPECTED_SUPABASE_PROJECT_REF }}
