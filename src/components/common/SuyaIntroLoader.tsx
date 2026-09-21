@@ -52,7 +52,15 @@ export function SuyaIntroLoader({ onFinish, minDuration = 1750 }: SuyaIntroLoade
     >
       <div className="suya-intro__stage">
         {reduceMotion ? (
-          <img src={sceneUrl} alt="" className="suya-intro__scene" width={400} height={300} />
+          <img
+            src={sceneUrl}
+            alt=""
+            className="suya-intro__scene"
+            width={400}
+            height={300}
+            loading="eager"
+            decoding="async"
+          />
         ) : (
           <svg viewBox="0 0 400 300" className="suya-intro__scene" aria-hidden="true">
             <g className="intro-sun">

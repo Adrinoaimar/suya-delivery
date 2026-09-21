@@ -25,6 +25,11 @@ Lighthouse móvil sobre el candidato confirmó rendimiento 76, accesibilidad 100
 SEO 100. Métricas: FCP 2.7 s, LCP 3.0 s, TBT 560 ms y CLS 0. El backend Supabase local no estaba
 levantado y el navegador registró rechazos de conexión; no se presenta como resultado productivo.
 
+La repetición posterior a la auditoría de imágenes obtuvo 74 de rendimiento, 100 de accesibilidad,
+96 de buenas prácticas y 100 de SEO; FCP 2.7 s, LCP 3.1 s, TBT 620 ms y CLS 0. La diferencia está
+dentro de la variación de Lighthouse local. El auditor estático confirmó 16 imágenes, ninguna sin
+alt, dimensiones, política de carga o decodificación.
+
 La revalidación más reciente del dominio publicado, antes de aplicar el PR #45, registró rendimiento 45, accesibilidad 100, buenas prácticas 92 y SEO 83 en móvil (FCP 4.5 s, LCP 19.7 s, CLS 0.013, TBT 520 ms). El HTML público todavía no expone canonical; esto confirma que el dominio sirve la versión anterior y no se presenta como resultado de la tanda SEO.
 
 En el HTML estático generado localmente, `/stores` y `/help` obtuvieron SEO 100. La ruta de menú probada cae en `noindex` cuando Supabase no está disponible, comportamiento intencional para evitar indexar un menú inexistente; debe repetirse con catálogo productivo después de publicar.

@@ -72,6 +72,8 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
               alt={`Logo de ${store.name}`}
               width="96"
               height="96"
+              loading="lazy"
+              decoding="async"
               referrerPolicy="no-referrer"
               className="h-full w-full object-contain"
             />

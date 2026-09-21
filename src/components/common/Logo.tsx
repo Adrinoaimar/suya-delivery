@@ -67,9 +67,11 @@ export function Logo({ className, tone = 'brand', showCity = false, size = 'md',
     return (
       <img
         src={assetUrl('/brand/suya-logo-horizontal.svg')}
-        alt="Suya"
+        alt="Suya Delivery"
         width="236"
         height="64"
+        loading="eager"
+        decoding="async"
         className={cn('w-auto object-contain', masterSizes[size], className)}
       />
     );

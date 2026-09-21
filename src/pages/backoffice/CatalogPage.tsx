@@ -236,6 +236,10 @@ export default function CatalogPage() {
                       <img
                         src={assetUrl(menu.logoUrl)}
                         alt=""
+                        width={56}
+                        height={56}
+                        loading="lazy"
+                        decoding="async"
                         referrerPolicy="no-referrer"
                         className="h-14 w-14 rounded-xl object-cover"
                       />
@@ -366,6 +370,10 @@ export default function CatalogPage() {
                               <img
                                 src={product.image}
                                 alt=""
+                                width={40}
+                                height={40}
+                                loading="lazy"
+                                decoding="async"
                                 referrerPolicy="no-referrer"
                                 className="h-full w-full object-cover"
                               />

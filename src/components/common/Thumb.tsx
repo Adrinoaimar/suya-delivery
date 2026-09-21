@@ -79,6 +79,10 @@ export function Thumb({
         src={FALLBACK[variant]}
         alt=""
         aria-hidden="true"
+        width={variant === 'store' ? 640 : 512}
+        height={variant === 'store' ? 480 : 512}
+        loading="lazy"
+        decoding="async"
         referrerPolicy="no-referrer"
         className={cn('h-full w-full object-cover', rounded, className)}
       />

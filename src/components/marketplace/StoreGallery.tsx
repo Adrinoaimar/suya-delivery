@@ -57,6 +57,8 @@ export function StoreGallery({ gallery, storeName }: StoreGalleryProps) {
             referrerPolicy="no-referrer"
             width={1600}
             height={1200}
+            loading="eager"
+            decoding="async"
             className="mx-auto max-h-[70dvh] w-full object-contain"
           />
         )}

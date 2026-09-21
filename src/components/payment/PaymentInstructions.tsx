@@ -571,6 +571,10 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
               <img
                 src={intent.qrPayload}
                 alt="QR Yape generado para este pedido"
+                width={176}
+                height={176}
+                loading="eager"
+                decoding="async"
                 className="h-44 w-44"
               />
             </div>

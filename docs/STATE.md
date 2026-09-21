@@ -2,6 +2,18 @@
 
 Actualizado: 21 de septiembre de 2026 (`America/Lima`)
 
+## Imágenes SEO — candidato F33
+
+- Los 16 `<img>` renderizados tienen alt semántico/decorativo, dimensiones, carga y decodificación;
+  portadas críticas usan prioridad alta y miniaturas carga diferida.
+- No quedan hallazgos críticos o altos de imágenes. Los PNG productivos pesados se resuelven a WebP;
+  los artes de marketing grandes no están referenciados por la aplicación.
+- Typecheck, lint, 42 pruebas focales, build multiapp y bundle gate pasan. La suite base y CI de F32
+  están verdes; F33 requiere CI limpio porque el host local no pudo iniciar todos los workers.
+  Lighthouse móvil local:
+  SEO 100, accesibilidad 100, rendimiento 74–76, LCP 3.0–3.1 s y CLS 0.
+- Evidencia: `docs/seo/IMAGE-REPORT.md` y `docs/execution/F33.md`.
+
 ## SEO local Sullana — candidato F32
 
 - La web cliente entrega contenido estático y metadatos específicos para doce documentos públicos, suma

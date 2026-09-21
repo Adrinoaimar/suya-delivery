@@ -192,6 +192,8 @@ export default function MenuPage() {
                 referrerPolicy="no-referrer"
                 width={236}
                 height={64}
+                loading="eager"
+                decoding="async"
                 className="h-10 w-auto object-contain sm:h-11"
               />
             </Link>
@@ -230,6 +232,9 @@ export default function MenuPage() {
                   referrerPolicy="no-referrer"
                   width={1200}
                   height={720}
+                  loading="eager"
+                  decoding="async"
+                  fetchPriority="high"
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -241,6 +246,8 @@ export default function MenuPage() {
                       referrerPolicy="no-referrer"
                       width={256}
                       height={256}
+                      loading="eager"
+                      decoding="async"
                       className="max-h-32 w-auto max-w-[78%] rounded-2xl bg-white/95 object-contain p-4 shadow-soft"
                     />
                   ) : (
@@ -267,6 +274,8 @@ export default function MenuPage() {
                     referrerPolicy="no-referrer"
                     width={256}
                     height={256}
+                    loading="eager"
+                    decoding="async"
                     className="h-full w-full bg-white object-contain p-1"
                   />
                 ) : (
