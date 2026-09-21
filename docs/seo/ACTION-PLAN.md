@@ -8,6 +8,7 @@
 4. Corregir la jerarquía `h1` de tiendas y el texto del enlace de categorías.
 5. Reducir activos PNG grandes y reservar dimensiones de imágenes.
 6. Permitir el beacon que Cloudflare inyecta en la CSP.
+7. Aplicar `20260921100000_optimize_public_asset_urls.sql` para servir imágenes desde el dominio propio.
 
 ## P1 — siguiente iteración
 

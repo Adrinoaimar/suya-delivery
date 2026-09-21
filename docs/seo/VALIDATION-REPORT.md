@@ -12,6 +12,7 @@ Fecha: 2026-09-21
 - `npm run build:customer` con backend Supabase local de E2E: pasa.
 - `npm run build:apps` con configuración local de E2E: pasa; bundles aislados de cliente, rider y backoffice.
 - HTML construido: canonical, robots, OG, Twitter, JSON-LD, sitemap y robots presentes.
+- Contrato de migración: test pgTAP preparado para confirmar que Donde Joel no conserva URLs raw de GitHub.
 
 ## Medición local
 

@@ -31,6 +31,7 @@ Los valores de rendimiento corresponden a la medición móvil simulada de Lighth
 - `noindex,nofollow` para login, checkout, carrito, búsquedas, pedidos, perfil, QR de mesa y aplicaciones operativas.
 - `h1` semántico para la portada de tiendas y texto descriptivo para el enlace de categorías.
 - Dimensiones explícitas en imágenes, conversión WebP de los activos pesados y mapeo transparente de rutas antiguas.
+- Migración `20260921100000_optimize_public_asset_urls.sql` para retirar URLs `raw.githubusercontent.com` del catálogo productivo.
 - CSP compatible con el beacon de Cloudflare Web Analytics.
 
 ## Riesgo residual
