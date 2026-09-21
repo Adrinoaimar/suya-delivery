@@ -185,8 +185,8 @@ select ok(
   'cliente y guest pueden renovar un intento expirado'
 );
 select ok(
-  has_function_privilege('anon', 'public.create_culqi_payment_intent(uuid,text,text)', 'execute')
-    and has_function_privilege('authenticated', 'public.create_culqi_payment_intent(uuid,text,text)', 'execute'),
+  has_function_privilege('anon', 'public.create_culqi_payment_intent_secure(uuid,text,text)', 'execute')
+    and has_function_privilege('authenticated', 'public.create_culqi_payment_intent_secure(uuid,text,text)', 'execute'),
   'cliente y guest pueden iniciar orden Culqi con RPC'
 );
 select ok(
@@ -210,9 +210,9 @@ select ok(
   'solo backoffice verifica observaciones'
 );
 select ok(
-  has_function_privilege('anon', 'public.claim_culqi_payment(uuid,text,text)', 'execute')
-    and has_function_privilege('anon', 'public.authorize_culqi_payment(uuid,text,text,text,text)', 'execute')
-    and has_function_privilege('anon', 'public.fail_culqi_payment_claim(uuid,text,text,text)', 'execute'),
+  has_function_privilege('anon', 'public.claim_culqi_payment_secure(uuid,text,text)', 'execute')
+    and has_function_privilege('anon', 'public.authorize_culqi_payment_secure(uuid,text,text,text,text)', 'execute')
+    and has_function_privilege('anon', 'public.fail_culqi_payment_claim_secure(uuid,text,text,text)', 'execute'),
   'cliente y guest usan RPCs Culqi reservadas'
 );
 select ok(
@@ -250,8 +250,8 @@ select ok(
   'reservar creación Culqi usa security definer'
 );
 select ok(
-  has_function_privilege('anon', 'public.claim_culqi_order_creation(uuid,text,text)', 'execute')
-    and has_function_privilege('authenticated', 'public.claim_culqi_order_creation(uuid,text,text)', 'execute'),
+  has_function_privilege('anon', 'public.claim_culqi_order_creation_secure(uuid,text,text)', 'execute')
+    and has_function_privilege('authenticated', 'public.claim_culqi_order_creation_secure(uuid,text,text)', 'execute'),
   'cliente y guest pueden reservar una sola creación Culqi'
 );
 select ok(
@@ -391,17 +391,17 @@ select is(
   'el intento vencido queda cerrado como expirado'
 );
 select lives_ok(
-  $$ select * from public.create_culqi_payment_intent('a6300000-0000-0000-0000-000000000003', 'yape') $$,
+  $$ select * from public.create_culqi_payment_intent_secure('a6300000-0000-0000-0000-000000000003', 'yape') $$,
   'cliente uno crea intento Culqi de S/30'
 );
 select lives_ok(
-  $$ select * from public.claim_culqi_order_creation(
+  $$ select * from public.claim_culqi_order_creation_secure(
     (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000003'), 'yape'
   ) $$,
   'primer toque reserva la creación externa Culqi'
 );
 select throws_ok(
-  $$ select * from public.claim_culqi_order_creation(
+  $$ select * from public.claim_culqi_order_creation_secure(
     (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000003'), 'yape'
   ) $$,
   'payment attempt is already preparing',
