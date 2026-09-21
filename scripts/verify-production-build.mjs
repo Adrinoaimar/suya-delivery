@@ -4,6 +4,7 @@ import { isSafeSupabasePublishableKey } from './lib/public-supabase-key.mjs';
 
 const backend = process.env.VITE_BACKEND;
 const mapProvider = process.env.VITE_MAP_PROVIDER;
+const analyticsProvider = process.env.VITE_ANALYTICS_PROVIDER?.trim().toLowerCase();
 const supabaseUrl = process.env.VITE_SUPABASE_URL;
 const supabaseKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 const expectedProjectRef = process.env.VITE_EXPECTED_SUPABASE_PROJECT_REF;
@@ -22,6 +23,9 @@ if (!isSafeSupabasePublishableKey(supabaseKey)) {
 }
 if (!mapProvider || mapProvider === 'mock') {
   failures.push('VITE_MAP_PROVIDER debe seleccionar un proveedor real.');
+}
+if (analyticsProvider !== 'suya') {
+  failures.push('VITE_ANALYTICS_PROVIDER debe ser suya para mantener activo el medidor first-party.');
 }
 
 function walk(directory) {
@@ -49,6 +53,19 @@ for (const file of files) {
   const content = readFileSync(file, 'utf8');
   for (const pattern of forbiddenContent) {
     if (pattern.test(content)) failures.push(`${file}: contiene ${pattern}.`);
+  }
+}
+
+if (analyticsProvider === 'suya') {
+  const javascript = files
+    .filter((file) => extname(file) === '.js')
+    .map((file) => readFileSync(file, 'utf8'))
+    .join('\n');
+  if (!javascript.includes('analyticsConsent')) {
+    failures.push('El build productivo no contiene el consentimiento del medidor.');
+  }
+  if (!javascript.includes('record_suya_analytics_visit')) {
+    failures.push('El build productivo no contiene el registro first-party del medidor.');
   }
 }
 

@@ -100,7 +100,7 @@ export default function OperationsSummaryPage() {
                 </h2>
               </div>
               <p className="mt-1 text-sm text-suya-muted">
-                Visitantes únicos por día, con consentimiento y sin IP, nombre ni correo.
+                Navegadores únicos estimados por día, con consentimiento y sin IP, nombre ni correo.
               </p>
             </div>
             <button
@@ -124,7 +124,7 @@ export default function OperationsSummaryPage() {
           {analyticsState !== 'error' && (
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <div className="rounded-btn bg-suya-ivory p-4">
-                <p className="text-sm text-suya-muted">Visitantes únicos hoy</p>
+                <p className="text-sm text-suya-muted">Navegadores únicos estimados hoy</p>
                 <p className="mt-1 font-display text-3xl font-bold">{today}</p>
               </div>
               <div className="rounded-btn bg-suya-ivory p-4">
