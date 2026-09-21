@@ -101,13 +101,14 @@ select is(
 
 select set_config('role', 'postgres', true);
 insert into public.orders (
-  id, code, customer_id, restaurant_id, status, payment_method, subtotal, delivery_fee,
+  id, code, customer_id, restaurant_id, idempotency_key, status, payment_method, subtotal, delivery_fee,
   discount, customer_name, customer_phone, delivery_address, estimated_minutes,
   delivery_verified_at
 ) values (
   'c3500000-0000-0000-0000-000000000001', 'CASH001',
   'c3100000-0000-0000-0000-000000000001',
-  'c3300000-0000-0000-0000-000000000001', 'delivered', 'cash', 25, 5, 0,
+  'c3300000-0000-0000-0000-000000000001', 'c3700000-0000-0000-0000-000000000001',
+  'delivered', 'cash', 25, 5, 0,
   'Cliente Caja', '900000001', 'Dirección de prueba', 30, now()
 );
 insert into public.restaurant_tables (
