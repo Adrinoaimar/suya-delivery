@@ -9,13 +9,13 @@
 5. Reducir activos PNG grandes y reservar dimensiones de imágenes.
 6. Permitir el beacon que Cloudflare inyecta en la CSP.
 7. Aplicar `20260921100000_optimize_public_asset_urls.sql` para servir imágenes desde el dominio propio.
+8. Generar HTML estático con metadatos y Schema específicos para `/stores`, `/help` y los menús públicos.
 
 ## P1 — siguiente iteración
 
-1. Prerenderizar `/`, `/stores`, `/help` y menús públicos para que los rastreadores reciban contenido sin ejecutar React.
-2. Separar el bootstrap de autenticación/catálogo del primer render del home.
-3. Medir INP, LCP y CLS en una visita nueva y con catálogo productivo antes de cerrar el presupuesto de rendimiento.
-4. Validar en Search Console que `robots.txt` y el sitemap se sirven como `text/plain` y `application/xml` respectivamente.
+1. Separar el bootstrap de autenticación/catálogo del primer render del home.
+2. Medir INP, LCP y CLS en una visita nueva y con catálogo productivo antes de cerrar el presupuesto de rendimiento.
+3. Validar en Search Console que `robots.txt` y el sitemap se sirven como `text/plain` y `application/xml` respectivamente.
 
 ## Criterio de publicación
 

@@ -33,8 +33,9 @@ Los valores de rendimiento corresponden a la medición móvil simulada de Lighth
 - `h1` semántico para la portada de tiendas y texto descriptivo para el enlace de categorías.
 - Dimensiones explícitas en imágenes, conversión WebP de los activos pesados y mapeo transparente de rutas antiguas.
 - Migración `20260921100000_optimize_public_asset_urls.sql` para retirar URLs `raw.githubusercontent.com` del catálogo productivo.
+- HTML estático por ruta para `/stores`, `/help` y los cinco menús públicos del sitemap, con metadatos y Schema específicos antes de iniciar React.
 - CSP compatible con el beacon de Cloudflare Web Analytics.
 
 ## Riesgo residual
 
-La aplicación cliente sigue siendo una SPA y el bootstrap de React, fuentes y catálogo domina la primera carga móvil. La implementación mejora descubrimiento, metadatos y peso de imágenes; para llevar el rendimiento móvil a nivel alto todavía conviene prerenderizar la portada o separar el bootstrap del catálogo de la ruta inicial.
+La aplicación cliente mantiene un bootstrap de React, fuentes y catálogo que domina parte de la primera carga móvil. Las rutas públicas principales ya entregan HTML estático con metadatos; para llevar el rendimiento móvil a nivel alto todavía conviene separar el bootstrap de autenticación/catálogo del home y medir INP, LCP y CLS con catálogo productivo.

@@ -64,4 +64,8 @@ for (const app of requested) {
   }
 }
 
+if (requested.includes('customer')) {
+  await import('./prepare-customer-seo.mjs');
+}
+
 
