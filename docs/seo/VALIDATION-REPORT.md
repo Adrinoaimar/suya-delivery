@@ -6,7 +6,7 @@ Fecha: 2026-09-21
 
 - `npm run typecheck`: pasa.
 - `npm run lint`: pasa.
-- `npm test`: 76 archivos, 387 pruebas, pasa.
+- `npm test`: 77 archivos, 392 pruebas, pasa.
 - `npm run security:secrets`: pasa; no se detectaron secretos.
 - `git diff --check`: pasa.
 - `npm run build:customer` con backend Supabase local de E2E: pasa.
@@ -17,9 +17,9 @@ Fecha: 2026-09-21
   `/stores`, `/help`, cuatro páginas institucionales y cinco menús del sitemap.
 - Suite Supabase en CI: pasa con 632 pruebas, incluida la migración del contador anónimo y el reemplazo de assets públicos.
 - Contrato de migración: Donde Joel no conserva URLs raw de GitHub.
-- Gates CI del PR #45: frontend, E2E multiapp, base de datos, Android e iOS pasan.
+- Gates CI del PR #57: frontend, E2E multiapp, Android, iOS y simulador pasan.
 
-## Medición local
+## Medición Lighthouse
 
 Lighthouse móvil sobre el candidato confirmó rendimiento 76, accesibilidad 100, buenas prácticas 96 y
 SEO 100. Métricas: FCP 2.7 s, LCP 3.0 s, TBT 560 ms y CLS 0. El backend Supabase local no estaba
@@ -30,19 +30,33 @@ La repetición posterior a la auditoría de imágenes obtuvo 74 de rendimiento, 
 dentro de la variación de Lighthouse local. El auditor estático confirmó 16 imágenes, ninguna sin
 alt, dimensiones, política de carga o decodificación.
 
-La revalidación más reciente del dominio publicado, antes de aplicar el PR #45, registró rendimiento 45, accesibilidad 100, buenas prácticas 92 y SEO 83 en móvil (FCP 4.5 s, LCP 19.7 s, CLS 0.013, TBT 520 ms). El HTML público todavía no expone canonical; esto confirma que el dominio sirve la versión anterior y no se presenta como resultado de la tanda SEO.
+La revalidación del dominio publicado después de PR #54 registró en móvil: `/` rendimiento 76,
+accesibilidad 100, buenas prácticas 100, SEO 100, FCP 3.4 s, LCP 3.8 s, TBT 220 ms y CLS 0;
+`/stores/` rendimiento 58, SEO 100, FCP 4.2 s, LCP 7.8 s, TBT 340 ms y CLS 0. Lighthouse
+varía según red, caché y catálogo; LCP de `/stores/` sigue siendo la mejora técnica prioritaria.
+
+El build candidato de PR #57 añade `fetchpriority="high"`, carga eager en las dos primeras tarjetas
+visibles y precarga de portadas destacadas solo en Inicio. Las rutas secundarias eliminan esas
+precargas. No cambia diseño ni comportamiento.
 
 En el HTML estático generado localmente, `/stores` y `/help` obtuvieron SEO 100. La ruta de menú probada cae en `noindex` cuando Supabase no está disponible, comportamiento intencional para evitar indexar un menú inexistente; debe repetirse con catálogo productivo después de publicar.
 
 ## Verificación productiva
 
 `npm run verify:production` pasa sobre los artefactos candidatos con configuración pública sintética:
-697 archivos, sin simulaciones ni secretos. Esto valida el contenido del build; no demuestra el estado
+702 archivos, sin simulaciones ni secretos. Esto valida el contenido del build; no demuestra el estado
 del backend ni sustituye una publicación real con el entorno protegido.
 
 El medidor propio de visitas ya está publicado en producción: es first-party, opt-in, registra como máximo un visitante único por día y guarda únicamente un digest diario. El backoffice lo muestra a usuarios `platform_admin`.
 
-## Pendientes antes del cierre
+## Resultado de auditoría posterior
+
+- 12 URLs del sitemap responden 200, todas con canonical propio, `index,follow`, exactamente un H1 y JSON-LD válido.
+- Robots y sitemap responden 200 con tipos MIME correctos.
+- Rutas privadas mantienen 200 HTML con `noindex,nofollow` sin canonical; rutas desconocidas responden 404.
+- No quedan errores críticos o altos técnicos detectados. La autoridad externa no se puede validar desde el repositorio.
+
+## Pendientes externos
 
 - Publicar la tanda SEO tras revisión del diff y del nuevo PR.
 - Repetir Lighthouse en producción con catálogo disponible.
