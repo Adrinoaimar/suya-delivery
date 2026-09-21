@@ -29,7 +29,9 @@ describe('seguimiento visual del mapa', () => {
     expect(map).toContain('Ruta vial no disponible');
     expect(map).not.toContain('drawFallbackRoute');
     expect(map).toContain('sin inventar una línea recta');
-    expect(map).toContain('if (!navigation) return undefined');
+    expect(map).toContain('if (!navigation) {');
+    expect(map).toContain('lastRouteRequestRef.current = null');
+    expect(map).toContain('Una vista de cliente o de backoffice puede reutilizar el mismo componente');
     expect(map).toContain('Activar modo noche');
     expect(map).toContain('Activar modo día');
     expect(map).toContain('hasAppliedInitialViewRef');

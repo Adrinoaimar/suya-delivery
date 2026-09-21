@@ -283,6 +283,23 @@ export default function LeafletMap({
     const layer = routeLayerRef.current;
     if (!map || !layer) return undefined;
 
+    // Una vista de cliente o de backoffice puede reutilizar el mismo componente.
+    // Al salir de navegación se deben retirar inmediatamente la ruta vial y su estado;
+    // de lo contrario una ruta pendiente podría reaparecer sobre un mapa que no guía al rider.
+    if (!navigation) {
+      routeControllerRef.current?.abort();
+      routeControllerRef.current = null;
+      routeRequestIdRef.current += 1;
+      layer.clearLayers();
+      setRoutePlan(null);
+      setNextInstruction(null);
+      setRouteStatus('idle');
+      lastRouteRequestRef.current = null;
+      routeBoundsRef.current = null;
+      hasFittedRouteRef.current = false;
+      return undefined;
+    }
+
     const currentRider =
       routingRiderLat !== undefined && routingRiderLng !== undefined
         ? { lat: routingRiderLat, lng: routingRiderLng }
@@ -312,7 +329,6 @@ export default function LeafletMap({
     setRoutePlan(null);
     setNextInstruction(null);
     setRouteStatus('idle');
-    if (!navigation) return undefined;
 
     if (!routingStart || !routingEnd || distanceKm(routingStart, routingEnd) < 0.01) {
       return undefined;
