@@ -14,6 +14,7 @@ jobs:
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      VITE_CULQI_GATEWAY_ENABLED: ${{ secrets.VITE_CULQI_GATEWAY_ENABLED || 'false' }}
       CULQI_SECRET_KEY: ${{ secrets.CULQI_SECRET_KEY }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
@@ -27,11 +28,17 @@ jobs:
           set -euo pipefail
           test -n "$SUPABASE_ACCESS_TOKEN"
           test -n "$SUPABASE_DB_PASSWORD"
-          test -n "$CULQI_SECRET_KEY"
           test -n "$SUPABASE_SERVICE_ROLE_KEY"
           test -n "$ALLOWED_ORIGINS"
-          test -n "$CULQI_WEBHOOK_USERNAME"
-          test -n "$CULQI_WEBHOOK_PASSWORD"
+          case "$VITE_CULQI_GATEWAY_ENABLED" in
+            false) ;;
+            true)
+              test -n "$CULQI_SECRET_KEY"
+              test -n "$CULQI_WEBHOOK_USERNAME"
+              test -n "$CULQI_WEBHOOK_PASSWORD"
+              ;;
+            *) echo "VITE_CULQI_GATEWAY_ENABLED debe ser true o false." >&2; exit 1 ;;
+          esac
           for origin in \
             https://suyadelivery.com \
             https://rider.suyadelivery.com \
@@ -58,11 +65,13 @@ jobs:
           secret_file="$RUNNER_TEMP/suya-edge-functions.env"
           umask 077
           {
-            printf 'CULQI_SECRET_KEY=%s\n' "$CULQI_SECRET_KEY"
             printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SUPABASE_SERVICE_ROLE_KEY"
             printf 'ALLOWED_ORIGINS=%s\n' "$ALLOWED_ORIGINS"
-            printf 'CULQI_WEBHOOK_USERNAME=%s\n' "$CULQI_WEBHOOK_USERNAME"
-            printf 'CULQI_WEBHOOK_PASSWORD=%s\n' "$CULQI_WEBHOOK_PASSWORD"
+            if [ "$VITE_CULQI_GATEWAY_ENABLED" = "true" ]; then
+              printf 'CULQI_SECRET_KEY=%s\n' "$CULQI_SECRET_KEY"
+              printf 'CULQI_WEBHOOK_USERNAME=%s\n' "$CULQI_WEBHOOK_USERNAME"
+              printf 'CULQI_WEBHOOK_PASSWORD=%s\n' "$CULQI_WEBHOOK_PASSWORD"
+            fi
           } > "$secret_file"
           trap 'rm -f "$secret_file"' EXIT
           supabase secrets set \
