@@ -58,10 +58,10 @@ describe('SEO local de Suya Delivery', () => {
     const store = source('src/pages/customer/StoreDetailPage.tsx');
 
     for (const route of ['/login', '/checkout', '/cart', '/orders', '/profile', '/search']) {
-      expect(redirects).toContain(`${route} /_private/index.html 200`);
+      expect(redirects).toContain(`${route} /_private 200`);
     }
-    expect(redirects).toContain('/store/:id /_private/index.html 200');
-    expect(redirects).toContain('/menu/:slug/pedido/:id /_private/index.html 200');
+    expect(redirects).toContain('/store/:id /_private 200');
+    expect(redirects).toContain('/menu/:slug/pedido/:id /_private 200');
     expect(store).toMatch(/path={`\/store\/\${store\.id}`}\s+noIndex/);
   });
 

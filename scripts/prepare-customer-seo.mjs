@@ -414,8 +414,7 @@ for (const metadata of routeMetadata) {
   await writeFile(output, renderRoute(template, metadata));
 }
 
-const privateShell = path.join(customerDist, '_private', 'index.html');
-await mkdir(path.dirname(privateShell), { recursive: true });
+const privateShell = path.join(customerDist, '_private');
 await writeFile(privateShell, renderNoIndexShell(template));
 await writeFile(path.join(customerDist, '404.html'), renderNoIndexShell(template, { notFound: true }));
 
