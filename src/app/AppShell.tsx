@@ -1,4 +1,5 @@
 import { useLayoutEffect, type ReactNode } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { AnalyticsBootstrap } from '@/app/AnalyticsBootstrap';
 import { ScrollToTop } from '@/app/ScrollToTop';
 import { OfflineBanner } from '@/components/common/OfflineBanner';
@@ -23,6 +24,7 @@ export function AppShell({
 }) {
   const intro = useIntro();
   const reduceMotion = usePrefersReducedMotion();
+  const showIntro = Capacitor.isNativePlatform() && intro.visible;
 
   useLayoutEffect(() => {
     const root = document.documentElement;
@@ -46,7 +48,7 @@ export function AppShell({
       {children}
       <OfflineBanner />
       <ToastViewport />
-      {intro.visible && (
+      {showIntro && (
         <SuyaIntroLoader onFinish={intro.finish} minDuration={introDurationOverride()} />
       )}
     </>

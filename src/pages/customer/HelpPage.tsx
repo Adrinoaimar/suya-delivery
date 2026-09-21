@@ -48,6 +48,37 @@ export default function HelpPage() {
         title="Ayuda para pedidos y delivery en Sullana | Suya"
         description="Encuentra respuestas sobre pedidos, pagos, seguimiento, privacidad y uso de Suya Delivery en Sullana."
         path="/help"
+        schema={{
+          '@context': 'https://schema.org',
+          '@graph': [
+            {
+              '@type': 'WebPage',
+              name: 'Centro de ayuda de Suya Delivery',
+              description:
+                'Ayuda sobre pedidos, pagos, seguimiento y privacidad en Suya Delivery.',
+              url: 'https://suyadelivery.com/help',
+              isPartOf: { '@id': 'https://suyadelivery.com/#website' },
+              inLanguage: 'es-PE',
+            },
+            {
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                {
+                  '@type': 'ListItem',
+                  position: 1,
+                  name: 'Inicio',
+                  item: 'https://suyadelivery.com/',
+                },
+                {
+                  '@type': 'ListItem',
+                  position: 2,
+                  name: 'Centro de ayuda',
+                  item: 'https://suyadelivery.com/help',
+                },
+              ],
+            },
+          ],
+        }}
       />
       <div className="shell max-w-3xl space-y-4 py-4 lg:py-8">
         <h1 className="section-title">Centro de ayuda</h1>

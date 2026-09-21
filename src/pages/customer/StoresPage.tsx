@@ -73,6 +73,38 @@ export default function StoresPage() {
         title="Restaurantes y tiendas en Sullana | Suya"
         description="Explora restaurantes, tiendas y negocios locales de Sullana. Filtra por categoría, horario, calificación y costo de envío en Suya Delivery."
         path="/stores"
+        schema={{
+          '@context': 'https://schema.org',
+          '@graph': [
+            {
+              '@type': 'CollectionPage',
+              name: 'Restaurantes y tiendas en Sullana',
+              description:
+                'Directorio de restaurantes, tiendas y negocios locales disponibles en Sullana.',
+              url: 'https://suyadelivery.com/stores',
+              isPartOf: { '@id': 'https://suyadelivery.com/#website' },
+              about: { '@type': 'City', name: 'Sullana' },
+              inLanguage: 'es-PE',
+            },
+            {
+              '@type': 'BreadcrumbList',
+              itemListElement: [
+                {
+                  '@type': 'ListItem',
+                  position: 1,
+                  name: 'Inicio',
+                  item: 'https://suyadelivery.com/',
+                },
+                {
+                  '@type': 'ListItem',
+                  position: 2,
+                  name: 'Restaurantes y tiendas en Sullana',
+                  item: 'https://suyadelivery.com/stores',
+                },
+              ],
+            },
+          ],
+        }}
       />
       <div className="shell space-y-5 py-4 lg:py-8">
         <SectionHeader

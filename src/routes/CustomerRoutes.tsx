@@ -17,6 +17,18 @@ const OrderDetailPage = lazy(() => import('@/pages/customer/OrderDetailPage'));
 const OrderTrackPage = lazy(() => import('@/pages/customer/OrderTrackPage'));
 const ProfilePage = lazy(() => import('@/pages/customer/ProfilePage'));
 const HelpPage = lazy(() => import('@/pages/customer/HelpPage'));
+const AboutPage = lazy(() =>
+  import('@/pages/customer/PublicInfoPages').then((module) => ({ default: module.AboutPage })),
+);
+const ContactPage = lazy(() =>
+  import('@/pages/customer/PublicInfoPages').then((module) => ({ default: module.ContactPage })),
+);
+const PrivacyPage = lazy(() =>
+  import('@/pages/customer/PublicInfoPages').then((module) => ({ default: module.PrivacyPage })),
+);
+const TermsPage = lazy(() =>
+  import('@/pages/customer/PublicInfoPages').then((module) => ({ default: module.TermsPage })),
+);
 const TableQrPage = lazy(() => import('@/pages/customer/TableQrPage'));
 const MenuPage = lazy(() => import('@/pages/customer/MenuPage'));
 const GuestOrderPage = lazy(() => import('@/pages/customer/GuestOrderPage'));
@@ -84,6 +96,10 @@ export function CustomerRoutes() {
           <Route path="search" element={<SearchPage />} />
           <Route path="cart" element={<CartPage />} />
           <Route path="help" element={<HelpPage />} />
+          <Route path="nosotros" element={<AboutPage />} />
+          <Route path="contacto" element={<ContactPage />} />
+          <Route path="privacidad" element={<PrivacyPage />} />
+          <Route path="terminos" element={<TermsPage />} />
           <Route path="checkout" element={<CheckoutAccessRoute />} />
           <Route element={<RequireAccess anyOf={['customer']} />}>
             <Route path="orders" element={<OrdersPage />} />

@@ -11,12 +11,27 @@
 7. Aplicar `20260921100000_optimize_public_asset_urls.sql` para servir imágenes desde el dominio propio.
 8. Generar HTML estático con metadatos y Schema específicos para `/stores`, `/help` y los menús públicos.
 
-## P1 — siguiente iteración
+## P1 — inmediatamente después de publicar
 
-1. Separar el bootstrap de autenticación/catálogo del primer render del home.
-2. Medir INP, LCP y CLS en una visita nueva y con catálogo productivo antes de cerrar el presupuesto de rendimiento.
-3. Validar en Search Console que `robots.txt` y el sitemap se sirven como `text/plain` y `application/xml` respectivamente.
+1. Verificar el dominio en Google Search Console y enviar `https://suyadelivery.com/sitemap.xml`.
+2. Solicitar indexación de `/`, `/stores`, `/help`, las páginas institucionales y las cartas reales.
+3. Confirmar en inspección de URL que Google recibe canonical, HTML estático, Schema y respuesta 200.
+4. Crear o completar Google Business Profile solo con identidad, área de servicio, contacto y horarios
+   reales; no inventar una dirección abierta al público.
+5. Conseguir reseñas de clientes reales y menciones coherentes en directorios/medios locales. Nunca
+   comprar reseñas, intercambiar enlaces ni generar ubicaciones ficticias.
+
+## P2 — autoridad y rendimiento
+
+1. Publicar contenido útil y verificable para búsquedas locales concretas, enlazando negocios y cartas
+   disponibles; evitar páginas repetitivas creadas solo para palabras clave.
+2. Separar autenticación y servicios Supabase no críticos del paquete inicial de React.
+3. Medir INP, LCP y CLS con datos de campo durante 28 días y revisar consultas/CTR en Search Console.
+4. Revisar posiciones por dispositivo y ubicación sin usar búsquedas personales como única evidencia.
 
 ## Criterio de publicación
 
-No desplegar esta tanda SEO hasta revisar el diff y confirmar que las rutas del sitemap responden `200` en producción. El medidor propio de visitas sí está publicado en el commit `5b14b74` y no usa proveedores de terceros.
+No desplegar esta tanda SEO hasta revisar el diff, pasar `verify:production` y confirmar que las rutas
+del sitemap responden `200` en producción. La primera posición no es un criterio técnico garantizable;
+el objetivo medible es indexación correcta, crecimiento de impresiones, CTR, posiciones y pedidos
+orgánicos. El medidor propio de visitas ya publicado no usa proveedores de terceros.

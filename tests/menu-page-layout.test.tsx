@@ -56,7 +56,7 @@ describe('MenuPage', () => {
     await waitFor(() => {
       expect(document.head.querySelector('meta[name="robots"]')).toHaveAttribute(
         'content',
-        'index,follow',
+        'index,follow,max-image-preview:large',
       );
     });
   });
