@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   setDeviceActive: vi.fn(),
   rotateDevice: vi.fn(),
   listPaymentCandidates: vi.fn(),
+  verifyObservationByName: vi.fn(),
   savePaymentAccount: vi.fn(),
   notify: vi.fn(),
 }));
@@ -33,6 +34,7 @@ vi.mock('@/lib/services', async (importOriginal) => ({
     listPaymentCandidates: mocks.listPaymentCandidates,
     setObservationCode: vi.fn(),
     verifyObservation: vi.fn(),
+    verifyObservationByName: mocks.verifyObservationByName,
     savePaymentAccount: mocks.savePaymentAccount,
   },
   notificationService: { notify: mocks.notify },
@@ -81,6 +83,7 @@ beforeEach(() => {
   mocks.listStores.mockResolvedValue([restaurant]);
   mocks.listDevices.mockResolvedValue([]);
   mocks.listPaymentAccounts.mockResolvedValue([]);
+  mocks.verifyObservationByName.mockResolvedValue(true);
   mocks.listObservations.mockResolvedValue([
     {
       id: 'observation-1',
@@ -112,6 +115,38 @@ describe('WalletsOperationsPage', () => {
 
     await waitFor(() =>
       expect(screen.getByLabelText('Código visible en la constancia')).toBeInTheDocument(),
+    );
+  });
+
+  it('permite verificar y aprobar una observación por nombre', async () => {
+    render(<WalletsOperationsPage />);
+
+    const payerInput = await screen.findByLabelText('Nombre del pagador para Ana Uno');
+    expect(payerInput).toHaveValue('Ana Uno');
+    await act(async () => {
+      screen.getByRole('button', { name: 'Verificar y aprobar' }).click();
+    });
+
+    expect(mocks.verifyObservationByName).toHaveBeenCalledWith('observation-1', 'Ana Uno');
+    expect(mocks.notify).toHaveBeenCalledWith(
+      'Pago verificado y aprobado para preparación.',
+      'success',
+    );
+  });
+
+  it('rechaza un nombre que no coincide con el remitente observado', async () => {
+    render(<WalletsOperationsPage />);
+
+    const payerInput = await screen.findByLabelText('Nombre del pagador para Ana Uno');
+    fireEvent.change(payerInput, { target: { value: 'Otra Persona' } });
+    await act(async () => {
+      screen.getByRole('button', { name: 'Verificar y aprobar' }).click();
+    });
+
+    expect(mocks.verifyObservationByName).not.toHaveBeenCalled();
+    expect(mocks.notify).toHaveBeenCalledWith(
+      'El nombre debe coincidir con el remitente de la notificación.',
+      'warning',
     );
   });
 

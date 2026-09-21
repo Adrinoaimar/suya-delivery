@@ -7,6 +7,7 @@ import type {
   WalletObserverService,
   WalletPaymentCandidate,
   RestaurantPaymentAccount,
+  WalletObservationOrigin,
 } from './types';
 
 type DeviceRow = {
@@ -39,6 +40,7 @@ type ObservationRow = {
   verification?: unknown;
   verification_status?: unknown;
   status?: unknown;
+  origin_metadata?: unknown;
 };
 
 type CandidateRow = {
@@ -86,6 +88,29 @@ function numberValue(value: unknown, fallback = 0): number {
   return Number.isFinite(result) ? result : fallback;
 }
 
+function nullableNumber(value: unknown): number | null {
+  if (value == null || value === '') return null;
+  const result = Number(value);
+  return Number.isFinite(result) ? result : null;
+}
+
+function mapObservationOrigin(value: unknown): WalletObservationOrigin {
+  const source = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+  return {
+    packageName: nullableText(source.packageName),
+    appLabel: nullableText(source.appLabel),
+    channelId: nullableText(source.channelId),
+    category: nullableText(source.category),
+    groupKey: nullableText(source.groupKey),
+    tag: nullableText(source.tag),
+    notificationId: nullableNumber(source.notificationId),
+    flags: nullableNumber(source.flags),
+    contentFingerprint: nullableText(source.contentFingerprint),
+    operationKind: nullableText(source.operationKind),
+    notificationWhen: nullableText(source.notificationWhen),
+  };
+}
+
 function mapDevice(row: DeviceRow): WalletObserverDevice {
   return {
     id: text(row.id ?? row.device_id),
@@ -124,6 +149,7 @@ function mapObservation(row: ObservationRow): WalletObservation {
     observedAt: text(row.observed_at, new Date(0).toISOString()),
     receivedAt: nullableText(row.created_at),
     verification: text(row.verification_status ?? row.verification ?? row.status, 'unverified'),
+    origin: mapObservationOrigin(row.origin_metadata),
   };
 }
 
@@ -199,16 +225,36 @@ export class SupabaseWalletObserverService implements WalletObserverService {
 
   async listObservations(restaurantIds: string[]): Promise<WalletObservation[]> {
     if (restaurantIds.length === 0) return [];
-    const { data, error } = await this.client
+    const baseColumns =
+      'id, restaurant_id, device_id, provider, sender_name, code_last4, amount_cents, currency, observed_at, created_at, verification_status';
+    const withOrigin = await this.client
       .from('wallet_observations')
       .select(
-        'id, restaurant_id, device_id, provider, sender_name, code_last4, amount_cents, currency, observed_at, created_at, verification_status',
+        `${baseColumns}, origin_metadata`,
       )
       .in('restaurant_id', restaurantIds)
       .order('observed_at', { ascending: false })
       .limit(100);
-    if (error) throw error;
-    return (data ?? []).map((row) => mapObservation(row as ObservationRow));
+    if (!withOrigin.error) {
+      return (withOrigin.data ?? []).map((row) => mapObservation(row as ObservationRow));
+    }
+
+    // Durante el rollout puede existir un panel actualizado contra un proyecto
+    // cuya migración todavía no fue aplicada. En ese caso conservamos la lectura
+    // histórica y mostramos el origen vacío hasta que la columna esté disponible.
+    const missingOriginColumn = /origin_metadata|column .* does not exist|PGRST204/i.test(
+      withOrigin.error.message,
+    );
+    if (!missingOriginColumn) throw withOrigin.error;
+
+    const legacy = await this.client
+      .from('wallet_observations')
+      .select(baseColumns)
+      .in('restaurant_id', restaurantIds)
+      .order('observed_at', { ascending: false })
+      .limit(100);
+    if (legacy.error) throw legacy.error;
+    return (legacy.data ?? []).map((row) => mapObservation(row as ObservationRow));
   }
 
   async listPaymentCandidates(observationId: string): Promise<WalletPaymentCandidate[]> {
@@ -259,6 +305,19 @@ export class SupabaseWalletObserverService implements WalletObserverService {
     const { data, error } = await this.client.rpc('verify_wallet_payment', {
       p_observation_id: observationId,
       p_payment_attempt_id: paymentAttemptId,
+    });
+    if (error) throw new Error(error.message);
+    return data === true;
+  }
+
+  async verifyObservationByName(observationId: string, payerName: string): Promise<boolean> {
+    const normalizedName = payerName.trim();
+    if (!observationId || normalizedName.length < 2 || normalizedName.length > 120) {
+      throw new Error('Escribe el nombre completo del pagador.');
+    }
+    const { data, error } = await this.client.rpc('verify_wallet_payment_by_name', {
+      p_observation_id: observationId,
+      p_payer_name: normalizedName,
     });
     if (error) throw new Error(error.message);
     return data === true;

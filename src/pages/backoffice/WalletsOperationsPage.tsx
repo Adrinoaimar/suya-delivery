@@ -35,6 +35,14 @@ function providerLabel(value: string): string {
   return providerLabels[value.toLowerCase()] ?? value.replaceAll('_', ' ');
 }
 
+function operationKindLabel(value: string | null): string {
+  if (value === 'deposit') return 'Depósito';
+  if (value === 'transfer_received') return 'Transferencia recibida';
+  if (value === 'payment_received') return 'Pago recibido';
+  if (value === 'incoming_payment') return 'Ingreso recibido';
+  return 'No identificado';
+}
+
 function normalizedPersonName(value: string | null): string {
   return (value ?? '')
     .normalize('NFD')
@@ -83,6 +91,10 @@ export default function WalletsOperationsPage() {
   const [candidates, setCandidates] = useState<WalletPaymentCandidate[]>([]);
   const [candidateLoading, setCandidateLoading] = useState(false);
   const [verifyingAttemptId, setVerifyingAttemptId] = useState<string | null>(null);
+  const [manualPayerNames, setManualPayerNames] = useState<Record<string, string>>({});
+  const [manualVerifyingObservationId, setManualVerifyingObservationId] = useState<string | null>(
+    null,
+  );
   const [observationCodeId, setObservationCodeId] = useState<string | null>(null);
   const [observationCode, setObservationCode] = useState('');
   const [savingObservationCode, setSavingObservationCode] = useState(false);
@@ -200,6 +212,8 @@ export default function WalletsOperationsPage() {
     setCandidates([]);
     setCandidateLoading(false);
     setVerifyingAttemptId(null);
+    setManualPayerNames({});
+    setManualVerifyingObservationId(null);
     setObservationCodeId(null);
     setObservationCode('');
     setNewDevice(null);
@@ -390,6 +404,40 @@ export default function WalletsOperationsPage() {
       );
     } finally {
       setVerifyingAttemptId(null);
+    }
+  };
+
+  const verifyObservationByName = async (observation: WalletObservation) => {
+    const payerName = manualPayerNames[observation.id] ?? observation.senderName ?? '';
+    if (!payerName.trim()) {
+      notificationService.notify('Escribe el nombre que aparece en la notificación.', 'warning');
+      return;
+    }
+    if (normalizedPersonName(payerName) !== normalizedPersonName(observation.senderName)) {
+      notificationService.notify(
+        'El nombre debe coincidir con el remitente de la notificación.',
+        'warning',
+      );
+      return;
+    }
+    const restaurantAtStart = activeRestaurantId;
+    setManualVerifyingObservationId(observation.id);
+    try {
+      const verified = await walletObserverService.verifyObservationByName(
+        observation.id,
+        payerName,
+      );
+      if (!verified) throw new Error('El servidor no aprobó la operación.');
+      if (useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart) return;
+      notificationService.notify('Pago verificado y aprobado para preparación.', 'success');
+      await load();
+    } catch (cause) {
+      notificationService.notify(
+        cause instanceof Error ? cause.message : 'No pudimos verificar el pago por nombre.',
+        'danger',
+      );
+    } finally {
+      setManualVerifyingObservationId(null);
     }
   };
 
@@ -717,6 +765,14 @@ export default function WalletsOperationsPage() {
             Últimas observaciones
           </h2>
         </div>
+        <Card className="mb-3 border-suya-sun/50 bg-suya-sun-soft/45">
+          <p className="font-semibold">Verificación manual por nombre</p>
+          <p className="mt-1 text-sm text-suya-muted">
+            En cada notificación puedes corregir o confirmar el nombre del pagador. «Verificar y
+            aprobar» solo autoriza el pago si el servidor encuentra un único pedido pendiente con
+            el mismo nombre, monto, billetera, cuenta receptora y ventana de tiempo.
+          </p>
+        </Card>
         {loading ? (
           <Card role="status" className="p-8 text-center text-sm text-suya-muted">
             Cargando observaciones…
@@ -732,6 +788,19 @@ export default function WalletsOperationsPage() {
             <div className="divide-y divide-suya-mist">
               {visibleObservations.map((observation) => {
                 const status = observationStatus(observation.verification);
+                const origin = observation.origin ?? {
+                  packageName: null,
+                  appLabel: null,
+                  channelId: null,
+                  category: null,
+                  groupKey: null,
+                  tag: null,
+                  notificationId: null,
+                  flags: null,
+                  contentFingerprint: null,
+                  operationKind: null,
+                  notificationWhen: null,
+                };
                 return (
                   <div
                     key={observation.id}
@@ -749,6 +818,30 @@ export default function WalletsOperationsPage() {
                         Notificación: {dateLabel(observation.observedAt)} · Servidor:{' '}
                         {dateLabel(observation.receivedAt)}
                       </p>
+                      <details className="mt-1 text-xs text-suya-muted">
+                        <summary className="cursor-pointer font-semibold text-suya-green">
+                          Ver origen técnico
+                        </summary>
+                        <div className="mt-1 space-y-0.5 rounded-lg bg-suya-ivory p-2 font-mono text-[11px]">
+                          <p>Aplicación: {origin.appLabel ?? 'No disponible'}</p>
+                          <p>Paquete: {origin.packageName ?? 'No disponible'}</p>
+                          <p>Tipo: {operationKindLabel(origin.operationKind)}</p>
+                          <p>Canal: {origin.channelId ?? 'No disponible'}</p>
+                          <p>Categoría: {origin.category ?? 'No disponible'}</p>
+                          <p>
+                            Evento: {origin.notificationId ?? 'No disponible'}
+                            {origin.tag ? ` · etiqueta ${origin.tag}` : ''}
+                          </p>
+                          <p>Banderas Android: {origin.flags ?? 'No disponible'}</p>
+                          {origin.groupKey && <p>Grupo: {origin.groupKey}</p>}
+                          {origin.notificationWhen && (
+                            <p>Hora interna: {dateLabel(origin.notificationWhen)}</p>
+                          )}
+                          {origin.contentFingerprint && (
+                            <p>Huella: {origin.contentFingerprint.slice(0, 16)}…</p>
+                          )}
+                        </div>
+                      </details>
                     </div>
                     <p className="text-sm">
                       Código:{' '}
@@ -781,6 +874,42 @@ export default function WalletsOperationsPage() {
                     </div>
                     {observation.verification !== 'verified' && (
                       <div className="flex flex-wrap items-end gap-2 sm:col-span-4">
+                        {(observation.provider === 'yape' || observation.provider === 'lemon') && (
+                          <label className="min-w-52 flex-1 text-xs font-semibold text-suya-muted">
+                            Nombre del pagador
+                            <input
+                              aria-label={`Nombre del pagador para ${observation.senderName ?? observation.id}`}
+                              value={manualPayerNames[observation.id] ?? observation.senderName ?? ''}
+                              onChange={(event) => {
+                                setManualPayerNames((current) => ({
+                                  ...current,
+                                  [observation.id]: event.target.value,
+                                }));
+                              }}
+                              maxLength={120}
+                              autoComplete="off"
+                              placeholder="Ej. Clara Elena Navarro Tocto"
+                              className="mt-1 h-10 w-full rounded-btn border border-suya-border bg-white px-3 text-sm font-normal"
+                              disabled={manualVerifyingObservationId !== null}
+                            />
+                          </label>
+                        )}
+                        {(observation.provider === 'yape' || observation.provider === 'lemon') && (
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => void verifyObservationByName(observation)}
+                            disabled={
+                              manualVerifyingObservationId !== null ||
+                              verifyingAttemptId !== null
+                            }
+                          >
+                            {manualVerifyingObservationId === observation.id
+                              ? 'Verificando…'
+                              : 'Verificar y aprobar'}
+                          </Button>
+                        )}
                         {observation.codeLast4 && observationCodeId !== observation.id ? (
                           <Button
                             type="button"

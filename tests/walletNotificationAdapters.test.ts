@@ -10,6 +10,7 @@ describe('wallet notification adapters', () => {
   it('parses verified Lemon package with PEN amount and operation reference', () => {
     const result = parseWalletNotification({
       packageName: 'com.applemoncash',
+      notificationAppLabel: 'Lemon',
       title: 'Lemon',
       text: 'Recibiste S/ 35.90. Operación: LEMON-482',
       postedAt: '2026-09-06T12:00:00.000Z',
@@ -23,6 +24,35 @@ describe('wallet notification adapters', () => {
       code: 'LEMON-482',
       verification: 'unverified',
     });
+    expect(result?.origin).toMatchObject({
+      packageName: 'com.applemoncash',
+      appLabel: 'Lemon',
+      operationKind: 'incoming_payment',
+    });
+  });
+
+  it('keeps notification provenance metadata separate from payment identity', () => {
+    const result = parseWalletNotification({
+      packageName: 'com.applemoncash',
+      title: 'Lemon',
+      text: 'Recibiste S/ 1.00',
+      notificationChannel: 'payments',
+      notificationCategory: 'msg',
+      notificationGroup: 'wallet-events',
+      notificationId: 42,
+      notificationTag: 'payment',
+    });
+
+    expect(result?.origin).toMatchObject({
+      packageName: 'com.applemoncash',
+      channelId: 'payments',
+      category: 'msg',
+      groupKey: 'wallet-events',
+      notificationId: 42,
+      tag: 'payment',
+      operationKind: 'incoming_payment',
+    });
+    expect(result?.origin.contentFingerprint).toBeNull();
   });
 
   it('keeps Lemon USD observations unverified', () => {

@@ -12,6 +12,26 @@ export interface WalletNotificationInput {
   /** Stable local notification identifier; it is hashed into the fingerprint. */
   notificationKey?: string;
   postedAt?: string;
+  notificationChannel?: string;
+  notificationCategory?: string;
+  notificationGroup?: string;
+  notificationId?: number;
+  notificationTag?: string;
+  notificationAppLabel?: string;
+}
+
+export interface WalletNotificationOrigin {
+  packageName: string | null;
+  appLabel: string | null;
+  channelId: string | null;
+  category: string | null;
+  groupKey: string | null;
+  tag: string | null;
+  notificationId: number | null;
+  flags: number | null;
+  contentFingerprint: string | null;
+  operationKind: string | null;
+  notificationWhen: string | null;
 }
 
 export interface WalletObservedPayment {
@@ -24,6 +44,7 @@ export interface WalletObservedPayment {
   code: string | null;
   observedAt: string;
   fingerprint: string;
+  origin: WalletNotificationOrigin;
 }
 
 export interface WalletNotificationAdapter {
@@ -173,6 +194,14 @@ function hasMalformedAmountContinuation(text: string, end: number): boolean {
   return /^[.,]\d/.test(text.slice(end));
 }
 
+function classifyOperation(text: string): string {
+  const lower = text.toLocaleLowerCase('es-PE');
+  if (lower.includes('depósito') || lower.includes('deposit') || lower.includes('abono')) return 'deposit';
+  if (lower.includes('transferencia') || lower.includes('transfer')) return 'transfer_received';
+  if (lower.includes('pago') || lower.includes('payment')) return 'payment_received';
+  return 'incoming_payment';
+}
+
 export function createGenericWalletNotificationAdapter(
   config: Omit<WalletNotificationAdapter, 'provider'> & { provider?: 'generic' },
 ): WalletNotificationAdapter {
@@ -220,5 +249,18 @@ export function parseWalletNotification(
     code: codeMatch?.[1] ?? null,
     observedAt,
     fingerprint: fingerprint(adapter.provider, stable),
+    origin: {
+      packageName: input.packageName ?? null,
+      appLabel: input.notificationAppLabel ?? null,
+      channelId: input.notificationChannel ?? null,
+      category: input.notificationCategory ?? null,
+      groupKey: input.notificationGroup ?? null,
+      tag: input.notificationTag ?? null,
+      notificationId: Number.isInteger(input.notificationId) ? input.notificationId ?? null : null,
+      flags: null,
+      contentFingerprint: null,
+      operationKind: classifyOperation(text),
+      notificationWhen: null,
+    },
   };
 }
