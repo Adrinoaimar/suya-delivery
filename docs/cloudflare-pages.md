@@ -46,6 +46,8 @@ cambio de `pages.dev` a dominio propio. Documentación oficial:
 <https://developers.cloudflare.com/pages/get-started/direct-upload/> y
 <https://developers.cloudflare.com/pages/how-to/use-direct-upload-with-continuous-integration/>.
 
-La entrega sube y prueba primero tres previews. Al promover, guarda los deployments productivos
-anteriores y ejecuta rollback por API si falla una app o el smoke final. La primera publicación no
-tiene snapshot y exige activar conscientemente `allow_initial_release`.
+La entrega sube y prueba primero tres previews. Además valida que el cliente entregue `robots.txt`
+como `text/plain` y `sitemap.xml` como `application/xml`; si alguno vuelve a caer en el fallback
+HTML de la SPA, la release se detiene. Al promover, guarda los deployments productivos anteriores
+y ejecuta rollback por API si falla una app o el smoke final. La primera publicación no tiene
+snapshot y exige activar conscientemente `allow_initial_release`.

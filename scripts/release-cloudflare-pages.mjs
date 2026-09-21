@@ -89,6 +89,33 @@ async function smoke(origin, path) {
   }
 }
 
+async function smokeAsset(origin, path, expectedContentType, bodyPattern) {
+  const target = new URL(path, origin).href;
+  let lastStatus;
+  let lastContentType = '';
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    try {
+      const response = await fetch(target, { redirect: 'follow' });
+      lastStatus = response.status;
+      lastContentType = response.headers.get('content-type') || '';
+      const body = await response.text();
+      if (
+        response.status === 200 &&
+        lastContentType.toLowerCase().includes(expectedContentType) &&
+        bodyPattern.test(body)
+      ) {
+        return;
+      }
+    } catch {
+      lastStatus = 'sin conexión';
+    }
+    if (attempt < 5) await new Promise((resolve) => setTimeout(resolve, 2_000));
+  }
+  throw new Error(
+    `Smoke falló en ${target}: HTTP ${lastStatus}, content-type ${lastContentType || 'ausente'}.`,
+  );
+}
+
 async function rollback() {
   const failures = [];
   for (const app of [...published].reverse()) {
@@ -121,6 +148,10 @@ for (const app of appOrder) {
   const project = config.apps[app].cloudflareProject;
   await smoke(`https://${candidateBranch}.${project}.pages.dev`, config.apps[app].smokePath);
 }
+const candidateCustomerOrigin =
+  `https://${candidateBranch}.${config.apps.customer.cloudflareProject}.pages.dev`;
+await smokeAsset(candidateCustomerOrigin, '/robots.txt', 'text/plain', /User-agent:\s*\*/iu);
+await smokeAsset(candidateCustomerOrigin, '/sitemap.xml', 'application/xml', /<urlset\b[^>]*>/iu);
 
 try {
   for (const app of appOrder) {
@@ -130,6 +161,8 @@ try {
   for (const app of appOrder) {
     await smoke(config.apps[app].origin, config.apps[app].smokePath);
   }
+  await smokeAsset(config.apps.customer.origin, '/robots.txt', 'text/plain', /User-agent:\s*\*/iu);
+  await smokeAsset(config.apps.customer.origin, '/sitemap.xml', 'application/xml', /<urlset\b[^>]*>/iu);
 } catch (error) {
   try {
     await rollback();
