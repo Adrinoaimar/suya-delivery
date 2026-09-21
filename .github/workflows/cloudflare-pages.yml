@@ -73,7 +73,21 @@ jobs:
           npm run security:secrets
           npm run typecheck
           npm run lint
-          npm run test
+          # Las pruebas de dominio usan servicios mock; no deben heredar las
+          # credenciales/configuración productivas del job de publicación.
+          env \
+            -u VITE_BACKEND \
+            -u VITE_SUPABASE_URL \
+            -u VITE_SUPABASE_PUBLISHABLE_KEY \
+            -u VITE_EXPECTED_SUPABASE_PROJECT_REF \
+            -u VITE_ANALYTICS_PROVIDER \
+            -u VITE_CULQI_GATEWAY_ENABLED \
+            -u VITE_CULQI_PUBLIC_KEY \
+            -u VITE_ROUTING_URL \
+            -u VITE_CUSTOMER_APP_URL \
+            -u VITE_RIDER_APP_URL \
+            -u VITE_BACKOFFICE_APP_URL \
+            npm run test
 
       - name: Verificar Edge Functions de pagos y rutas
         run: npm run verify:payments -- --network
