@@ -140,6 +140,9 @@ function resolveWalletObserverService(): Promise<WalletObserverService> {
           async verifyObservation() {
             throw new Error('La verificación de billeteras requiere Supabase.');
           },
+          async verifyObservationByName() {
+            throw new Error('La verificación manual de billeteras requiere Supabase.');
+          },
           async listPaymentAccounts() {
             return [];
           },
@@ -180,6 +183,12 @@ export const walletObserverService: WalletObserverService = {
     return (await resolveWalletObserverService()).verifyObservation(
       observationId,
       paymentAttemptId,
+    );
+  },
+  async verifyObservationByName(observationId, payerName) {
+    return (await resolveWalletObserverService()).verifyObservationByName(
+      observationId,
+      payerName,
     );
   },
   async listPaymentAccounts(restaurantId) {
@@ -541,6 +550,13 @@ export const paymentService: PaymentService = {
   },
   declarePayment(orderId, code, payerDisplayName, guestAccessToken) {
     return resolvePaymentService().declarePayment(orderId, code, payerDisplayName, guestAccessToken);
+  },
+  confirmWalletPayment(orderId, payerDisplayName, guestAccessToken) {
+    return resolvePaymentService().confirmWalletPayment(
+      orderId,
+      payerDisplayName,
+      guestAccessToken,
+    );
   },
   getPaymentDeclaration(orderId, guestAccessToken) {
     return resolvePaymentService().getPaymentDeclaration(orderId, guestAccessToken);

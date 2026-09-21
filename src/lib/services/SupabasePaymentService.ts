@@ -1,8 +1,13 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
 import type { PaymentIntent, PaymentIntentStatus, PaymentMethod } from '@/types';
-import type { PaymentResult, PaymentService } from './types';
-import type { PaymentDeclaration } from './types';
+import type {
+  PaymentDeclaration,
+  PaymentResult,
+  PaymentService,
+  WalletPaymentConfirmation,
+  WalletPaymentConfirmationStatus,
+} from './types';
 import { readGuestOrderToken } from './guestOrderAccess';
 
 interface PaymentIntentRow {
@@ -25,6 +30,14 @@ interface PaymentReceiverLabelRow {
 
 interface PaymentDeclarationRow {
   declared_at?: unknown;
+  payer_display_name?: unknown;
+}
+
+interface WalletPaymentConfirmationRow {
+  confirmation_status?: unknown;
+  payment_attempt_id?: unknown;
+  observation_id?: unknown;
+  observed_at?: unknown;
   payer_display_name?: unknown;
 }
 
@@ -233,6 +246,39 @@ export class SupabasePaymentService implements PaymentService {
     });
     if (error) throw new Error(error.message);
     return data === true;
+  }
+
+  async confirmWalletPayment(
+    orderId: string,
+    payerDisplayName: string,
+    suppliedGuestAccessToken?: string | null,
+  ): Promise<WalletPaymentConfirmation> {
+    if (!orderId) throw new Error('No pudimos identificar el pedido.');
+    const normalizedPayer = payerDisplayName.trim();
+    if (normalizedPayer.length < 2 || normalizedPayer.length > 120) {
+      throw new Error('Escribe el nombre que aparece en la billetera.');
+    }
+    const { data, error } = await this.client.rpc('confirm_manual_wallet_payment', {
+      p_order_id: orderId,
+      p_payer_name: normalizedPayer,
+      p_guest_access_token: guestToken(orderId, suppliedGuestAccessToken),
+    });
+    if (error) throw new Error(error.message);
+    const row = firstRow(data) as WalletPaymentConfirmationRow | null;
+    const status = text(row?.confirmation_status) as WalletPaymentConfirmationStatus;
+    if (!['pending', 'authorized', 'ambiguous'].includes(status)) {
+      throw new Error('Supabase devolvió un estado de confirmación inválido.');
+    }
+    const attemptId = text(row?.payment_attempt_id);
+    if (!attemptId) throw new Error('Supabase no devolvió el intento de pago.');
+    return {
+      status,
+      attemptId,
+      observationId: typeof row?.observation_id === 'string' ? row.observation_id : null,
+      observedAt: typeof row?.observed_at === 'string' ? row.observed_at : null,
+      payerDisplayName:
+        typeof row?.payer_display_name === 'string' ? row.payer_display_name : null,
+    };
   }
 
   async getPaymentDeclaration(

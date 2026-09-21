@@ -162,6 +162,20 @@ export interface CreatedWalletObserverDevice extends WalletObserverDevice {
   deviceToken: string;
 }
 
+export interface WalletObservationOrigin {
+  packageName: string | null;
+  appLabel: string | null;
+  channelId: string | null;
+  category: string | null;
+  groupKey: string | null;
+  tag: string | null;
+  notificationId: number | null;
+  flags: number | null;
+  contentFingerprint: string | null;
+  operationKind: string | null;
+  notificationWhen: string | null;
+}
+
 export interface WalletObservation {
   id: string;
   restaurantId: string;
@@ -175,6 +189,7 @@ export interface WalletObservation {
   /** Hora en que el servidor recibió la observación; no es la hora bancaria. */
   receivedAt?: string | null;
   verification: string;
+  origin: WalletObservationOrigin;
 }
 
 export interface WalletPaymentCandidate {
@@ -212,6 +227,7 @@ export interface WalletObserverService {
   listPaymentCandidates(observationId: string): Promise<WalletPaymentCandidate[]>;
   setObservationCode(observationId: string, code: string): Promise<boolean>;
   verifyObservation(observationId: string, paymentAttemptId: string): Promise<boolean>;
+  verifyObservationByName(observationId: string, payerName: string): Promise<boolean>;
   listPaymentAccounts(restaurantId: string): Promise<RestaurantPaymentAccount[]>;
   savePaymentAccount(input: {
     restaurantId: string;
@@ -429,6 +445,16 @@ export interface PaymentDeclaration {
   payerDisplayName: string | null;
 }
 
+export type WalletPaymentConfirmationStatus = 'pending' | 'authorized' | 'ambiguous';
+
+export interface WalletPaymentConfirmation {
+  status: WalletPaymentConfirmationStatus;
+  attemptId: string;
+  observationId: string | null;
+  observedAt: string | null;
+  payerDisplayName: string | null;
+}
+
 export interface PaymentService {
   /** La confirmación final de pagos digitales siempre proviene del backend/webhook. */
   authorize(method: PaymentMethod, amount: number): Promise<PaymentResult>;
@@ -449,6 +475,11 @@ export interface PaymentService {
     payerDisplayName?: string | null,
     guestAccessToken?: string | null,
   ): Promise<boolean>;
+  confirmWalletPayment(
+    orderId: string,
+    payerDisplayName: string,
+    guestAccessToken?: string | null,
+  ): Promise<WalletPaymentConfirmation>;
   getPaymentDeclaration(
     orderId: string,
     guestAccessToken?: string | null,

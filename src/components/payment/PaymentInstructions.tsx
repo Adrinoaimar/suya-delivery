@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { CheckCircle2, Copy, ExternalLink, LoaderCircle, QrCode, ShieldCheck } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { notificationService, paymentService } from '@/lib/services';
+import type { WalletPaymentConfirmation, WalletPaymentConfirmationStatus } from '@/lib/services';
 import { openCulqiCheckout } from '@/lib/payments/culqiCheckout';
 import type { Order, PaymentIntent } from '@/types';
 import { formatDateTime, formatPrice, paymentLabel } from '@/utils/format';
@@ -49,6 +50,8 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   const [paymentDeclared, setPaymentDeclared] = useState(false);
   const [declarationKnown, setDeclarationKnown] = useState(false);
   const [declarationBusy, setDeclarationBusy] = useState(false);
+  const [walletConfirmationStatus, setWalletConfirmationStatus] =
+    useState<WalletPaymentConfirmationStatus | null>(null);
   const [gatewayBusy, setGatewayBusy] = useState(false);
   const [gatewayAwaitingWebhook, setGatewayAwaitingWebhook] = useState(false);
   const [manualBusy, setManualBusy] = useState(false);
@@ -69,6 +72,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
     setPaymentDeclared(false);
     setDeclarationKnown(false);
     setDeclarationBusy(false);
+    setWalletConfirmationStatus(null);
     setGatewayBusy(false);
     setGatewayAwaitingWebhook(false);
     setManualBusy(false);
@@ -126,6 +130,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
       .then((declaration) => {
         if (!active) return;
         setPaymentDeclared(Boolean(declaration));
+        setPayerDisplayName(declaration?.payerDisplayName ?? '');
         setDeclarationKnown(true);
       })
       .catch(() => {
@@ -161,6 +166,72 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
       setGatewayAwaitingWebhook(false);
     }
   }, [intent]);
+
+  const handleWalletConfirmationResult = useCallback((
+    result: WalletPaymentConfirmation,
+    notifyPending = true,
+  ) => {
+    setWalletConfirmationStatus(result.status);
+    if (result.status === 'authorized') {
+      setIntent((current) =>
+        current
+          ? {
+              ...current,
+              status: 'authorized',
+              providerReference:
+                result.observationId
+                  ? `wallet_observation:${result.observationId}`
+                  : current.providerReference,
+            }
+          : current,
+      );
+      setPaymentDeclared(true);
+      setDeclarationKnown(true);
+      notificationService.notify(
+        'Pago realizado y validado. El pedido quedó liberado para preparación.',
+        'success',
+      );
+      return;
+    }
+    setPaymentDeclared(true);
+    setDeclarationKnown(true);
+    if (result.status === 'ambiguous') {
+      notificationService.notify(
+        'Encontramos más de una notificación compatible. Caja debe revisar el pago antes de liberarlo.',
+        'warning',
+      );
+    } else if (notifyPending) {
+      notificationService.notify(
+        'Pago registrado. Estamos validando nombre, monto y hora con la notificación de Lemon.',
+        'success',
+      );
+    }
+  }, []);
+
+  useEffect(() => {
+    if (
+      walletConfirmationStatus !== 'pending' ||
+      intent?.status !== 'pending' ||
+      !payerDisplayName.trim()
+    ) {
+      return;
+    }
+    let active = true;
+    const confirm = () => {
+      void paymentService
+        .confirmWalletPayment(order.id, payerDisplayName.trim())
+        .then((result) => {
+          if (!active || result.status === 'pending') return;
+          handleWalletConfirmationResult(result, false);
+        })
+        .catch(() => undefined);
+    };
+    const timer = window.setInterval(confirm, 5_000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [handleWalletConfirmationResult, intent?.status, order.id, payerDisplayName, walletConfirmationStatus]);
 
   const gatewayStatus = intent?.status;
 
@@ -262,20 +333,23 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
     }
   };
 
-  const declareManualPayment = async () => {
+  const confirmWalletPayment = async () => {
     if (declarationBusy || paymentDeclared || !declarationKnown) return;
+    const normalizedPayerName = payerDisplayName.trim();
+    if (!normalizedPayerName) {
+      notificationService.notify(
+        'Escribe el nombre que aparece en la cuenta de Lemon que realizó el pago.',
+        'warning',
+      );
+      return;
+    }
     setDeclarationBusy(true);
     try {
-      const saved = await paymentService.declarePayment(order.id);
-      if (!saved) throw new Error('No pudimos registrar la declaración de pago.');
-      setPaymentDeclared(true);
-      notificationService.notify(
-        'Pago declarado. No generes otra referencia; el restaurante revisará el abono.',
-        'success',
-      );
+      const result = await paymentService.confirmWalletPayment(order.id, normalizedPayerName);
+      handleWalletConfirmationResult(result);
     } catch (cause) {
       notificationService.notify(
-        cause instanceof Error ? cause.message : 'No pudimos registrar la declaración de pago.',
+        cause instanceof Error ? cause.message : 'No pudimos validar el pago.',
         'danger',
       );
     } finally {
@@ -524,14 +598,6 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
-              size="sm"
-              onClick={() => void declareManualPayment()}
-              disabled={!declarationKnown || declarationBusy}
-            >
-              {declarationBusy ? 'Guardando…' : 'Ya pagué'}
-            </Button>
-            <Button
-              type="button"
               variant="secondary"
               size="sm"
               onClick={() => void renewManualIntent()}
@@ -549,27 +615,54 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
             <>
               <p className="text-sm font-semibold text-suya-carbon">¿Ya realizaste el pago?</p>
               <p className="mt-1 text-xs text-suya-muted">
-                Toca «Ya pagué» para conservar este intento en revisión. Luego podrás agregar el
-                código de seguridad u operación de tu constancia, si existe.
+                Escribe el nombre que aparece en Lemon. Suya comprobará en el servidor que coincida
+                con la notificación, el monto, la cuenta receptora y la hora del abono.
               </p>
-              {!manualRecoveryRequired && (
-                <Button
-                  type="button"
-                  className="mt-3"
-                  onClick={() => void declareManualPayment()}
-                  disabled={!declarationKnown || declarationBusy}
-                >
-                  {declarationBusy ? 'Guardando…' : 'Ya pagué'}
-                </Button>
-              )}
+              <label className="mt-3 block text-xs font-semibold text-suya-carbon">
+                Nombre del pagador en Lemon
+                <input
+                  aria-label="Nombre del pagador en Lemon"
+                  value={payerDisplayName}
+                  onChange={(event) => setPayerDisplayName(event.target.value)}
+                  autoComplete="name"
+                  maxLength={120}
+                  placeholder="Ej. Clara Elena Navarro Tocto"
+                  className="mt-1 h-11 w-full rounded-btn border border-suya-border bg-white px-3 text-sm font-normal outline-none focus:border-suya-green focus:ring-2 focus:ring-suya-green/20"
+                  disabled={declarationBusy}
+                />
+              </label>
+              <Button
+                type="button"
+                className="mt-3"
+                onClick={() => void confirmWalletPayment()}
+                disabled={!declarationKnown || declarationBusy}
+              >
+                {declarationBusy ? (
+                  <>
+                    <LoaderCircle className="h-4 w-4 animate-spin" aria-hidden="true" />
+                    Validando pago…
+                  </>
+                ) : (
+                  'Confirmar pago'
+                )}
+              </Button>
             </>
           ) : (
             <>
-              <p className="text-sm font-semibold text-suya-carbon">Pago en revisión</p>
+              <p className="flex items-center gap-2 text-sm font-semibold text-suya-carbon">
+                {walletConfirmationStatus === 'pending' && (
+                  <LoaderCircle className="h-4 w-4 animate-spin text-suya-green" aria-hidden="true" />
+                )}
+                {walletConfirmationStatus === 'pending'
+                  ? 'Validando pago…'
+                  : walletConfirmationStatus === 'ambiguous'
+                    ? 'Pago requiere revisión de Caja'
+                    : 'Pago en revisión'}
+              </p>
               <p className="mt-1 text-xs text-suya-muted">
-                No generes otra referencia. El restaurante revisará monto, cuenta receptora y
-                constancia antes de confirmar. El código ayuda a buscar el movimiento, pero no lo
-                confirma por sí solo.
+                {walletConfirmationStatus === 'pending'
+                  ? 'Estamos esperando la notificación de Lemon y comparando nombre, monto y hora. No vuelvas a pagar.'
+                  : 'No generes otra referencia. El restaurante conserva la evidencia y puede revisar el pago desde Suya Caja.'}
               </p>
               <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
                 <label className="min-w-0 flex-1 text-xs font-semibold text-suya-carbon">
@@ -634,7 +727,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
             ? 'Este pago fue devuelto y no debe repetirse desde esta referencia.'
             : intent.provider === 'culqi'
             ? 'El servidor confirma el pago. Suya conserva la referencia del pedido y no libera por una notificación local.'
-            : 'El estado cambia cuando el restaurante revisa el abono. Una constancia o notificación solo ayuda a localizarlo y no confirma el pago por sí sola.'}
+            : 'Suya valida en el servidor el nombre, monto, cuenta receptora y hora contra la notificación de Lemon. Si no hay una coincidencia exacta, Caja debe revisar el abono.'}
         </p>
       </div>
     </Card>

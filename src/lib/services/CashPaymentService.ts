@@ -33,6 +33,10 @@ export class CashPaymentServiceImpl implements PaymentService {
     throw new Error('La declaración de pago requiere Supabase configurado.');
   }
 
+  async confirmWalletPayment(): Promise<never> {
+    throw new Error('La confirmación de billetera requiere Supabase configurado.');
+  }
+
   async getPaymentDeclaration(): Promise<null> {
     throw new Error('La declaración de pago requiere Supabase configurado.');
   }

@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   chargeCard: vi.fn(),
   submitEvidence: vi.fn(),
   declarePayment: vi.fn(),
+  confirmWalletPayment: vi.fn(),
   getPaymentDeclaration: vi.fn(),
   notify: vi.fn(),
   openCulqiCheckout: vi.fn(),
@@ -21,6 +22,7 @@ vi.mock('@/lib/services', () => ({
     chargeCard: mocks.chargeCard,
     submitEvidence: mocks.submitEvidence,
     declarePayment: mocks.declarePayment,
+    confirmWalletPayment: mocks.confirmWalletPayment,
     getPaymentDeclaration: mocks.getPaymentDeclaration,
   },
   notificationService: { notify: mocks.notify },
@@ -67,6 +69,13 @@ afterEach(() => {
 beforeEach(() => {
   mocks.getPaymentDeclaration.mockResolvedValue(null);
   mocks.declarePayment.mockResolvedValue(true);
+  mocks.confirmWalletPayment.mockResolvedValue({
+    status: 'pending',
+    attemptId: 'attempt-1',
+    observationId: null,
+    observedAt: null,
+    payerDisplayName: 'Otra Persona',
+  });
 });
 
 describe('PaymentInstructions', () => {
@@ -74,7 +83,7 @@ describe('PaymentInstructions', () => {
     render(<PaymentInstructions order={order(pendingIntent, 'cancelled')} />);
 
     expect(screen.queryByText(/Paga con/)).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Ya pagué' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Confirmar pago' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Aún no pagué' })).not.toBeInTheDocument();
     await waitFor(() => expect(mocks.getIntent).not.toHaveBeenCalled());
     expect(mocks.getIntent).not.toHaveBeenCalled();
@@ -126,7 +135,7 @@ describe('PaymentInstructions', () => {
     expect(screen.getByText('Pago verificado')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Pago verificado con Yape' })).toBeInTheDocument();
     expect(screen.queryByText('QR del negocio')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Ya pagué' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Confirmar pago' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Aún no pagué' })).not.toBeInTheDocument();
   });
 
@@ -161,11 +170,20 @@ describe('PaymentInstructions', () => {
   });
 
   it('limpia la constancia al cambiar el intento del mismo pedido', async () => {
-    mocks.declarePayment.mockResolvedValueOnce(true);
+    mocks.confirmWalletPayment.mockResolvedValueOnce({
+      status: 'pending',
+      attemptId: 'attempt-1',
+      observationId: null,
+      observedAt: null,
+      payerDisplayName: 'Otra Persona',
+    });
     const { rerender } = render(<PaymentInstructions order={order(pendingIntent)} />);
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Ya pagué' })).toBeEnabled());
-    await act(async () => screen.getByRole('button', { name: 'Ya pagué' }).click());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled());
+    fireEvent.change(screen.getByLabelText('Nombre del pagador en Lemon'), {
+      target: { value: 'Otra Persona' },
+    });
+    await act(async () => screen.getByRole('button', { name: 'Confirmar pago' }).click());
     fireEvent.change(screen.getByLabelText('Código de constancia'), { target: { value: '384' } });
     await act(async () => {
       screen.getByRole('button', { name: 'Vincular código' }).click();
@@ -182,20 +200,32 @@ describe('PaymentInstructions', () => {
       />,
     );
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Ya pagué' })).toBeEnabled());
-    await act(async () => screen.getByRole('button', { name: 'Ya pagué' }).click());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled());
+    fireEvent.change(screen.getByLabelText('Nombre del pagador en Lemon'), {
+      target: { value: 'Otra Persona' },
+    });
+    await act(async () => screen.getByRole('button', { name: 'Confirmar pago' }).click());
     await waitFor(() => expect(screen.getByLabelText('Código de constancia')).toHaveValue(''));
-    expect(screen.getByRole('button', { name: 'Guardar pagador' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Guardar pagador' })).toBeEnabled();
     expect(screen.queryByRole('button', { name: 'Cambiar código' })).not.toBeInTheDocument();
     expect(screen.getByText('SUYA-EF56GH78')).toBeInTheDocument();
   });
 
   it('permite corregir el código de la constancia mientras sigue pendiente', async () => {
-    mocks.declarePayment.mockResolvedValueOnce(true);
+    mocks.confirmWalletPayment.mockResolvedValueOnce({
+      status: 'pending',
+      attemptId: 'attempt-1',
+      observationId: null,
+      observedAt: null,
+      payerDisplayName: 'Otra Persona',
+    });
     render(<PaymentInstructions order={order(pendingIntent)} />);
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Ya pagué' })).toBeEnabled());
-    await act(async () => screen.getByRole('button', { name: 'Ya pagué' }).click());
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled());
+    fireEvent.change(screen.getByLabelText('Nombre del pagador en Lemon'), {
+      target: { value: 'Otra Persona' },
+    });
+    await act(async () => screen.getByRole('button', { name: 'Confirmar pago' }).click());
     const input = screen.getByLabelText('Código de constancia');
     expect(input).toHaveAttribute('inputmode', 'numeric');
     fireEvent.change(input, { target: { value: '384' } });
@@ -208,25 +238,24 @@ describe('PaymentInstructions', () => {
       screen.getByRole('button', { name: 'Cambiar código' }).click();
     });
     expect(screen.getByLabelText('Código de constancia')).toHaveValue('');
-    expect(screen.getByRole('button', { name: 'Guardar pagador' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Guardar pagador' })).toBeEnabled();
     fireEvent.change(screen.getByLabelText('Código de constancia'), { target: { value: '482' } });
     expect(screen.getByRole('button', { name: 'Vincular código' })).toBeEnabled();
   });
 
-  it('permite declarar que pagó otra persona sin inventar una confirmación', async () => {
+  it('permite confirmar el nombre del pagador sin inventar una autorización', async () => {
     render(<PaymentInstructions order={order(pendingIntent)} />);
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Ya pagué' })).toBeEnabled());
-    await act(async () => screen.getByRole('button', { name: 'Ya pagué' }).click());
-    fireEvent.change(screen.getByLabelText('Nombre del pagador (opcional)'), {
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled());
+    fireEvent.change(screen.getByLabelText('Nombre del pagador en Lemon'), {
       target: { value: 'Otra Persona' },
     });
-    await act(async () => screen.getByRole('button', { name: 'Guardar pagador' }).click());
+    await act(async () => screen.getByRole('button', { name: 'Confirmar pago' }).click());
 
-    expect(mocks.declarePayment).toHaveBeenCalledWith('order-1', null, 'Otra Persona');
-    expect(screen.getByText('Pago en revisión')).toBeInTheDocument();
+    expect(mocks.confirmWalletPayment).toHaveBeenCalledWith('order-1', 'Otra Persona');
+    expect(screen.getByText('Validando pago…')).toBeInTheDocument();
     expect(mocks.notify).toHaveBeenCalledWith(
-      'Pagador guardado. Caja podrá usar este dato para revisar el pago.',
+      'Pago registrado. Estamos validando nombre, monto y hora con la notificación de Lemon.',
       'success',
     );
   });
@@ -234,15 +263,24 @@ describe('PaymentInstructions', () => {
   it('preserva la revisión y no ofrece un segundo cobro si el intento vencido ya fue declarado', async () => {
     const expiredIntent = { ...pendingIntent, expiresAt: '2020-01-01T00:00:00.000Z' };
     mocks.getPaymentDeclaration.mockResolvedValueOnce(null);
-    mocks.declarePayment.mockResolvedValueOnce(true);
+    mocks.confirmWalletPayment.mockResolvedValueOnce({
+      status: 'pending',
+      attemptId: 'attempt-1',
+      observationId: null,
+      observedAt: null,
+      payerDisplayName: 'Otra Persona',
+    });
     render(<PaymentInstructions order={order(expiredIntent)} />);
 
-    const paid = await screen.findByRole('button', { name: 'Ya pagué' });
+    const paid = await screen.findByRole('button', { name: 'Confirmar pago' });
     await waitFor(() => expect(paid).toBeEnabled());
+    fireEvent.change(screen.getByLabelText('Nombre del pagador en Lemon'), {
+      target: { value: 'Otra Persona' },
+    });
     await act(async () => paid.click());
 
-    expect(mocks.declarePayment).toHaveBeenCalledWith('order-1');
-    expect(screen.getByText('Pago en revisión')).toBeInTheDocument();
+    expect(mocks.confirmWalletPayment).toHaveBeenCalledWith('order-1', 'Otra Persona');
+    expect(screen.getByText('Validando pago…')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Aún no pagué' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Generar nueva referencia' })).not.toBeInTheDocument();
   });
@@ -275,7 +313,7 @@ describe('PaymentInstructions', () => {
         'Este pago fue devuelto. No vuelvas a pagar desde esta pantalla; contacta al restaurante para revisar el siguiente paso.',
       ),
     ).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Ya pagué' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Confirmar pago' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Aún no pagué' })).not.toBeInTheDocument();
     expect(screen.queryByText('QR del negocio')).not.toBeInTheDocument();
   });
