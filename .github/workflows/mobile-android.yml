@@ -80,6 +80,14 @@ jobs:
           npm run security:secrets
           npm run build:mobile:roles
 
+      - name: Auditar APKs generados
+        shell: bash
+        run: |
+          set -euo pipefail
+          aapt2_path=$(find "$ANDROID_HOME/build-tools" -type f -name aapt2 -print | sort -V | tail -1)
+          test -n "$aapt2_path"
+          npm run verify:android-apks -- --aapt2 "$aapt2_path"
+
       - name: Publicar APK de repartidor
         uses: actions/upload-artifact@v4
         with:
