@@ -19,6 +19,7 @@ jobs:
       CI: 'true'
       VITE_BACKEND: supabase
       VITE_MAP_PROVIDER: osm
+      VITE_ANALYTICS_PROVIDER: suya
       VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
       VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
       VITE_EXPECTED_SUPABASE_PROJECT_REF: ${{ vars.VITE_EXPECTED_SUPABASE_PROJECT_REF }}
@@ -50,6 +51,7 @@ jobs:
           # production values are only needed by the deployment/build steps.
           env -u VITE_CULQI_GATEWAY_ENABLED \
             -u VITE_CULQI_PUBLIC_KEY \
+            -u VITE_ANALYTICS_PROVIDER \
             -u VITE_CUSTOMER_APP_URL \
             -u VITE_RIDER_APP_URL \
             -u VITE_BACKOFFICE_APP_URL \

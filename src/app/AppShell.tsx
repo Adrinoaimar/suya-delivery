@@ -14,7 +14,13 @@ function introDurationOverride(): number | undefined {
   return Number.isFinite(value) && value > 0 ? value : undefined;
 }
 
-export function AppShell({ children }: { children: ReactNode }) {
+export function AppShell({
+  children,
+  analyticsEnabled = false,
+}: {
+  children: ReactNode;
+  analyticsEnabled?: boolean;
+}) {
   const intro = useIntro();
   const reduceMotion = usePrefersReducedMotion();
 
@@ -36,7 +42,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         Saltar al contenido
       </a>
       <ScrollToTop />
-      <AnalyticsBootstrap />
+      {analyticsEnabled && <AnalyticsBootstrap />}
       {children}
       <OfflineBanner />
       <ToastViewport />

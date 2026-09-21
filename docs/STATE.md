@@ -2,6 +2,18 @@
 
 Actualizado: 16 de septiembre de 2026 (`America/Lima`)
 
+## Medidor propio de visitas — 21 de septiembre de 2026
+
+- Customer web registra visitantes únicos por día solo después de consentimiento explícito.
+- El navegador conserva un UUID aleatorio; Supabase recibe únicamente un digest SHA-256 limitado
+  al día local `America/Lima`. No se guardan IP, nombres, correos, rutas ni pedidos.
+- La migración `20260920170000_first_party_analytics.sql` fue aplicada y registrada en producción.
+- La RPC de registro es idempotente por visitante/día; la RPC agregada exige `platform_admin`.
+- El aviso de consentimiento queda activo en Customer web; no existe histórico anterior porque la
+  analítica permanecía desactivada.
+
+La evidencia detallada está en `docs/execution/F31.md`.
+
 ## Hotfix pairing de observador — 20 de septiembre de 2026
 
 - La RPC `create_wallet_observer_pairing` fallaba en producción por ambigüedad entre las

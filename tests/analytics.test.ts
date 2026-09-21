@@ -6,22 +6,23 @@ import {
   setAnalyticsConsent,
   track,
 } from '@/lib/analytics';
-describe('analítica desactivada por privacidad', () => {
+describe('analítica propia y opt-in', () => {
   beforeEach(() => {
-    vi.stubEnv('VITE_ANALYTICS_PROVIDER', 'ga4');
-    vi.stubEnv('VITE_GA4_MEASUREMENT_ID', 'G-TEST123');
+    vi.stubEnv('VITE_ANALYTICS_PROVIDER', 'none');
     document.getElementById('suya-ga4-script')?.remove();
   });
 
-  it('no carga etiquetas ni registra eventos sin consentimiento', () => {
+  it('permanece desactivada sin proveedor configurado', () => {
     expect(analyticsConfigured()).toBe(false);
     track('page_view', { page_path: '/stores' });
     expect(getAnalyticsConsent()).toBeNull();
     expect(document.getElementById('suya-ga4-script')).toBeNull();
   });
 
-  it('no persiste campañas ni activa etiquetas aunque haya configuración heredada', () => {
-    const campaign = captureCampaign('?utm_source=ads&utm_campaign=' + 'x'.repeat(200) + '&email=private@example.com');
+  it('no persiste campañas ni activa etiquetas de terceros', () => {
+    const campaign = captureCampaign(
+      '?utm_source=ads&utm_campaign=' + 'x'.repeat(200) + '&email=private@example.com',
+    );
     expect(campaign).toEqual({});
 
     setAnalyticsConsent('granted');

@@ -34,6 +34,15 @@ export interface StoreService {
   search(query: string): Promise<{ stores: Store[]; products: Product[] }>;
 }
 
+export interface AnalyticsDailyMetric {
+  visitDay: string;
+  uniqueVisitors: number;
+}
+
+export interface AnalyticsService {
+  listDaily(days?: number): Promise<AnalyticsDailyMetric[]>;
+}
+
 export interface CreateAppOfferInput {
   restaurantId: string | null;
   title: string;

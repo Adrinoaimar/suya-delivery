@@ -9,7 +9,11 @@ import {
   type AnalyticsConsent,
 } from '@/lib/analytics';
 
-function ConsentBanner({ onChange }: { onChange: (value: Exclude<AnalyticsConsent, null>) => void }) {
+function ConsentBanner({
+  onChange,
+}: {
+  onChange: (value: Exclude<AnalyticsConsent, null>) => void;
+}) {
   return (
     <aside
       role="dialog"
@@ -18,8 +22,8 @@ function ConsentBanner({ onChange }: { onChange: (value: Exclude<AnalyticsConsen
     >
       <p className="font-display text-sm font-bold text-suya-carbon">Ayúdanos a mejorar Suya</p>
       <p className="mt-1 text-xs leading-5 text-suya-muted">
-        Usamos analítica anónima para medir visitas y pedidos. No activamos publicidad personalizada
-        y puedes cambiar esta decisión borrando la preferencia del navegador.
+        Usamos analítica anónima para medir visitas. No activamos publicidad personalizada y puedes
+        cambiar esta decisión borrando la preferencia del navegador.
       </p>
       <div className="mt-3 flex flex-wrap justify-end gap-2">
         <button
@@ -53,7 +57,6 @@ export function AnalyticsBootstrap() {
     if (consent === 'granted') {
       track('page_view', {
         page_path: `${location.pathname}${location.search}`,
-        page_location: window.location.href,
         ...campaign,
       });
     }
@@ -69,7 +72,6 @@ export function AnalyticsBootstrap() {
         if (value === 'granted') {
           track('page_view', {
             page_path: `${window.location.pathname}${window.location.search}`,
-            page_location: window.location.href,
             ...captureCampaign(window.location.search),
           });
         }
@@ -77,4 +79,3 @@ export function AnalyticsBootstrap() {
     />
   );
 }
-

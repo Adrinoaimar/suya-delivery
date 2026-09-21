@@ -18,6 +18,7 @@ import { SupabaseOfferServiceImpl } from './SupabaseOfferService';
 import { SupabaseWalletObserverService } from './SupabaseWalletObserverService';
 import { SupabaseRestaurantAccountService } from './SupabaseRestaurantAccountService';
 import { SupabaseRestaurantRiderService } from './SupabaseRestaurantRiderService';
+import { SupabaseAnalyticsService } from './SupabaseAnalyticsService';
 import { CashPaymentServiceImpl } from './CashPaymentService';
 import { SupabasePaymentService } from './SupabasePaymentService';
 import { Capacitor } from '@capacitor/core';
@@ -37,7 +38,28 @@ import type {
   RestaurantRiderService,
   PaymentService,
   CashRegisterService,
+  AnalyticsService,
 } from './types';
+
+let resolvedAnalyticsService: Promise<AnalyticsService> | null = null;
+function resolveAnalyticsService(): Promise<AnalyticsService> {
+  if (resolvedAnalyticsService) return resolvedAnalyticsService;
+  resolvedAnalyticsService =
+    import.meta.env.VITE_BACKEND === 'supabase'
+      ? Promise.resolve(new SupabaseAnalyticsService())
+      : Promise.resolve({
+          async listDaily() {
+            return [];
+          },
+        });
+  return resolvedAnalyticsService;
+}
+
+export const analyticsService: AnalyticsService = {
+  async listDaily(days) {
+    return (await resolveAnalyticsService()).listDaily(days);
+  },
+};
 
 let resolvedRestaurantAccountService: Promise<RestaurantAccountService> | null = null;
 function resolveRestaurantAccountService(): Promise<RestaurantAccountService> {
