@@ -49,7 +49,13 @@ if (!functionsOnly) {
 
 async function checkCustomerAnalyticsBundle() {
   try {
-    const response = await fetch(origin, {
+    // Cloudflare can briefly serve the previous HTML shell after a Pages
+    // promotion. A cache-busting audit URL must inspect the deployment that
+    // was just promoted, otherwise a valid release is rolled back by a stale
+    // cached index.html.
+    const auditUrl = new URL(origin);
+    auditUrl.searchParams.set('_suya_live_audit', Date.now().toString());
+    const response = await fetch(auditUrl, {
       redirect: 'follow',
       signal: AbortSignal.timeout(10_000),
     });
