@@ -25,6 +25,21 @@ Los valores de rendimiento corresponden a la medición móvil simulada de Lighth
 
 La revalidación más reciente de `/` en el dominio publicado antes del PR #45 registró 45 de rendimiento, 100 de accesibilidad, 92 de buenas prácticas y 83 de SEO (FCP 4.5 s, LCP 19.7 s, CLS 0.013, TBT 520 ms). El HTML público no expuso canonical; por tanto, estos valores describen la versión aún publicada y no la versión corregida del PR.
 
+## Estado productivo revalidado
+
+La medición productiva más reciente registró `/` con rendimiento 61, SEO 100, accesibilidad 100,
+buenas prácticas 100, FCP 3.7 s, LCP 4.3 s, TBT 570 ms y CLS 0.011. `/stores/` registró rendimiento
+56, SEO 100, FCP 3.5 s, LCP 8.4 s, TBT 480 ms y CLS 0. Son mediciones puntuales; el dato oficial
+de Core Web Vitals requiere percentil 75 de usuarios reales.
+
+El candidato de PR #57 medido en `/stores/` obtuvo rendimiento 79, SEO/accesibilidad/buenas prácticas
+100, FCP 2.6 s, LCP 3.0 s, TBT 440 ms y CLS 0.
+
+La repetición final en producción obtuvo `/` 68 de rendimiento y `/stores/` 53; SEO, accesibilidad
+y buenas prácticas permanecieron en 100. FCP/LCP fueron 3.7/4.3 s en `/` y 5.0/13.1 s en `/stores/`.
+Es una medición puntual: el catálogo mantiene variación de red y carga, y el LCP de tiendas queda
+como prioridad de rendimiento, no como bloqueo de indexabilidad.
+
 ## Correcciones realizadas en el repositorio
 
 - Metadatos estáticos y dinámicos para título, descripción, canonical, robots, Open Graph y Twitter.
@@ -39,16 +54,22 @@ La revalidación más reciente de `/` en el dominio publicado antes del PR #45 r
 - CSP compatible con el beacon de Cloudflare Web Analytics.
 - Contenido local visible y útil sobre delivery en Sullana, proceso de compra, pagos y seguimiento,
   sin inventar cobertura, tiempos, reseñas, teléfonos ni direcciones.
+- Shell HTML inicial ampliado con contenido local factual, pasos de pedido, pagos, seguimiento,
+  H2 y enlaces internos para que los rastreadores reciban contexto antes de ejecutar React.
+- Tres páginas locales de intención: `/delivery-sullana/`, `/comida-a-domicilio-sullana/` y
+  `/restaurantes-delivery-sullana/`, con contenido factual, Schema y enlaces internos.
 - Páginas públicas de confianza para Sobre Suya, Contacto, Privacidad y Términos, enlazadas desde un
   footer visible en móvil y escritorio.
-- HTML estático específico para doce documentos públicos (la portada y once rutas derivadas), incluidas las cinco cartas publicadas y las
-  páginas de confianza; cada ruta declara título, descripción, canonical, `h1` y JSON-LD propios.
+- HTML estático específico para quince documentos públicos (la portada y catorce rutas derivadas), incluidas las tres páginas locales,
+  cinco cartas publicadas y las páginas de confianza; cada ruta declara título, descripción, canonical, `h1` y JSON-LD propios.
 - Schema de `Organization`, `WebSite`, `WebPage`, `Service`, `CollectionPage`, `Restaurant` y
   `BreadcrumbList` donde corresponde. No se añadió marcado de reseñas ni datos comerciales no
   comprobados.
 - `llms.txt` y controles de release que comprueban `robots.txt`, sitemap, HTML estático y tipos MIME.
 - La animación inicial dejó de bloquear la web y se conserva únicamente en la aplicación nativa.
 - Fuentes latinas locales precargadas, con caché inmutable, y contraste AA corregido en el footer.
+- Portadas de negocios visibles priorizadas con `fetchpriority="high"`; Inicio precarga solo tres
+  portadas destacadas conocidas y las rutas secundarias las eliminan. PR #57 no modifica la UI.
 
 ## Competencia observada para búsquedas locales
 
@@ -58,19 +79,16 @@ resultados visibles favorecieron agregadores, directorios, redes sociales y pág
 contenido y autoridad histórica. La implementación resuelve la brecha on-page y técnica; superar esa
 autoridad requiere señales externas auténticas y tiempo de rastreo.
 
-## Medición del candidato local
+## Revalidación posterior
 
-Lighthouse móvil sobre el build candidato obtuvo 76 de rendimiento, 100 de accesibilidad, 96 de buenas
-prácticas y 100 de SEO. Registró FCP 2.7 s, LCP 3.0 s, TBT 560 ms y CLS 0. La medición usa un backend
-Supabase local no iniciado; sirve como comparación técnica, no como dato de campo ni resultado
-productivo. Frente a la versión publicada medida antes de esta tanda, el SEO sube de 83 a 100 y el LCP
-local baja de 19.7 s a 3.0 s.
+La auditoría HTTP posterior recorrió las 15 URLs del sitemap candidato: todas devuelven 200, canonical propio,
+`index,follow`, un H1 y JSON-LD parseable. Rutas privadas conservan `noindex,nofollow`, sin canonical;
+una ruta desconocida devuelve 404. No quedan errores críticos o altos técnicos en el alcance revisado.
 
 ## Riesgo residual
 
-La aplicación cliente mantiene un bootstrap de React y Supabase que domina el trabajo de CPU inicial.
-Una optimización adicional exige separar servicios y autenticación del paquete crítico, y se mantiene
-fuera de esta tanda para no introducir regresiones operativas. El puesto 1 no puede garantizarse desde
-el código: faltan indexación efectiva, Search Console, una ficha de empresa legítima, reseñas reales,
-citaciones locales y enlaces editoriales. Después de publicar se deben medir INP, LCP y CLS con datos
-de campo y catálogo productivo.
+La aplicación cliente mantiene un bootstrap de React y Supabase que domina parte del trabajo de CPU
+inicial. Separar servicios y autenticación exige una tanda propia para no introducir regresiones.
+El puesto 1 no puede garantizarse desde código: faltan indexación efectiva, Search Console, ficha de
+empresa legítima, reseñas reales, citaciones locales y enlaces editoriales. Después de publicar PR #57
+se deben medir INP, LCP y CLS con datos de campo.

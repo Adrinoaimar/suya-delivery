@@ -34,6 +34,8 @@ interface ThumbProps {
   rounded?: string;
   /** Ajuste visual para logotipos: conserva el activo completo dentro de la tarjeta. */
   fit?: ThumbFit;
+  /** Prioriza solo la imagen principal que forma el LCP de listados públicos. */
+  priority?: boolean;
 }
 
 /**
@@ -48,6 +50,7 @@ export function Thumb({
   textClassName,
   rounded = 'rounded-xl',
   fit = 'cover',
+  priority = false,
 }: ThumbProps) {
   const [failed, setFailed] = useState(false);
   const resolved = assetUrl(src);
@@ -59,7 +62,8 @@ export function Thumb({
         alt={name}
         width={variant === 'store' ? 640 : 512}
         height={variant === 'store' ? 480 : 512}
-        loading="lazy"
+        loading={priority ? 'eager' : 'lazy'}
+        fetchPriority={priority ? 'high' : 'auto'}
         decoding="async"
         referrerPolicy="no-referrer"
         onError={() => setFailed(true)}

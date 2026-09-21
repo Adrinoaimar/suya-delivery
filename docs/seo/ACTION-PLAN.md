@@ -10,6 +10,9 @@
 6. Permitir el beacon que Cloudflare inyecta en la CSP.
 7. Aplicar `20260921100000_optimize_public_asset_urls.sql` para servir imágenes desde el dominio propio.
 8. Generar HTML estático con metadatos y Schema específicos para `/stores`, `/help` y los menús públicos.
+9. Priorizar portadas visibles y precargar activos destacados solo en Inicio para reducir descubrimiento tardío de LCP.
+10. Ampliar el shell HTML público con respuestas locales y enlaces internos, sin duplicar datos comerciales no verificados.
+11. Añadir páginas locales de intención para `delivery en Sullana`, `comida a domicilio en Sullana` y `restaurantes con delivery en Sullana`, con contenido factual y enlazado interno.
 
 ## P1 — inmediatamente después de publicar
 
@@ -35,3 +38,9 @@ No desplegar esta tanda SEO hasta revisar el diff, pasar `verify:production` y c
 del sitemap responden `200` en producción. La primera posición no es un criterio técnico garantizable;
 el objetivo medible es indexación correcta, crecimiento de impresiones, CTR, posiciones y pedidos
 orgánicos. El medidor propio de visitas ya publicado no usa proveedores de terceros.
+
+## Estado 2026-09-21
+
+La revalidación posterior no encontró errores críticos o altos técnicos. PR #57 tiene CI completo
+verde, pero sigue pendiente de autorización para merge/publicación. `/stores/` conserva LCP mayor a
+2.5 s en medición puntual y queda como prioridad de rendimiento.

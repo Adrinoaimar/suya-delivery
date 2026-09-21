@@ -15,7 +15,8 @@ Fecha: 2026-09-21 (`America/Lima`)
 Las imágenes informativas tienen texto alternativo contextual. Los activos decorativos conservan
 `alt=""` y, cuando corresponde, `aria-hidden`. Las portadas visibles al abrir una ficha o carta usan
 carga inmediata y prioridad alta; miniaturas y contenido bajo el pliegue usan carga diferida. Todas
-las imágenes reservan ancho/alto para evitar CLS.
+las imágenes reservan ancho/alto para evitar CLS. PR #57 prioriza las dos primeras tarjetas destacadas
+de Inicio y precarga tres portadas WebP conocidas; rutas secundarias no reciben esas precargas.
 
 ## Formatos y peso
 

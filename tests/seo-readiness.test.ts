@@ -28,12 +28,32 @@ describe('SEO local de Suya Delivery', () => {
     expect(content).toContain('política de privacidad');
   });
 
+  it('prioriza las dos primeras portadas del listado visible de inicio', () => {
+    const home = source('src/pages/customer/HomePage.tsx');
+    const template = source('apps/customer/index.html');
+    const generator = source('scripts/prepare-customer-seo.mjs');
+
+    expect(home).toContain('featured.map((store, index) =>');
+    expect(home).toContain('priorityImage={index < 2}');
+    expect(template).toContain('cover-cevicheria-background.webp');
+    expect(template).toContain('fetchpriority="high"');
+    expect(generator).toContain('no precargarlas en rutas secundarias');
+  });
+
   it('publica sitemap, robots y guía para rastreadores de IA', () => {
     const sitemap = source('public/sitemap.xml');
     const robots = source('public/robots.txt');
     const llms = source('public/llms.txt');
 
-    for (const route of ['/nosotros', '/contacto', '/privacidad', '/terminos']) {
+    for (const route of [
+      '/delivery-sullana',
+      '/comida-a-domicilio-sullana',
+      '/restaurantes-delivery-sullana',
+      '/nosotros',
+      '/contacto',
+      '/privacidad',
+      '/terminos',
+    ]) {
       expect(sitemap).toContain(`https://suyadelivery.com${route}/`);
     }
     expect(sitemap).toContain('<lastmod>2026-09-21</lastmod>');
@@ -48,6 +68,9 @@ describe('SEO local de Suya Delivery', () => {
     expect(generator).toContain('contenido SEO estático');
     expect(generator).toContain("title: `Menú de ${name} en Sullana | Suya Delivery`");
     expect(generator).toContain("breadcrumbs('stores', 'Restaurantes y tiendas en Sullana')");
+    expect(generator).toContain("route: 'delivery-sullana'");
+    expect(generator).toContain("route: 'comida-a-domicilio-sullana'");
+    expect(generator).toContain("route: 'restaurantes-delivery-sullana'");
     expect(generator).toContain('renderNoIndexShell');
     expect(generator).toContain("path.join(customerDist, '404.html')");
     expect(generator).toContain('const canonical = `${siteOrigin}/${metadata.route}/`');

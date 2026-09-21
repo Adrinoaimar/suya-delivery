@@ -44,6 +44,25 @@ describe('StoreCard', () => {
     );
   });
 
+  it('prioriza la portada principal solo cuando la tarjeta forma parte del LCP', () => {
+    const { rerender } = render(
+      <MemoryRouter>
+        <StoreCard store={store} priorityImage />
+      </MemoryRouter>,
+    );
+
+    const hero = screen.getByRole('img', { name: 'Andá Paya' });
+    expect(hero).toHaveAttribute('loading', 'eager');
+    expect(hero).toHaveAttribute('fetchpriority', 'high');
+
+    rerender(
+      <MemoryRouter>
+        <StoreCard store={store} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole('img', { name: 'Andá Paya' })).toHaveAttribute('loading', 'lazy');
+  });
+
   it('usa el logo como visual principal cuando la ficha no tiene portada', () => {
     render(
       <MemoryRouter>

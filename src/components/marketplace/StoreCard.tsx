@@ -14,6 +14,7 @@ interface StoreCardProps {
   store: Store;
   layout?: 'grid' | 'row';
   className?: string;
+  priorityImage?: boolean;
 }
 
 /** Dato operativo suelto: se lee de un vistazo, sin cadenas separadas por puntos. */
@@ -26,7 +27,7 @@ function MetaPill({ icon, children }: { icon: ReactNode; children: ReactNode }) 
   );
 }
 
-export function StoreCard({ store, layout = 'grid', className }: StoreCardProps) {
+export function StoreCard({ store, layout = 'grid', className, priorityImage = false }: StoreCardProps) {
   const favorites = useUserStore((state) => state.favorites);
   const toggleFavorite = useUserStore((state) => state.toggleFavorite);
   const isFavorite = favorites.includes(store.id);
@@ -60,6 +61,7 @@ export function StoreCard({ store, layout = 'grid', className }: StoreCardProps)
           src={visualSrc}
           variant="store"
           fit={visualFit}
+          priority={priorityImage}
           rounded="rounded-none"
           className={!hasVisualImage ? '!p-8 sm:!p-10' : undefined}
           textClassName={stacked ? 'text-3xl' : 'text-2xl'}

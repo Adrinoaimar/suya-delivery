@@ -50,9 +50,16 @@ function breadcrumbs(route, name) {
   };
 }
 
-function staticPage({ key, eyebrow, title, paragraphs, links = [] }) {
+function staticPage({ key, eyebrow, title, paragraphs, sections = [], links = [] }) {
   return `<main data-static-seo="${key}" class="shell py-8"><article><p>${eyebrow}</p><h1>${title}</h1>${paragraphs
     .map((paragraph) => `<p>${paragraph}</p>`)
+    .join('')}${sections
+    .map(
+      (section) =>
+        `<section><h2>${section.title}</h2>${section.paragraphs
+          .map((paragraph) => `<p>${paragraph}</p>`)
+          .join('')}${section.items ? `<ul>${section.items.map((item) => `<li>${item}</li>`).join('')}</ul>` : ''}</section>`,
+    )
     .join('')}<nav aria-label="Enlaces relacionados">${links
     .map((link) => `<a href="${link.href}">${link.label}</a>`)
     .join('')}</nav></article></main>`;
@@ -165,6 +172,96 @@ const menuRoutes = [
   { slug: 'la-waka-menu', name: 'La Waka' },
 ];
 
+const landingRoutes = [
+  {
+    route: 'delivery-sullana',
+    title: 'Delivery en Sullana: comida y compras a domicilio | Suya',
+    description:
+      'Encuentra delivery de comida, restaurantes, tiendas y negocios locales en Sullana con Suya. Revisa carta, total, pago y seguimiento antes de confirmar.',
+    name: 'Delivery en Sullana',
+    type: 'Service',
+    eyebrow: 'Servicio local',
+    heading: 'Delivery en Sullana para pedir comida y compras locales',
+    paragraphs: [
+      'Suya Delivery conecta restaurantes, tiendas y negocios incorporados de Sullana, Piura, en un solo catálogo. Explora opciones disponibles, revisa la información del comercio y confirma tu pedido desde la web.',
+      'La oferta depende de los negocios incorporados y de su disponibilidad. Puedes encontrar comida peruana, cevicherías, pollerías, comida rápida, bebidas y compras locales cuando cada comercio publica su catálogo y habilita pedidos.',
+    ],
+    sections: [
+      {
+        title: 'Cómo pedir delivery en Sullana con Suya',
+        paragraphs: [
+          'Empieza en el directorio, elige una categoría o busca un negocio, abre su carta y agrega productos al carrito. En el checkout revisa cantidades, dirección, método de pago y total. Después de confirmar, consulta el estado del pedido desde Mis pedidos.',
+        ],
+        items: ['Explora negocios disponibles.', 'Compara carta, horario, calificación y envío.', 'Confirma después de revisar el total.', 'Sigue preparación y reparto desde la plataforma.'],
+      },
+      {
+        title: 'Pagos y seguimiento del pedido',
+        paragraphs: [
+          'Suya presenta únicamente los métodos configurados por cada comercio. En pagos digitales verifica destinatario, monto y referencia. No compartas contraseñas ni códigos fuera del flujo oficial. Si el repartidor comparte GPS durante la etapa correspondiente, podrás consultar su ubicación.',
+        ],
+      },
+    ],
+  },
+  {
+    route: 'comida-a-domicilio-sullana',
+    title: 'Comida a domicilio en Sullana | Suya Delivery',
+    description:
+      'Pide comida a domicilio en Sullana desde Suya: revisa restaurantes, cartas, precios, horarios, pagos y seguimiento del pedido en un solo lugar.',
+    name: 'Comida a domicilio en Sullana',
+    type: 'CollectionPage',
+    eyebrow: 'Comida a domicilio',
+    heading: 'Comida a domicilio en Sullana con información clara',
+    paragraphs: [
+      'Busca opciones de comida a domicilio en Sullana sin saltar entre publicaciones. Suya reúne cartas de negocios incorporados para que compares la información disponible y confirmes tu pedido con el total visible.',
+      'Explora categorías como comida peruana, cevicherías, pollerías, comida rápida y bebidas conforme cada negocio habilita su catálogo. Los productos, precios y horarios pertenecen a cada comercio y se actualizan según la información que publica.',
+    ],
+    sections: [
+      {
+        title: 'Pedido de comida paso a paso',
+        paragraphs: [
+          'Abre una carta, selecciona productos y cantidades, revisa el carrito y completa la dirección. Suya muestra el método de pago configurado y el total antes de confirmar. Conserva la referencia dentro de la plataforma para consultar el pedido.',
+        ],
+        items: ['Revisa ingredientes, cantidades y precio.', 'Confirma dirección y referencias.', 'Verifica destinatario y monto en pagos digitales.', 'Consulta estados mientras el restaurante prepara y entrega.'],
+      },
+      {
+        title: 'Comida local y delivery responsable',
+        paragraphs: [
+          'Suya opera como plataforma tecnológica para negocios incorporados. La disponibilidad real depende del comercio, su horario, catálogo y cobertura. Consulta la carta vigente en cada pedido y evita compartir datos de acceso por canales externos.',
+        ],
+      },
+    ],
+  },
+  {
+    route: 'restaurantes-delivery-sullana',
+    title: 'Restaurantes con delivery en Sullana | Suya',
+    description:
+      'Explora restaurantes con delivery en Sullana, compara cartas, horarios, calificaciones y envío, y confirma tu pedido con Suya Delivery.',
+    name: 'Restaurantes con delivery en Sullana',
+    type: 'CollectionPage',
+    eyebrow: 'Restaurantes locales',
+    heading: 'Restaurantes con delivery en Sullana',
+    paragraphs: [
+      'Suya reúne restaurantes incorporados de Sullana para consultar sus cartas desde una sola web. Filtra negocios y revisa la información disponible antes de elegir dónde pedir.',
+      'Consulta restaurantes de comida peruana, cevicherías, pollerías, comida rápida y otras categorías que se incorporen a Suya. El directorio permite revisar negocios disponibles, ordenar por recomendación, tiempo, calificación o envío y filtrar los que están abiertos.',
+    ],
+    sections: [
+      {
+        title: 'Qué revisar antes de confirmar',
+        paragraphs: [
+          'Abre la carta del restaurante, revisa productos y cantidades, consulta el costo de envío y comprueba el total. En checkout verifica dirección, método de pago y referencia. La información comercial debe confirmarse en cada pedido porque puede cambiar.',
+        ],
+        items: ['Carta y productos disponibles.', 'Horario y estado de recepción.', 'Calificación y costo de envío.', 'Total, destinatario y referencia del pago.'],
+      },
+      {
+        title: 'Seguimiento del delivery',
+        paragraphs: [
+          'Después de confirmar, consulta el estado en Mis pedidos. Cuando existe reparto activo y el repartidor comparte GPS, Suya muestra la ubicación durante la etapa correspondiente. La dirección exacta se solicita solo cuando hace falta completar la entrega.',
+        ],
+      },
+    ],
+  },
+];
+
 const routeMetadata = [
   {
     route: 'stores',
@@ -195,6 +292,26 @@ const routeMetadata = [
       paragraphs: [
         'Explora negocios incorporados a Suya Delivery y revisa categorías, horario, calificación y costo de envío disponible.',
         'La disponibilidad depende del catálogo y la zona habilitada por cada comercio de Sullana.',
+      ],
+      sections: [
+        {
+          title: 'Encuentra comida y compras cerca de ti',
+          paragraphs: [
+            'El directorio reúne restaurantes, tiendas y otros negocios locales que publican su catálogo en Suya. Puedes revisar opciones de comida peruana, cevicherías, pollerías, comida rápida, bebidas y productos de uso diario cuando estén disponibles en la plataforma.',
+            'Cada ficha conserva la información del comercio: productos, precios, horario, calificación y costo de envío configurado. Los datos pueden cambiar durante el día; revisa la ficha y el total del carrito antes de confirmar.',
+          ],
+        },
+        {
+          title: 'Cómo elegir un negocio en Sullana',
+          paragraphs: [
+            'Usa las categorías para acotar la búsqueda, ordena por recomendación, tiempo, calificación o costo de envío y activa los filtros de negocios abiertos o locales. El resultado depende del catálogo y de la cobertura habilitada en ese momento.',
+          ],
+          items: [
+            'Compara el catálogo antes de agregar productos.',
+            'Confirma dirección, método de pago y total en el checkout.',
+            'Consulta el seguimiento desde Mis pedidos después de confirmar.',
+          ],
+        },
       ],
       links: [
         { href: '/', label: 'Delivery en Sullana' },
@@ -231,6 +348,25 @@ const routeMetadata = [
         'Consulta cómo hacer un pedido, revisar pagos habilitados, seguir una entrega y proteger tu ubicación.',
         'Suya muestra el total y la referencia del pago dentro del pedido. Verifica siempre el destinatario antes de confirmar.',
       ],
+      sections: [
+        {
+          title: 'Pedir comida o compras a domicilio',
+          paragraphs: [
+            'Elige un restaurante o tienda del directorio, revisa su carta, agrega productos al carrito y confirma la dirección de entrega. Antes de finalizar, comprueba cantidades, precio, costo de envío y total. La disponibilidad de cada negocio depende de su horario, catálogo y zona habilitada.',
+          ],
+        },
+        {
+          title: 'Pagos y seguimiento seguros',
+          paragraphs: [
+            'El checkout solo muestra métodos configurados por el comercio. En cualquier pago digital verifica destinatario, monto y referencia. No compartas contraseñas ni códigos fuera del flujo de Suya. Después de crear el pedido puedes revisar estados y, cuando corresponda, la ubicación compartida por el repartidor.',
+          ],
+          items: [
+            'Revisa el resumen antes de confirmar.',
+            'Conserva la referencia del pedido dentro de la plataforma.',
+            'Usa privacidad y términos para conocer el tratamiento de datos.',
+          ],
+        },
+      ],
       links: [
         { href: '/stores', label: 'Ver restaurantes y tiendas' },
         { href: '/contacto', label: 'Contacto y ayuda' },
@@ -238,6 +374,40 @@ const routeMetadata = [
     }),
   },
   ...publicInfoRoutes,
+  ...landingRoutes.map((page) => ({
+    route: page.route,
+    title: page.title,
+    description: page.description,
+    schema: {
+      '@context': 'https://schema.org',
+      '@graph': [
+        organization,
+        website,
+        {
+          '@type': page.type,
+          name: page.name,
+          description: page.description,
+          url: `${siteOrigin}/${page.route}/`,
+          isPartOf: { '@id': `${siteOrigin}/#website` },
+          about: { '@type': 'City', name: 'Sullana, Piura, Perú' },
+          inLanguage: 'es-PE',
+        },
+        breadcrumbs(page.route, page.name),
+      ],
+    },
+    staticHtml: staticPage({
+      key: page.route,
+      eyebrow: page.eyebrow,
+      title: page.heading,
+      paragraphs: page.paragraphs,
+      sections: page.sections,
+      links: [
+        { href: '/stores', label: 'Ver restaurantes y tiendas en Sullana' },
+        { href: '/help', label: 'Ayuda sobre pedidos y pagos' },
+        { href: '/', label: 'Inicio de Suya Delivery' },
+      ],
+    }),
+  })),
   ...menuRoutes.map(({ slug, name }) => ({
     route: `menu/${slug}`,
     title: `Menú de ${name} en Sullana | Suya Delivery`,
@@ -268,6 +438,21 @@ const routeMetadata = [
         `Consulta la carta y las opciones disponibles de ${name}. Los productos, precios y horarios se actualizan según la información del negocio.`,
         'Revisa el total y los métodos de pago habilitados antes de confirmar tu pedido.',
       ],
+      sections: [
+        {
+          title: `Cómo pedir en ${name}`,
+          paragraphs: [
+            `Explora los productos publicados por ${name}, elige cantidades y agrega los artículos al carrito. La carta digital permite consultar la oferta disponible desde el celular y continuar al checkout cuando el negocio acepta pedidos.`,
+            `Antes de pagar, verifica el nombre del negocio, los productos, el precio final, la dirección y el método de pago mostrado. El horario y la cobertura dependen de la configuración vigente de ${name}.`,
+          ],
+        },
+        {
+          title: 'Información del pedido y entrega',
+          paragraphs: [
+            'Suya conecta la carta del comercio con el pedido del cliente y muestra el estado de la entrega cuando existe información operativa disponible. Si una opción no aparece, puede estar fuera de horario, agotada o no habilitada para la zona seleccionada.',
+          ],
+        },
+      ],
       links: [
         { href: '/stores', label: 'Más restaurantes y tiendas en Sullana' },
         { href: '/help', label: 'Ayuda para pedir' },
@@ -283,7 +468,8 @@ function replaceOrThrow(html, pattern, replacement, label) {
 
 function renderRoute(template, metadata) {
   const canonical = `${siteOrigin}/${metadata.route}/`;
-  let html = template;
+  // Las portadas destacadas solo son críticas en Inicio; no precargarlas en rutas secundarias.
+  let html = template.replace(/\s*<link\s+rel="preload"\s+href="\/images\/stores\/[^>]+>/g, '');
   html = replaceOrThrow(html, /<title>[^<]*<\/title>/, `<title>${metadata.title}</title>`, 'title');
   html = replaceOrThrow(
     html,
@@ -354,7 +540,7 @@ function renderNoIndexShell(template, { notFound = false } = {}) {
     ? 'La página solicitada no existe. Regresa al inicio de Suya Delivery.'
     : 'Área funcional de Suya Delivery no disponible para indexación pública.';
   const heading = notFound ? 'Página no encontrada' : 'Cargando Suya Delivery';
-  let html = template;
+  let html = template.replace(/\s*<link\s+rel="preload"\s+href="\/images\/stores\/[^>]+>/g, '');
   html = replaceOrThrow(html, /<title>[^<]*<\/title>/, `<title>${title}</title>`, 'title noindex');
   html = replaceOrThrow(
     html,
