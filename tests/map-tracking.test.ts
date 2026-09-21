@@ -27,7 +27,8 @@ describe('seguimiento visual del mapa', () => {
     expect(map).toContain('fetchDrivingRoute');
     expect(map).toContain('Ruta alternativa');
     expect(map).toContain('Ruta vial no disponible');
-    expect(map).toContain("if (!navigation && fallbackPoints.length > 1) drawFallbackRoute");
+    expect(map).not.toContain('drawFallbackRoute');
+    expect(map).toContain('sin inventar una línea recta');
     expect(map).toContain('Activar modo noche');
     expect(map).toContain('Activar modo día');
     expect(map).toContain('hasAppliedInitialViewRef');

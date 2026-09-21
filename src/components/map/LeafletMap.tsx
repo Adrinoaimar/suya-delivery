@@ -273,8 +273,8 @@ export default function LeafletMap({
     }
   }, [destinationLabel, destinationLat, destinationLng, originLabel, originLat, originLng]);
 
-  // El mapa muestra calles reales cuando es posible. El motor vial es opt-in y privado/autorizado;
-  // sin él, el trazo local conserva orientación sin enviar el GPS preciso a un tercero.
+  // El mapa muestra calles reales solo cuando el motor vial autorizado devuelve una ruta válida.
+  // Si no está disponible, conserva los puntos y el estado sin inventar una línea recta.
   useEffect(() => {
     const map = mapRef.current;
     const layer = routeLayerRef.current;
@@ -307,15 +307,6 @@ export default function LeafletMap({
     setRoutePlan(null);
     setNextInstruction(null);
     setRouteStatus('idle');
-
-    const fallbackPoints =
-      navigation && currentRider && routingEnd ? [currentRider, routingEnd] : points;
-    if (!navigation && fallbackPoints.length > 1) {
-      drawFallbackRoute(layer, fallbackPoints);
-      routeBoundsRef.current = L.latLngBounds(
-        fallbackPoints.map((point) => [point.lat, point.lng] as [number, number]),
-      );
-    }
 
     if (!routingStart || !routingEnd || distanceKm(routingStart, routingEnd) < 0.01) {
       return undefined;
@@ -368,23 +359,8 @@ export default function LeafletMap({
     const layer = routeLayerRef.current;
     if (!map || !layer) return;
     layer.clearLayers();
-    const currentRider =
-      routingRiderLat !== undefined && routingRiderLng !== undefined
-        ? { lat: routingRiderLat, lng: routingRiderLng }
-        : null;
-    const currentDestination =
-      destinationLat !== undefined && destinationLng !== undefined
-        ? { lat: destinationLat, lng: destinationLng }
-        : null;
-    const fallbackPoints =
-      navigation && currentRider && currentDestination
-        ? [currentRider, currentDestination]
-        : points;
     const plan = routePlan;
-    if (!plan) {
-      if (!navigation && fallbackPoints.length > 1) drawFallbackRoute(layer, fallbackPoints);
-      return;
-    }
+    if (!plan) return;
 
     plan.alternatives.forEach((alternative) => {
       L.polyline(toLatLngs(alternative.geometry), {
@@ -746,27 +722,6 @@ export default function LeafletMap({
 
 function toLatLngs(points: { lat: number; lng: number }[]): [number, number][] {
   return points.map((point) => [point.lat, point.lng]);
-}
-
-function drawFallbackRoute(layer: L.LayerGroup, points: { lat: number; lng: number }[]): void {
-  const latlngs = toLatLngs(points);
-  L.polyline(latlngs, {
-    color: '#FFFFFF',
-    weight: 9,
-    opacity: 0.9,
-    lineCap: 'round',
-    lineJoin: 'round',
-    interactive: false,
-  }).addTo(layer);
-  L.polyline(latlngs, {
-    color: '#F2B544',
-    weight: 4,
-    opacity: 0.95,
-    dashArray: '9 11',
-    lineCap: 'round',
-    lineJoin: 'round',
-    interactive: false,
-  }).addTo(layer);
 }
 
 function instructionIcon(direction: RouteDirection): LucideIcon {
