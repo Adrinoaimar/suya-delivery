@@ -186,10 +186,7 @@ export const walletObserverService: WalletObserverService = {
     );
   },
   async verifyObservationByName(observationId, payerName) {
-    return (await resolveWalletObserverService()).verifyObservationByName(
-      observationId,
-      payerName,
-    );
+    return (await resolveWalletObserverService()).verifyObservationByName(observationId, payerName);
   },
   async listPaymentAccounts(restaurantId) {
     return (await resolveWalletObserverService()).listPaymentAccounts(restaurantId);
@@ -333,28 +330,13 @@ export const cashRegisterService: CashRegisterService = {
     return (await resolveCashRegisterService()).open(restaurantId, openingFloat, requestId);
   },
   async recordSale(sessionId, orderId, received, requestId) {
-    return (await resolveCashRegisterService()).recordSale(
-      sessionId,
-      orderId,
-      received,
-      requestId,
-    );
+    return (await resolveCashRegisterService()).recordSale(sessionId, orderId, received, requestId);
   },
   async addAdjustment(sessionId, amount, note, requestId) {
-    return (await resolveCashRegisterService()).addAdjustment(
-      sessionId,
-      amount,
-      note,
-      requestId,
-    );
+    return (await resolveCashRegisterService()).addAdjustment(sessionId, amount, note, requestId);
   },
   async close(sessionId, declaredCash, note, requestId) {
-    return (await resolveCashRegisterService()).close(
-      sessionId,
-      declaredCash,
-      note,
-      requestId,
-    );
+    return (await resolveCashRegisterService()).close(sessionId, declaredCash, note, requestId);
   },
 };
 
@@ -549,12 +531,24 @@ export const paymentService: PaymentService = {
     return resolvePaymentService().submitEvidence(orderId, code, guestAccessToken);
   },
   declarePayment(orderId, code, payerDisplayName, guestAccessToken) {
-    return resolvePaymentService().declarePayment(orderId, code, payerDisplayName, guestAccessToken);
+    return resolvePaymentService().declarePayment(
+      orderId,
+      code,
+      payerDisplayName,
+      guestAccessToken,
+    );
   },
   confirmWalletPayment(orderId, payerDisplayName, guestAccessToken) {
     return resolvePaymentService().confirmWalletPayment(
       orderId,
       payerDisplayName,
+      guestAccessToken,
+    );
+  },
+  confirmWalletPaymentByCode(orderId, confirmationCode, guestAccessToken) {
+    return resolvePaymentService().confirmWalletPaymentByCode(
+      orderId,
+      confirmationCode,
       guestAccessToken,
     );
   },

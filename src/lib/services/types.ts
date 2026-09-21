@@ -464,11 +464,7 @@ export interface PaymentService {
     guestAccessToken?: string | null,
     customerEmail?: string | null,
   ): Promise<PaymentIntent>;
-  submitEvidence(
-    orderId: string,
-    code: string,
-    guestAccessToken?: string | null,
-  ): Promise<boolean>;
+  submitEvidence(orderId: string, code: string, guestAccessToken?: string | null): Promise<boolean>;
   declarePayment(
     orderId: string,
     code?: string | null,
@@ -478,6 +474,11 @@ export interface PaymentService {
   confirmWalletPayment(
     orderId: string,
     payerDisplayName: string,
+    guestAccessToken?: string | null,
+  ): Promise<WalletPaymentConfirmation>;
+  confirmWalletPaymentByCode(
+    orderId: string,
+    confirmationCode: string,
     guestAccessToken?: string | null,
   ): Promise<WalletPaymentConfirmation>;
   getPaymentDeclaration(
