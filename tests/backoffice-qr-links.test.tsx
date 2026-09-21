@@ -49,8 +49,6 @@ const restaurant: Store = {
 };
 
 describe('QR de mesas en la cuenta del restaurante', () => {
-  const customerOrigin = import.meta.env.VITE_CUSTOMER_APP_URL || 'http://localhost:3000';
-
   beforeEach(() => {
     vi.clearAllMocks();
     useAuthStore.setState({
@@ -83,7 +81,7 @@ describe('QR de mesas en la cuenta del restaurante', () => {
     expect(screen.queryByRole('combobox', { name: 'Cuenta de restaurante' })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Abrir QR' })).toHaveAttribute(
       'href',
-      `${customerOrigin}/table/server-token`,
+      `${import.meta.env.VITE_CUSTOMER_APP_URL || 'http://localhost:3000'}/table/server-token`,
     );
   });
 
