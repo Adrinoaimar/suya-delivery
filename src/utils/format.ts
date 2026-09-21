@@ -63,6 +63,17 @@ export function orderStatusLabel(status: OrderStatus): string {
   return STATUS_LABELS[status];
 }
 
+/** Copy shown beside an assigned rider, aligned with the current delivery phase. */
+export function riderTrackingMessage(status: OrderStatus): string {
+  if (status === 'picked_up') {
+    return 'El repartidor recogió el pedido. Su GPS aparecerá cuando comparta ubicación.';
+  }
+  if (status === 'on_the_way') {
+    return 'El repartidor está en camino. Puedes ver su ubicación en el mapa cuando comparta GPS.';
+  }
+  return 'Repartidor asignado. Su GPS aparecerá cuando recoja el pedido.';
+}
+
 const PAYMENT_LABELS: Record<PaymentMethod, string> = {
   cash: 'Efectivo',
   yape: 'Yape',

@@ -332,8 +332,8 @@ La evidencia detallada de este bloque está en `docs/execution/F28.md` y la matr
 
 ## Siguiente acción
 
-Validar inicio de sesión real en un dispositivo físico y resolver la firma Android release. Después
-de confirmar sede y logística, habilitar pedidos.
+Publicar F19 en Cloudflare Pages y validar Cliente en detalle/seguimiento. Después de confirmar sede
+y logística, habilitar pedidos.
 
 ## Gate productivo pendiente
 

@@ -17,7 +17,7 @@ import { notificationService, safetyOperationsService } from '@/lib/services';
 import { useOrderStore } from '@/store/orderStore';
 import { orderRouteProgress, useOrderStatusNotifier } from '@/hooks/useOrders';
 import { useIsDesktop } from '@/hooks/useMediaQuery';
-import { formatPrice, orderStatusLabel } from '@/utils/format';
+import { formatPrice, orderStatusLabel, riderTrackingMessage } from '@/utils/format';
 import type { LatLng } from '@/types';
 import { appendTrail, mergeTrails } from '@/utils/locationTrail';
 
@@ -166,7 +166,7 @@ export default function OrderTrackPage() {
 
       {order.riderId && !cancelled && (
         <p className="rounded-card border border-suya-mist p-3 text-sm text-[#4A4F55]">
-          Repartidor asignado. Su ubicación aparecerá cuando recoja el pedido y comparta GPS.
+          {riderTrackingMessage(order.status)}
         </p>
       )}
 
