@@ -35,6 +35,12 @@ buenas prácticas 100, SEO 100, FCP 3.7 s, LCP 4.3 s, TBT 570 ms y CLS 0.011; `/
 rendimiento 56, SEO 100, FCP 3.5 s, LCP 8.4 s, TBT 480 ms y CLS 0. Lighthouse varía según red,
 caché y catálogo; LCP de `/stores/` sigue siendo la mejora técnica prioritaria.
 
+La repetición final sobre producción obtuvo `/` rendimiento 68, accesibilidad 100, buenas prácticas
+100 y SEO 100 (FCP 3.7 s, LCP 4.3 s, TBT 360 ms, CLS 0); `/stores/` obtuvo rendimiento 53,
+accesibilidad 100, buenas prácticas 100 y SEO 100 (FCP 5.0 s, LCP 13.1 s, TBT 330 ms, CLS 0).
+La variación confirma que el LCP del catálogo depende del catálogo/red y sigue siendo el único foco
+de rendimiento pendiente; no introduce un error crítico o alto de SEO.
+
 El build candidato de PR #57, medido en `/stores/`, obtuvo rendimiento 79, SEO/accesibilidad/buenas
 prácticas 100, FCP 2.6 s, LCP 3.0 s, TBT 440 ms y CLS 0. Añade `fetchpriority="high"`, carga eager en las dos primeras tarjetas
 visibles y precarga de portadas destacadas solo en Inicio. Las rutas secundarias eliminan esas

@@ -35,6 +35,11 @@ de Core Web Vitals requiere percentil 75 de usuarios reales.
 El candidato de PR #57 medido en `/stores/` obtuvo rendimiento 79, SEO/accesibilidad/buenas prácticas
 100, FCP 2.6 s, LCP 3.0 s, TBT 440 ms y CLS 0.
 
+La repetición final en producción obtuvo `/` 68 de rendimiento y `/stores/` 53; SEO, accesibilidad
+y buenas prácticas permanecieron en 100. FCP/LCP fueron 3.7/4.3 s en `/` y 5.0/13.1 s en `/stores/`.
+Es una medición puntual: el catálogo mantiene variación de red y carga, y el LCP de tiendas queda
+como prioridad de rendimiento, no como bloqueo de indexabilidad.
+
 ## Correcciones realizadas en el repositorio
 
 - Metadatos estáticos y dinámicos para título, descripción, canonical, robots, Open Graph y Twitter.
