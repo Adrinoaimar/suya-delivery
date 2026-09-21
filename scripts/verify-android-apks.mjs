@@ -9,9 +9,24 @@ const outputDirectory = path.resolve(process.env.SUYA_ANDROID_OUTPUT || 'output/
 const failures = [];
 
 const expected = [
-  { file: 'Suya-Rider-debug.apk', packageName: 'com.suya.rider', label: 'Suya Repartidor' },
-  { file: 'Suya-Backoffice-debug.apk', packageName: 'com.suya.backoffice', label: 'Suya Backoffice' },
-  { file: 'Suya-Wallet-Observer-debug.apk', packageName: 'com.suya.walletobserver', label: 'Suya' },
+  {
+    file: 'Suya-Rider-debug.apk',
+    packageName: 'com.suya.rider',
+    label: 'Suya Repartidor',
+    observerEnabled: false,
+  },
+  {
+    file: 'Suya-Backoffice-debug.apk',
+    packageName: 'com.suya.backoffice',
+    label: 'Suya Backoffice',
+    observerEnabled: false,
+  },
+  {
+    file: 'Suya-Wallet-Observer-debug.apk',
+    packageName: 'com.suya.walletobserver',
+    label: 'Suya',
+    observerEnabled: true,
+  },
 ];
 
 function fail(message) {
@@ -25,6 +40,28 @@ function inspectBadging(file) {
     fail(`${path.basename(file)}: no se pudo inspeccionar con aapt2 (${error.message}).`);
     return '';
   }
+}
+
+function inspectManifest(file) {
+  try {
+    return execFileSync(aapt2, ['dump', 'xmltree', '--file', 'AndroidManifest.xml', file], {
+      encoding: 'utf8',
+    });
+  } catch (error) {
+    fail(`${path.basename(file)}: no se pudo inspeccionar el manifiesto (${error.message}).`);
+    return '';
+  }
+}
+
+function serviceEnabled(manifest, serviceName) {
+  const escaped = serviceName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = manifest.match(
+    new RegExp(
+      `E: service[\\s\\S]*?android:name[^\\n]*="${escaped}"[\\s\\S]*?android:enabled[^=]*=(true|false)`,
+      'u',
+    ),
+  );
+  return match?.[1] === 'true';
 }
 
 for (const item of expected) {
@@ -42,6 +79,7 @@ for (const item of expected) {
   }
 
   const badging = inspectBadging(file);
+  const manifest = inspectManifest(file);
   const packageName = badging.match(/package: name='([^']+)'/)?.[1];
   const label = badging.match(/application-label(?:-es)?:'([^']+)'/)?.[1];
   if (packageName !== item.packageName) {
@@ -55,6 +93,13 @@ for (const item of expected) {
   }
   if (!/versionCode='6'\s+versionName='1\.5'/u.test(badging)) {
     fail(`${item.file}: versión nativa inesperada; se esperaba 6/1.5.`);
+  }
+  const listenerEnabled = serviceEnabled(manifest, 'com.suya.app.YapeNotificationListenerService');
+  const syncEnabled = serviceEnabled(manifest, 'com.suya.app.SuyaWalletSyncJobService');
+  if (listenerEnabled !== item.observerEnabled || syncEnabled !== item.observerEnabled) {
+    fail(
+      `${item.file}: servicios del observador inesperados (listener=${listenerEnabled}, sync=${syncEnabled}; esperado=${item.observerEnabled}).`,
+    );
   }
   for (const forbidden of ['android.permission.READ_SMS', 'android.permission.RECEIVE_SMS', 'android.permission.SYSTEM_ALERT_WINDOW']) {
     if (badging.includes(`uses-permission: name='${forbidden}'`)) {
