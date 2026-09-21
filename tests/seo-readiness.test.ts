@@ -71,4 +71,12 @@ describe('SEO local de Suya Delivery', () => {
     expect(shell).toContain('Capacitor.isNativePlatform() && intro.visible');
     expect(shell).toContain('{showIntro && (');
   });
+
+  it('audita también los chunks JavaScript importados por el bundle principal', () => {
+    const verifier = source('scripts/verify-live-production.mjs');
+
+    expect(verifier).toContain('const pending = [...scriptSources]');
+    expect(verifier).toContain('while (pending.length > 0 && inspected.size < 300)');
+    expect(verifier).toContain('new URL(match[1], scriptUrl)');
+  });
 });
