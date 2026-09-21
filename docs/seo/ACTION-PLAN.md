@@ -11,7 +11,7 @@
 7. Aplicar `20260921100000_optimize_public_asset_urls.sql` para servir imágenes desde el dominio propio.
 8. Generar HTML estático con metadatos y Schema específicos para `/stores`, `/help` y los menús públicos.
 
-## P1 — inmediatamente después de publicar
+## P1 — siguiente trabajo externo tras publicar
 
 1. Verificar el dominio en Google Search Console y enviar `https://suyadelivery.com/sitemap.xml`.
 2. Solicitar indexación de `/`, `/stores`, `/help`, las páginas institucionales y las cartas reales.
@@ -29,9 +29,12 @@
 3. Medir INP, LCP y CLS con datos de campo durante 28 días y revisar consultas/CTR en Search Console.
 4. Revisar posiciones por dispositivo y ubicación sin usar búsquedas personales como única evidencia.
 
-## Criterio de publicación
+## Publicación y criterio de cierre técnico
 
-No desplegar esta tanda SEO hasta revisar el diff, pasar `verify:production` y confirmar que las rutas
-del sitemap responden `200` en producción. La primera posición no es un criterio técnico garantizable;
-el objetivo medible es indexación correcta, crecimiento de impresiones, CTR, posiciones y pedidos
-orgánicos. El medidor propio de visitas ya publicado no usa proveedores de terceros.
+La tanda técnica quedó publicada tras PR #54. El release gate, `verify:live`, el sitemap, el HTML
+renderizado y Lighthouse de producción se validaron el 2026-09-21. El SEO técnico no puede prometer
+la primera posición: Search Console, señales locales auténticas, rastreo e historial de autoridad
+son factores externos que deben medirse después de la publicación.
+
+El objetivo medible siguiente es crecimiento de impresiones, CTR, posiciones y pedidos orgánicos. El
+medidor propio de visitas ya publicado no usa proveedores de terceros.
