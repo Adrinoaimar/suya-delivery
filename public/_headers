@@ -29,6 +29,63 @@
   Content-Type: text/plain; charset=utf-8
   Cache-Control: public, max-age=3600
 
+/_private
+  Content-Type: text/html; charset=utf-8
+  Cache-Control: no-store
+  X-Robots-Tag: noindex, nofollow
+
+/login
+  Content-Type: text/html; charset=utf-8
+  X-Robots-Tag: noindex, nofollow
+
+/unauthorized
+  Content-Type: text/html; charset=utf-8
+  X-Robots-Tag: noindex, nofollow
+
+/search
+  Content-Type: text/html; charset=utf-8
+  X-Robots-Tag: noindex, nofollow
+
+/cart
+  Content-Type: text/html; charset=utf-8
+  X-Robots-Tag: noindex, nofollow
+
+/checkout
+  Content-Type: text/html; charset=utf-8
+  X-Robots-Tag: noindex, nofollow
+
+/orders
+  Content-Type: text/html; charset=utf-8
+  X-Robots-Tag: noindex, nofollow
+
+/orders/*
+  Content-Type: text/html; charset=utf-8
+  X-Robots-Tag: noindex, nofollow
+
+/profile
+  Content-Type: text/html; charset=utf-8
+  X-Robots-Tag: noindex, nofollow
+
+/jobs
+  Content-Type: text/html; charset=utf-8
+  X-Robots-Tag: noindex, nofollow
+
+/store/*
+  Content-Type: text/html; charset=utf-8
+  X-Robots-Tag: noindex, nofollow
+
+/table/*
+  Content-Type: text/html; charset=utf-8
+  X-Robots-Tag: noindex, nofollow
+
+/pedido/*
+  Content-Type: text/html; charset=utf-8
+  X-Robots-Tag: noindex, nofollow
+
+/menu/*
+  Content-Type: text/html; charset=utf-8
+
+
 /fonts/*
   Content-Type: font/woff2
   Cache-Control: public, max-age=31536000, immutable

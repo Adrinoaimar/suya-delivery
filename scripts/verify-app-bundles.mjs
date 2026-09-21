@@ -132,7 +132,7 @@ for (const app of apps) {
       }
     }
 
-    const privateShell = path.join(output, '_private', 'index.html');
+    const privateShell = path.join(output, '_private');
     if (!files.includes(privateShell)) {
       failures.push('customer: falta HTML noindex para rutas funcionales privadas');
     } else {
