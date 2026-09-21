@@ -6,7 +6,7 @@ Fecha: 2026-09-21
 
 - `npm run typecheck`: pasa.
 - `npm run lint`: pasa.
-- `npm test`: 75 archivos, 381 pruebas, pasa.
+- `npm test`: 75 archivos, 382 pruebas, pasa.
 - `npm run security:secrets`: pasa; no se detectaron secretos.
 - `git diff --check`: pasa.
 - `npm run build:customer` con backend Supabase local de E2E: pasa.
