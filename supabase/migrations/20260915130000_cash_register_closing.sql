@@ -247,9 +247,9 @@ begin
     return;
   end if;
 
-  select id into open_id
-  from public.cash_register_sessions
-  where restaurant_id = p_restaurant_id and status = 'open'
+  select s.id into open_id
+  from public.cash_register_sessions s
+  where s.restaurant_id = p_restaurant_id and s.status = 'open'
   for update;
   if open_id is not null then raise exception 'restaurant already has an open cash register'; end if;
 

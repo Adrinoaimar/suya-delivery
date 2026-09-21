@@ -283,8 +283,9 @@ select ok(
   'los candidatos prefieren fingerprint exacto sobre solo monto'
 );
 select ok(
-  (select pg_get_functiondef('public.submit_payment_evidence(uuid,text,text)'::regprocedure) like '%payer_code_digest%'),
-  'la evidencia del cliente guarda digest exacto'
+  (select pg_get_functiondef('public.submit_payment_evidence(uuid,text,text)'::regprocedure) like '%declare_manual_payment%')
+    and (select pg_get_functiondef('public.declare_manual_payment(uuid,text,text,text)'::regprocedure) like '%payer_code_hmac%'),
+  'la evidencia del cliente delega en la declaración HMAC server-side'
 );
 select ok(
   (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) like '%payment identity%'),
