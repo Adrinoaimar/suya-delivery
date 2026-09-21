@@ -157,7 +157,9 @@ export class SupabasePaymentService implements PaymentService {
         },
       });
       if (error) throw new Error(error.message);
-      const row = firstRow(data && typeof data === 'object' && 'paymentIntent' in data ? data.paymentIntent : data);
+      const row = firstRow(
+        data && typeof data === 'object' && 'paymentIntent' in data ? data.paymentIntent : data,
+      );
       if (!row) throw new Error('La pasarela no devolvió el intento de pago.');
       return this.withReceiverLabel(mapIntent(row), token);
     }
@@ -184,10 +186,12 @@ export class SupabasePaymentService implements PaymentService {
     if (intent.provider !== 'culqi' || (intent.method !== 'card' && intent.method !== 'yape')) {
       throw new Error('Este intento no corresponde a un token Culqi compatible.');
     }
-    const tokenPattern = intent.method === 'card'
-      ? /^tkn_(?:test|live)_[A-Za-z0-9_-]+$/
-      : /^ype_(?:test|live)_[A-Za-z0-9_-]+$/;
-    if (!tokenPattern.test(tokenId)) throw new Error('El token Culqi no corresponde al método elegido.');
+    const tokenPattern =
+      intent.method === 'card'
+        ? /^tkn_(?:test|live)_[A-Za-z0-9_-]+$/
+        : /^ype_(?:test|live)_[A-Za-z0-9_-]+$/;
+    if (!tokenPattern.test(tokenId))
+      throw new Error('El token Culqi no corresponde al método elegido.');
     const { data, error } = await this.client.functions.invoke('charge-culqi-card', {
       body: {
         attemptId: intent.attemptId,
@@ -198,9 +202,10 @@ export class SupabasePaymentService implements PaymentService {
       },
     });
     if (error) throw new Error(error.message);
-    const reference = data && typeof data === 'object' && typeof data.providerReference === 'string'
-      ? data.providerReference
-      : '';
+    const reference =
+      data && typeof data === 'object' && typeof data.providerReference === 'string'
+        ? data.providerReference
+        : '';
     if (!reference) throw new Error('Culqi no devolvió la referencia del cargo.');
     return reference;
   }
@@ -276,8 +281,39 @@ export class SupabasePaymentService implements PaymentService {
       attemptId,
       observationId: typeof row?.observation_id === 'string' ? row.observation_id : null,
       observedAt: typeof row?.observed_at === 'string' ? row.observed_at : null,
-      payerDisplayName:
-        typeof row?.payer_display_name === 'string' ? row.payer_display_name : null,
+      payerDisplayName: typeof row?.payer_display_name === 'string' ? row.payer_display_name : null,
+    };
+  }
+
+  async confirmWalletPaymentByCode(
+    orderId: string,
+    confirmationCode: string,
+    suppliedGuestAccessToken?: string | null,
+  ): Promise<WalletPaymentConfirmation> {
+    if (!orderId) throw new Error('No pudimos identificar el pedido.');
+    const normalizedCode = confirmationCode.trim();
+    if (!/^\d{3}$/.test(normalizedCode)) {
+      throw new Error('Escribe el código Yape de 3 dígitos.');
+    }
+    const { data, error } = await this.client.rpc('confirm_manual_wallet_payment_by_code', {
+      p_order_id: orderId,
+      p_confirmation_code: normalizedCode,
+      p_guest_access_token: guestToken(orderId, suppliedGuestAccessToken),
+    });
+    if (error) throw new Error(error.message);
+    const row = firstRow(data) as WalletPaymentConfirmationRow | null;
+    const status = text(row?.confirmation_status) as WalletPaymentConfirmationStatus;
+    if (!['pending', 'authorized', 'ambiguous'].includes(status)) {
+      throw new Error('Supabase devolvió un estado de confirmación inválido.');
+    }
+    const attemptId = text(row?.payment_attempt_id);
+    if (!attemptId) throw new Error('Supabase no devolvió el intento de pago.');
+    return {
+      status,
+      attemptId,
+      observationId: typeof row?.observation_id === 'string' ? row.observation_id : null,
+      observedAt: typeof row?.observed_at === 'string' ? row.observed_at : null,
+      payerDisplayName: typeof row?.payer_display_name === 'string' ? row.payer_display_name : null,
     };
   }
 

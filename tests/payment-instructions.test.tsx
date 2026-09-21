@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   submitEvidence: vi.fn(),
   declarePayment: vi.fn(),
   confirmWalletPayment: vi.fn(),
+  confirmWalletPaymentByCode: vi.fn(),
   getPaymentDeclaration: vi.fn(),
   notify: vi.fn(),
   openCulqiCheckout: vi.fn(),
@@ -23,6 +24,7 @@ vi.mock('@/lib/services', () => ({
     submitEvidence: mocks.submitEvidence,
     declarePayment: mocks.declarePayment,
     confirmWalletPayment: mocks.confirmWalletPayment,
+    confirmWalletPaymentByCode: mocks.confirmWalletPaymentByCode,
     getPaymentDeclaration: mocks.getPaymentDeclaration,
   },
   notificationService: { notify: mocks.notify },
@@ -76,6 +78,13 @@ beforeEach(() => {
     observedAt: null,
     payerDisplayName: 'Otra Persona',
   });
+  mocks.confirmWalletPaymentByCode.mockResolvedValue({
+    status: 'pending',
+    attemptId: 'attempt-1',
+    observationId: null,
+    observedAt: null,
+    payerDisplayName: 'Otra Persona',
+  });
 });
 
 describe('PaymentInstructions', () => {
@@ -96,7 +105,11 @@ describe('PaymentInstructions', () => {
 
     rerender(
       <PaymentInstructions
-        order={order({ ...pendingIntent, status: 'authorized', providerReference: 'wallet_observation:1' })}
+        order={order({
+          ...pendingIntent,
+          status: 'authorized',
+          providerReference: 'wallet_observation:1',
+        })}
       />,
     );
 
@@ -170,7 +183,7 @@ describe('PaymentInstructions', () => {
   });
 
   it('limpia la constancia al cambiar el intento del mismo pedido', async () => {
-    mocks.confirmWalletPayment.mockResolvedValueOnce({
+    mocks.confirmWalletPaymentByCode.mockResolvedValueOnce({
       status: 'pending',
       attemptId: 'attempt-1',
       observationId: null,
@@ -179,12 +192,16 @@ describe('PaymentInstructions', () => {
     });
     const { rerender } = render(<PaymentInstructions order={order(pendingIntent)} />);
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled());
-    fireEvent.change(screen.getByLabelText('Nombre del pagador en Lemon'), {
-      target: { value: 'Otra Persona' },
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled(),
+    );
+    fireEvent.change(screen.getByLabelText('Código de seguridad Yape'), {
+      target: { value: '482' },
     });
     await act(async () => screen.getByRole('button', { name: 'Confirmar pago' }).click());
-    fireEvent.change(screen.getByLabelText('Código de constancia'), { target: { value: '384' } });
+    fireEvent.change(screen.getByLabelText('Código Yape (3 dígitos)'), {
+      target: { value: '384' },
+    });
     await act(async () => {
       screen.getByRole('button', { name: 'Vincular código' }).click();
     });
@@ -200,19 +217,21 @@ describe('PaymentInstructions', () => {
       />,
     );
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled());
-    fireEvent.change(screen.getByLabelText('Nombre del pagador en Lemon'), {
-      target: { value: 'Otra Persona' },
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled(),
+    );
+    fireEvent.change(screen.getByLabelText('Código de seguridad Yape'), {
+      target: { value: '482' },
     });
     await act(async () => screen.getByRole('button', { name: 'Confirmar pago' }).click());
-    await waitFor(() => expect(screen.getByLabelText('Código de constancia')).toHaveValue(''));
-    expect(screen.getByRole('button', { name: 'Guardar pagador' })).toBeEnabled();
+    await waitFor(() => expect(screen.getByLabelText('Código Yape (3 dígitos)')).toHaveValue(''));
+    expect(screen.getByRole('button', { name: 'Vincular código' })).toBeDisabled();
     expect(screen.queryByRole('button', { name: 'Cambiar código' })).not.toBeInTheDocument();
     expect(screen.getByText('SUYA-EF56GH78')).toBeInTheDocument();
   });
 
   it('permite corregir el código de la constancia mientras sigue pendiente', async () => {
-    mocks.confirmWalletPayment.mockResolvedValueOnce({
+    mocks.confirmWalletPaymentByCode.mockResolvedValueOnce({
       status: 'pending',
       attemptId: 'attempt-1',
       observationId: null,
@@ -221,12 +240,14 @@ describe('PaymentInstructions', () => {
     });
     render(<PaymentInstructions order={order(pendingIntent)} />);
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled());
-    fireEvent.change(screen.getByLabelText('Nombre del pagador en Lemon'), {
-      target: { value: 'Otra Persona' },
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled(),
+    );
+    fireEvent.change(screen.getByLabelText('Código de seguridad Yape'), {
+      target: { value: '482' },
     });
     await act(async () => screen.getByRole('button', { name: 'Confirmar pago' }).click());
-    const input = screen.getByLabelText('Código de constancia');
+    const input = screen.getByLabelText('Código Yape (3 dígitos)');
     expect(input).toHaveAttribute('inputmode', 'numeric');
     fireEvent.change(input, { target: { value: '384' } });
     await act(async () => {
@@ -237,25 +258,29 @@ describe('PaymentInstructions', () => {
     await act(async () => {
       screen.getByRole('button', { name: 'Cambiar código' }).click();
     });
-    expect(screen.getByLabelText('Código de constancia')).toHaveValue('');
-    expect(screen.getByRole('button', { name: 'Guardar pagador' })).toBeEnabled();
-    fireEvent.change(screen.getByLabelText('Código de constancia'), { target: { value: '482' } });
+    expect(screen.getByLabelText('Código Yape (3 dígitos)')).toHaveValue('');
+    expect(screen.getByRole('button', { name: 'Vincular código' })).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Código Yape (3 dígitos)'), {
+      target: { value: '482' },
+    });
     expect(screen.getByRole('button', { name: 'Vincular código' })).toBeEnabled();
   });
 
-  it('permite confirmar el nombre del pagador sin inventar una autorización', async () => {
+  it('permite confirmar el código Yape sin inventar una autorización', async () => {
     render(<PaymentInstructions order={order(pendingIntent)} />);
 
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled());
-    fireEvent.change(screen.getByLabelText('Nombre del pagador en Lemon'), {
-      target: { value: 'Otra Persona' },
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled(),
+    );
+    fireEvent.change(screen.getByLabelText('Código de seguridad Yape'), {
+      target: { value: '482' },
     });
     await act(async () => screen.getByRole('button', { name: 'Confirmar pago' }).click());
 
-    expect(mocks.confirmWalletPayment).toHaveBeenCalledWith('order-1', 'Otra Persona');
+    expect(mocks.confirmWalletPaymentByCode).toHaveBeenCalledWith('order-1', '482');
     expect(screen.getByText('Validando pago…')).toBeInTheDocument();
     expect(mocks.notify).toHaveBeenCalledWith(
-      'Pago registrado. Estamos validando nombre, monto y hora con la notificación de Lemon.',
+      'Pago registrado. Estamos validando identidad, monto y hora con la notificación.',
       'success',
     );
   });
@@ -263,7 +288,7 @@ describe('PaymentInstructions', () => {
   it('preserva la revisión y no ofrece un segundo cobro si el intento vencido ya fue declarado', async () => {
     const expiredIntent = { ...pendingIntent, expiresAt: '2020-01-01T00:00:00.000Z' };
     mocks.getPaymentDeclaration.mockResolvedValueOnce(null);
-    mocks.confirmWalletPayment.mockResolvedValueOnce({
+    mocks.confirmWalletPaymentByCode.mockResolvedValueOnce({
       status: 'pending',
       attemptId: 'attempt-1',
       observationId: null,
@@ -274,20 +299,26 @@ describe('PaymentInstructions', () => {
 
     const paid = await screen.findByRole('button', { name: 'Confirmar pago' });
     await waitFor(() => expect(paid).toBeEnabled());
-    fireEvent.change(screen.getByLabelText('Nombre del pagador en Lemon'), {
-      target: { value: 'Otra Persona' },
+    fireEvent.change(screen.getByLabelText('Código de seguridad Yape'), {
+      target: { value: '482' },
     });
     await act(async () => paid.click());
 
-    expect(mocks.confirmWalletPayment).toHaveBeenCalledWith('order-1', 'Otra Persona');
+    expect(mocks.confirmWalletPaymentByCode).toHaveBeenCalledWith('order-1', '482');
     expect(screen.getByText('Validando pago…')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Aún no pagué' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Generar nueva referencia' })).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: 'Generar nueva referencia' }),
+    ).not.toBeInTheDocument();
   });
 
   it('solo renueva una referencia vencida cuando el cliente declara que aún no pagó', async () => {
     const expiredIntent = { ...pendingIntent, expiresAt: '2020-01-01T00:00:00.000Z' };
-    const renewedIntent = { ...pendingIntent, attemptId: 'attempt-2', checkoutReference: 'SUYA-NEWREF1' };
+    const renewedIntent = {
+      ...pendingIntent,
+      attemptId: 'attempt-2',
+      checkoutReference: 'SUYA-NEWREF1',
+    };
     mocks.getPaymentDeclaration.mockResolvedValueOnce(null);
     mocks.createIntent.mockResolvedValueOnce(renewedIntent);
     render(<PaymentInstructions order={order(expiredIntent)} />);
@@ -470,7 +501,10 @@ describe('PaymentInstructions', () => {
     };
     let resolveCharge!: (reference: string) => void;
     mocks.chargeCard.mockImplementationOnce(
-      () => new Promise((resolve) => { resolveCharge = resolve; }),
+      () =>
+        new Promise((resolve) => {
+          resolveCharge = resolve;
+        }),
     );
     mocks.openCulqiCheckout.mockImplementationOnce(
       (options: { onToken: (tokenId: string) => Promise<void> }) => {
@@ -488,9 +522,7 @@ describe('PaymentInstructions', () => {
     await waitFor(() => expect(mocks.chargeCard).toHaveBeenCalledTimes(1));
 
     resolveCharge('chr_test_duplicate_token');
-    await waitFor(() =>
-      expect(screen.getByText('Pago verificado')).toBeInTheDocument(),
-    );
+    await waitFor(() => expect(screen.getByText('Pago verificado')).toBeInTheDocument());
     expect(screen.queryByRole('button', { name: 'Pagar con tarjeta' })).not.toBeInTheDocument();
     expect(screen.queryByText('Pago electrónico seguro')).not.toBeInTheDocument();
     expect(mocks.chargeCard).toHaveBeenCalledTimes(1);
@@ -525,7 +557,9 @@ describe('PaymentInstructions', () => {
     expect(onToken).toBeTypeOf('function');
 
     rerender(<PaymentInstructions order={order(secondIntent)} />);
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Abrir QR Yape' })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Abrir QR Yape' })).toBeInTheDocument(),
+    );
 
     await act(async () => {
       await onToken('tkn_test_stale_order');
