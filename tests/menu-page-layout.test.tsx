@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MenuPage from '@/pages/customer/MenuPage';
@@ -9,7 +9,10 @@ import { useCartStore } from '@/store/cartStore';
 vi.mock('@/lib/loadPublicMenu', () => ({ loadPublicMenu: vi.fn() }));
 
 describe('MenuPage', () => {
-  const store = { ...stores.find((candidate) => candidate.id === 'don-pizza')!, isComingSoon: true };
+  const store = {
+    ...stores.find((candidate) => candidate.id === 'don-pizza')!,
+    isComingSoon: true,
+  };
   const product = products.find((candidate) => candidate.storeId === store.id)!;
 
   beforeEach(() => {
@@ -50,6 +53,12 @@ describe('MenuPage', () => {
     expect(label).not.toHaveClass('left-4');
     expect(screen.getByRole('img', { name: 'Marca de Pizzería Don Pizza' })).toBeInTheDocument();
     expect(screen.getByText('Próximamente')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(document.head.querySelector('meta[name="robots"]')).toHaveAttribute(
+        'content',
+        'index,follow',
+      );
+    });
   });
 
   it('conserva un carrito delivery al abrir el menú público', async () => {
@@ -84,5 +93,23 @@ describe('MenuPage', () => {
     await screen.findByText('Menú público');
     expect(useCartStore.getState().origin).toBe('delivery');
     expect(useCartStore.getState().menuSlug).toBeNull();
+  });
+
+  it('marca como no indexable un menú inexistente', async () => {
+    vi.mocked(loadPublicMenu).mockResolvedValueOnce({ menu: null, products: [] });
+
+    render(
+      <MemoryRouter initialEntries={['/menu/menu-inexistente']}>
+        <Routes>
+          <Route path="/menu/:slug" element={<MenuPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    expect(await screen.findByText('Menú no disponible')).toBeInTheDocument();
+    expect(document.head.querySelector('meta[name="robots"]')).toHaveAttribute(
+      'content',
+      'noindex,nofollow',
+    );
   });
 });

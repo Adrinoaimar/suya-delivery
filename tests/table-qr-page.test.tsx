@@ -76,6 +76,10 @@ describe('TableQrPage', () => {
       'href',
       '/store/restaurant-1',
     );
+    expect(document.head.querySelector('meta[name="robots"]')).toHaveAttribute(
+      'content',
+      'noindex,nofollow',
+    );
     expect(mocks.resolve).toHaveBeenCalledWith('real-token');
     expect(mocks.openGuest).toHaveBeenCalledWith('real-token');
   });

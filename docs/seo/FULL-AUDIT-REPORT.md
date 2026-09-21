@@ -29,6 +29,7 @@ Los valores de rendimiento corresponden a la medición móvil simulada de Lighth
 - JSON-LD de `Organization`, `WebSite`, `Service` y `Restaurant` sin inventar teléfono, dirección ni reseñas.
 - `public/robots.txt` y `public/sitemap.xml` con rutas públicas y exclusión de áreas privadas.
 - `noindex,nofollow` para login, checkout, carrito, búsquedas, pedidos, perfil, QR de mesa y aplicaciones operativas.
+- `noindex,nofollow` explícito para comprobantes invitados, redirección Jobs, 404, acceso no autorizado y fallos de negocio/menú; evita indexar soft-404 o URLs con tokens.
 - `h1` semántico para la portada de tiendas y texto descriptivo para el enlace de categorías.
 - Dimensiones explícitas en imágenes, conversión WebP de los activos pesados y mapeo transparente de rutas antiguas.
 - Migración `20260921100000_optimize_public_asset_urls.sql` para retirar URLs `raw.githubusercontent.com` del catálogo productivo.

@@ -12,6 +12,7 @@ Fecha: 2026-09-21
 - `npm run build:customer` con backend Supabase local de E2E: pasa.
 - `npm run build:apps` con configuración local de E2E: pasa; bundles aislados de cliente, rider y backoffice.
 - HTML construido: canonical, robots, OG, Twitter, JSON-LD, sitemap y robots presentes.
+- Rutas privadas, URLs con tokens y estados de negocio/menú inexistentes mantienen `noindex,nofollow`; tests de Table QR, comprobante invitado y menú lo verifican.
 - Suite Supabase en CI: pasa con 632 pruebas, incluida la migración del contador anónimo y el reemplazo de assets públicos.
 - Contrato de migración: Donde Joel no conserva URLs raw de GitHub.
 - Gates CI del PR #45: frontend, E2E multiapp, base de datos, Android e iOS pasan.
