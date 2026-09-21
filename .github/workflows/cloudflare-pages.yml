@@ -49,7 +49,7 @@ jobs:
       VITE_OSM_TILE_URL: ${{ vars.VITE_OSM_TILE_URL }}
       VITE_CULQI_GATEWAY_ENABLED: ${{ secrets.VITE_CULQI_GATEWAY_ENABLED || 'false' }}
       VITE_CULQI_PUBLIC_KEY: ${{ secrets.VITE_CULQI_PUBLIC_KEY || '' }}
-      ALLOWED_ORIGINS: https://suyadelivery.com,https://rider.suyadelivery.com,https://panel.suyadelivery.com
+      ALLOWED_ORIGINS: https://suyadelivery.com,https://rider.suyadelivery.com,https://panel.suyadelivery.com,https://localhost,capacitor://localhost
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       SUYA_LIVE_UPDATE_PRIVATE_KEY: ${{ secrets.SUYA_LIVE_UPDATE_PRIVATE_KEY }}
