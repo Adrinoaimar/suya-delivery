@@ -1,0 +1,20 @@
+# Suya Delivery
+> Plataforma local para pedir comida y compras de negocios incorporados en Sullana, Piura, Perú.
+
+## Páginas principales
+- [Delivery en Sullana](https://suyadelivery.com/): Catálogo local, flujo de pedido, pagos habilitados y seguimiento.
+- [Restaurantes y tiendas](https://suyadelivery.com/stores): Directorio de negocios incorporados disponibles en Sullana.
+- [Centro de ayuda](https://suyadelivery.com/help): Información sobre pedidos, pagos, seguimiento, privacidad y uso desde el celular.
+- [Sobre Suya](https://suyadelivery.com/nosotros): Propósito, alcance y principios de la plataforma.
+- [Privacidad](https://suyadelivery.com/privacidad): Datos usados para operar pedidos y medición anónima de visitas.
+- [Términos](https://suyadelivery.com/terminos): Condiciones de uso de catálogo, pedidos y entregas.
+
+## Hechos verificables
+- Suya Delivery está enfocada en Sullana, Piura, Perú.
+- Los negocios controlan su catálogo, horario, precios y zona disponible.
+- Los métodos de pago aparecen según la configuración de cada negocio.
+- El seguimiento GPS aparece cuando existe un reparto activo y el permiso está disponible.
+- La analítica pública requiere consentimiento y no conserva IP, nombre, correo ni contenido del pedido.
+
+## Rastreo
+Los rastreadores de búsqueda y asistentes pueden consultar las páginas públicas. Las rutas privadas, pedidos, perfiles, checkout y paneles operativos no deben indexarse.

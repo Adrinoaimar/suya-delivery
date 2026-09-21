@@ -166,6 +166,7 @@ const candidateCustomerOrigin =
   `https://${candidateBranch}.${config.apps.customer.cloudflareProject}.pages.dev`;
 await smokeAsset(candidateCustomerOrigin, '/robots.txt', 'text/plain', /User-agent:\s*\*/iu);
 await smokeAsset(candidateCustomerOrigin, '/sitemap.xml', 'application/xml', /<urlset\b[^>]*>/iu);
+await smokeAsset(candidateCustomerOrigin, '/llms.txt', 'text/plain', /# Suya Delivery/iu);
 
 try {
   for (const app of appOrder) {
@@ -177,6 +178,7 @@ try {
   }
   await smokeAsset(config.apps.customer.origin, '/robots.txt', 'text/plain', /User-agent:\s*\*/iu);
   await smokeAsset(config.apps.customer.origin, '/sitemap.xml', 'application/xml', /<urlset\b[^>]*>/iu);
+  await smokeAsset(config.apps.customer.origin, '/llms.txt', 'text/plain', /# Suya Delivery/iu);
   await verifyLive();
 } catch (error) {
   try {

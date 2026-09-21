@@ -8,9 +8,25 @@
       name="description"
       content="Pide comida y compras en restaurantes, tiendas y negocios locales de Sullana. Sigue tu pedido y recibe en tu puerta con Suya Delivery."
     />
-    <meta name="robots" content="index,follow" />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
     <meta name="theme-color" content="#0B7048" />
     <meta name="color-scheme" content="only light" />
+    <link rel="preconnect" href="https://cggxooilzhqlcnofgtmi.supabase.co" crossorigin />
+    <link rel="dns-prefetch" href="https://cggxooilzhqlcnofgtmi.supabase.co" />
+    <link
+      rel="preload"
+      href="/fonts/dm-sans-latin-variable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/bricolage-grotesque-latin-variable.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <link rel="icon" type="image/svg+xml" href="/brand/suya-icon.svg" />
     <link rel="canonical" href="https://suyadelivery.com/" />
     <link rel="manifest" href="/manifest/manifest.webmanifest" />
@@ -20,17 +36,20 @@
       content="Pide comida y compras en restaurantes, tiendas y negocios locales de Sullana."
     />
     <meta property="og:url" content="https://suyadelivery.com/" />
-    <meta property="og:image" content="https://suyadelivery.com/brand/suya-logo.svg" />
+    <meta property="og:image" content="https://suyadelivery.com/brand/suya-master-logo.png" />
+    <meta property="og:image:width" content="2079" />
+    <meta property="og:image:height" content="756" />
+    <meta property="og:image:alt" content="Suya Delivery, plataforma local de Sullana" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Suya Delivery" />
     <meta property="og:locale" content="es_PE" />
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Delivery en Sullana: restaurantes y tiendas | Suya" />
     <meta
       name="twitter:description"
       content="Pide comida y compras en negocios locales de Sullana con Suya Delivery."
     />
-    <meta name="twitter:image" content="https://suyadelivery.com/brand/suya-logo.svg" />
+    <meta name="twitter:image" content="https://suyadelivery.com/brand/suya-master-logo.png" />
     <script type="application/ld+json" id="suya-seo-schema">
       {
         "@context": "https://schema.org",
@@ -41,7 +60,12 @@
             "name": "Suya Delivery",
             "url": "https://suyadelivery.com/",
             "logo": "https://suyadelivery.com/brand/suya-logo.svg",
-            "areaServed": { "@type": "City", "name": "Sullana" }
+            "description": "Plataforma local para pedir comida y compras de negocios incorporados en Sullana, Piura.",
+            "areaServed": {
+              "@type": "City",
+              "name": "Sullana",
+              "containedInPlace": { "@type": "AdministrativeArea", "name": "Piura, Perú" }
+            }
           },
           {
             "@type": "WebSite",
@@ -50,13 +74,69 @@
             "url": "https://suyadelivery.com/",
             "inLanguage": "es-PE",
             "publisher": { "@id": "https://suyadelivery.com/#organization" }
+          },
+          {
+            "@type": "WebPage",
+            "@id": "https://suyadelivery.com/#webpage",
+            "url": "https://suyadelivery.com/",
+            "name": "Delivery en Sullana: restaurantes y tiendas",
+            "description": "Pide comida y compras en restaurantes, tiendas y negocios locales de Sullana.",
+            "isPartOf": { "@id": "https://suyadelivery.com/#website" },
+            "about": { "@id": "https://suyadelivery.com/#service" },
+            "inLanguage": "es-PE"
+          },
+          {
+            "@type": "Service",
+            "@id": "https://suyadelivery.com/#service",
+            "name": "Delivery de restaurantes y negocios locales en Sullana",
+            "serviceType": "Delivery de comida y compras",
+            "provider": { "@id": "https://suyadelivery.com/#organization" },
+            "areaServed": { "@type": "City", "name": "Sullana, Piura, Perú" },
+            "url": "https://suyadelivery.com/"
           }
         ]
       }
     </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <main data-static-seo="home" class="shell py-8">
+        <article>
+          <p>Plataforma local de Sullana</p>
+          <h1>Delivery en Sullana de restaurantes y tiendas locales</h1>
+          <p>
+            Suya Delivery reúne negocios incorporados de Sullana para consultar cartas, precios y
+            disponibilidad desde una sola web. Explora el catálogo, agrega productos al carrito,
+            revisa el total antes de confirmar y consulta el estado del pedido durante la operación.
+          </p>
+          <p>
+            La disponibilidad depende del horario, catálogo y zona habilitada por cada comercio.
+            Los métodos de pago aparecen únicamente cuando el negocio los configura. En pagos
+            digitales debes verificar el destinatario, el monto y la referencia mostrada.
+          </p>
+          <h2>¿Cómo pedir comida a domicilio en Sullana?</h2>
+          <ol>
+            <li>Explora restaurantes, tiendas y categorías disponibles.</li>
+            <li>Elige productos, confirma la dirección y revisa el total.</li>
+            <li>Consulta el avance del pedido y el reparto disponible.</li>
+          </ol>
+          <h2>Negocios locales, pagos y seguimiento</h2>
+          <p>
+            Suya conecta el catálogo del comercio, el pedido del cliente y las herramientas
+            operativas de entrega. Cuando existe un reparto activo y el repartidor comparte GPS, el
+            cliente puede revisar su ubicación. La ubicación exacta se solicita solo cuando hace
+            falta completar la entrega.
+          </p>
+          <nav aria-label="Enlaces principales">
+            <a href="/stores">Restaurantes y tiendas en Sullana</a>
+            <a href="/help">Ayuda sobre pedidos y pagos</a>
+            <a href="/nosotros">Sobre Suya Delivery</a>
+            <a href="/privacidad">Política de privacidad</a>
+            <a href="/terminos">Términos de uso</a>
+          </nav>
+        </article>
+      </main>
+    </div>
     <noscript>Suya Delivery necesita JavaScript activado para funcionar.</noscript>
     <script type="module" src="../../src/entries/customer.tsx"></script>
   </body>

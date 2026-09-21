@@ -1,7 +1,7 @@
 import { useLayoutEffect } from 'react';
 
 const SITE_ORIGIN = 'https://suyadelivery.com';
-const DEFAULT_IMAGE = `${SITE_ORIGIN}/brand/suya-logo.svg`;
+const DEFAULT_IMAGE = `${SITE_ORIGIN}/brand/suya-master-logo.png`;
 
 interface SeoHeadProps {
   title: string;
@@ -9,6 +9,7 @@ interface SeoHeadProps {
   path?: string;
   noIndex?: boolean;
   image?: string;
+  imageAlt?: string;
   schema?: Record<string, unknown> | Record<string, unknown>[];
 }
 
@@ -39,6 +40,7 @@ export function SeoHead({
   path,
   noIndex = false,
   image = DEFAULT_IMAGE,
+  imageAlt = 'Suya Delivery, plataforma local de Sullana',
   schema,
 }: SeoHeadProps) {
   // Los metadatos cambian cuando una ruta SPA termina de cargar. Aplicarlos en
@@ -52,14 +54,20 @@ export function SeoHead({
 
     document.title = title;
     upsertMeta('name', 'description', description);
-    upsertMeta('name', 'robots', noIndex ? 'noindex,nofollow' : 'index,follow');
+    upsertMeta(
+      'name',
+      'robots',
+      noIndex ? 'noindex,nofollow' : 'index,follow,max-image-preview:large',
+    );
     upsertMeta('property', 'og:title', title);
     upsertMeta('property', 'og:description', description);
     upsertMeta('property', 'og:url', canonical);
     upsertMeta('property', 'og:image', imageUrl);
+    upsertMeta('property', 'og:image:alt', imageAlt);
     upsertMeta('property', 'og:type', 'website');
     upsertMeta('property', 'og:locale', 'es_PE');
-    upsertMeta('name', 'twitter:card', 'summary');
+    upsertMeta('property', 'og:site_name', 'Suya Delivery');
+    upsertMeta('name', 'twitter:card', 'summary_large_image');
     upsertMeta('name', 'twitter:title', title);
     upsertMeta('name', 'twitter:description', description);
     upsertMeta('name', 'twitter:image', imageUrl);
@@ -73,7 +81,7 @@ export function SeoHead({
       script.textContent = JSON.stringify(schema);
       document.head.appendChild(script);
     }
-  }, [description, image, noIndex, path, schema, title]);
+  }, [description, image, imageAlt, noIndex, path, schema, title]);
 
   return null;
 }

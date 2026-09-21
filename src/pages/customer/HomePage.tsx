@@ -11,6 +11,7 @@ import { SearchInput } from '@/components/common/SearchInput';
 import { StoreListSkeleton } from '@/components/common/Skeleton';
 import { CategoryRail } from '@/components/marketplace/CategoryRail';
 import { StoreCard } from '@/components/marketplace/StoreCard';
+import { LocalDeliveryContent } from '@/components/marketing/LocalDeliveryContent';
 import { useCatalogStore } from '@/store/catalogStore';
 import { offerService } from '@/lib/services';
 import type { AppOffer } from '@/types';
@@ -89,7 +90,16 @@ export default function HomePage() {
               name: 'Suya Delivery',
               url: 'https://suyadelivery.com/',
               logo: 'https://suyadelivery.com/brand/suya-logo.svg',
-              areaServed: { '@type': 'City', name: 'Sullana' },
+              description:
+                'Plataforma local para pedir comida y compras de negocios incorporados en Sullana, Piura.',
+              areaServed: {
+                '@type': 'City',
+                name: 'Sullana',
+                containedInPlace: {
+                  '@type': 'AdministrativeArea',
+                  name: 'Piura, Perú',
+                },
+              },
             },
             {
               '@type': 'WebSite',
@@ -100,11 +110,24 @@ export default function HomePage() {
               publisher: { '@id': 'https://suyadelivery.com/#organization' },
             },
             {
+              '@type': 'WebPage',
+              '@id': 'https://suyadelivery.com/#webpage',
+              url: 'https://suyadelivery.com/',
+              name: 'Delivery en Sullana: restaurantes y tiendas',
+              description:
+                'Pide comida y compras en restaurantes, tiendas y negocios locales de Sullana.',
+              isPartOf: { '@id': 'https://suyadelivery.com/#website' },
+              about: { '@id': 'https://suyadelivery.com/#service' },
+              inLanguage: 'es-PE',
+            },
+            {
               '@type': 'Service',
+              '@id': 'https://suyadelivery.com/#service',
               name: 'Delivery de restaurantes y negocios locales en Sullana',
               serviceType: 'Delivery de comida y compras',
               provider: { '@id': 'https://suyadelivery.com/#organization' },
-              areaServed: { '@type': 'City', name: 'Sullana' },
+              areaServed: { '@type': 'City', name: 'Sullana, Piura, Perú' },
+              url: 'https://suyadelivery.com/',
             },
           ],
         }}
@@ -118,10 +141,10 @@ export default function HomePage() {
               <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
               Hecho para Sullana
             </span>
-            <h1 className="mt-4 font-display text-5xl font-bold leading-[1.05]">
-              <span className="block">Todo lo que necesitas,</span>
+            <p className="mt-4 font-display text-5xl font-bold leading-[1.05]">
+              <span className="block">Delivery en Sullana,</span>
               <span className="block">de tu ciudad a tu puerta.</span>
-            </h1>
+            </p>
             <p className="mt-4 max-w-md text-lg text-suya-muted">
               Restaurantes, tiendas y negocios de Sullana en un solo lugar.
             </p>
@@ -213,7 +236,7 @@ export default function HomePage() {
               Descubre Sullana
             </p>
             <h1 className="mt-1 font-display text-[30px] font-bold leading-tight tracking-[-0.045em]">
-              Tu ciudad, a un toque.
+              Delivery en Sullana, a un toque.
             </h1>
             <p className="mt-1 text-sm text-suya-muted">Comida y negocios locales cerca de ti.</p>
           </div>
@@ -398,6 +421,8 @@ export default function HomePage() {
             </ButtonLink>
           </div>
         </section>
+
+        <LocalDeliveryContent />
       </div>
       </div>
     </>

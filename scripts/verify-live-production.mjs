@@ -166,6 +166,13 @@ if (!functionsOnly) {
     'application/xml',
     /<urlset\b[^>]*>/iu,
   );
+  await checkHttp(
+    `${config.apps.customer.origin} llms.txt`,
+    new URL('/llms.txt', origin),
+    undefined,
+    'text/plain',
+    /# Suya Delivery/iu,
+  );
 }
 
 const functionChecks = [

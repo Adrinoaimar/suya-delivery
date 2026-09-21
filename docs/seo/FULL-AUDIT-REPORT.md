@@ -37,7 +37,40 @@ La revalidación más reciente de `/` en el dominio publicado antes del PR #45 r
 - Migración `20260921100000_optimize_public_asset_urls.sql` para retirar URLs `raw.githubusercontent.com` del catálogo productivo.
 - HTML estático por ruta para `/stores`, `/help` y los cinco menús públicos del sitemap, con metadatos y Schema específicos antes de iniciar React.
 - CSP compatible con el beacon de Cloudflare Web Analytics.
+- Contenido local visible y útil sobre delivery en Sullana, proceso de compra, pagos y seguimiento,
+  sin inventar cobertura, tiempos, reseñas, teléfonos ni direcciones.
+- Páginas públicas de confianza para Sobre Suya, Contacto, Privacidad y Términos, enlazadas desde un
+  footer visible en móvil y escritorio.
+- HTML estático específico para doce documentos públicos (la portada y once rutas derivadas), incluidas las cinco cartas publicadas y las
+  páginas de confianza; cada ruta declara título, descripción, canonical, `h1` y JSON-LD propios.
+- Schema de `Organization`, `WebSite`, `WebPage`, `Service`, `CollectionPage`, `Restaurant` y
+  `BreadcrumbList` donde corresponde. No se añadió marcado de reseñas ni datos comerciales no
+  comprobados.
+- `llms.txt` y controles de release que comprueban `robots.txt`, sitemap, HTML estático y tipos MIME.
+- La animación inicial dejó de bloquear la web y se conserva únicamente en la aplicación nativa.
+- Fuentes latinas locales precargadas, con caché inmutable, y contraste AA corregido en el footer.
+
+## Competencia observada para búsquedas locales
+
+En consultas de referencia como «delivery Sullana», «delivery en Sullana», «pedir comida Sullana» y
+«restaurantes delivery Sullana», Suya no apareció entre los resultados principales observados. Los
+resultados visibles favorecieron agregadores, directorios, redes sociales y páginas locales con más
+contenido y autoridad histórica. La implementación resuelve la brecha on-page y técnica; superar esa
+autoridad requiere señales externas auténticas y tiempo de rastreo.
+
+## Medición del candidato local
+
+Lighthouse móvil sobre el build candidato obtuvo 76 de rendimiento, 100 de accesibilidad, 96 de buenas
+prácticas y 100 de SEO. Registró FCP 2.7 s, LCP 3.0 s, TBT 560 ms y CLS 0. La medición usa un backend
+Supabase local no iniciado; sirve como comparación técnica, no como dato de campo ni resultado
+productivo. Frente a la versión publicada medida antes de esta tanda, el SEO sube de 83 a 100 y el LCP
+local baja de 19.7 s a 3.0 s.
 
 ## Riesgo residual
 
-La aplicación cliente mantiene un bootstrap de React, fuentes y catálogo que domina parte de la primera carga móvil. Las rutas públicas principales ya entregan HTML estático con metadatos; para llevar el rendimiento móvil a nivel alto todavía conviene separar el bootstrap de autenticación/catálogo del home y medir INP, LCP y CLS con catálogo productivo.
+La aplicación cliente mantiene un bootstrap de React y Supabase que domina el trabajo de CPU inicial.
+Una optimización adicional exige separar servicios y autenticación del paquete crítico, y se mantiene
+fuera de esta tanda para no introducir regresiones operativas. El puesto 1 no puede garantizarse desde
+el código: faltan indexación efectiva, Search Console, una ficha de empresa legítima, reseñas reales,
+citaciones locales y enlaces editoriales. Después de publicar se deben medir INP, LCP y CLS con datos
+de campo y catálogo productivo.

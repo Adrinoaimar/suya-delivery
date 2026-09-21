@@ -2,6 +2,17 @@
 
 Actualizado: 21 de septiembre de 2026 (`America/Lima`)
 
+## SEO local Sullana — candidato F32
+
+- La web cliente entrega contenido estático y metadatos específicos para doce documentos públicos, suma
+  páginas de confianza, contenido local visible, sitemap ampliado, `llms.txt` y Schema verificable.
+- La intro bloqueante queda limitada a Android/iOS; fuentes latinas se precargan y el footer cumple
+  contraste AA. Lighthouse local: 76 rendimiento, 100 accesibilidad, 96 buenas prácticas, 100 SEO;
+  LCP 3.0 s y CLS 0.
+- Gates: typecheck, lint, secretos, 76 suites/387 pruebas, tres builds, `verify:production` y diff pasan.
+- No se garantiza el puesto 1. Quedan publicación protegida, validación productiva, Search Console,
+  ficha comercial legítima, reseñas y autoridad local. Evidencia: `docs/execution/F32.md`.
+
 ## Medidor propio de visitas — 21 de septiembre de 2026
 
 - Customer web registra visitantes únicos por día solo después de consentimiento explícito.

@@ -98,6 +98,39 @@ for (const app of apps) {
         failures.push(`${app}: contiene activo PWA exclusivo del cliente: ${customerAsset}`);
       }
     }
+  } else {
+    const requiredAssets = ['robots.txt', 'sitemap.xml', 'llms.txt'];
+    for (const asset of requiredAssets) {
+      if (!files.includes(path.join(output, asset))) {
+        failures.push(`customer: falta activo SEO ${asset}`);
+      }
+    }
+
+    const publicRoutes = [
+      'index.html',
+      path.join('stores', 'index.html'),
+      path.join('help', 'index.html'),
+      path.join('nosotros', 'index.html'),
+      path.join('contacto', 'index.html'),
+      path.join('privacidad', 'index.html'),
+      path.join('terminos', 'index.html'),
+      path.join('menu', 'anda-paya-menu', 'index.html'),
+      path.join('menu', 'anda-paya-cevicheria-menu', 'index.html'),
+      path.join('menu', 'donde-joel-menu', 'index.html'),
+      path.join('menu', 'tio-jhony-menu', 'index.html'),
+      path.join('menu', 'la-waka-menu', 'index.html'),
+    ];
+    for (const route of publicRoutes) {
+      const file = path.join(output, route);
+      if (!files.includes(file)) {
+        failures.push(`customer: falta HTML público ${route}`);
+        continue;
+      }
+      const html = await readFile(file, 'utf8');
+      for (const marker of ['rel="canonical"', 'application/ld+json', 'data-static-seo=', '<h1']) {
+        if (!html.includes(marker)) failures.push(`customer: ${route} no contiene ${marker}`);
+      }
+    }
   }
 }
 

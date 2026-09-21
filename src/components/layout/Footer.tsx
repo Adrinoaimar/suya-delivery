@@ -6,14 +6,21 @@ const INTERNAL_COLUMNS = [
     title: 'Suya Delivery',
     links: [
       { to: '/stores', label: 'Tiendas' },
-      { to: '/orders', label: 'Mis pedidos' },
+      { to: '/nosotros', label: 'Sobre Suya' },
     ],
   },
   {
     title: 'Soporte',
     links: [
       { to: '/help', label: 'Centro de ayuda' },
-      { to: '/profile', label: 'Mi cuenta' },
+      { to: '/contacto', label: 'Contacto' },
+    ],
+  },
+  {
+    title: 'Legal',
+    links: [
+      { to: '/privacidad', label: 'Privacidad' },
+      { to: '/terminos', label: 'Términos de uso' },
     ],
   },
 ];
@@ -35,8 +42,8 @@ export function Footer() {
     : INTERNAL_COLUMNS;
 
   return (
-    <footer className="mt-12 hidden border-t border-suya-mist bg-white lg:block">
-      <div className="shell grid grid-cols-4 gap-8 py-10">
+    <footer className="pb-nav mt-12 border-t border-suya-mist bg-white lg:pb-0">
+      <div className="shell grid grid-cols-2 gap-7 py-8 sm:grid-cols-3 lg:grid-cols-4 lg:gap-8 lg:py-10">
         <div>
           <Logo size="sm" showCity />
           <p className="mt-3 max-w-[240px] text-sm text-[#6B7076]">
@@ -67,7 +74,7 @@ export function Footer() {
         ))}
       </div>
       <div className="border-t border-suya-mist py-4">
-        <p className="shell text-xs text-[#9AA0A6]">
+        <p className="shell text-xs text-suya-muted">
           Suya Delivery · Sullana, Piura, Perú · Catálogo conectado a comercios incorporados.
         </p>
       </div>
