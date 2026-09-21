@@ -93,7 +93,7 @@ export default function WalletObserverPage() {
     <main id="contenido" className="min-h-screen bg-suya-ivory px-4 py-8 text-suya-carbon sm:px-6">
       <div className="mx-auto flex max-w-lg flex-col gap-4">
         <header className="rounded-card bg-suya-green p-5 text-white shadow-soft">
-          <p className="text-xs font-bold uppercase tracking-[.18em] text-suya-lime">Suya</p>
+          <p className="text-xs font-bold uppercase tracking-[.18em] text-suya-lime">Suya Caja</p>
           <h1 className="mt-2 font-display text-2xl font-bold">Conexión de caja</h1>
           <p className="mt-2 text-sm text-white/80">
             Vincula este teléfono para mantener la evidencia de pagos sincronizada con operaciones.
