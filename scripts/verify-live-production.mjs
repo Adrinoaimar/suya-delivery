@@ -110,6 +110,23 @@ for (const [name, path] of functionChecks) {
     null,
     [200, 204],
   );
+  // OPTIONS solo confirma CORS. Un GET sin una sesión válida debe alcanzar el
+  // handler y devolver 401; un 404 o 503 demuestra que la función no está
+  // publicada o no tiene su configuración interna completa.
+  await checkHttp(
+    `Edge Function ${name} auth`,
+    `${config.supabaseUrl ?? `https://${config.supabaseProjectRef}.supabase.co`}/functions/v1/${path}`,
+    {
+      method: 'GET',
+      headers: {
+        Origin: origin,
+        Authorization: 'Bearer invalid-live-audit-token',
+      },
+    },
+    'application/json',
+    /sesi[oó]n|auth|authorization/iu,
+    [401],
+  );
 }
 
 if (!culqiEnabled) console.log('Culqi: omitido (VITE_CULQI_GATEWAY_ENABLED no está en true).');
