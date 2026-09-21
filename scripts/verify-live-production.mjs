@@ -42,6 +42,52 @@ for (const [app, details] of Object.entries(config.apps)) {
   );
 }
 
+async function checkCustomerAnalyticsBundle() {
+  try {
+    const response = await fetch(origin, {
+      redirect: 'follow',
+      signal: AbortSignal.timeout(10_000),
+    });
+    const html = await response.text();
+    const scriptSources = [...html.matchAll(/<script[^>]+src=["']([^"']+)["']/giu)].map(
+      (match) => new URL(match[1], origin).toString(),
+    );
+    if (!scriptSources.length) {
+      failures.push('medidor de visitas: la página cliente no publicó bundles JavaScript.');
+      return;
+    }
+
+    const bundles = [];
+    for (const scriptUrl of scriptSources) {
+      const scriptResponse = await fetch(scriptUrl, {
+        redirect: 'follow',
+        signal: AbortSignal.timeout(10_000),
+      });
+      if (scriptResponse.ok) bundles.push(await scriptResponse.text());
+    }
+    const bundle = bundles.join('\n');
+    if (!bundle.includes('suya_analytics_consent')) {
+      failures.push('medidor de visitas: el bundle cliente no contiene la preferencia de consentimiento.');
+    }
+    if (!bundle.includes('record_suya_analytics_visit')) {
+      failures.push('medidor de visitas: el bundle cliente no contiene el registro first-party.');
+    }
+    if (
+      failures.every(
+        (failure) => !failure.startsWith('medidor de visitas:'),
+      )
+    ) {
+      console.log(`${origin} medidor: bundle first-party activo`);
+    }
+  } catch (error) {
+    failures.push(
+      `medidor de visitas: no se pudo inspeccionar el bundle (${error instanceof Error ? error.message : 'error de red'}).`,
+    );
+  }
+}
+
+await checkCustomerAnalyticsBundle();
+
 await checkHttp(`${config.apps.customer.origin} robots.txt`, new URL('/robots.txt', origin), undefined, 'text/plain', /User-agent:\s*\*/iu);
 await checkHttp(`${config.apps.customer.origin} sitemap.xml`, new URL('/sitemap.xml', origin), undefined, 'application/xml', /<urlset\b[^>]*>/iu);
 

@@ -36,7 +36,11 @@ export function track(name: AnalyticsEventName, params: AnalyticsParams = {}): v
   const visitorId = getVisitorId();
   if (!visitorId) return;
   void params;
-  void supabase?.rpc('record_suya_analytics_visit', { p_visitor_id: visitorId });
+  // La analítica no debe convertir una caída de red en un error visible para el cliente.
+  if (!supabase) return;
+  void Promise.resolve(supabase.rpc('record_suya_analytics_visit', { p_visitor_id: visitorId })).catch(
+    () => undefined,
+  );
 }
 
 export function captureCampaign(search: string): Record<string, string> {
