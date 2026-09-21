@@ -141,10 +141,10 @@ export default function HomePage() {
               <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
               Hecho para Sullana
             </span>
-            <p className="mt-4 font-display text-5xl font-bold leading-[1.05]">
+            <h1 className="mt-4 font-display text-5xl font-bold leading-[1.05]">
               <span className="block">Delivery en Sullana,</span>
               <span className="block">de tu ciudad a tu puerta.</span>
-            </p>
+            </h1>
             <p className="mt-4 max-w-md text-lg text-suya-muted">
               Restaurantes, tiendas y negocios de Sullana en un solo lugar.
             </p>
@@ -235,9 +235,13 @@ export default function HomePage() {
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-suya-green">
               Descubre Sullana
             </p>
-            <h1 className="mt-1 font-display text-[30px] font-bold leading-tight tracking-[-0.045em]">
+            <div
+              role="heading"
+              aria-level={1}
+              className="mt-1 font-display text-[30px] font-bold leading-tight tracking-[-0.045em]"
+            >
               Delivery en Sullana, a un toque.
-            </h1>
+            </div>
             <p className="mt-1 text-sm text-suya-muted">Comida y negocios locales cerca de ti.</p>
           </div>
           <SearchInput value={query} onChange={setQuery} onSubmit={submitSearch} />
