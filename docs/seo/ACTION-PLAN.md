@@ -11,6 +11,7 @@
 7. Aplicar `20260921100000_optimize_public_asset_urls.sql` para servir imágenes desde el dominio propio.
 8. Generar HTML estático con metadatos y Schema específicos para `/stores`, `/help` y los menús públicos.
 9. Priorizar portadas visibles y precargar activos destacados solo en Inicio para reducir descubrimiento tardío de LCP.
+10. Ampliar el shell HTML público con respuestas locales y enlaces internos, sin duplicar datos comerciales no verificados.
 
 ## P1 — inmediatamente después de publicar
 

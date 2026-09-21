@@ -56,6 +56,8 @@ El medidor propio de visitas ya está publicado en producción: es first-party, 
 - Robots y sitemap responden 200 con tipos MIME correctos.
 - Rutas privadas mantienen 200 HTML con `noindex,nofollow` sin canonical; rutas desconocidas responden 404.
 - No quedan errores críticos o altos técnicos detectados. La autoridad externa no se puede validar desde el repositorio.
+- El shell SEO inicial se amplió sin alterar la UI hidratada: Inicio 441 palabras; `/stores/` 207;
+  `/help/` 191; cada menú público 189, con H2, pasos, pagos, seguimiento y enlaces internos.
 
 ## Pendientes externos
 

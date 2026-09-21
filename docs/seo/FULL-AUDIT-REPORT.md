@@ -49,6 +49,8 @@ El candidato de PR #57 medido en `/stores/` obtuvo rendimiento 79, SEO/accesibil
 - CSP compatible con el beacon de Cloudflare Web Analytics.
 - Contenido local visible y útil sobre delivery en Sullana, proceso de compra, pagos y seguimiento,
   sin inventar cobertura, tiempos, reseñas, teléfonos ni direcciones.
+- Shell HTML inicial ampliado con contenido local factual, pasos de pedido, pagos, seguimiento,
+  H2 y enlaces internos para que los rastreadores reciban contexto antes de ejecutar React.
 - Páginas públicas de confianza para Sobre Suya, Contacto, Privacidad y Términos, enlazadas desde un
   footer visible en móvil y escritorio.
 - HTML estático específico para doce documentos públicos (la portada y once rutas derivadas), incluidas las cinco cartas publicadas y las
