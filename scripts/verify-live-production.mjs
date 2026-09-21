@@ -88,6 +88,44 @@ async function checkCustomerAnalyticsBundle() {
 
 await checkCustomerAnalyticsBundle();
 
+async function checkCustomerAnalyticsRpc() {
+  const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
+  const supabaseOrigin = config.supabaseUrl ?? `https://${config.supabaseProjectRef}.supabase.co`;
+  if (!publishableKey) {
+    console.log('RPC del medidor: omitida (VITE_SUPABASE_PUBLISHABLE_KEY no está configurada).');
+    return;
+  }
+
+  try {
+    const response = await fetch(`${supabaseOrigin}/rest/v1/rpc/record_suya_analytics_visit`, {
+      method: 'POST',
+      headers: {
+        apikey: publishableKey,
+        Authorization: `Bearer ${publishableKey}`,
+        'Content-Type': 'application/json',
+      },
+      // Entrada deliberadamente inválida: confirma que la función existe sin
+      // insertar una visita ni modificar datos de producción.
+      body: JSON.stringify({ p_visitor_id: 'invalid-live-audit-visitor' }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    const contentType = response.headers.get('content-type') || '';
+    if (response.status !== 400 || !contentType.toLowerCase().includes('application/json')) {
+      failures.push(
+        `RPC del medidor: respuesta inesperada (HTTP ${response.status}, ${contentType || 'sin content-type'}).`,
+      );
+      return;
+    }
+    console.log(`${supabaseOrigin} RPC del medidor: presente (prueba no mutante)`);
+  } catch (error) {
+    failures.push(
+      `RPC del medidor: no se pudo comprobar (${error instanceof Error ? error.message : 'error de red'}).`,
+    );
+  }
+}
+
+await checkCustomerAnalyticsRpc();
+
 await checkHttp(`${config.apps.customer.origin} robots.txt`, new URL('/robots.txt', origin), undefined, 'text/plain', /User-agent:\s*\*/iu);
 await checkHttp(`${config.apps.customer.origin} sitemap.xml`, new URL('/sitemap.xml', origin), undefined, 'application/xml', /<urlset\b[^>]*>/iu);
 
