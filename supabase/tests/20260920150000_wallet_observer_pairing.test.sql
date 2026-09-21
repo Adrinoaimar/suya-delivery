@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(8);
+select plan(9);
 
 select has_function(
   'public',
@@ -58,6 +58,13 @@ select ok(
     and pg_get_functiondef('public.complete_wallet_observer_pairing(text,text)'::regprocedure)
       like '%token_hash%'),
   'la credencial se genera y almacena como hash en servidor'
+);
+select ok(
+  (select pg_get_functiondef('public.create_wallet_observer_pairing(uuid,uuid,text)'::regprocedure)
+    like '%update public.wallet_observer_pairings as pairing%'
+    and pg_get_functiondef('public.create_wallet_observer_pairing(uuid,uuid,text)'::regprocedure)
+      like '%pairing.restaurant_id = p_restaurant_id%'),
+  'la RPC califica columnas para evitar ambigüedad con variables de salida'
 );
 
 select * from finish();

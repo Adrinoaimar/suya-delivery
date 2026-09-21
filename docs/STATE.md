@@ -2,6 +2,18 @@
 
 Actualizado: 16 de septiembre de 2026 (`America/Lima`)
 
+## Hotfix pairing de observador — 20 de septiembre de 2026
+
+- La RPC `create_wallet_observer_pairing` fallaba en producción por ambigüedad entre las
+  columnas `restaurant_id`/`receiver_account_id` y variables implícitas de `RETURNS TABLE`.
+- La migración `20260920160000_fix_wallet_observer_pairing_ambiguity.sql` califica las columnas con
+  el alias `pairing`; fue aplicada y registrada en Supabase producción.
+- Prueba transaccional con cuenta autorizada: genera identificador, código hexadecimal de 8
+  caracteres y expiración futura; la transacción se revierte, sin dejar datos de prueba.
+- Suite: 380/380 pruebas, typecheck, lint, secretos y `git diff --check` pasan. Build local queda
+  pendiente de variables productivas; el workflow de publicación debe ejecutar el build con su
+  entorno protegido.
+
 ## Objetivo
 
 Convertir Suya Delivery en producto funcional multiapp. Ninguna simulación puede quedar activa en
