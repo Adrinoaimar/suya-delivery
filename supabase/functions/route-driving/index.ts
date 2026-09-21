@@ -9,6 +9,11 @@ const corsHeaders = (origin: string | null) => ({
 // sustituye la autenticación: todas las solicitudes siguen necesitando una
 // sesión válida y un perfil de rider verificado.
 const NATIVE_APP_ORIGINS = new Set(['https://localhost', 'capacitor://localhost']);
+const DEFAULT_WEB_ORIGINS = new Set([
+  'https://suyadelivery.com',
+  'https://rider.suyadelivery.com',
+  'https://panel.suyadelivery.com',
+]);
 const ROUTE_CACHE_TTL_MS = 30_000;
 const ROUTE_CACHE_LIMIT = 100;
 type CachedRoute = { expiresAt: number; payload: unknown };
@@ -23,7 +28,7 @@ function json(body: unknown, status: number, origin: string | null): Response {
 
 function allowedOrigin(origin: string | null): boolean {
   if (!origin) return true;
-  if (NATIVE_APP_ORIGINS.has(origin)) return true;
+  if (NATIVE_APP_ORIGINS.has(origin) || DEFAULT_WEB_ORIGINS.has(origin)) return true;
   const allowed = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
     .split(',')
     .map((value) => value.trim())
