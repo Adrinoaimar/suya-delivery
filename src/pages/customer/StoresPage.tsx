@@ -180,8 +180,8 @@ export default function StoresPage() {
                 />
               </div>
               <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {availableStores.map((store) => (
-                  <StoreCard key={store.id} store={store} />
+                {availableStores.map((store, index) => (
+                  <StoreCard key={store.id} store={store} priorityImage={index < 2} />
                 ))}
               </div>
             </section>
