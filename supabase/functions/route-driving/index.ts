@@ -5,6 +5,11 @@ const corsHeaders = (origin: string | null) => ({
   Vary: 'Origin',
 });
 
+// Capacitor usa estos orígenes fijos en las aplicaciones nativas. CORS no
+// sustituye la autenticación: todas las solicitudes siguen necesitando una
+// sesión válida y un perfil de rider verificado.
+const NATIVE_APP_ORIGINS = new Set(['https://localhost', 'capacitor://localhost']);
+
 function json(body: unknown, status: number, origin: string | null): Response {
   return new Response(JSON.stringify(body), {
     status,
@@ -14,6 +19,7 @@ function json(body: unknown, status: number, origin: string | null): Response {
 
 function allowedOrigin(origin: string | null): boolean {
   if (!origin) return true;
+  if (NATIVE_APP_ORIGINS.has(origin)) return true;
   const allowed = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
     .split(',')
     .map((value) => value.trim())
