@@ -70,6 +70,20 @@ function deploy(app, branch) {
   });
 }
 
+function verifyLive() {
+  const executable = process.execPath;
+  return new Promise((resolve, reject) => {
+    const child = spawn(executable, ['scripts/verify-live-production.mjs'], {
+      env: process.env,
+      stdio: 'inherit',
+    });
+    child.on('error', reject);
+    child.on('close', (code) =>
+      code === 0 ? resolve() : reject(new Error(`La auditoría live falló (${code}).`)),
+    );
+  });
+}
+
 async function smoke(origin, path) {
   const targets = [origin, new URL(path, origin).href];
   for (const target of targets) {
@@ -163,6 +177,7 @@ try {
   }
   await smokeAsset(config.apps.customer.origin, '/robots.txt', 'text/plain', /User-agent:\s*\*/iu);
   await smokeAsset(config.apps.customer.origin, '/sitemap.xml', 'application/xml', /<urlset\b[^>]*>/iu);
+  await verifyLive();
 } catch (error) {
   try {
     await rollback();
