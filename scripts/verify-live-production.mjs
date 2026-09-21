@@ -5,6 +5,8 @@ const failures = [];
 const functionsOnly = new Set(process.argv.slice(2)).has('--functions-only');
 const origin = config.apps.customer.origin;
 const culqiEnabled = process.env.VITE_CULQI_GATEWAY_ENABLED === 'true';
+let livePublishableKey = null;
+let liveSupabaseOrigin = null;
 
 async function checkHttp(name, url, options, expectedContentType, bodyPattern, statuses = [200]) {
   try {
@@ -52,9 +54,13 @@ async function checkCustomerAnalyticsBundle() {
       signal: AbortSignal.timeout(10_000),
     });
     const html = await response.text();
-    const scriptSources = [...html.matchAll(/<script[^>]+src=["']([^"']+)["']/giu)].map(
-      (match) => new URL(match[1], origin).toString(),
-    );
+    const scriptSources = [
+      ...new Set(
+        [...html.matchAll(/(?:src|href)=["']([^"']+\.js(?:\?[^"']*)?)["']/giu)].map(
+          (match) => new URL(match[1], origin).toString(),
+        ),
+      ),
+    ];
     if (!scriptSources.length) {
       failures.push('medidor de visitas: la página cliente no publicó bundles JavaScript.');
       return;
@@ -75,6 +81,20 @@ async function checkCustomerAnalyticsBundle() {
     if (!bundle.includes('record_suya_analytics_visit')) {
       failures.push('medidor de visitas: el bundle cliente no contiene el registro first-party.');
     }
+    const publishedSupabaseOrigin = bundle.match(
+      new RegExp(`https://${config.supabaseProjectRef}\\.supabase\\.co`, 'iu'),
+    )?.[0];
+    const publishedPublishableKey = bundle.match(/sb_publishable_[A-Za-z0-9._-]{20,}/u)?.[0];
+    if (!publishedSupabaseOrigin || !publishedPublishableKey) {
+      failures.push(
+        'medidor de visitas: el bundle no publicó la configuración pública de Supabase necesaria.',
+      );
+    } else {
+      // La publishable key no es un secreto; solo se usa para una comprobación
+      // deliberadamente inválida y no mutante contra la RPC publicada.
+      liveSupabaseOrigin = publishedSupabaseOrigin;
+      livePublishableKey = publishedPublishableKey;
+    }
     if (
       failures.every(
         (failure) => !failure.startsWith('medidor de visitas:'),
@@ -92,10 +112,12 @@ async function checkCustomerAnalyticsBundle() {
 if (!functionsOnly) await checkCustomerAnalyticsBundle();
 
 async function checkCustomerAnalyticsRpc() {
-  const publishableKey = process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim();
-  const supabaseOrigin = config.supabaseUrl ?? `https://${config.supabaseProjectRef}.supabase.co`;
+  const publishableKey =
+    process.env.VITE_SUPABASE_PUBLISHABLE_KEY?.trim() || livePublishableKey;
+  const supabaseOrigin =
+    config.supabaseUrl ?? liveSupabaseOrigin ?? `https://${config.supabaseProjectRef}.supabase.co`;
   if (!publishableKey) {
-    console.log('RPC del medidor: omitida (VITE_SUPABASE_PUBLISHABLE_KEY no está configurada).');
+    failures.push('RPC del medidor: no se encontró una publishable key válida.');
     return;
   }
 
