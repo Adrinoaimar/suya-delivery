@@ -4,7 +4,6 @@ import { orderService } from '@/lib/services';
 import { products } from '@/data';
 import { useOrderStore } from '@/store/orderStore';
 import type { CartItem } from '@/types';
-import { riderTrackingMessage } from '@/utils/format';
 
 function buildItems(): CartItem[] {
   const product = products.find((candidate) => candidate.storeId === 'anda-paya')!;
