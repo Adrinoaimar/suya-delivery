@@ -66,8 +66,8 @@ async function checkCustomerAnalyticsBundle() {
       if (scriptResponse.ok) bundles.push(await scriptResponse.text());
     }
     const bundle = bundles.join('\n');
-    if (!bundle.includes('suya_analytics_consent')) {
-      failures.push('medidor de visitas: el bundle cliente no contiene la preferencia de consentimiento.');
+    if (!bundle.includes('analyticsConsent')) {
+      failures.push('medidor de visitas: el bundle cliente no contiene el estado de consentimiento.');
     }
     if (!bundle.includes('record_suya_analytics_visit')) {
       failures.push('medidor de visitas: el bundle cliente no contiene el registro first-party.');
