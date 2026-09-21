@@ -103,6 +103,32 @@ try {
           activated_at = coalesce(activated_at, now())
       where restaurant_id = (select id from public.restaurants where slug = 'anda-paya');
 
+      insert into public.restaurant_payment_accounts (
+        restaurant_id, provider, account_label, qr_payload, active
+      )
+      select id, 'yape', 'Caja Yape E2E', 'yape://e2e/anda-paya', true
+      from public.restaurants
+      where slug = 'anda-paya'
+      on conflict (restaurant_id, provider)
+      do update set
+        account_label = excluded.account_label,
+        qr_payload = excluded.qr_payload,
+        active = excluded.active,
+        updated_at = now();
+
+      insert into public.restaurant_payment_accounts (
+        restaurant_id, provider, account_label, qr_payload, active
+      )
+      select id, 'lemon', 'Caja Lemon E2E', 'lemon://e2e/anda-paya', true
+      from public.restaurants
+      where slug = 'anda-paya'
+      on conflict (restaurant_id, provider)
+      do update set
+        account_label = excluded.account_label,
+        qr_payload = excluded.qr_payload,
+        active = excluded.active,
+        updated_at = now();
+
       select count(*)
       from public.restaurant_members rm
       join public.restaurants r on r.id = rm.restaurant_id

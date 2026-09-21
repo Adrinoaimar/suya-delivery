@@ -21,6 +21,39 @@ const executablePath = process.env.PLAYWRIGHT_EXECUTABLE_PATH ??
 const browser = await chromium.launch({ headless: true, executablePath });
 const failures = [];
 
+async function exerciseManualWalletCheckout(page, customerOrigin, method) {
+  await page.goto(`${customerOrigin}/stores`, { waitUntil: 'networkidle', timeout: 20_000 });
+  await page.getByRole('link', { name: 'Andá Paya Restaurante', exact: true }).click();
+  await page.getByRole('heading', { name: 'Andá Paya Restaurante', exact: true }).first().waitFor();
+  await page.getByRole('button', { name: 'Agregar Chicharrón de pescado' }).click();
+  await page.getByRole('button', { name: /Agregar ·/ }).click();
+  await page.goto(`${customerOrigin}/cart`, { waitUntil: 'networkidle', timeout: 20_000 });
+  await page.getByRole('link', { name: 'Continuar al pago' }).click();
+  await page.getByRole('heading', { name: 'Confirmar pedido' }).waitFor();
+  await page.getByLabel('Nombre y apellido').fill('Cliente Wallet E2E');
+  await page.getByLabel('Teléfono').fill('987654322');
+  await page.getByLabel('Dirección').fill('Av. José de Lama 480, Sullana');
+  await page.getByRole('button', { name: 'Usar mi ubicación' }).click();
+  await page.getByText('Punto confirmado:', { exact: false }).waitFor({ timeout: 10_000 });
+  const methodLabel = method === 'yape' ? /Yape QR/ : /Lemon Billetera/;
+  await page.getByRole('checkbox', { name: methodLabel }).check();
+  await page.getByRole('button', { name: /Continuar con pago ·/ }).click();
+  await page.waitForURL(/\/orders\/[^/]+\/track$/, { timeout: 20_000 });
+  await page.getByRole('heading', { name: `Paga con ${method === 'yape' ? 'Yape' : 'Lemon'}` }).waitFor({
+    timeout: 20_000,
+  });
+  await page.getByText('QR del negocio', { exact: true }).waitFor({ timeout: 20_000 });
+  await page.getByText('Pendiente de verificación', { exact: true }).waitFor({ timeout: 20_000 });
+  if (method === 'yape') {
+    await page.getByLabel('Código de seguridad Yape').waitFor();
+    await page.getByRole('button', { name: 'Confirmar pago' }).waitFor();
+  } else {
+    await page.getByLabel('Nombre del pagador en Lemon').waitFor();
+    await page.getByRole('button', { name: 'Confirmar pago' }).waitFor();
+  }
+  console.log(`business/customer-${method}-checkout-awaits-verification: OK`);
+}
+
 for (const viewport of viewports) {
   const context = await browser.newContext({ viewport, reducedMotion: 'reduce' });
   for (const target of targets) {
@@ -199,6 +232,12 @@ if (process.env.SMOKE_BUSINESS === 'true') {
     await riderPage.getByRole('button', { name: 'Confirmar entrega' }).click();
     await riderPage.getByText('Entregado', { exact: true }).waitFor({ timeout: 20_000 });
     console.log('business/rider-confirm-delivery-code: OK');
+
+    if (process.env.SMOKE_MANUAL_WALLETS === 'true') {
+      await exerciseManualWalletCheckout(page, customerOrigin, 'yape');
+      await exerciseManualWalletCheckout(page, customerOrigin, 'lemon');
+    }
+
     await opsPage.close();
     await riderPage.close();
   } catch (error) {
