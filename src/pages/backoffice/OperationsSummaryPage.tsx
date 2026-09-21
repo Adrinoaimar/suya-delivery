@@ -1,11 +1,14 @@
 import { Bike, CheckCircle2, ClipboardList, UtensilsCrossed } from 'lucide-react';
 import { Card } from '@/components/common/Card';
+import { isOperationalOrder } from '@/lib/orderOperations';
 import { useOrderStore } from '@/store/orderStore';
 import { formatPrice } from '@/utils/format';
 
 export default function OperationsSummaryPage() {
   const orders = useOrderStore((state) => state.orders);
-  const active = orders.filter((order) => !['delivered', 'cancelled'].includes(order.status));
+  const active = orders.filter(
+    (order) => !['delivered', 'cancelled'].includes(order.status) && isOperationalOrder(order),
+  );
   const preparing = active.filter((order) => order.status === 'preparing').length;
   const inRoute = active.filter((order) =>
     ['picked_up', 'on_the_way'].includes(order.status),
