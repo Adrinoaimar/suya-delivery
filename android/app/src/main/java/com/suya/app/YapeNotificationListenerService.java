@@ -6,6 +6,7 @@ import android.app.job.JobScheduler;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
@@ -20,6 +21,8 @@ import org.json.JSONObject;
 
 import java.nio.charset.StandardCharsets;
 import java.io.OutputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.MessageDigest;
@@ -65,6 +68,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     private static final int SYNC_JOB_ID = 170914;
     private static final int MAX_EVENTS = 500;
     private static final long MAX_OBSERVED_AMOUNT_CENTS = 100000000L;
+    private static final Pattern PAIRING_CODE_PATTERN = Pattern.compile("^[A-Fa-f0-9]{8}$");
     private static final Object QUEUE_LOCK = new Object();
     private static final ExecutorService SYNC_EXECUTOR = Executors.newSingleThreadExecutor();
     private static final Pattern MONEY_PATTERN = Pattern.compile("(?<![\\p{L}\\d+-])(?:S\\/?|S\\.|PEN|ARS|USD|US\\$|\\$)\\s*((?:\\d{1,3}(?:[.,]\\d{3})+|\\d+)(?:[.,]\\d{2})?)(?!\\d)", Pattern.CASE_INSENSITIVE);
@@ -471,6 +475,48 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         return true;
     }
 
+    static boolean isPairingCodeValid(String pairingCode) {
+        return pairingCode != null && PAIRING_CODE_PATTERN.matcher(pairingCode.trim()).matches();
+    }
+
+    /** Consumes a one-use code; the resulting credential never reaches the WebView. */
+    public static boolean pairDevice(Context context, String pairingCode) {
+        if (context == null || !isPairingCodeValid(pairingCode)
+                || BuildConfig.SUYA_SUPABASE_URL.isEmpty()
+                || BuildConfig.SUYA_SUPABASE_PUBLISHABLE_KEY.isEmpty()) return false;
+        HttpURLConnection connection = null;
+        try {
+            URL endpoint = new URL(BuildConfig.SUYA_SUPABASE_URL.replaceAll("/+$", "")
+                    + "/rest/v1/rpc/complete_wallet_observer_pairing");
+            connection = (HttpURLConnection) endpoint.openConnection();
+            connection.setRequestMethod("POST");
+            connection.setConnectTimeout(10_000);
+            connection.setReadTimeout(10_000);
+            connection.setDoOutput(true);
+            connection.setRequestProperty("apikey", BuildConfig.SUYA_SUPABASE_PUBLISHABLE_KEY);
+            connection.setRequestProperty("Authorization", "Bearer " + BuildConfig.SUYA_SUPABASE_PUBLISHABLE_KEY);
+            connection.setRequestProperty("Content-Type", "application/json");
+
+            JSONObject payload = new JSONObject();
+            payload.put("p_pairing_code", pairingCode.trim().toLowerCase(Locale.US));
+            payload.put("p_device_label", Build.MANUFACTURER + " " + Build.MODEL);
+            try (OutputStream output = connection.getOutputStream()) {
+                output.write(payload.toString().getBytes(StandardCharsets.UTF_8));
+            }
+            int status = connection.getResponseCode();
+            if (status < 200 || status >= 300) return false;
+            String response = readResponseBody(connection);
+            JSONArray rows = new JSONArray(response);
+            JSONObject row = rows.optJSONObject(0);
+            String token = row == null ? null : row.optString("device_token", null);
+            return configureDeviceToken(context, token);
+        } catch (Exception ignored) {
+            return false;
+        } finally {
+            if (connection != null) connection.disconnect();
+        }
+    }
+
     public static void clearDeviceToken(Context context) {
         if (context == null) return;
         synchronized (QUEUE_LOCK) {
@@ -632,6 +678,16 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         } finally {
             if (connection != null) connection.disconnect();
         }
+    }
+
+    private static String readResponseBody(HttpURLConnection connection) throws Exception {
+        StringBuilder body = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) body.append(line);
+        }
+        return body.toString();
     }
 
     @Nullable

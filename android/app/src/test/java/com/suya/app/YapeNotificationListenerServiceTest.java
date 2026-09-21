@@ -55,6 +55,14 @@ public class YapeNotificationListenerServiceTest {
     }
 
     @Test
+    public void acceptsOnlyTheEightCharacterPairingCode() {
+        assertTrue(YapeNotificationListenerService.isPairingCodeValid("AB12CD34"));
+        assertTrue(!YapeNotificationListenerService.isPairingCodeValid("AB12-CD34"));
+        assertTrue(!YapeNotificationListenerService.isPairingCodeValid("AB12CD3"));
+        assertTrue(!YapeNotificationListenerService.isPairingCodeValid("AB12CD345"));
+    }
+
+    @Test
     public void extractsSenderAfterWalletTitle() {
         assertEquals(
                 "Ana María Torres",

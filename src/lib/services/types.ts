@@ -162,6 +162,15 @@ export interface CreatedWalletObserverDevice extends WalletObserverDevice {
   deviceToken: string;
 }
 
+export interface WalletObserverPairing {
+  pairingId: string;
+  pairingCode: string;
+  expiresAt: string;
+  restaurantId: string;
+  receiverAccountId: string;
+  deviceLabel: string;
+}
+
 export interface WalletObservationOrigin {
   packageName: string | null;
   appLabel: string | null;
@@ -216,6 +225,11 @@ export interface RestaurantPaymentAccount {
 
 export interface WalletObserverService {
   listDevices(restaurantIds: string[]): Promise<WalletObserverDevice[]>;
+  createPairing(
+    restaurantId: string,
+    label: string,
+    receiverAccountId: string,
+  ): Promise<WalletObserverPairing>;
   createDevice(
     restaurantId: string,
     label: string,

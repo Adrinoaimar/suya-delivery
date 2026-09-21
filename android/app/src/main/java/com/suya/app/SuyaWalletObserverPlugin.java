@@ -13,17 +13,32 @@ import com.getcapacitor.PluginCall;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.PluginMethod;
 
-/** Explicit bridge for configuring the opt-in caja notification observer. */
+/** Explicit bridge for securely pairing the opt-in caja notification observer. */
 @CapacitorPlugin(name = "SuyaWalletObserver")
 public final class SuyaWalletObserverPlugin extends Plugin {
+    private static final java.util.concurrent.ExecutorService PAIRING_EXECUTOR =
+            java.util.concurrent.Executors.newSingleThreadExecutor();
+
     @PluginMethod
-    public void configure(PluginCall call) {
-        String token = call.getString("deviceToken", "").trim();
-        if (!YapeNotificationListenerService.configureDeviceToken(getContext(), token)) {
-            call.reject("El token del dispositivo no es válido.");
+    public void pair(PluginCall call) {
+        String pairingCode = call.getString("pairingCode", "").trim();
+        if (!YapeNotificationListenerService.isPairingCodeValid(pairingCode)) {
+            call.reject("El código de emparejamiento debe tener 8 caracteres hexadecimales.");
             return;
         }
-        call.resolve(status());
+        Context context = getContext();
+        if (context == null) {
+            call.reject("No se pudo acceder al teléfono.");
+            return;
+        }
+        PAIRING_EXECUTOR.execute(() -> {
+            boolean paired = YapeNotificationListenerService.pairDevice(context, pairingCode);
+            if (!paired) {
+                call.reject("El código es inválido, expiró o ya fue utilizado.");
+                return;
+            }
+            call.resolve(status());
+        });
     }
 
     @PluginMethod

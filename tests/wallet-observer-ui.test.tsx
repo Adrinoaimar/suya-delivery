@@ -4,7 +4,7 @@ import WalletObserverPage from '@/pages/wallet/WalletObserverPage';
 
 const mocks = vi.hoisted(() => ({
   getStatus: vi.fn(),
-  configure: vi.fn(),
+  pair: vi.fn(),
   sync: vi.fn(),
   clear: vi.fn(),
   openNotificationSettings: vi.fn(),
@@ -23,7 +23,7 @@ vi.mock('@/lib/services', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/services')>()),
   nativeWalletObserver: {
     getStatus: mocks.getStatus,
-    configure: mocks.configure,
+    pair: mocks.pair,
     sync: mocks.sync,
     clear: mocks.clear,
     openNotificationSettings: mocks.openNotificationSettings,
@@ -46,7 +46,7 @@ describe('WalletObserverPage', () => {
 
     expect(screen.getByText('Suya Caja')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Conexión de caja' })).toBeInTheDocument();
-    expect(screen.getByLabelText('Código de caja')).toBeInTheDocument();
+    expect(screen.getByLabelText('Código de emparejamiento')).toBeInTheDocument();
     expect(screen.queryByText('Pedidos')).not.toBeInTheDocument();
     await waitFor(() => expect(mocks.getStatus).toHaveBeenCalledTimes(1));
     expect(screen.getByText('Sin vincular')).toBeInTheDocument();
@@ -64,6 +64,8 @@ describe('WalletObserverPage', () => {
     render(<WalletObserverPage />);
 
     expect(await screen.findByText('3 eventos pendientes')).toBeInTheDocument();
-    expect(screen.getByText('La cola está llena. Sincroniza antes de seguir capturando pagos.')).toBeInTheDocument();
+    expect(
+      screen.getByText('La cola está llena. Sincroniza antes de seguir capturando pagos.'),
+    ).toBeInTheDocument();
   });
 });

@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
 import type {
   CreatedWalletObserverDevice,
+  WalletObserverPairing,
   WalletObservation,
   WalletObserverDevice,
   WalletObserverService,
@@ -21,6 +22,15 @@ type DeviceRow = {
   last_seen_at?: unknown;
   device_token?: unknown;
   token?: unknown;
+};
+
+type PairingRow = {
+  pairing_id?: unknown;
+  pairing_code?: unknown;
+  expires_at?: unknown;
+  restaurant_id?: unknown;
+  receiver_account_id?: unknown;
+  device_label?: unknown;
 };
 
 type ObservationRow = {
@@ -95,7 +105,7 @@ function nullableNumber(value: unknown): number | null {
 }
 
 function mapObservationOrigin(value: unknown): WalletObservationOrigin {
-  const source = value && typeof value === 'object' ? value as Record<string, unknown> : {};
+  const source = value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
   return {
     packageName: nullableText(source.packageName),
     appLabel: nullableText(source.appLabel),
@@ -128,6 +138,21 @@ function mapCreatedDevice(row: DeviceRow): CreatedWalletObserverDevice {
     throw new Error('Supabase no devolvió las credenciales completas del dispositivo.');
   }
   return { ...device, deviceToken };
+}
+
+function mapPairing(row: PairingRow): WalletObserverPairing {
+  const pairing = {
+    pairingId: text(row.pairing_id),
+    pairingCode: text(row.pairing_code).toUpperCase(),
+    expiresAt: text(row.expires_at),
+    restaurantId: text(row.restaurant_id),
+    receiverAccountId: text(row.receiver_account_id),
+    deviceLabel: text(row.device_label, 'Dispositivo móvil'),
+  };
+  if (!pairing.pairingId || !/^[A-F0-9]{8}$/.test(pairing.pairingCode) || !pairing.expiresAt) {
+    throw new Error('Supabase no devolvió un código de emparejamiento válido.');
+  }
+  return pairing;
 }
 
 function mapObservation(row: ObservationRow): WalletObservation {
@@ -177,6 +202,24 @@ export class SupabaseWalletObserverService implements WalletObserverService {
     return responses.flat().map((row) => mapDevice(row));
   }
 
+  async createPairing(
+    restaurantId: string,
+    label: string,
+    receiverAccountId: string,
+  ): Promise<WalletObserverPairing> {
+    if (!restaurantId) throw new Error('Selecciona un restaurante.');
+    if (!receiverAccountId) throw new Error('Selecciona la cuenta receptora.');
+    if (!label.trim()) throw new Error('Escribe un nombre para el dispositivo.');
+    const { data, error } = await this.client.rpc('create_wallet_observer_pairing', {
+      p_restaurant_id: restaurantId,
+      p_receiver_account_id: receiverAccountId,
+      p_label: label.trim(),
+    });
+    if (error) throw error;
+    const row = Array.isArray(data) ? data[0] : data;
+    return mapPairing((row ?? {}) as PairingRow);
+  }
+
   async createDevice(
     restaurantId: string,
     label: string,
@@ -187,13 +230,16 @@ export class SupabaseWalletObserverService implements WalletObserverService {
     const rpcName = receiverAccountId
       ? 'create_wallet_observer_device_for_account'
       : 'create_wallet_observer_device';
-    const { data, error } = await this.client.rpc(rpcName, receiverAccountId
-      ? {
-          p_restaurant_id: restaurantId,
-          p_receiver_account_id: receiverAccountId,
-          p_label: label.trim(),
-        }
-      : { p_restaurant_id: restaurantId, p_label: label.trim() });
+    const { data, error } = await this.client.rpc(
+      rpcName,
+      receiverAccountId
+        ? {
+            p_restaurant_id: restaurantId,
+            p_receiver_account_id: receiverAccountId,
+            p_label: label.trim(),
+          }
+        : { p_restaurant_id: restaurantId, p_label: label.trim() },
+    );
     if (error) throw error;
     const row = Array.isArray(data) ? data[0] : data;
     return mapCreatedDevice({
@@ -229,9 +275,7 @@ export class SupabaseWalletObserverService implements WalletObserverService {
       'id, restaurant_id, device_id, provider, sender_name, code_last4, amount_cents, currency, observed_at, created_at, verification_status';
     const withOrigin = await this.client
       .from('wallet_observations')
-      .select(
-        `${baseColumns}, origin_metadata`,
-      )
+      .select(`${baseColumns}, origin_metadata`)
       .in('restaurant_id', restaurantIds)
       .order('observed_at', { ascending: false })
       .limit(100);

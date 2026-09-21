@@ -6,11 +6,8 @@ import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
 import { cn } from '@/lib/cn';
-import {
-  notificationService,
-  storeService,
-  walletObserverService,
-} from '@/lib/services';
+import { QRCodeSVG } from 'qrcode.react';
+import { notificationService, storeService, walletObserverService } from '@/lib/services';
 import { useAuthStore } from '@/store/authStore';
 import { useBackofficeContextStore } from '@/store/backofficeContextStore';
 import { formatDateTime, formatPrice } from '@/utils/format';
@@ -19,6 +16,7 @@ import type {
   CreatedWalletObserverDevice,
   WalletObservation,
   WalletObserverDevice,
+  WalletObserverPairing,
   WalletPaymentCandidate,
   RestaurantPaymentAccount,
 } from '@/lib/services';
@@ -83,6 +81,7 @@ export default function WalletsOperationsPage() {
   const restaurantId = useBackofficeContextStore((state) => state.activeRestaurantId);
   const setRestaurantId = useBackofficeContextStore((state) => state.setActiveRestaurantId);
   const [label, setLabel] = useState('Caja principal');
+  const [newPairing, setNewPairing] = useState<WalletObserverPairing | null>(null);
   const [newDevice, setNewDevice] = useState<CreatedWalletObserverDevice | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -111,7 +110,7 @@ export default function WalletsOperationsPage() {
   const canSelectRestaurant = isPlatformAdmin || restaurantIds.length > 1;
   const activeRestaurantId = stores.some((store) => store.id === restaurantId)
     ? restaurantId
-    : stores[0]?.id ?? '';
+    : (stores[0]?.id ?? '');
   const visibleDevices = useMemo(
     () => devices.filter((device) => device.restaurantId === activeRestaurantId),
     [activeRestaurantId, devices],
@@ -150,7 +149,7 @@ export default function WalletsOperationsPage() {
           setRestaurantId((current) =>
             current && visibleStores.some((store) => store.id === current)
               ? current
-              : visibleStores[0]?.id ?? '',
+              : (visibleStores[0]?.id ?? ''),
           );
         }
       }
@@ -172,7 +171,7 @@ export default function WalletsOperationsPage() {
         setRestaurantId((current) =>
           current && visibleStores.some((store) => store.id === current)
             ? current
-            : visibleStores[0]?.id ?? '',
+            : (visibleStores[0]?.id ?? ''),
         );
       }
     } catch (cause) {
@@ -216,6 +215,7 @@ export default function WalletsOperationsPage() {
     setManualVerifyingObservationId(null);
     setObservationCodeId(null);
     setObservationCode('');
+    setNewPairing(null);
     setNewDevice(null);
     if (!activeRestaurantId) {
       setPaymentAccounts([]);
@@ -235,7 +235,8 @@ export default function WalletsOperationsPage() {
         if (!active) return;
         setPaymentAccounts(accounts);
         const selected =
-          accounts.find((account) => account.provider === accountProviderRef.current) ?? accounts[0];
+          accounts.find((account) => account.provider === accountProviderRef.current) ??
+          accounts[0];
         if (selected) {
           accountProviderRef.current = selected.provider;
           setAccountProvider(selected.provider);
@@ -278,16 +279,15 @@ export default function WalletsOperationsPage() {
     const restaurantAtStart = activeRestaurantId;
     setBusy(true);
     try {
-      const created = await walletObserverService.createDevice(
+      const pairing = await walletObserverService.createPairing(
         restaurantAtStart,
         label,
         receiverAccount.id,
       );
       if (useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart) return;
-      setDevices((current) => [created, ...current]);
-      setNewDevice(created);
+      setNewPairing(pairing);
       notificationService.notify(
-        'Dispositivo creado. Abre la aplicación de caja en el teléfono receptor y pega el token.',
+        'Código generado. Escríbelo una sola vez en la aplicación de caja.',
         'success',
       );
     } catch (cause) {
@@ -311,6 +311,16 @@ export default function WalletsOperationsPage() {
     }
   };
 
+  const copyPairingCode = async () => {
+    if (!newPairing) return;
+    try {
+      await navigator.clipboard.writeText(newPairing.pairingCode);
+      notificationService.notify('Código copiado. Caduca en 10 minutos.', 'success');
+    } catch {
+      notificationService.notify('No pudimos copiar el código; escríbelo manualmente.', 'warning');
+    }
+  };
+
   const setDeviceActive = async (device: WalletObserverDevice, active: boolean) => {
     if (deviceActionId) return;
     setDeviceActionId(device.id);
@@ -321,7 +331,9 @@ export default function WalletsOperationsPage() {
         current.map((entry) => (entry.id === device.id ? { ...entry, active } : entry)),
       );
       notificationService.notify(
-        active ? 'Dispositivo reactivado.' : 'Dispositivo revocado; su token ya no ingresa evidencia.',
+        active
+          ? 'Dispositivo reactivado.'
+          : 'Dispositivo revocado; su token ya no ingresa evidencia.',
         'success',
       );
     } catch (cause) {
@@ -367,9 +379,10 @@ export default function WalletsOperationsPage() {
     try {
       const nextCandidates = await walletObserverService.listPaymentCandidates(observationId);
       if (
-        requestId !== candidateRequestRef.current
-        || useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart
-      ) return;
+        requestId !== candidateRequestRef.current ||
+        useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart
+      )
+        return;
       setCandidates(nextCandidates);
     } catch (cause) {
       if (requestId !== candidateRequestRef.current) return;
@@ -449,10 +462,7 @@ export default function WalletsOperationsPage() {
     const restaurantAtStart = activeRestaurantId;
     setSavingObservationCode(true);
     try {
-      const saved = await walletObserverService.setObservationCode(
-        observationId,
-        observationCode,
-      );
+      const saved = await walletObserverService.setObservationCode(observationId, observationCode);
       if (!saved) throw new Error('El servidor no guardó el código de operación.');
       if (useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart) return;
       setObservationCode('');
@@ -548,8 +558,8 @@ export default function WalletsOperationsPage() {
           <div>
             <p className="font-semibold">Conecta un celular de caja</p>
             <p className="mt-1 text-sm text-suya-muted">
-              Crea un dispositivo por restaurante y configura el observador de pagos en el celular
-              de caja. Este dispositivo observa pagos; no es el celular del repartidor ni confirma
+              Genera un código de un solo uso para emparejar el observador de pagos en el celular de
+              caja. Este dispositivo observa pagos; no es el celular del repartidor ni confirma
               pagos automáticamente.
             </p>
           </div>
@@ -600,6 +610,43 @@ export default function WalletsOperationsPage() {
           </Button>
         </div>
       </Card>
+
+      {newPairing && (
+        <div role="status">
+          <Card className="border-suya-green/30 bg-suya-lime-soft/40">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="font-semibold text-suya-carbon">Código de emparejamiento</p>
+                <p className="mt-1 text-sm text-suya-muted">
+                  Úsalo una sola vez en la APK Suya Caja. Caduca en 10 minutos y no es un token.
+                </p>
+                <button
+                  type="button"
+                  className="mt-3 rounded-btn border border-suya-green/30 bg-white px-4 py-3 font-mono text-2xl font-bold tracking-[.3em] text-suya-green"
+                  onClick={() => void copyPairingCode()}
+                  aria-label="Copiar código de emparejamiento"
+                >
+                  {newPairing.pairingCode}
+                </button>
+              </div>
+              <div className="rounded-btn border border-suya-border bg-white p-3">
+                <QRCodeSVG
+                  value={newPairing.pairingCode}
+                  size={144}
+                  level="M"
+                  includeMargin
+                  aria-label="QR del código de emparejamiento"
+                />
+              </div>
+            </div>
+            <div className="mt-3 flex justify-end">
+              <Button variant="secondary" onClick={() => setNewPairing(null)}>
+                Entendido
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
 
       {newDevice && (
         <div role="status">
@@ -769,8 +816,8 @@ export default function WalletsOperationsPage() {
           <p className="font-semibold">Verificación manual por nombre</p>
           <p className="mt-1 text-sm text-suya-muted">
             En cada notificación puedes corregir o confirmar el nombre del pagador. «Verificar y
-            aprobar» solo autoriza el pago si el servidor encuentra un único pedido pendiente con
-            el mismo nombre, monto, billetera, cuenta receptora y ventana de tiempo.
+            aprobar» solo autoriza el pago si el servidor encuentra un único pedido pendiente con el
+            mismo nombre, monto, billetera, cuenta receptora y ventana de tiempo.
           </p>
         </Card>
         {loading ? (
@@ -879,7 +926,9 @@ export default function WalletsOperationsPage() {
                             Nombre del pagador
                             <input
                               aria-label={`Nombre del pagador para ${observation.senderName ?? observation.id}`}
-                              value={manualPayerNames[observation.id] ?? observation.senderName ?? ''}
+                              value={
+                                manualPayerNames[observation.id] ?? observation.senderName ?? ''
+                              }
                               onChange={(event) => {
                                 setManualPayerNames((current) => ({
                                   ...current,
@@ -901,8 +950,7 @@ export default function WalletsOperationsPage() {
                             size="sm"
                             onClick={() => void verifyObservationByName(observation)}
                             disabled={
-                              manualVerifyingObservationId !== null ||
-                              verifyingAttemptId !== null
+                              manualVerifyingObservationId !== null || verifyingAttemptId !== null
                             }
                           >
                             {manualVerifyingObservationId === observation.id
@@ -945,7 +993,9 @@ export default function WalletsOperationsPage() {
                               variant="secondary"
                               size="sm"
                               onClick={() => void saveObservationCode(observation.id)}
-                              disabled={savingObservationCode || observationCodeId !== observation.id}
+                              disabled={
+                                savingObservationCode || observationCodeId !== observation.id
+                              }
                             >
                               {savingObservationCode ? 'Guardando…' : 'Agregar código'}
                             </Button>
@@ -994,12 +1044,18 @@ export default function WalletsOperationsPage() {
                                     <p
                                       className={cn(
                                         'mt-1 text-xs font-semibold',
-                                        senderMatchesCustomer(candidate.senderName, candidate.customerName)
+                                        senderMatchesCustomer(
+                                          candidate.senderName,
+                                          candidate.customerName,
+                                        )
                                           ? 'text-suya-green-dark'
                                           : 'text-suya-sun-dark',
                                       )}
                                     >
-                                      {senderMatchesCustomer(candidate.senderName, candidate.customerName)
+                                      {senderMatchesCustomer(
+                                        candidate.senderName,
+                                        candidate.customerName,
+                                      )
                                         ? 'Pista: el remitente coincide con el cliente.'
                                         : 'Pista: confirma el código completo antes de verificar.'}
                                     </p>
