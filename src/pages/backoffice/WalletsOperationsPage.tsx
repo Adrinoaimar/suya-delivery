@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Copy, Eye, KeyRound, RefreshCw, Smartphone, WalletCards } from 'lucide-react';
+import { Check, Eye, KeyRound, RefreshCw, Smartphone, WalletCards } from 'lucide-react';
 import { Badge } from '@/components/common/Badge';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
@@ -13,7 +13,6 @@ import { useBackofficeContextStore } from '@/store/backofficeContextStore';
 import { formatDateTime, formatPrice } from '@/utils/format';
 import type { Store } from '@/types';
 import type {
-  CreatedWalletObserverDevice,
   WalletObservation,
   WalletObserverDevice,
   WalletObserverPairing,
@@ -82,7 +81,6 @@ export default function WalletsOperationsPage() {
   const setRestaurantId = useBackofficeContextStore((state) => state.setActiveRestaurantId);
   const [label, setLabel] = useState('Caja principal');
   const [newPairing, setNewPairing] = useState<WalletObserverPairing | null>(null);
-  const [newDevice, setNewDevice] = useState<CreatedWalletObserverDevice | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -216,7 +214,6 @@ export default function WalletsOperationsPage() {
     setObservationCodeId(null);
     setObservationCode('');
     setNewPairing(null);
-    setNewDevice(null);
     if (!activeRestaurantId) {
       setPaymentAccounts([]);
       setAccountLabel('Cuenta principal');
@@ -301,16 +298,6 @@ export default function WalletsOperationsPage() {
     }
   };
 
-  const copyToken = async () => {
-    if (!newDevice) return;
-    try {
-      await navigator.clipboard.writeText(newDevice.deviceToken);
-      notificationService.notify('Token copiado. Trátalo como una contraseña.', 'success');
-    } catch {
-      notificationService.notify('No pudimos copiar el token; cópialo manualmente.', 'warning');
-    }
-  };
-
   const copyPairingCode = async () => {
     if (!newPairing) return;
     try {
@@ -339,30 +326,6 @@ export default function WalletsOperationsPage() {
     } catch (cause) {
       notificationService.notify(
         cause instanceof Error ? cause.message : 'No pudimos cambiar el estado del dispositivo.',
-        'danger',
-      );
-    } finally {
-      setDeviceActionId(null);
-    }
-  };
-
-  const rotateDevice = async (device: WalletObserverDevice) => {
-    if (deviceActionId) return;
-    const restaurantAtStart = activeRestaurantId;
-    setDeviceActionId(device.id);
-    try {
-      const rotated = await walletObserverService.rotateDevice(device.id);
-      if (useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart) return;
-      setDevices((current) => current.map((entry) => (entry.id === device.id ? rotated : entry)));
-      setNewDevice(rotated);
-      notificationService.notify(
-        'Token regenerado. Pégalo en el celular de caja; el token anterior quedó invalidado.',
-        'success',
-      );
-    } catch (cause) {
-      if (useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart) return;
-      notificationService.notify(
-        cause instanceof Error ? cause.message : 'No pudimos regenerar el token.',
         'danger',
       );
     } finally {
@@ -606,7 +569,7 @@ export default function WalletsOperationsPage() {
           </label>
           <Button onClick={() => void create()} disabled={busy || loading || !activeRestaurantId}>
             <Smartphone className="h-4 w-4" />
-            {busy ? 'Creando…' : 'Crear dispositivo'}
+            {busy ? 'Generando…' : 'Generar código'}
           </Button>
         </div>
       </Card>
@@ -643,37 +606,6 @@ export default function WalletsOperationsPage() {
               <Button variant="secondary" onClick={() => setNewPairing(null)}>
                 Entendido
               </Button>
-            </div>
-          </Card>
-        </div>
-      )}
-
-      {newDevice && (
-        <div role="status">
-          <Card className="border-amber-300 bg-amber-50/80">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="font-semibold text-amber-950">
-                  Token de acceso · muéstralo solo ahora
-                </p>
-                <p className="mt-1 text-sm text-amber-900">
-                  Guárdalo en el celular. Por seguridad, Suya no volverá a mostrar este token.
-                </p>
-              </div>
-              <Button variant="secondary" onClick={() => setNewDevice(null)}>
-                Entendido
-              </Button>
-            </div>
-            <div className="mt-3 flex items-center gap-2 break-all rounded-btn border border-amber-300 bg-white p-3 font-mono text-xs">
-              <span className="min-w-0 flex-1">{newDevice.deviceToken}</span>
-              <button
-                type="button"
-                aria-label="Copiar token"
-                className="shrink-0 rounded-lg p-2 text-amber-900 hover:bg-amber-100"
-                onClick={() => void copyToken()}
-              >
-                <Copy className="h-4 w-4" />
-              </button>
             </div>
           </Card>
         </div>
@@ -787,17 +719,6 @@ export default function WalletsOperationsPage() {
                         ? 'Revocar'
                         : 'Reactivar'}
                   </Button>
-                  {device.active && (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => void rotateDevice(device)}
-                      disabled={deviceActionId !== null}
-                    >
-                      Rotar token
-                    </Button>
-                  )}
                 </div>
               </Card>
             ))}

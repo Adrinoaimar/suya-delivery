@@ -217,7 +217,7 @@ describe('WalletsOperationsPage', () => {
       ),
     );
     await act(async () => {
-      screen.getByRole('button', { name: 'Crear dispositivo' }).click();
+      screen.getByRole('button', { name: 'Generar código' }).click();
     });
     expect(mocks.createPairing).toHaveBeenCalledWith(
       restaurant.id,
@@ -411,9 +411,9 @@ describe('WalletsOperationsPage', () => {
 
     const selector = await screen.findByRole('combobox', { name: 'Cuenta de restaurante' });
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Crear dispositivo' })).not.toBeDisabled(),
+      expect(screen.getByRole('button', { name: 'Generar código' })).not.toBeDisabled(),
     );
-    fireEvent.click(screen.getByRole('button', { name: 'Crear dispositivo' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Generar código' }));
     fireEvent.change(selector, { target: { value: secondRestaurant.id } });
 
     await act(async () => {
@@ -499,7 +499,7 @@ describe('WalletsOperationsPage', () => {
     expect(await screen.findByRole('button', { name: 'Reactivar' })).toBeInTheDocument();
   });
 
-  it('rota el token y muestra la credencial nueva una sola vez', async () => {
+  it('no expone acciones ni credenciales de token en Backoffice', async () => {
     mocks.listDevices.mockResolvedValue([
       {
         id: 'device-1',
@@ -509,68 +509,11 @@ describe('WalletsOperationsPage', () => {
         lastSeenAt: null,
       },
     ]);
-    mocks.rotateDevice.mockResolvedValue({
-      id: 'device-1',
-      restaurantId: restaurant.id,
-      label: 'Caja observadora',
-      active: true,
-      lastSeenAt: null,
-      deviceToken: 'b'.repeat(64),
-    });
     render(<WalletsOperationsPage />);
 
     expect(await screen.findByText('Caja observadora')).toBeInTheDocument();
-    await act(async () => {
-      screen.getByRole('button', { name: 'Rotar token' }).click();
-    });
-    expect(mocks.rotateDevice).toHaveBeenCalledWith('device-1');
-    expect(await screen.findByText('Token de acceso · muéstralo solo ahora')).toBeInTheDocument();
-    expect(screen.getByText('b'.repeat(64))).toBeInTheDocument();
-  });
-
-  it('no revela un token rotado después de cambiar a otra sede', async () => {
-    const secondRestaurant = { ...restaurant, id: 'restaurant-2', name: 'Andá Paya' };
-    useAuthStore.setState({
-      identity: { ...identity, restaurantIds: [restaurant.id, secondRestaurant.id] },
-    });
-    mocks.listStores.mockResolvedValue([restaurant, secondRestaurant]);
-    mocks.listDevices.mockResolvedValue([
-      {
-        id: 'device-1',
-        restaurantId: restaurant.id,
-        label: 'Caja observadora',
-        active: true,
-        lastSeenAt: null,
-      },
-    ]);
-    let resolveRotation!: (value: unknown) => void;
-    mocks.rotateDevice.mockImplementation(
-      () =>
-        new Promise((resolve) => {
-          resolveRotation = resolve;
-        }),
-    );
-    render(<WalletsOperationsPage />);
-
-    const restaurantSelector = await screen.findByRole('combobox', {
-      name: 'Cuenta de restaurante',
-    });
-    fireEvent.click(await screen.findByRole('button', { name: 'Rotar token' }));
-    fireEvent.change(restaurantSelector, { target: { value: secondRestaurant.id } });
-
-    await act(async () => {
-      resolveRotation({
-        id: 'device-1',
-        restaurantId: restaurant.id,
-        label: 'Caja observadora',
-        active: true,
-        lastSeenAt: null,
-        deviceToken: 'd'.repeat(64),
-      });
-    });
-
-    expect(screen.queryByText('Token de acceso · muéstralo solo ahora')).not.toBeInTheDocument();
-    expect(screen.queryByText('d'.repeat(64))).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Rotar token' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/Token de acceso/)).not.toBeInTheDocument();
   });
 
   it('descarta una respuesta vieja al buscar candidatos en rápida sucesión', async () => {
