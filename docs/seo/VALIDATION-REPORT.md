@@ -6,7 +6,7 @@ Fecha: 2026-09-21
 
 - `npm run typecheck`: pasa.
 - `npm run lint`: pasa.
-- `npm test`: 77 archivos, 392 pruebas, pasa.
+- `npm test`: 77 archivos, 394 pruebas, pasa.
 - `npm run security:secrets`: pasa; no se detectaron secretos.
 - `git diff --check`: pasa.
 - `npm run build:customer` con backend Supabase local de E2E: pasa.
@@ -54,7 +54,10 @@ En el HTML estático generado localmente, `/stores` y `/help` obtuvieron SEO 100
 702 archivos, sin simulaciones ni secretos. Esto valida el contenido del build; no demuestra el estado
 del backend ni sustituye una publicación real con el entorno protegido.
 
-El medidor propio de visitas ya está publicado en producción: es first-party, opt-in, registra como máximo un visitante único por día y guarda únicamente un digest diario. El backoffice lo muestra a usuarios `platform_admin`.
+El medidor propio de visitas ya está publicado en producción: las visitas únicas son first-party y
+opt-in, con como máximo un visitante único por día y solo un digest diario. La nueva tanda añade
+visualizaciones y clics agregados sin consentimiento; queda pendiente aplicar su migración en
+Supabase. El backoffice muestra ambos agregados a usuarios `platform_admin`.
 
 ## Resultado de auditoría posterior
 

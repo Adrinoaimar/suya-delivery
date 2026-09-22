@@ -39,8 +39,16 @@ export interface AnalyticsDailyMetric {
   uniqueVisitors: number;
 }
 
+export interface AnalyticsEventMetric {
+  eventDay: string;
+  eventName: 'page_view' | 'link_click';
+  eventKey: string;
+  eventCount: number;
+}
+
 export interface AnalyticsService {
   listDaily(days?: number): Promise<AnalyticsDailyMetric[]>;
+  listEvents(days?: number): Promise<AnalyticsEventMetric[]>;
 }
 
 export interface CreateAppOfferInput {

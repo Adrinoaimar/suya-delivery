@@ -1,10 +1,17 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
-import type { AnalyticsDailyMetric, AnalyticsService } from './types';
+import type { AnalyticsDailyMetric, AnalyticsEventMetric, AnalyticsService } from './types';
 
 type DailyMetricRow = {
   visit_day?: unknown;
   unique_visitors?: unknown;
+};
+
+type EventMetricRow = {
+  event_day?: unknown;
+  event_name?: unknown;
+  event_key?: unknown;
+  event_count?: unknown;
 };
 
 function requireClient(): SupabaseClient {
@@ -42,5 +49,24 @@ export class SupabaseAnalyticsService implements AnalyticsService {
         };
       })
       .filter((item) => /^\d{4}-\d{2}-\d{2}$/.test(item.visitDay));
+  }
+
+  async listEvents(days = 14): Promise<AnalyticsEventMetric[]> {
+    const { data, error } = await this.client.rpc('list_suya_analytics_events', {
+      p_days: days,
+    });
+    if (error) throw error;
+    return (Array.isArray(data) ? data : [])
+      .map((row) => {
+        const item = row as EventMetricRow;
+        const eventName = text(item.event_name);
+        return {
+          eventDay: text(item.event_day),
+          eventName: eventName === 'link_click' ? 'link_click' : 'page_view',
+          eventKey: text(item.event_key),
+          eventCount: number(item.event_count),
+        } satisfies AnalyticsEventMetric;
+      })
+      .filter((item) => /^\d{4}-\d{2}-\d{2}$/.test(item.eventDay));
   }
 }

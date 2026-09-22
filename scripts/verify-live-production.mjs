@@ -108,6 +108,9 @@ async function checkCustomerAnalyticsBundle() {
     if (!bundle.includes('record_suya_analytics_visit')) {
       failures.push('medidor de visitas: el bundle cliente no contiene el registro first-party.');
     }
+    if (!bundle.includes('record_suya_analytics_event')) {
+      failures.push('medidor de visitas: el bundle cliente no contiene el registro agregado de eventos.');
+    }
     const publishedSupabaseOrigin = bundle.match(
       new RegExp(`https://${config.supabaseProjectRef}\\.supabase\\.co`, 'iu'),
     )?.[0];
@@ -169,6 +172,22 @@ async function checkCustomerAnalyticsRpc() {
       return;
     }
     console.log(`${supabaseOrigin} RPC del medidor: presente (prueba no mutante)`);
+
+    const eventResponse = await fetch(`${supabaseOrigin}/rest/v1/rpc/record_suya_analytics_event`, {
+      method: 'POST',
+      headers: {
+        apikey: publishableKey,
+        Authorization: `Bearer ${publishableKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ p_event_name: 'page_view', p_event_key: 'invalid key!' }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (eventResponse.status !== 400) {
+      failures.push(`RPC de eventos: respuesta inesperada (HTTP ${eventResponse.status}).`);
+    } else {
+      console.log(`${supabaseOrigin} RPC de eventos: presente (prueba no mutante)`);
+    }
   } catch (error) {
     failures.push(
       `RPC del medidor: no se pudo comprobar (${error instanceof Error ? error.message : 'error de red'}).`,

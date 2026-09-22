@@ -3,6 +3,7 @@ import {
   analyticsConfigured,
   captureCampaign,
   getAnalyticsConsent,
+  normalizeAnalyticsKey,
   setAnalyticsConsent,
   track,
 } from '@/lib/analytics';
@@ -29,5 +30,13 @@ describe('analítica propia y opt-in', () => {
     track('add_to_cart', { item_id: 'p-1', value: 12.5 });
     expect(getAnalyticsConsent()).toBeNull();
     expect(document.getElementById('suya-ga4-script')).toBeNull();
+  });
+
+  it('normaliza claves sin conservar consultas ni identificadores dinámicos', () => {
+    expect(normalizeAnalyticsKey('/stores?utm_source=instagram')).toBe('/stores');
+    expect(normalizeAnalyticsKey('/store/abc-123')).toBe('/store/:id');
+    expect(normalizeAnalyticsKey('/orders/secret-order-id')).toBe('/dynamic');
+    expect(normalizeAnalyticsKey('https://example.com/catalogo')).toBe('/external');
+    expect(normalizeAnalyticsKey('')).toBeNull();
   });
 });

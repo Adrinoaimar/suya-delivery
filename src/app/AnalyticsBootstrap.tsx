@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   analyticsConfigured,
-  captureCampaign,
   getAnalyticsConsent,
+  normalizeAnalyticsKey,
+  recordConsentVisitor,
   setAnalyticsConsent,
   track,
   type AnalyticsConsent,
@@ -22,8 +23,8 @@ function ConsentBanner({
     >
       <p className="font-display text-sm font-bold text-suya-carbon">Ayúdanos a mejorar Suya</p>
       <p className="mt-1 text-xs leading-5 text-suya-muted">
-        Usamos analítica anónima para medir visitas. No activamos publicidad personalizada y puedes
-        cambiar esta decisión borrando la preferencia del navegador.
+        Contamos visualizaciones y clics de forma agregada, sin IP ni identificadores. Las visitas
+        únicas requieren tu consentimiento; no activamos publicidad personalizada.
       </p>
       <div className="mt-3 flex flex-wrap justify-end gap-2">
         <button
@@ -45,7 +46,7 @@ function ConsentBanner({
   );
 }
 
-/** Inicializa analítica opt-in y registra páginas/campañas sin enviar PII. */
+/** Inicializa analítica agregada y registra páginas/clics sin identificadores personales. */
 export function AnalyticsBootstrap() {
   const location = useLocation();
   const [consent, setConsent] = useState<AnalyticsConsent>(() => getAnalyticsConsent());
@@ -53,14 +54,24 @@ export function AnalyticsBootstrap() {
 
   useEffect(() => {
     if (!configured) return;
-    const campaign = captureCampaign(location.search);
-    if (consent === 'granted') {
-      track('page_view', {
-        page_path: `${location.pathname}${location.search}`,
-        ...campaign,
-      });
-    }
-  }, [configured, consent, location.pathname, location.search]);
+    track('page_view', { page_key: location.pathname });
+  }, [configured, location.pathname]);
+
+  useEffect(() => {
+    if (!configured) return undefined;
+    const onClick = (event: MouseEvent) => {
+      if (!(event.target instanceof Element)) return;
+      const anchor = event.target.closest('a');
+      if (!anchor || anchor.hasAttribute('download')) return;
+      const explicitKey = anchor.getAttribute('data-analytics-key');
+      const href = anchor.getAttribute('href');
+      if (!explicitKey && !href) return;
+      const key = normalizeAnalyticsKey(explicitKey ?? href);
+      if (key) track('link_click', { link_key: key });
+    };
+    document.addEventListener('click', onClick, true);
+    return () => document.removeEventListener('click', onClick, true);
+  }, [configured]);
 
   if (!configured || consent !== null) return null;
 
@@ -69,12 +80,7 @@ export function AnalyticsBootstrap() {
       onChange={(value) => {
         setAnalyticsConsent(value);
         setConsent(value);
-        if (value === 'granted') {
-          track('page_view', {
-            page_path: `${window.location.pathname}${window.location.search}`,
-            ...captureCampaign(window.location.search),
-          });
-        }
+        if (value === 'granted') recordConsentVisitor();
       }}
     />
   );

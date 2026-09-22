@@ -109,8 +109,9 @@ export function AboutPage() {
             <p className="mt-2">
               Buscamos información clara antes de pagar, privacidad por diseño y separación entre
               las áreas públicas y operativas. La ubicación exacta se solicita cuando hace falta
-              completar una entrega. La medición de visitas es opcional y usa identificadores
-              anónimos, sin guardar IP, nombre ni correo en el contador diario.
+              completar una entrega. Las visualizaciones y clics se cuentan de forma agregada, sin
+              IP, cookies ni identificadores. Las visitas únicas requieren consentimiento y usan un
+              identificador aleatorio resumido por día.
             </p>
           </section>
           <p>
@@ -230,9 +231,10 @@ export function PrivacyPage() {
           <section>
             <h2 className="font-display text-xl font-bold text-suya-carbon">Medición de visitas</h2>
             <p className="mt-2">
-              La analítica pública es opcional. Si aceptas, el navegador crea un identificador
-              aleatorio y el servidor conserva un resumen diario irreversible. El contador no guarda
-              IP, nombre, correo, ruta visitada ni contenido del pedido.
+              Las visualizaciones y clics se cuentan de forma agregada para conocer qué contenido
+              funciona, incluso si no aceptas analítica personalizada. No se guardan IP, cookies,
+              nombres, correos, consultas, identificadores ni contenido del pedido. Las visitas
+              únicas requieren consentimiento y usan un identificador aleatorio resumido por día.
             </p>
           </section>
           <section>

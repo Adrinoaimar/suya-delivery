@@ -47,6 +47,9 @@ function resolveAnalyticsService(): Promise<AnalyticsService> {
           async listDaily() {
             return [];
           },
+          async listEvents() {
+            return [];
+          },
         });
   return resolvedAnalyticsService;
 }
@@ -54,6 +57,9 @@ function resolveAnalyticsService(): Promise<AnalyticsService> {
 export const analyticsService: AnalyticsService = {
   async listDaily(days) {
     return (await resolveAnalyticsService()).listDaily(days);
+  },
+  async listEvents(days) {
+    return (await resolveAnalyticsService()).listEvents(days);
   },
 };
 

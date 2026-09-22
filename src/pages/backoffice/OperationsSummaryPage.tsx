@@ -10,7 +10,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Card } from '@/components/common/Card';
 import { isOperationalOrder } from '@/lib/orderOperations';
 import { analyticsService } from '@/lib/services';
-import type { AnalyticsDailyMetric } from '@/lib/services';
+import type { AnalyticsDailyMetric, AnalyticsEventMetric } from '@/lib/services';
 import { useAuthStore } from '@/store/authStore';
 import { useOrderStore } from '@/store/orderStore';
 import { formatPrice } from '@/utils/format';
@@ -20,6 +20,7 @@ export default function OperationsSummaryPage() {
   const orders = useOrderStore((state) => state.orders);
   const isPlatformAdmin = identity?.access.includes('platform_admin') ?? false;
   const [dailyVisitors, setDailyVisitors] = useState<AnalyticsDailyMetric[]>([]);
+  const [dailyEvents, setDailyEvents] = useState<AnalyticsEventMetric[]>([]);
   const [analyticsState, setAnalyticsState] = useState<'idle' | 'loading' | 'ready' | 'error'>(
     'idle',
   );
@@ -28,7 +29,12 @@ export default function OperationsSummaryPage() {
     if (!isPlatformAdmin) return;
     setAnalyticsState('loading');
     try {
-      setDailyVisitors(await analyticsService.listDaily(14));
+      const [visitors, events] = await Promise.all([
+        analyticsService.listDaily(14),
+        analyticsService.listEvents(14),
+      ]);
+      setDailyVisitors(visitors);
+      setDailyEvents(events);
       setAnalyticsState('ready');
     } catch {
       setAnalyticsState('error');
@@ -52,6 +58,30 @@ export default function OperationsSummaryPage() {
     () => dailyVisitors.slice(0, 7).reduce((total, metric) => total + metric.uniqueVisitors, 0),
     [dailyVisitors],
   );
+  const todayKey = useMemo(
+    () => new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Lima',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date()),
+    [],
+  );
+  const sevenDayCutoff = useMemo(() => {
+    const today = new Date(`${todayKey}T00:00:00-05:00`);
+    today.setDate(today.getDate() - 6);
+    return today.toISOString().slice(0, 10);
+  }, [todayKey]);
+  const aggregateEvents = useCallback(
+    (eventName: AnalyticsEventMetric['eventName'], fromDay: string) =>
+      dailyEvents
+        .filter((event) => event.eventName === eventName && event.eventDay >= fromDay)
+        .reduce((total, event) => total + event.eventCount, 0),
+    [dailyEvents],
+  );
+  const todayPageViews = aggregateEvents('page_view', todayKey);
+  const lastSevenPageViews = aggregateEvents('page_view', sevenDayCutoff);
+  const lastSevenLinkClicks = aggregateEvents('link_click', sevenDayCutoff);
   const active = orders.filter(
     (order) => !['delivered', 'cancelled'].includes(order.status) && isOperationalOrder(order),
   );
@@ -137,6 +167,37 @@ export default function OperationsSummaryPage() {
             <p className="mt-4 text-sm text-suya-muted">
               Aún no hay visitas consentidas registradas.
             </p>
+          )}
+        </Card>
+      )}
+      {isPlatformAdmin && (
+        <Card aria-labelledby="aggregate-analytics-title">
+          <div>
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-suya-green" aria-hidden="true" />
+              <h2 id="aggregate-analytics-title" className="font-display text-lg font-bold">
+                Visualizaciones e interacciones
+              </h2>
+            </div>
+            <p className="mt-1 text-sm text-suya-muted">
+              Conteos agregados, incluso sin consentimiento, sin IP, cookies ni identificadores.
+            </p>
+          </div>
+          {analyticsState !== 'error' && (
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-btn bg-suya-ivory p-4">
+                <p className="text-sm text-suya-muted">Visualizaciones hoy</p>
+                <p className="mt-1 font-display text-3xl font-bold">{todayPageViews}</p>
+              </div>
+              <div className="rounded-btn bg-suya-ivory p-4">
+                <p className="text-sm text-suya-muted">Visualizaciones · 7 días</p>
+                <p className="mt-1 font-display text-3xl font-bold">{lastSevenPageViews}</p>
+              </div>
+              <div className="rounded-btn bg-suya-ivory p-4">
+                <p className="text-sm text-suya-muted">Clics en enlaces · 7 días</p>
+                <p className="mt-1 font-display text-3xl font-bold">{lastSevenLinkClicks}</p>
+              </div>
+            </div>
           )}
         </Card>
       )}
