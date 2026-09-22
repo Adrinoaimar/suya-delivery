@@ -40,6 +40,10 @@ describe('contratos de configuración productiva', () => {
 
     expect(cloudflareWorkflow).toContain('VITE_ANALYTICS_PROVIDER: suya');
     expect(androidWorkflow).toContain('VITE_ANALYTICS_PROVIDER: suya');
+    expect(androidWorkflow).toContain('npm run build:mobile:roles');
+    expect(androidWorkflow).toContain('npm run verify:android-apks');
+    expect(androidWorkflow).toContain('reactivecircus/android-emulator-runner@v2');
+    expect(androidWorkflow).toContain(':app:connectedDebugAndroidTest');
   });
 
   it('no reintroduce la opción incompatible de Vitest', () => {
