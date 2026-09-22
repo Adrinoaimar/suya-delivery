@@ -33,6 +33,10 @@ export default defineConfig({
     // `threads` evita el fallo de arranque de los workers cuando la ruta del proyecto
     // contiene espacios (por ejemplo «Nueva carpeta») en Windows.
     pool: 'threads',
+    // El paralelismo ilimitado satura el entorno y hace expirar pruebas React
+    // existentes con el timeout normal de 5 s. Este límite mantiene la suite
+    // reproducible tanto localmente como en CI.
+    maxWorkers: 4,
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./tests/setup.ts'],

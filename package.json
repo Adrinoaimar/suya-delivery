@@ -9,7 +9,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run build:apps && npm run verify:production",
+    "build:demo": "tsc -b && vite build",
     "build:apps": "tsc -b && node scripts/build-apps.mjs && node scripts/verify-app-bundles.mjs",
     "build:customer": "tsc -b && node scripts/build-apps.mjs customer && node scripts/verify-app-bundles.mjs customer",
     "build:rider": "tsc -b && node scripts/build-apps.mjs rider && node scripts/verify-app-bundles.mjs rider",

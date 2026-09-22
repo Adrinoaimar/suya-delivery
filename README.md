@@ -29,11 +29,20 @@ npm run dev
 
 Abre <http://localhost:5173>.
 
-Otros comandos:
+El build publicable usa Supabase y genera los tres bundles aislados; requiere las variables
+productivas descritas en `.env.example`:
 
 ```bash
 npm run build
 ```
+
+`VITE_ANALYTICS_PROVIDER=suya` forma parte de esa configuración porque el medidor first-party
+se valida como parte del build. Si falta cualquier variable, el build se detiene sin generar un
+artefacto publicable.
+
+Para generar deliberadamente la demo local con servicios mock, usa `npm run build:demo`.
+
+Otros comandos:
 
 ```bash
 npm run preview

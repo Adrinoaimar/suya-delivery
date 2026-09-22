@@ -42,7 +42,7 @@ export function assertProductionBuildConfig(env = process.env) {
   if (!result.ok) {
     throw new Error(
       `Build productivo rechazado. Configura ${result.failures.join(', ')}; ` +
-        'el modo demo solo puede usarse con npm run dev.',
+        'el modo demo solo puede usarse con npm run dev o npm run build:demo.',
     );
   }
   return result;
