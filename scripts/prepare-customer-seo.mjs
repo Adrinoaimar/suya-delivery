@@ -121,7 +121,7 @@ const publicInfoRoutes = [
       title: 'Política de privacidad de Suya Delivery',
       paragraphs: [
         'Suya usa información necesaria para autenticar cuentas, preparar pedidos, verificar el método de pago elegido y coordinar entregas.',
-        'La analítica pública es opcional. El contador diario no guarda IP, nombre, correo, ruta visitada ni contenido del pedido.',
+        'Las visualizaciones y clics se cuentan de forma agregada, sin IP, cookies ni identificadores. Las visitas únicas requieren consentimiento y usan un resumen diario irreversible.',
       ],
       links: [{ href: '/contacto', label: 'Contacto y ayuda' }],
     }),

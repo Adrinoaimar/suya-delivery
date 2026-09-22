@@ -67,6 +67,9 @@ if (analyticsProvider === 'suya') {
   if (!javascript.includes('record_suya_analytics_visit')) {
     failures.push('El build productivo no contiene el registro first-party del medidor.');
   }
+  if (!javascript.includes('record_suya_analytics_event')) {
+    failures.push('El build productivo no contiene el registro agregado de visualizaciones.');
+  }
 }
 
 if (failures.length > 0) {
