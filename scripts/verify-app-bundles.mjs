@@ -1,4 +1,4 @@
-import { readdir, readFile } from 'node:fs/promises';
+import { access, readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -76,6 +76,12 @@ const failures = [];
 for (const app of apps) {
   if (!(app in forbiddenByApp)) throw new Error(`Aplicación desconocida: ${app}`);
   const output = path.join(repoRoot, 'dist', app);
+  try {
+    await access(output);
+  } catch {
+    failures.push(`${app}: no existe ${path.relative(repoRoot, output)}; ejecuta npm run build:apps primero.`);
+    continue;
+  }
   const files = await filesBelow(output);
   const searchable = files.filter((file) => /\.(?:html|js)$/.test(file));
 

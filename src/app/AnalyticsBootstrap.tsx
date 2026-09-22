@@ -18,28 +18,35 @@ function ConsentBanner({
     <aside
       role="dialog"
       aria-label="Preferencias de analítica"
-      className="fixed inset-x-3 bottom-3 z-[80] mx-auto max-w-xl rounded-2xl border border-suya-mist bg-white p-4 shadow-soft"
+      aria-labelledby="analytics-consent-title"
+      aria-describedby="analytics-consent-description"
+      aria-modal="false"
+      className="pointer-events-none fixed inset-x-3 bottom-3 z-[80] mx-auto max-w-xl"
     >
-      <p className="font-display text-sm font-bold text-suya-carbon">Ayúdanos a mejorar Suya</p>
-      <p className="mt-1 text-xs leading-5 text-suya-muted">
-        Usamos analítica anónima para medir visitas. No activamos publicidad personalizada y puedes
-        cambiar esta decisión borrando la preferencia del navegador.
-      </p>
-      <div className="mt-3 flex flex-wrap justify-end gap-2">
-        <button
-          type="button"
-          className="min-h-11 rounded-btn px-3 text-sm font-semibold text-suya-muted hover:bg-suya-ivory"
-          onClick={() => onChange('denied')}
-        >
-          Solo necesaria
-        </button>
-        <button
-          type="button"
-          className="min-h-11 rounded-btn bg-suya-green px-4 text-sm font-semibold text-white hover:bg-suya-green-dark"
-          onClick={() => onChange('granted')}
-        >
-          Aceptar analítica
-        </button>
+      <div className="pointer-events-auto rounded-2xl border border-suya-mist bg-white p-4 shadow-soft">
+        <p id="analytics-consent-title" className="font-display text-sm font-bold text-suya-carbon">
+          Ayúdanos a mejorar Suya
+        </p>
+        <p id="analytics-consent-description" className="mt-1 text-xs leading-5 text-suya-muted">
+          Usamos analítica anónima para medir visitas. No activamos publicidad personalizada y puedes
+          cambiar esta decisión borrando la preferencia del navegador.
+        </p>
+        <div className="mt-3 flex flex-wrap justify-end gap-2">
+          <button
+            type="button"
+            className="min-h-11 rounded-btn px-3 text-sm font-semibold text-suya-muted hover:bg-suya-ivory"
+            onClick={() => onChange('denied')}
+          >
+            Solo necesaria
+          </button>
+          <button
+            type="button"
+            className="min-h-11 rounded-btn bg-suya-green px-4 text-sm font-semibold text-white hover:bg-suya-green-dark"
+            onClick={() => onChange('granted')}
+          >
+            Aceptar analítica
+          </button>
+        </div>
       </div>
     </aside>
   );

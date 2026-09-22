@@ -64,4 +64,10 @@ describe('configuración de disponibilidad del rider', () => {
     await waitFor(() => expect(mocks.notify).toHaveBeenCalledWith('rider is suspended', 'danger'));
     expect(useRiderStore.getState().available).toBe(false);
   });
+
+  it('expone una salida de sesión visible', () => {
+    render(<RiderSettingsPage />);
+
+    expect(screen.getByRole('button', { name: 'Cerrar sesión' })).toBeVisible();
+  });
 });

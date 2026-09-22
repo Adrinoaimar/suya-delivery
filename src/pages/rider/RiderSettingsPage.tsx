@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Settings } from 'lucide-react';
+import { LogOut, Settings } from 'lucide-react';
+import { Button } from '@/components/common/Button';
 import { Toggle } from '@/components/common/Toggle';
 import { notificationService, riderOperationsService } from '@/lib/services';
 import { useRiderStore } from '@/store/riderStore';
@@ -10,6 +11,7 @@ export default function RiderSettingsPage() {
   const available = useRiderStore((state) => state.available);
   const setAvailable = useRiderStore((state) => state.setAvailable);
   const identity = useAuthStore((state) => state.identity);
+  const signOut = useAuthStore((state) => state.signOut);
   const preferences = useUserStore((state) => state.preferences);
   const setPreferences = useUserStore((state) => state.setPreferences);
   const [availabilityBusy, setAvailabilityBusy] = useState(false);
@@ -56,6 +58,10 @@ export default function RiderSettingsPage() {
             <dd className="font-medium">{available ? 'Disponible' : 'No disponible'}</dd>
           </div>
         </dl>
+        <Button className="mt-4" variant="ghost" onClick={() => void signOut()}>
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+          Cerrar sesión
+        </Button>
       </section>
 
       <section className="space-y-4 rounded-card bg-white p-4 text-suya-carbon">

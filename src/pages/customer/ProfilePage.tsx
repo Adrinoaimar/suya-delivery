@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Heart, User } from 'lucide-react';
+import { Heart, LogOut, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
@@ -16,6 +16,7 @@ import { useAuthStore } from '@/store/authStore';
 export default function ProfilePage() {
   const identity = useAuthStore((state) => state.identity);
   const updateProfile = useAuthStore((state) => state.updateProfile);
+  const signOut = useAuthStore((state) => state.signOut);
   const preferences = useUserStore((state) => state.preferences);
   const favorites = useUserStore((state) => state.favorites);
   const setPreferences = useUserStore((state) => state.setPreferences);
@@ -97,6 +98,14 @@ export default function ProfilePage() {
               }}
             >
               Guardar cambios
+            </Button>
+            <Button
+              className="mt-3"
+              variant="ghost"
+              onClick={() => void signOut()}
+            >
+              <LogOut className="h-4 w-4" aria-hidden="true" />
+              Cerrar sesión
             </Button>
           </Card>
 

@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import { isSafeSupabasePublishableKey } from './lib/public-supabase-key.mjs';
 
@@ -35,7 +35,11 @@ function walk(directory) {
   });
 }
 
-const files = walk('dist');
+if (!existsSync('dist')) {
+  failures.push('No existe dist/. Ejecuta npm run build:apps con configuración productiva válida antes de verificar el bundle.');
+}
+
+const files = existsSync('dist') ? walk('dist') : [];
 const forbiddenNames = /(?:MockMap|DemoNotice|MockOrderService|MockPaymentService|MockStoreService)/iu;
 const forbiddenContent = [
   /DEMO LOCAL/iu,
