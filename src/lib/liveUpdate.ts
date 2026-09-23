@@ -1,7 +1,5 @@
 import { Capacitor } from '@capacitor/core';
 
-const UPDATE_BASE_URL = 'https://suyadelivery.com/mobile-updates';
-const UPDATE_ORIGIN = 'https://suyadelivery.com';
 const UPDATE_PATH_PREFIX = '/mobile-updates/';
 const UPDATE_TIMEOUT_MS = 10_000;
 const MOBILE_ROLES = new Set(['customer', 'rider', 'backoffice', 'walletobserver', 'unified']);
@@ -15,7 +13,7 @@ interface MobileUpdateManifest {
   signature: string;
 }
 
-function isManifest(value: unknown, expectedRole: string): value is MobileUpdateManifest {
+function isManifest(value: unknown, expectedRole: string, expectedOrigin: string): value is MobileUpdateManifest {
   if (!value || typeof value !== 'object') return false;
   const manifest = value as Partial<MobileUpdateManifest>;
   let artifactUrl: URL;
@@ -30,7 +28,7 @@ function isManifest(value: unknown, expectedRole: string): value is MobileUpdate
     manifest.role === expectedRole &&
     typeof manifest.bundleId === 'string' &&
     /^[a-zA-Z0-9._-]{1,128}$/.test(manifest.bundleId) &&
-    artifactUrl.origin === UPDATE_ORIGIN &&
+    artifactUrl.origin === expectedOrigin &&
     artifactUrl.pathname === `${UPDATE_PATH_PREFIX}${expectedRole}/${manifest.bundleId}.zip` &&
     !artifactUrl.search &&
     !artifactUrl.hash &&
@@ -49,6 +47,19 @@ function isManifest(value: unknown, expectedRole: string): value is MobileUpdate
 export async function syncMobileLiveUpdate(): Promise<void> {
   if (!Capacitor.isNativePlatform()) return;
 
+  // Sin origen configurado, un build QA nunca consulta el canal OTA productivo.
+  const configuredBaseUrl = import.meta.env.VITE_LIVE_UPDATE_BASE_URL?.trim();
+  if (!configuredBaseUrl) return;
+  let updateOrigin: string;
+  try {
+    const parsedBaseUrl = new URL(configuredBaseUrl);
+    if (parsedBaseUrl.protocol !== 'https:' || parsedBaseUrl.pathname !== '/' ||
+        parsedBaseUrl.search || parsedBaseUrl.hash || parsedBaseUrl.username || parsedBaseUrl.password) return;
+    updateOrigin = parsedBaseUrl.origin;
+  } catch {
+    return;
+  }
+
   try {
     const { LiveUpdate } = await import('@capawesome/capacitor-live-update');
     await LiveUpdate.ready();
@@ -59,7 +70,7 @@ export async function syncMobileLiveUpdate(): Promise<void> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), UPDATE_TIMEOUT_MS);
     try {
-      const response = await fetch(`${UPDATE_BASE_URL}/${mobileRole}/latest.json?t=${Date.now()}`, {
+      const response = await fetch(`${updateOrigin}${UPDATE_PATH_PREFIX}${mobileRole}/latest.json?t=${Date.now()}`, {
         cache: 'no-store',
         headers: { Accept: 'application/json' },
         signal: controller.signal,
@@ -68,7 +79,7 @@ export async function syncMobileLiveUpdate(): Promise<void> {
       if (!(response.headers.get('content-type') ?? '').toLowerCase().includes('application/json')) return;
 
       const manifest: unknown = await response.json();
-      if (!isManifest(manifest, mobileRole)) return;
+      if (!isManifest(manifest, mobileRole, updateOrigin)) return;
 
       const { bundleId: currentBundleId } = await LiveUpdate.getCurrentBundle();
       if (currentBundleId === manifest.bundleId) return;

@@ -19,6 +19,7 @@
     "build:mobile": "tsc -b && node scripts/build-apps.mjs mobile && node scripts/verify-app-bundles.mjs mobile && npx cap sync",
     "build:mobile:roles": "node scripts/build-mobile-apks.mjs",
     "verify:android-apks": "node scripts/verify-android-apks.mjs",
+    "verify:mobile-qa-env": "node scripts/verify-mobile-qa-env.mjs",
     "prepare:mobile-live-update": "node scripts/prepare-mobile-live-update.mjs",
     "mobile:sync": "npx cap sync",
     "mobile:copy": "npx cap copy",

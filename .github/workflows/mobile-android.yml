@@ -41,16 +41,16 @@ jobs:
       VITE_BACKEND: supabase
       VITE_MAP_PROVIDER: osm
       VITE_ANALYTICS_PROVIDER: suya
-      VITE_ROUTING_URL: https://cggxooilzhqlcnofgtmi.supabase.co/functions/v1/route-driving
+      VITE_ROUTING_URL: ${{ vars.SUYA_STAGING_ROUTING_URL }}
       VITE_OSM_DARK_TILE_URL: https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png
-      VITE_SUPABASE_URL: https://cggxooilzhqlcnofgtmi.supabase.co
-      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
-      VITE_EXPECTED_SUPABASE_PROJECT_REF: cggxooilzhqlcnofgtmi
-      VITE_CUSTOMER_APP_URL: https://suyadelivery.com
-      VITE_RIDER_APP_URL: https://rider.suyadelivery.com
-      VITE_BACKOFFICE_APP_URL: https://panel.suyadelivery.com
-      VITE_CULQI_GATEWAY_ENABLED: ${{ secrets.VITE_CULQI_GATEWAY_ENABLED }}
-      VITE_CULQI_PUBLIC_KEY: ${{ secrets.VITE_CULQI_PUBLIC_KEY }}
+      VITE_SUPABASE_URL: ${{ vars.SUYA_STAGING_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUYA_STAGING_SUPABASE_PUBLISHABLE_KEY }}
+      VITE_EXPECTED_SUPABASE_PROJECT_REF: ${{ vars.SUYA_STAGING_SUPABASE_PROJECT_REF }}
+      VITE_CUSTOMER_APP_URL: ${{ vars.SUYA_STAGING_CUSTOMER_APP_URL }}
+      VITE_RIDER_APP_URL: ${{ vars.SUYA_STAGING_RIDER_APP_URL }}
+      VITE_BACKOFFICE_APP_URL: ${{ vars.SUYA_STAGING_BACKOFFICE_APP_URL }}
+      VITE_LIVE_UPDATE_BASE_URL: ${{ vars.SUYA_STAGING_LIVE_UPDATE_BASE_URL }}
+      VITE_CULQI_GATEWAY_ENABLED: 'false'
     steps:
       - uses: actions/checkout@v4
 
@@ -75,6 +75,9 @@ jobs:
         run: sdkmanager "platform-tools" "platforms;android-36" "build-tools;35.0.0"
 
       - run: npm ci
+
+      - name: Exigir staging aislado para APKs de QA
+        run: npm run verify:mobile-qa-env
 
       - name: Verificar secretos y compilar APKs por rol
         run: |
