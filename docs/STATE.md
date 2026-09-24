@@ -1,6 +1,19 @@
 # Estado de ejecución
 
-Actualizado: 21 de septiembre de 2026 (`America/Lima`)
+Actualizado: 23 de septiembre de 2026 (`America/Lima`)
+
+## Distribución Android — candidato F35
+
+- La rama `codex/payment-android-hardening-20260923` prepara `versionName 1.7` / `versionCode 8`.
+- Gradle ahora configura la firma release solo con las cuatro variables requeridas y rechaza
+  configuración parcial. Sin keystore produce únicamente un APK unsigned, no distribuible.
+- Las cuatro APK release 1.6/code 7 disponibles localmente comparten certificado; una APK debug
+  inspeccionada usa otro firmante. La compatibilidad final de firma debe confirmarse con
+  `apksigner` y la clave original en un runner Android antes de entregar una actualización.
+- Typecheck, lint, secretos, 85 archivos/411 pruebas y build web con valores sintéticos pasan.
+  No se compiló ni instaló una APK 1.7 firmada: faltan el keystore original, staging real y
+  toolchain Android local. CI Android del commit final sigue pendiente.
+- No se publicó producción ni se realizó pago real. Evidencia y desbloqueo: `docs/execution/F35.md`.
 
 ## Imágenes SEO — candidato F33
 
