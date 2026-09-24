@@ -12,7 +12,8 @@ Actualizado: 23 de septiembre de 2026 (`America/Lima`)
   `apksigner` y la clave original en un runner Android antes de entregar una actualización.
 - Typecheck, lint, secretos, 85 archivos/411 pruebas y build web con valores sintéticos pasan.
   No se compiló ni instaló una APK 1.7 firmada: faltan el keystore original, staging real y
-  toolchain Android local. CI Android del commit final sigue pendiente.
+  toolchain Android local. CI Android del commit `1091125` se detuvo correctamente antes de compilar
+  por las siete variables de staging ausentes (run 35937323674).
 - No se publicó producción ni se realizó pago real. Evidencia y desbloqueo: `docs/execution/F35.md`.
 
 ## Imágenes SEO — candidato F33
