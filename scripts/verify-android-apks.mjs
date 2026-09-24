@@ -91,8 +91,8 @@ for (const item of expected) {
   if (!/launchable-activity: name='[^']+'/u.test(badging)) {
     fail(`${item.file}: no contiene una actividad lanzable.`);
   }
-  if (!/versionCode='6'\s+versionName='1\.5'/u.test(badging)) {
-    fail(`${item.file}: versión nativa inesperada; se esperaba 6/1.5.`);
+  if (!/versionCode='8'\s+versionName='1\.7'/u.test(badging)) {
+    fail(`${item.file}: versión nativa inesperada; se esperaba 8/1.7.`);
   }
   const listenerEnabled = serviceEnabled(manifest, 'com.suya.app.YapeNotificationListenerService');
   const syncEnabled = serviceEnabled(manifest, 'com.suya.app.SuyaWalletSyncJobService');

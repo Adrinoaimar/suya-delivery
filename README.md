@@ -76,7 +76,14 @@ La publicación productiva usa **Cloudflare Pages** y está separada de la verif
 - `.github/workflows/supabase-functions.yml` se ejecuta manualmente desde `main`; aplica
   migraciones y publica Edge Functions solo con los secretos protegidos de Supabase.
 - `.github/workflows/mobile-android.yml` genera APK debug por rol; no son releases firmadas para
-  Play Store.
+  Play Store. El CI Android QA exige proyecto Supabase y URLs de staging: `SUYA_STAGING_SUPABASE_URL`,
+  `SUYA_STAGING_SUPABASE_PROJECT_REF`, `SUYA_STAGING_ROUTING_URL`,
+  `SUYA_STAGING_CUSTOMER_APP_URL`, `SUYA_STAGING_RIDER_APP_URL`,
+  `SUYA_STAGING_BACKOFFICE_APP_URL` en GitHub Actions Variables y
+  `SUYA_STAGING_SUPABASE_PUBLISHABLE_KEY` en Secrets. Sin ellos, falla antes de compilar.
+  `SUYA_STAGING_LIVE_UPDATE_BASE_URL` es opcional: vacío desactiva OTA en QA. Nunca reutilizar
+  origen productivo. Estas APK debug 1.7/code 8 no actualizan instalaciones release con otra firma;
+  una actualización distribuible necesita firma release compatible y prueba de instalación.
 
 El build de cliente genera rutas SEO estáticas, `robots.txt`, `sitemap.xml` y `404.html`.
 La release no es apta si `npm run verify:live` reporta funciones, MIME SEO o configuración remota

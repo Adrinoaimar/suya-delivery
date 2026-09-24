@@ -5,6 +5,21 @@ def suyaAndroidAppName = System.getenv('SUYA_ANDROID_APP_NAME') ?: 'Suya'
 def suyaWalletObserverEnabled = suyaAndroidAppId == 'com.suya.walletobserver' ? 'true' : 'false'
 def suyaSupabaseUrl = (System.getenv('VITE_SUPABASE_URL') ?: '').replace('\\', '\\\\').replace('"', '\\"')
 def suyaSupabasePublishableKey = (System.getenv('VITE_SUPABASE_PUBLISHABLE_KEY') ?: '').replace('\\', '\\\\').replace('"', '\\"')
+def suyaReleaseSigning = [
+    SUYA_RELEASE_STORE_FILE: System.getenv('SUYA_RELEASE_STORE_FILE'),
+    SUYA_RELEASE_STORE_PASSWORD: System.getenv('SUYA_RELEASE_STORE_PASSWORD'),
+    SUYA_RELEASE_KEY_ALIAS: System.getenv('SUYA_RELEASE_KEY_ALIAS'),
+    SUYA_RELEASE_KEY_PASSWORD: System.getenv('SUYA_RELEASE_KEY_PASSWORD'),
+]
+def suyaSigningProvided = suyaReleaseSigning.values().any { it != null && !it.isEmpty() }
+def suyaSigningComplete = suyaReleaseSigning.values().every { it != null && !it.isEmpty() }
+if (suyaSigningProvided && !suyaSigningComplete) {
+    def missing = suyaReleaseSigning.findAll { key, value -> value == null || value.isEmpty() }.keySet()
+    throw new GradleException("Firma release incompleta: faltan ${missing.join(', ')}")
+}
+if (suyaSigningComplete && !file(suyaReleaseSigning.SUYA_RELEASE_STORE_FILE).isFile()) {
+    throw new GradleException('Firma release: el archivo SUYA_RELEASE_STORE_FILE no existe')
+}
 
 android {
     namespace = "com.suya.app"
@@ -12,6 +27,16 @@ android {
         buildConfig true
     }
     compileSdk = rootProject.ext.compileSdkVersion
+    signingConfigs {
+        if (suyaSigningComplete) {
+            release {
+                storeFile file(suyaReleaseSigning.SUYA_RELEASE_STORE_FILE)
+                storePassword suyaReleaseSigning.SUYA_RELEASE_STORE_PASSWORD
+                keyAlias suyaReleaseSigning.SUYA_RELEASE_KEY_ALIAS
+                keyPassword suyaReleaseSigning.SUYA_RELEASE_KEY_PASSWORD
+            }
+        }
+    }
     defaultConfig {
         applicationId suyaAndroidAppId
         manifestPlaceholders = [
@@ -22,8 +47,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Fuerza el retorno al bundle nativo al actualizar una instalación que
         // pudiera tener pendiente el OTA incorrecto de Suya Cliente.
-        versionCode 6
-        versionName "1.5"
+        versionCode 8
+        versionName "1.7"
         buildConfigField "String", "SUYA_SUPABASE_URL", "\"${suyaSupabaseUrl}\""
         buildConfigField "String", "SUYA_SUPABASE_PUBLISHABLE_KEY", "\"${suyaSupabasePublishableKey}\""
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -35,6 +60,9 @@ android {
     }
     buildTypes {
         release {
+            if (suyaSigningComplete) {
+                signingConfig signingConfigs.release
+            }
             debuggable false
             minifyEnabled true
             shrinkResources true

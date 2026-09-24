@@ -22,11 +22,23 @@ describe('actualizaciones nativas por rol', () => {
     expect(liveUpdate).toContain('manifest.role === expectedRole');
     expect(liveUpdate).toContain('expectedRole}/');
     expect(apkBuilder).toContain('VITE_MOBILE_ROLE: target.build');
+    expect(apkBuilder).toContain('inspectMobileQaEnv(process.env)');
     expect(appBuilder).toContain("const mobileRole = app === 'mobile' ? 'unified' : app;");
     expect(appBuilder).toContain("'import.meta.env.VITE_MOBILE_ROLE'");
-    expect(androidBuild).toContain('versionCode 6');
-    expect(androidBuild).toContain('versionName "1.5"');
+    expect(androidBuild).toContain('versionCode 8');
+    expect(androidBuild).toContain('versionName "1.7"');
     expect(iosProject).toContain('CURRENT_PROJECT_VERSION = 2;');
+  });
+
+  it('no consulta OTA productiva si la APK de QA no tiene un origen explícito', () => {
+    const liveUpdate = readFileSync(root('src/lib/liveUpdate.ts'), 'utf8');
+    const workflow = readFileSync(root('.github/workflows/mobile-android.yml'), 'utf8');
+
+    expect(liveUpdate).toContain('VITE_LIVE_UPDATE_BASE_URL');
+    expect(liveUpdate).toContain('if (!configuredBaseUrl) return');
+    expect(workflow).not.toContain('cggxooilzhqlcnofgtmi');
+    expect(workflow).toContain('SUYA_STAGING_SUPABASE_URL');
+    expect(workflow).toContain('verify:mobile-qa-env');
   });
 
   it('fija el origen del artefacto y rechaza bundle IDs inseguros al preparar OTA', () => {

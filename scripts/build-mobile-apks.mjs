@@ -2,11 +2,17 @@ import { cp, mkdir, rm } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { inspectMobileQaEnv } from './lib/mobile-qa-env.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const outputRoot = path.join(repoRoot, 'output', 'android');
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+
+const qaEnvironmentFailures = inspectMobileQaEnv(process.env);
+if (qaEnvironmentFailures.length > 0) {
+  throw new Error(`APKs debug rechazadas: ${qaEnvironmentFailures.join(' ')}`);
+}
 
 const targets = {
   rider: {
