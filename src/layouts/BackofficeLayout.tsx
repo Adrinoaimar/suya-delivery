@@ -2,6 +2,7 @@ import {
   Building2,
   Banknote,
   ClipboardList,
+  Code2,
   LayoutDashboard,
   LogOut,
   MoreHorizontal,
@@ -46,6 +47,7 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
     { to: `${prefix}/wallets`, label: 'Dispositivos de pagos', icon: Wallet },
     { to: `${prefix}/riders`, label: 'Repartidores', icon: Users },
     { to: `${prefix}/restaurants`, label: 'Restaurantes', icon: Building2, platformAdminOnly: true },
+    { to: `${prefix}/developers/riders`, label: 'Desarrolladores', icon: Code2, platformAdminOnly: true },
     { to: `${prefix}/settings`, label: 'Configuración', icon: Settings },
   ].filter((item) => !item.platformAdminOnly || isPlatformAdmin);
   const mobileNavigation = navigation.filter((item) =>

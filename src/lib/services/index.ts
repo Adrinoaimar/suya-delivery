@@ -14,6 +14,7 @@ import { SupabaseOfferServiceImpl } from './SupabaseOfferService';
 import { SupabaseWalletObserverService } from './SupabaseWalletObserverService';
 import { SupabaseRestaurantAccountService } from './SupabaseRestaurantAccountService';
 import { SupabaseRestaurantRiderService } from './SupabaseRestaurantRiderService';
+import { SupabaseDeveloperRiderAccountService } from './SupabaseDeveloperRiderAccountService';
 import { SupabaseAnalyticsService } from './SupabaseAnalyticsService';
 import { CashPaymentServiceImpl } from './CashPaymentService';
 import { SupabasePaymentService } from './SupabasePaymentService';
@@ -32,6 +33,7 @@ import type {
   WalletObserverService,
   RestaurantAccountService,
   RestaurantRiderService,
+  DeveloperRiderAccountService,
   PaymentService,
   CashRegisterService,
   AnalyticsService,
@@ -124,6 +126,32 @@ export const restaurantRiderService: RestaurantRiderService = {
   },
   async setActive(restaurantId, riderId, active) {
     return (await resolveRestaurantRiderService()).setActive(restaurantId, riderId, active);
+  },
+};
+
+let resolvedDeveloperRiderAccountService: Promise<DeveloperRiderAccountService> | null = null;
+function resolveDeveloperRiderAccountService(): Promise<DeveloperRiderAccountService> {
+  if (resolvedDeveloperRiderAccountService) return resolvedDeveloperRiderAccountService;
+  resolvedDeveloperRiderAccountService =
+    import.meta.env.VITE_BACKEND === 'supabase'
+      ? Promise.resolve(new SupabaseDeveloperRiderAccountService())
+      : Promise.resolve({
+          async create() {
+            throw new Error('La creación de cuentas rider requiere Supabase.');
+          },
+          async resetPassword() {
+            throw new Error('El restablecimiento de claves requiere Supabase.');
+          },
+        });
+  return resolvedDeveloperRiderAccountService;
+}
+
+export const developerRiderAccountService: DeveloperRiderAccountService = {
+  async create(input) {
+    return (await resolveDeveloperRiderAccountService()).create(input);
+  },
+  async resetPassword(input) {
+    return (await resolveDeveloperRiderAccountService()).resetPassword(input);
   },
 };
 

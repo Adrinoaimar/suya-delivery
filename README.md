@@ -81,6 +81,7 @@ incompleta.
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Cliente               | `/`, `/stores`, `/store/:id`, `/search`, `/cart`, `/checkout`, `/orders`, `/orders/:id`, `/orders/:id/track`, `/promotions`, `/profile`, `/help`, `/rider/:id` |
 | Repartidor            | `/rider`, `/rider/current`, `/rider/safety`, `/rider/history`, `/rider/earnings`, `/rider/settings`                                                            |
+| Desarrolladores       | `/developers/riders` — crear cuentas rider y restablecer claves (`platform_admin`)                                                                              |
 | Contacto de confianza | `/share/:token`                                                                                                                                                |
 
 - Marketplace con 13 negocios, 6 categorías, 94 productos y 5 promociones.

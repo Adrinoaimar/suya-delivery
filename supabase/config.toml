@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.route-driving]
 verify_jwt = false
+
+[functions.manage-rider-accounts]
+verify_jwt = true

@@ -289,6 +289,27 @@ export interface InviteRestaurantRiderInput {
   vehiclePlate: string;
 }
 
+export interface CreateDeveloperRiderInput extends InviteRestaurantRiderInput {
+  password: string;
+}
+
+export interface ResetDeveloperRiderPasswordInput {
+  restaurantId: string;
+  riderId: string;
+  password: string;
+}
+
+export interface DeveloperRiderAccountResult {
+  riderId: string;
+  email: string;
+  displayName: string;
+}
+
+export interface DeveloperRiderAccountService {
+  create(input: CreateDeveloperRiderInput): Promise<DeveloperRiderAccountResult>;
+  resetPassword(input: ResetDeveloperRiderPasswordInput): Promise<{ email: string }>;
+}
+
 export interface RestaurantRiderService {
   list(restaurantId: string): Promise<RestaurantRider[]>;
   invite(input: InviteRestaurantRiderInput): Promise<RestaurantRider>;

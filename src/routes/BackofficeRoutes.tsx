@@ -12,6 +12,7 @@ import OffersPage from '@/pages/backoffice/OffersPage';
 import WalletsOperationsPage from '@/pages/backoffice/WalletsOperationsPage';
 import RidersOperationsPage from '@/pages/backoffice/RidersOperationsPage';
 import CashRegisterPage from '@/pages/backoffice/CashRegisterPage';
+import DeveloperRidersPage from '@/pages/backoffice/DeveloperRidersPage';
 
 export function BackofficeRoutes() {
   return (
@@ -38,6 +39,7 @@ export function BackofficeRoutes() {
           <Route path="cash" element={<CashRegisterPage />} />
           <Route path="riders" element={<RidersOperationsPage />} />
           <Route element={<RequireAccess anyOf={['platform_admin']} />}>
+            <Route path="developers/riders" element={<DeveloperRidersPage />} />
             <Route
               path="restaurants"
               element={
