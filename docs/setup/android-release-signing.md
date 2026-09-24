@@ -25,6 +25,8 @@ Para actualizar una APK ya instalada, usa **la misma clave de firma original**, 
 `applicationId` y un `versionCode` mayor. Una clave nueva no actualizará la instalación anterior;
 el usuario tendría que desinstalarla y perdería los datos locales de esa aplicación. Antes de
 distribuir, compara la huella del certificado anterior con la del nuevo mediante `apksigner`.
+Las cuatro APK release 1.6/code 7 verificadas usan certificado SHA-256
+`4695c3a9d18c672c891fbe90c4b53bb436c3a456f501261f4d154c6ca6aec071`.
 
 ## Crear un keystore nuevo (solo primera instalación)
 

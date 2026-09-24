@@ -8,12 +8,14 @@ Actualizado: 23 de septiembre de 2026 (`America/Lima`)
 - Gradle ahora configura la firma release solo con las cuatro variables requeridas y rechaza
   configuración parcial. Sin keystore produce únicamente un APK unsigned, no distribuible.
 - Las cuatro APK release 1.6/code 7 disponibles localmente comparten certificado; una APK debug
-  inspeccionada usa otro firmante. La compatibilidad final de firma debe confirmarse con
-  `apksigner` y la clave original en un runner Android antes de entregar una actualización.
+  inspeccionada usa otro firmante. Se recuperó el keystore original, se protegió su acceso y
+  `apksigner` confirmó el mismo certificado en una APK Cliente firmada de prueba.
 - Typecheck, lint, secretos, 85 archivos/411 pruebas y build web con valores sintéticos pasan.
-  No se compiló ni instaló una APK 1.7 firmada: faltan el keystore original, staging real y
-  toolchain Android local. CI Android del commit `1091125` se detuvo correctamente antes de compilar
-  por las siete variables de staging ausentes (run 35937323674).
+  Java/SDK/AVD locales permiten Gradle release y actualización Cliente 7→8 en emulador API 35:
+  PASS solo con backend sintético. Se eliminó esa APK de prueba tras validar su firma.
+- Supabase staging está Healthy, pero sin migraciones ni Edge Functions. GitHub Actions ya tiene
+  URL, project ref y clave pública de staging; faltan routing URL operativa y tres URLs web.
+  CI Android `35939987627` confirmó esos cuatro faltantes y se detuvo antes de compilar.
 - No se publicó producción ni se realizó pago real. Evidencia y desbloqueo: `docs/execution/F35.md`.
 
 ## Imágenes SEO — candidato F33
