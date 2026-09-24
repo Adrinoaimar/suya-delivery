@@ -1,9 +1,10 @@
 # Firma de release Android
 
 El repositorio no contiene keystore ni contraseñas. `assembleRelease` funciona sin secretos y
-produce `app-release-unsigned.apk`; ese artefacto sirve para inspección, no para distribución.
-El workflow `Compilar Suya Android` publica este artefacto separado del APK debug para comprobar
-el pipeline release sin confundirlo con una entrega firmada.
+produce `app-release-unsigned.apk`; ese artefacto sirve para inspección, no para instalar sobre
+una versión firmada. `npm run build:mobile:roles -- --release` exige las cuatro variables de abajo,
+compila Cliente, Repartidor, Backoffice y Caja con la misma firma y guarda las APK en
+`output/android/` sin borrar otros artefactos.
 
 ## Variables privadas
 
@@ -17,8 +18,8 @@ SUYA_RELEASE_KEY_ALIAS=suya-upload
 SUYA_RELEASE_KEY_PASSWORD=...
 ```
 
-El archivo debe existir en el runner y nunca debe subirse al repositorio. Sin variables, build deja
-resultado explícitamente unsigned. Configuración parcial falla para evitar una entrega ambigua.
+El archivo debe existir en el equipo de build y nunca debe subirse al repositorio. Sin variables,
+el build helper release se detiene; configuración parcial falla para evitar una entrega ambigua.
 
 ## Crear un keystore nuevo
 
@@ -47,5 +48,9 @@ $ANDROID_HOME/build-tools/35.0.0/apksigner verify --verbose --print-certs \
   android/app/build/outputs/apk/release/app-release.apk
 ```
 
-La firma release aún requiere decisión del propietario sobre keystore, alias y custodia. No se
-incluyen secretos de firma en CI hasta recibirlos por un canal seguro.
+Para auditar versión, rol, firma y compatibilidad con el certificado instalado, pasa las rutas de
+`aapt2` y `apksigner` al verificador. También acepta `--expected-cert-sha256` con la huella pública
+del certificado de la APK que ya está en el teléfono.
+
+El workflow público compila APK debug; las releases firmadas se generan en el entorno local
+protegido del propietario. No guardes contraseñas en Git, comandos del shell ni logs.

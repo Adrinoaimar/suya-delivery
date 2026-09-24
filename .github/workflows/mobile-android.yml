@@ -85,8 +85,10 @@ jobs:
         run: |
           set -euo pipefail
           aapt2_path=$(find "$ANDROID_HOME/build-tools" -type f -name aapt2 -print | sort -V | tail -1)
+          apksigner_path=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner -print | sort -V | tail -1)
           test -n "$aapt2_path"
-          npm run verify:android-apks -- --aapt2 "$aapt2_path"
+          test -n "$apksigner_path"
+          npm run verify:android-apks -- --aapt2 "$aapt2_path" --apksigner "$apksigner_path"
 
       - name: Regresión Android Keystore en emulador API 35
         uses: reactivecircus/android-emulator-runner@v2
@@ -101,6 +103,14 @@ jobs:
         with:
           name: Suya-Rider-debug-${{ github.sha }}
           path: output/android/Suya-Rider-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publicar APK de cliente
+        uses: actions/upload-artifact@v4
+        with:
+          name: Suya-Cliente-debug-${{ github.sha }}
+          path: output/android/Suya-Cliente-debug.apk
           if-no-files-found: error
           retention-days: 14
 

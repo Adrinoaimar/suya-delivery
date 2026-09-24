@@ -9,6 +9,7 @@ describe('actualizaciones nativas por rol', () => {
     const liveUpdate = readFileSync(root('src/lib/liveUpdate.ts'), 'utf8');
     const apkBuilder = readFileSync(root('scripts/build-mobile-apks.mjs'), 'utf8');
     const appBuilder = readFileSync(root('scripts/build-apps.mjs'), 'utf8');
+    const apkVerifier = readFileSync(root('scripts/verify-android-apks.mjs'), 'utf8');
     const androidBuild = readFileSync(root('android/app/build.gradle'), 'utf8');
     const iosProject = readFileSync(root('ios/App/App.xcodeproj/project.pbxproj'), 'utf8');
 
@@ -22,10 +23,16 @@ describe('actualizaciones nativas por rol', () => {
     expect(liveUpdate).toContain('manifest.role === expectedRole');
     expect(liveUpdate).toContain('expectedRole}/');
     expect(apkBuilder).toContain('VITE_MOBILE_ROLE: target.build');
+    expect(apkBuilder).toContain("appId: 'com.suya.app'");
+    expect(apkBuilder).toContain("artifactPrefix: 'Suya-Cliente'");
     expect(appBuilder).toContain("const mobileRole = app === 'mobile' ? 'unified' : app;");
     expect(appBuilder).toContain("'import.meta.env.VITE_MOBILE_ROLE'");
-    expect(androidBuild).toContain('versionCode 6');
-    expect(androidBuild).toContain('versionName "1.5"');
+    expect(apkVerifier).toContain("packageName: 'com.suya.app'");
+    expect(apkVerifier).toContain("releaseBuild ? '-1.7-code8-release.apk' : '-debug.apk'");
+    expect(apkBuilder).toContain("const releaseBuild = args.includes('--release');");
+    expect(apkBuilder).toContain("'SUYA_RELEASE_STORE_FILE'");
+    expect(androidBuild).toContain('versionCode 8');
+    expect(androidBuild).toContain('versionName "1.7"');
     expect(iosProject).toContain('CURRENT_PROJECT_VERSION = 2;');
   });
 

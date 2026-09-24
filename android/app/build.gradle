@@ -5,11 +5,36 @@ def suyaAndroidAppName = System.getenv('SUYA_ANDROID_APP_NAME') ?: 'Suya'
 def suyaWalletObserverEnabled = suyaAndroidAppId == 'com.suya.walletobserver' ? 'true' : 'false'
 def suyaSupabaseUrl = (System.getenv('VITE_SUPABASE_URL') ?: '').replace('\\', '\\\\').replace('"', '\\"')
 def suyaSupabasePublishableKey = (System.getenv('VITE_SUPABASE_PUBLISHABLE_KEY') ?: '').replace('\\', '\\\\').replace('"', '\\"')
+def suyaReleaseSigning = [
+    storeFile: System.getenv('SUYA_RELEASE_STORE_FILE')?.trim(),
+    storePassword: System.getenv('SUYA_RELEASE_STORE_PASSWORD'),
+    keyAlias: System.getenv('SUYA_RELEASE_KEY_ALIAS')?.trim(),
+    keyPassword: System.getenv('SUYA_RELEASE_KEY_PASSWORD'),
+]
+def suyaReleaseSigningConfigured = suyaReleaseSigning.values().every { it }
+def hasPartialReleaseSigning = suyaReleaseSigning.values().any { it } && !suyaReleaseSigningConfigured
+
+if (hasPartialReleaseSigning) {
+    throw new GradleException('La firma release de Suya está incompleta; configura las cuatro variables SUYA_RELEASE_*.')
+}
+if (suyaReleaseSigningConfigured && !project.file(suyaReleaseSigning.storeFile).isFile()) {
+    throw new GradleException('SUYA_RELEASE_STORE_FILE debe señalar un keystore existente.')
+}
 
 android {
     namespace = "com.suya.app"
     buildFeatures {
         buildConfig true
+    }
+    if (suyaReleaseSigningConfigured) {
+        signingConfigs {
+            release {
+                storeFile project.file(suyaReleaseSigning.storeFile)
+                storePassword suyaReleaseSigning.storePassword
+                keyAlias suyaReleaseSigning.keyAlias
+                keyPassword suyaReleaseSigning.keyPassword
+            }
+        }
     }
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
@@ -22,8 +47,8 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         // Fuerza el retorno al bundle nativo al actualizar una instalación que
         // pudiera tener pendiente el OTA incorrecto de Suya Cliente.
-        versionCode 6
-        versionName "1.5"
+        versionCode 8
+        versionName "1.7"
         buildConfigField "String", "SUYA_SUPABASE_URL", "\"${suyaSupabaseUrl}\""
         buildConfigField "String", "SUYA_SUPABASE_PUBLISHABLE_KEY", "\"${suyaSupabasePublishableKey}\""
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -39,6 +64,9 @@ android {
             minifyEnabled true
             shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (suyaReleaseSigningConfigured) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }

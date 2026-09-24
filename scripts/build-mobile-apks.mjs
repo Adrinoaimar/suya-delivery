@@ -1,4 +1,4 @@
-import { cp, mkdir, rm } from 'node:fs/promises';
+import { cp, mkdir, stat } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -7,35 +7,68 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..'
 const outputRoot = path.join(repoRoot, 'output', 'android');
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
+const args = process.argv.slice(2);
+const releaseBuild = args.includes('--release');
+const buildType = releaseBuild ? 'release' : 'debug';
 
 const targets = {
+  customer: {
+    build: 'customer',
+    appId: 'com.suya.app',
+    appName: 'Suya Cliente',
+    oauthScheme: 'com.suya.app',
+    artifactPrefix: 'Suya-Cliente',
+  },
   rider: {
     build: 'rider',
     appId: 'com.suya.rider',
     appName: 'Suya Repartidor',
     oauthScheme: 'com.suya.rider',
-    artifact: 'Suya-Rider-debug.apk',
+    artifactPrefix: 'Suya-Rider',
   },
   backoffice: {
     build: 'backoffice',
     appId: 'com.suya.backoffice',
     appName: 'Suya Backoffice',
     oauthScheme: 'com.suya.backoffice',
-    artifact: 'Suya-Backoffice-debug.apk',
+    artifactPrefix: 'Suya-Backoffice',
   },
   walletobserver: {
     build: 'walletobserver',
     appId: 'com.suya.walletobserver',
-    appName: 'Suya',
+    appName: 'Suya Caja',
     oauthScheme: 'com.suya.walletobserver',
-    artifact: 'Suya-Wallet-Observer-debug.apk',
+    artifactPrefix: 'Suya-Wallet-Observer',
   },
 };
 
-const requested = process.argv[2] ? [process.argv[2]] : Object.keys(targets);
+const requested = args.filter((argument) => argument !== '--release');
+if (requested.includes('all')) {
+  if (requested.length !== 1) throw new Error('Usa all por sí solo, con o sin --release.');
+  requested.splice(0, requested.length, ...Object.keys(targets));
+}
+if (requested.length === 0) requested.push(...Object.keys(targets));
 for (const name of requested) {
   if (!(name in targets)) {
-    throw new Error(`Rol desconocido: ${name}. Usa rider, backoffice o walletobserver.`);
+    throw new Error(`Rol desconocido: ${name}. Usa customer, rider, backoffice o walletobserver.`);
+  }
+}
+
+if (releaseBuild) {
+  const requiredSigningVariables = [
+    'SUYA_RELEASE_STORE_FILE',
+    'SUYA_RELEASE_STORE_PASSWORD',
+    'SUYA_RELEASE_KEY_ALIAS',
+    'SUYA_RELEASE_KEY_PASSWORD',
+  ];
+  const missing = requiredSigningVariables.filter((name) => !process.env[name]?.trim());
+  if (missing.length) {
+    throw new Error(`Para APK release firmada configura: ${missing.join(', ')}.`);
+  }
+  try {
+    await stat(process.env.SUYA_RELEASE_STORE_FILE);
+  } catch {
+    throw new Error('SUYA_RELEASE_STORE_FILE no señala un keystore disponible.');
   }
 }
 
@@ -47,7 +80,6 @@ function run(command, args, env) {
   });
 }
 
-await rm(outputRoot, { recursive: true, force: true });
 await mkdir(outputRoot, { recursive: true });
 
 let nativeTestsRan = false;
@@ -72,11 +104,15 @@ for (const name of requested) {
     run('bash', ['android/gradlew', '-p', 'android', ':app:test', '--no-daemon'], targetEnv);
     nativeTestsRan = true;
   }
-  run('bash', ['android/gradlew', '-p', 'android', 'assembleDebug', '--no-daemon'], targetEnv);
+  const gradleTask = `assemble${buildType[0].toUpperCase()}${buildType.slice(1)}`;
+  run('bash', ['android/gradlew', '-p', 'android', gradleTask, '--no-daemon'], targetEnv);
 
-  const apk = path.join(repoRoot, 'android', 'app', 'build', 'outputs', 'apk', 'debug', 'app-debug.apk');
-  await cp(apk, path.join(outputRoot, target.artifact));
-  console.log(`APK listo: output/android/${target.artifact}`);
+  const apk = path.join(repoRoot, 'android', 'app', 'build', 'outputs', 'apk', buildType, `app-${buildType}.apk`);
+  const artifact = releaseBuild
+    ? `${target.artifactPrefix}-1.7-code8-release.apk`
+    : `${target.artifactPrefix}-debug.apk`;
+  await cp(apk, path.join(outputRoot, artifact));
+  console.log(`APK listo: output/android/${artifact}`);
 }
 
-console.log(`\nAPKs generados: ${requested.join(', ')}`);
+console.log(`\nAPKs ${buildType} generados: ${requested.join(', ')}`);

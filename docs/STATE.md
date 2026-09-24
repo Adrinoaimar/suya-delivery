@@ -1,6 +1,20 @@
 # Estado de ejecución
 
-Actualizado: 21 de septiembre de 2026 (`America/Lima`)
+Actualizado: 23 de septiembre de 2026 (`America/Lima`)
+
+## Estado vigente — APK Android 1.7 / checkpoint F35
+
+- Trabajo realizado directamente en `main`, desde `34a99ac`; no se publicó ni se desplegó código.
+- Se corrigió el generador para incluir Cliente, conservar otros artefactos y compilar los cuatro
+  roles; se añadió firma release mediante variables locales protegidas y auditoría de certificado.
+- APK release `1.7`/código `8`: Cliente (`com.suya.app`), Rider (`com.suya.rider`), Backoffice
+  (`com.suya.backoffice`) y Wallet Observer/Caja (`com.suya.walletobserver`). Las cuatro conservan
+  el certificado de la versión estable anterior `1.6`/código `7`.
+- Smoke en emulador Android 15: cada APK anterior instaló, actualizó a código 8 y abrió sin excepción
+  fatal. La suite Android y los gates web/producción pasan; detalle y SHA-256 en `execution/F35.md`.
+- Quedan pruebas de login y recorridos de rol con cuentas autorizadas, notificaciones reales del
+  Observer, OTA publicado y validación en teléfono físico. No se ejecutaron pagos ni escrituras
+  remotas durante esta compilación.
 
 ## Imágenes SEO — candidato F33
 
@@ -55,7 +69,7 @@ La evidencia detallada está en `docs/execution/F31.md`.
 Convertir Suya Delivery en producto funcional multiapp. Ninguna simulación puede quedar activa en
 producción.
 
-## Estado vigente — checkpoint F29
+## Estado histórico — checkpoint F29
 
 - Rama: `feat/backoffice-restaurant-ops`; checkpoint Android funcional `a2b7f4a`.
 - Android: Rider, Backoffice y Wallet Observer avanzan a `versionName 1.5`/`versionCode 6`; las tres APK debug tienen ZIP íntegro, SDK 36, un firmante y firma v2 válida.
