@@ -28,11 +28,11 @@ describe('actualizaciones nativas por rol', () => {
     expect(appBuilder).toContain("const mobileRole = app === 'mobile' ? 'unified' : app;");
     expect(appBuilder).toContain("'import.meta.env.VITE_MOBILE_ROLE'");
     expect(apkVerifier).toContain("packageName: 'com.suya.app'");
-    expect(apkVerifier).toContain("releaseBuild ? '-1.7-code8-release.apk' : '-debug.apk'");
+    expect(apkVerifier).toContain("releaseBuild ? '-1.8-code9-release.apk' : '-1.8-code9-debug.apk'");
     expect(apkBuilder).toContain("const releaseBuild = args.includes('--release');");
     expect(apkBuilder).toContain("'SUYA_RELEASE_STORE_FILE'");
-    expect(androidBuild).toContain('versionCode 8');
-    expect(androidBuild).toContain('versionName "1.7"');
+    expect(androidBuild).toContain('versionCode 9');
+    expect(androidBuild).toContain('versionName "1.8"');
     expect(iosProject).toContain('CURRENT_PROJECT_VERSION = 2;');
   });
 

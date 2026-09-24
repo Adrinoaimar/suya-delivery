@@ -109,8 +109,8 @@ for (const name of requested) {
 
   const apk = path.join(repoRoot, 'android', 'app', 'build', 'outputs', 'apk', buildType, `app-${buildType}.apk`);
   const artifact = releaseBuild
-    ? `${target.artifactPrefix}-1.7-code8-release.apk`
-    : `${target.artifactPrefix}-debug.apk`;
+    ? `${target.artifactPrefix}-1.8-code9-release.apk`
+    : `${target.artifactPrefix}-1.8-code9-debug.apk`;
   await cp(apk, path.join(outputRoot, artifact));
   console.log(`APK listo: output/android/${artifact}`);
 }

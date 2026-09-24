@@ -13,7 +13,7 @@ const expectedCertificate = expectedCertificateIndex >= 0 ? args[expectedCertifi
 const outputDirectory = path.resolve(process.env.SUYA_ANDROID_OUTPUT || 'output/android');
 const failures = [];
 const signerDigests = [];
-const versionPattern = /versionCode='8'\s+versionName='1\.7'/u;
+const versionPattern = /versionCode='9'\s+versionName='1\.8'/u;
 
 const expected = [
   {
@@ -42,7 +42,7 @@ const expected = [
   },
 ];
 
-const suffix = releaseBuild ? '-1.7-code8-release.apk' : '-debug.apk';
+const suffix = releaseBuild ? '-1.8-code9-release.apk' : '-1.8-code9-debug.apk';
 
 function fail(message) {
   failures.push(message);
@@ -108,7 +108,7 @@ for (const item of expected) {
     fail(`${fileName}: no contiene una actividad lanzable.`);
   }
   if (!versionPattern.test(badging)) {
-    fail(`${fileName}: versión nativa inesperada; se esperaba 8/1.7.`);
+    fail(`${fileName}: versión nativa inesperada; se esperaba 9/1.8.`);
   }
   if (releaseBuild && /application-debuggable/u.test(badging)) {
     fail(`${fileName}: un APK release no puede ser depurable.`);

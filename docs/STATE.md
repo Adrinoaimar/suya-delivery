@@ -2,6 +2,22 @@
 
 Actualizado: 24 de septiembre de 2026 (`America/Lima`)
 
+## F37 — SQL y APK Android 1.8
+
+- Se aplicaron atómicamente las migraciones `20260924140000` y `20260924150000` al Supabase
+  configurado. La entrada histórica `20260912223000` se incorporó al ledger tras la conciliación
+  de sus 58 + 29 mapeos ya existentes; ledger local/remoto quedó alineado (82/82).
+- PgTAP remoto validó 18/18 aserciones después del cambio, dentro de una transacción revertida.
+  Las dos RPC de caja ya califican sus columnas y los roles anónimos no ejecutan mutaciones.
+- Se generaron cuatro APK debug `1.8`/código `9`: Cliente, Rider, Backoffice y Caja/Observer.
+  `verify:android-apks` pasó. No son APK release: falta firma con el keystore estable.
+- `verify:production` pasó (901 archivos). `typecheck`, lint, secretos y suite web (77 archivos,
+  393 pruebas) pasaron; también pasó `:app:test` de Gradle.
+- Pendiente: `db:test` local requiere Postgres en `127.0.0.1:54322`; no hay daemon Docker.
+  `db lint --linked` posterior tampoco conectó: `28P01` para `cli_login_postgres`. No se hizo
+  smoke en emulador ni se publicó Cloudflare.
+- Evidencia, checksums y límites en `docs/execution/F37.md`.
+
 ## Auditoría Supabase F36 — 2026-09-24
 
 - Acceso directo de solo lectura a producción quedó comprobado con `supabase db query --linked`.
