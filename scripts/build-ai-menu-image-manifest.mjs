@@ -2,7 +2,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const root = resolve(import.meta.dirname, '..');
-const seed = readFileSync(resolve(root, 'supabase/seed.sql'), 'utf8');
+const catalogSource = readFileSync(resolve(root, 'supabase/catalog-source.sql'), 'utf8');
 const dondeJoelMigration = readFileSync(
   resolve(root, 'supabase/migrations/20260906230000_donde_joel_menu_cards.sql'),
   'utf8',
@@ -19,7 +19,7 @@ const slugify = (value) =>
 
 const items = [];
 const andaPattern = /\('(?<id>30000000-0000-4000-8000-000000000(?<number>\d{3}))','20000000-0000-4000-8000-000000000001','(?<section>(?:''|[^'])*)','(?<name>(?:''|[^'])*)','(?<description>(?:''|[^'])*)',(?<price>\d+(?:\.\d+)?),/g;
-for (const match of seed.matchAll(andaPattern)) {
+for (const match of catalogSource.matchAll(andaPattern)) {
   const number = match.groups.number;
   const name = decodeSql(match.groups.name);
   const target = `public/images/generated/anda-paya/ap-${number}-${slugify(name)}.webp`;

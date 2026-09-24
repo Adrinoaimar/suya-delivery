@@ -19,6 +19,8 @@ Antes de tocar código, lee el `README.md`. Las reglas de abajo son obligatorias
    funciones seguras. Todo acceso pasa por contratos compartidos; ninguna pantalla importa el
    cliente Supabase ni una implementación concreta. Migraciones versionadas, RLS `default deny`
    y proyecto exclusivo de Suya son obligatorios.
+   La base QA vive en Supabase remoto; no iniciar PostgreSQL local ni Supabase con Docker. Los
+   comandos `db:test` y `db:lint` apuntan solo al proyecto remoto `SUYA-STAGING-QA`.
 6. **Nada simulado en producción.** Mocks, datos ficticios, `localStorage` como base, timers de
    estados, pagos falsos, mapas falsos y sincronización entre pestañas solo pueden existir en
    pruebas o desarrollo local mediante flags explícitos. El build productivo debe fallar si activa

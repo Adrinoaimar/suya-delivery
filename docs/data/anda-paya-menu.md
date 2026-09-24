@@ -13,7 +13,7 @@
   pedidos deben migrarse a grupos de opciones con cardinalidad obligatoria.
 - Alitas: sabores visibles: BBQ, acevichadas, broaster, anticucheras, maracuyá, picantes y al ajo.
 
-La transcripción estructurada y sus 58 productos están en `supabase/seed.sql`. Los importes dobles
+La transcripción estructurada y sus 58 productos están en `supabase/catalog-source.sql`. Los importes dobles
 se representan como precio base y extra "Porción grande" por la diferencia exacta.
 
 ## Carta JPG recibida el 6 de septiembre de 2026

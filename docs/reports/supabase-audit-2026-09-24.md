@@ -1,5 +1,8 @@
 # Supabase audit — 2026-09-24
 
+> Snapshot anterior a F37. Las migraciones correctivas se aplicaron después; producción llegó a
+> 82/82 migraciones y pgTAP remoto pasó 18/18. Estado posterior: `docs/execution/F37.md` y F38.
+
 ## Scope and access
 
 Read-only inspection of the production Supabase project through its SQL Editor and Supabase CLI. `supabase db query --linked` now executes read-only queries through the Management API; this runtime still has no Supabase MCP tools. No production rows, credentials, schema, or migration history were changed. The separate staging project was not used. The production migration ledger reaches `20260921120000`.
@@ -38,7 +41,8 @@ Read-only inspection of the production Supabase project through its SQL Editor a
 - `supabase/migrations/20260924150000_cash_register_ambiguity_repair.sql`: replaces the two remote cash-register RPC definitions with qualified column references.
 - `supabase/tests/20260924150000_cash_register_ambiguity_repair.test.sql`: covers function security settings, grants, and qualified references.
 
-These migrations are local-only and not applied to production.
+At audit time, these migrations were prepared but not yet applied. F37 records their later remote
+application and validation.
 
 ## Verification
 
@@ -50,8 +54,6 @@ These migrations are local-only and not applied to production.
 
 ## Next actions
 
-1. Reconcile the missing migration record after verifying all expected image mappings, then rerun migration-list and dry-run.
-2. Start the local Supabase/Docker stack, run the database tests and local SQL lint, and fix any remaining failures.
-3. Pass production preflight before applying either prepared migration; rerun remote DB lint afterward.
-4. Establish real mail delivery and verified owner contacts, then deploy/configure the owner invitation flow. Do not store passwords in assistant memory.
-5. Build and sign a new APK after backend changes are validated and release-signing configuration is available.
+1. Repair SQL authentication for the remote QA project, apply the schema there, then run remote SQL tests and lint.
+2. Establish real mail delivery and verified owner contacts, then deploy/configure the owner invitation flow. Do not store passwords in assistant memory.
+3. Build and sign a release APK after backend changes are validated and release-signing configuration is available.

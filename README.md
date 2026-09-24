@@ -11,9 +11,9 @@ Aplicaciones publicadas:
 > Los bundles productivos usan Supabase y rechazan configuración incompleta o proveedores mock.
 > Los mocks solo se cargan en desarrollo y pruebas explícitas.
 
-Marketplace de delivery local de **Sullana, Piura, Perú**. Web app responsive **mobile-first**
-construida con React + TypeScript + Vite + Tailwind CSS. El producto está en migración desde una
-prueba local hacia tres aplicaciones conectadas a un backend Supabase exclusivo.
+Marketplace de delivery de **Sullana, Piura, Perú**. Web app responsive **mobile-first**
+construida con React + TypeScript + Vite + Tailwind CSS. Las aplicaciones usan el proyecto
+Supabase remoto exclusivo de Suya; el repositorio no requiere una base de datos local ni Docker.
 
 ---
 
@@ -115,12 +115,16 @@ incompleta.
 
 ---
 
-## Desarrollo local y modo demostración
+## Desarrollo de interfaz y modo demostración
+
+La base de datos vive en Supabase. No se inicia PostgreSQL local ni se usa Docker. Las migraciones
+y pruebas SQL apuntan al proyecto remoto `SUYA-STAGING-QA`; el acceso de CLI y la contraseña de
+base de datos deben estar configurados para ejecutar `npm run db:test` o `npm run db:lint`.
 
 | Función              | Estado actual |
 | -------------------- | ------------- |
 | Backend `supabase`   | Catálogo, pedidos, auth, RLS, realtime, pagos manuales, caja y observador de billeteras. |
-| Backend de desarrollo | Sin `VITE_BACKEND=supabase`, los servicios mock se cargan únicamente para pruebas/local. |
+| Backend de desarrollo | El frontend puede ejecutarse localmente; persistencia real usa Supabase remoto. Los servicios mock quedan solo para pruebas explícitas. |
 | Mapa                 | Leaflet + OpenStreetMap; el rider solicita geometría e indicaciones al proxy autenticado `route-driving`. No se dibuja una línea recta como ruta vial. |
 | Pagos                | Efectivo y Yape/Lemon manuales con intento server-side, QR público del negocio y verificación por evidencia; Culqi solo cuando está configurado. |
 | Observador           | APK Android opt-in; captura notificaciones permitidas, cifra la cola en Android Keystore y nunca marca un pedido como pagado por sí sola. |

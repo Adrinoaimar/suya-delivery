@@ -6,23 +6,25 @@ Actualizado: 24 de septiembre de 2026 (`America/Lima`)
 
 - Se aplicaron atómicamente las migraciones `20260924140000` y `20260924150000` al Supabase
   configurado. La entrada histórica `20260912223000` se incorporó al ledger tras la conciliación
-  de sus 58 + 29 mapeos ya existentes; ledger local/remoto quedó alineado (82/82).
+  de sus 58 + 29 mapeos ya existentes; ledger del repo/remoto quedó alineado (82/82).
 - PgTAP remoto validó 18/18 aserciones después del cambio, dentro de una transacción revertida.
   Las dos RPC de caja ya califican sus columnas y los roles anónimos no ejecutan mutaciones.
 - Se generaron cuatro APK debug `1.8`/código `9`: Cliente, Rider, Backoffice y Caja/Observer.
   `verify:android-apks` pasó. No son APK release: falta firma con el keystore estable.
 - `verify:production` pasó (901 archivos). `typecheck`, lint, secretos y suite web (77 archivos,
   393 pruebas) pasaron; también pasó `:app:test` de Gradle.
-- Pendiente: `db:test` local requiere Postgres en `127.0.0.1:54322`; no hay daemon Docker.
-  `db lint --linked` posterior tampoco conectó: `28P01` para `cli_login_postgres`. No se hizo
-  smoke en emulador ni se publicó Cloudflare.
+- Verificación nueva: Supabase producción tiene 82/82 migraciones, última `20260924150000`.
+  `SUYA-STAGING-QA` existe, pero sigue sin esquema; conexión CLI directa devuelve `28P01`.
+- Se retiraron del repo la base local, Docker, semillas locales y E2E que modificaba esa base.
+  `db:test`/`db:lint` ahora apuntan al Supabase remoto de QA. Falta corregir el acceso SQL de QA.
+  No se hizo smoke en emulador ni se publicó Cloudflare.
 - Evidencia, checksums y límites en `docs/execution/F37.md`.
 
-## Auditoría Supabase F36 — 2026-09-24
+## Auditoría Supabase F36 — foto previa a F37, 2026-09-24
 
 - Acceso directo de solo lectura a producción quedó comprobado con `supabase db query --linked`.
-  La auditoría extensa encontró dos RPC de caja con error real de ambigüedad; hay dos migraciones
-  locales preparadas para corregir caja, RLS y grants. Aún no se aplicaron.
+  La auditoría extensa encontró dos RPC de caja con error real de ambigüedad; F37 aplicó las dos
+  correcciones y verificó 18 aserciones transaccionales. Ver `docs/execution/F37.md`.
 - Causa que bloquea `db push`: falta en el ledger remoto la migración histórica de imágenes. Una
   conciliación remota de solo lectura confirmó sus 58 mapeos de Andá Paya y 29 de Donde Joel.
   `verify:production` sigue fallando por variables productivas/mocks; Docker local no está activo,
