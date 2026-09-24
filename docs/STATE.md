@@ -1,6 +1,23 @@
 # Estado de ejecución
 
-Actualizado: 23 de septiembre de 2026 (`America/Lima`)
+Actualizado: 24 de septiembre de 2026 (`America/Lima`)
+
+## Auditoría Supabase F36 — 2026-09-24
+
+- Acceso directo de solo lectura a producción quedó comprobado con `supabase db query --linked`.
+  La auditoría extensa encontró dos RPC de caja con error real de ambigüedad; hay dos migraciones
+  locales preparadas para corregir caja, RLS y grants. Aún no se aplicaron.
+- Causa que bloquea `db push`: falta en el ledger remoto la migración histórica de imágenes. Una
+  conciliación remota de solo lectura confirmó sus 58 mapeos de Andá Paya y 29 de Donde Joel.
+  `verify:production` sigue fallando por variables productivas/mocks; Docker local no está activo,
+  por lo que pgTAP aún no corrió.
+- Cuentas: existe un propietario activo con correo confirmado; los dos perfiles de Andá Paya siguen
+  sin contacto ni propietario. `invite-restaurant-owner` no figura desplegada. No se emitieron claves
+  ni correos.
+- Cloudflare Email Routing está sin configurar, sin destinos ni reglas; el dominio no publica MX y
+  el conector disponible es de solo lectura. No se crearon buzones/aliases.
+- APK local vigente sigue en `1.7`/`versionCode 8`. No se produjo APK adicional en esta auditoría.
+- Evidencia y siguientes pasos en `docs/execution/F36.md` y `docs/reports/supabase-audit-2026-09-24.md`.
 
 ## Estado vigente — APK Android 1.7 / checkpoint F35
 
