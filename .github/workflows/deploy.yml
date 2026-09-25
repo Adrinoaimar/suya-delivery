@@ -42,7 +42,14 @@ jobs:
     timeout-minutes: 20
     env:
       CI: 'true'
-      VITE_BACKEND: mock
+      # El build seguro rechaza mocks. Este job solo abre pantallas estáticas
+      # en Playwright, así que usa el modo E2E explícito y un endpoint local.
+      CI_E2E: 'true'
+      VITE_BACKEND: supabase
+      VITE_MAP_PROVIDER: osm
+      VITE_SUPABASE_URL: http://127.0.0.1:54321
+      VITE_EXPECTED_SUPABASE_PROJECT_REF: local
+      VITE_SUPABASE_PUBLISHABLE_KEY: sb_publishable_ci_e2e_only_placeholder_12345
     steps:
       - uses: actions/checkout@v4
 
