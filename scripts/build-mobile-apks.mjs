@@ -1,10 +1,14 @@
-import { cp, mkdir, stat } from 'node:fs/promises';
+import { cp, mkdir, readFile, stat } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const outputRoot = path.join(repoRoot, 'output', 'android');
+const androidBuildConfig = await readFile(path.join(repoRoot, 'android', 'app', 'build.gradle'), 'utf8');
+const versionCode = androidBuildConfig.match(/^\s*versionCode\s+(\d+)\s*$/m)?.[1];
+const versionName = androidBuildConfig.match(/^\s*versionName\s+"([^"]+)"\s*$/m)?.[1];
+if (!versionCode || !versionName) throw new Error('No se pudo leer la versión Android de android/app/build.gradle.');
 const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 const npxCommand = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 const args = process.argv.slice(2);
@@ -109,8 +113,8 @@ for (const name of requested) {
 
   const apk = path.join(repoRoot, 'android', 'app', 'build', 'outputs', 'apk', buildType, `app-${buildType}.apk`);
   const artifact = releaseBuild
-    ? `${target.artifactPrefix}-1.8-code9-release.apk`
-    : `${target.artifactPrefix}-1.8-code9-debug.apk`;
+    ? `${target.artifactPrefix}-${versionName}-code${versionCode}-release.apk`
+    : `${target.artifactPrefix}-${versionName}-code${versionCode}-debug.apk`;
   await cp(apk, path.join(outputRoot, artifact));
   console.log(`APK listo: output/android/${artifact}`);
 }

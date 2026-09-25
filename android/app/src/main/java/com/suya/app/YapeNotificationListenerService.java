@@ -63,23 +63,27 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     private static final String DEVICE_TOKEN_KEY = "device_token";
     private static final String DEVICE_BINDING_KEY = "device_binding_id";
     private static final String QUEUE_FULL_KEY = "queue_full";
+    private static final String YAPE_CALLBACK_COUNT_KEY = "yape_callback_count";
+    private static final String LAST_YAPE_RESULT_KEY = "last_yape_result";
+    private static final String LAST_YAPE_AT_KEY = "last_yape_at";
     private static final String KEY_ALIAS = "suya_yape_observed_events";
     private static final String KEYSTORE = "AndroidKeyStore";
     private static final int SYNC_JOB_ID = 170914;
     private static final int MAX_EVENTS = 500;
+    private static final long RECENT_NOTIFICATION_WINDOW_MS = 30 * 60 * 1000L;
     private static final long MAX_OBSERVED_AMOUNT_CENTS = 100000000L;
     private static final Pattern PAIRING_CODE_PATTERN = Pattern.compile("^[A-Fa-f0-9]{8}$");
     private static final Object QUEUE_LOCK = new Object();
     private static final ExecutorService SYNC_EXECUTOR = Executors.newSingleThreadExecutor();
     private static final Pattern MONEY_PATTERN = Pattern.compile("(?<![\\p{L}\\d+-])(?:S\\/?|S\\.|PEN|ARS|USD|US\\$|\\$)\\s*((?:\\d{1,3}(?:[.,]\\d{3})+|\\d+)(?:[.,]\\d{2})?)(?!\\d)", Pattern.CASE_INSENSITIVE);
-    private static final Pattern CODE_PATTERN = Pattern.compile("(?:c[oó]digo(?:\\s+(?:de\\s+)?(?:seguridad|operaci[oó]n|aprobaci[oó]n))?|operaci[oó]n|referencia|reference|ref\\.?|id(?:\\s+de)?\\s+(?:transferencia|operaci[oó]n))\\b\\s*[:#-]?\\s*([a-z0-9-]{3,64})", Pattern.CASE_INSENSITIVE);
+    private static final Pattern CODE_PATTERN = Pattern.compile("(?:c[oó]d(?:igo|\\.)(?:\\s+(?:de\\s+)?(?:seguridad|operaci[oó]n|aprobaci[oó]n))?|operaci[oó]n|referencia|reference|ref\\.?|id(?:\\s+de)?\\s+(?:transferencia|operaci[oó]n))(?:\\s+es)?\\s*[:#-]?\\s*([a-z0-9-]{3,64})", Pattern.CASE_INSENSITIVE);
     private static final Pattern SENDER_PATTERN = Pattern.compile("(?:^|\\b)(?:de|from|remitente|sender)\\s*[:#-]?\\s*(?!(?:seguridad|operaci[oó]n|transferencia|pago|payment|referencia|reference)\\b)([\\p{L}][\\p{L}'-]*(?:\\s+[\\p{L}][\\p{L}'-]*){0,4})(?=\\s*(?:[.,;:·|]|$|\\b(?:te\\b|envi[oó]|sent\\b|por\\b|monto\\b|amount\\b|operaci[oó]n\\b|c[oó]digo\\b|ref(?:erencia)?\\b|S\\/?|PEN\\b|USD\\b|ARS\\b)))|(?:^|\\b)([\\p{L}][\\p{L}'-]*(?:\\s+[\\p{L}][\\p{L}'-]*){0,4})(?=\\s+te\\s+(?:envi[oó](?=\\s|$)|sent\\b))", Pattern.CASE_INSENSITIVE);
     private static final Pattern INCOMING_NOTIFICATION_PATTERN = Pattern.compile("(?:^|[^\\p{L}])(?:recib(?:e|es|iste|i[oó]|ido|ieron|imos)|received|payment\\s+received|te\\s+envi[oó]|you\\s+(?:received|got)|dep[oó]sito\\s+(?:recibido|received)|transferencia\\s+recibida)(?=$|[^\\p{L}])", Pattern.CASE_INSENSITIVE);
     private static final Pattern NON_INCOMING_NOTIFICATION_PATTERN = Pattern.compile("(?:^|[^\\p{L}])(?:saldo|reversi[oó]n|devoluci[oó]n|promoci[oó]n|oferta|solicitud|solicitaste|enviaste|enviado|enviada|sent|failed|fall[oó])(?=$|[^\\p{L}])", Pattern.CASE_INSENSITIVE);
     private static final WalletAdapter[] ADAPTERS = new WalletAdapter[]{
             new WalletAdapter("yape", "yape_notification",
                     new String[]{"com.bcp.innovacxion.yapeapp", "com.bcp.yape.app"},
-                    new String[]{"yape", "recib"}, new String[]{"PEN"}),
+                    new String[]{"yape", "recib", "te envió un pago", "te envio un pago"}, new String[]{"PEN"}),
             // Verified from Lemon's official Google Play listing. Do not add guessed package IDs.
             new WalletAdapter("lemon", "lemon_notification", new String[]{"com.applemoncash"},
                     new String[]{"lemon", "recib", "received", "transfer"},
@@ -96,33 +100,73 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     };
 
     @Override
+    public void onListenerConnected() {
+        super.onListenerConnected();
+        StatusBarNotification[] active = getActiveNotifications();
+        if (active == null) return;
+        long cutoff = System.currentTimeMillis() - RECENT_NOTIFICATION_WINDOW_MS;
+        for (StatusBarNotification notification : active) {
+            if (notification == null || notification.getPostTime() < cutoff) continue;
+            WalletAdapter adapter = findAdapter(notification.getPackageName());
+            if (adapter == null || !"yape".equals(adapter.provider)) continue;
+            onNotificationPosted(notification);
+        }
+    }
+
+    @Override
     public void onNotificationPosted(StatusBarNotification statusBarNotification) {
         if (statusBarNotification == null) return;
+        WalletAdapter adapter = findAdapter(statusBarNotification.getPackageName());
+        if (adapter == null) return;
+        long postTime = statusBarNotification.getPostTime();
+        if ("yape".equals(adapter.provider)) recordYapeCallback(this, postTime);
         String bindingId = currentBindingId(this);
         // No se capturan notificaciones antes de que el operador vincule el
         // dispositivo a una cuenta receptora concreta.
-        if (bindingId == null) return;
-        WalletAdapter adapter = findAdapter(statusBarNotification.getPackageName());
-        if (adapter == null) return;
+        if (bindingId == null) {
+            setLastYapeResult(this, "device_unpaired", postTime, adapter);
+            return;
+        }
         Notification notification = statusBarNotification.getNotification();
-        if (notification == null || notification.extras == null) return;
+        if (notification == null || notification.extras == null) {
+            setLastYapeResult(this, "notification_empty", postTime, adapter);
+            return;
+        }
 
         String combined = combinedNotificationText(notification.extras);
         String lower = combined.toLowerCase(new Locale("es", "PE"));
-        if (combined.isEmpty() || !adapter.matchesText(lower) || !isIncomingNotification(lower)) return;
+        if (combined.isEmpty()) {
+            setLastYapeResult(this, "notification_text_empty", postTime, adapter);
+            return;
+        }
+        if (!adapter.matchesText(lower)) {
+            setLastYapeResult(this, "wallet_marker_missing", postTime, adapter);
+            return;
+        }
+        if (!isIncomingNotification(lower)) {
+            setLastYapeResult(this, "incoming_marker_missing", postTime, adapter);
+            return;
+        }
 
         Matcher amountMatcher = MONEY_PATTERN.matcher(combined);
-        if (!amountMatcher.find()) return;
-        if (hasMalformedAmountContinuation(combined, amountMatcher.end())) return;
+        if (!amountMatcher.find()) {
+            setLastYapeResult(this, "amount_missing", postTime, adapter);
+            return;
+        }
+        if (hasMalformedAmountContinuation(combined, amountMatcher.end())) {
+            setLastYapeResult(this, "amount_malformed", postTime, adapter);
+            return;
+        }
         String rawAmount = amountMatcher.group(1);
         String prefix = amountMatcher.group().substring(0, amountMatcher.group().length() - rawAmount.length()).trim();
         Money money = parseMoney(prefix, rawAmount);
-        if (money == null || !adapter.currencies.contains(money.currency)) return;
+        if (money == null || !adapter.currencies.contains(money.currency)) {
+            setLastYapeResult(this, "currency_unrecognized", postTime, adapter);
+            return;
+        }
 
-        Matcher codeMatcher = CODE_PATTERN.matcher(combined);
-        String code = codeMatcher.find() ? codeMatcher.group(1) : null;
+        String code = extractCode(combined);
         String senderName = extractSenderNameFromFields(notificationTextFields(notification.extras), combined);
-        long postTime = statusBarNotification.getPostTime();
         String observedAt = isoAt(postTime);
         String notificationKey = statusBarNotification.getKey();
         if (TextUtils.isEmpty(notificationKey)) {
@@ -152,7 +196,52 @@ public final class YapeNotificationListenerService extends NotificationListenerS
             return;
         }
         appendEvent(event);
+        String result = code == null
+                ? (senderName == null ? "recognized_missing_code_and_sender" : "recognized_missing_code")
+                : (senderName == null ? "recognized_missing_sender" : "recognized_complete");
+        setLastYapeResult(this, result, postTime, adapter);
         syncPendingEvents(this);
+    }
+
+    private static void recordYapeCallback(Context context, long postTime) {
+        if (context == null) return;
+        SharedPreferences preferences = context.getSharedPreferences(PREFS, MODE_PRIVATE);
+        preferences.edit()
+                .putInt(YAPE_CALLBACK_COUNT_KEY, preferences.getInt(YAPE_CALLBACK_COUNT_KEY, 0) + 1)
+                .putString(LAST_YAPE_RESULT_KEY, "checking_notification")
+                .putString(LAST_YAPE_AT_KEY, isoAt(postTime))
+                .apply();
+    }
+
+    private static void setLastYapeResult(
+            Context context,
+            String result,
+            long postTime,
+            WalletAdapter adapter
+    ) {
+        if (context == null || adapter == null || !"yape".equals(adapter.provider)) return;
+        context.getSharedPreferences(PREFS, MODE_PRIVATE)
+                .edit()
+                .putString(LAST_YAPE_RESULT_KEY, result)
+                .putString(LAST_YAPE_AT_KEY, isoAt(postTime))
+                .apply();
+    }
+
+    static int yapeCallbackCount(Context context) {
+        if (context == null) return 0;
+        return context.getSharedPreferences(PREFS, MODE_PRIVATE).getInt(YAPE_CALLBACK_COUNT_KEY, 0);
+    }
+
+    @Nullable
+    static String lastYapeResult(Context context) {
+        if (context == null) return null;
+        return context.getSharedPreferences(PREFS, MODE_PRIVATE).getString(LAST_YAPE_RESULT_KEY, null);
+    }
+
+    @Nullable
+    static String lastYapeAt(Context context) {
+        if (context == null) return null;
+        return context.getSharedPreferences(PREFS, MODE_PRIVATE).getString(LAST_YAPE_AT_KEY, null);
     }
 
     private static String combinedNotificationText(Bundle extras) {
@@ -244,6 +333,17 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     static boolean isIncomingNotification(String text) {
         return INCOMING_NOTIFICATION_PATTERN.matcher(text).find()
                 && !NON_INCOMING_NOTIFICATION_PATTERN.matcher(text).find();
+    }
+
+    static boolean isYapeNotificationText(String text) {
+        return text != null && ADAPTERS[0].matchesText(text.toLowerCase(new Locale("es", "PE")));
+    }
+
+    @Nullable
+    static String extractCode(String text) {
+        if (text == null) return null;
+        Matcher matcher = CODE_PATTERN.matcher(text);
+        return matcher.find() ? matcher.group(1) : null;
     }
 
     @Nullable

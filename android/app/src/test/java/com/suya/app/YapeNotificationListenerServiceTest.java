@@ -55,6 +55,17 @@ public class YapeNotificationListenerServiceTest {
     }
 
     @Test
+    public void recognizesObservedYapeReceiptWithAbbreviatedSecurityCode() {
+        String notification = "Confirmación de Pago Ana Nav* te envió un pago por S/ 1. "
+                + "El cód. de seguridad es: 482";
+
+        assertTrue(YapeNotificationListenerService.isYapeNotificationText(notification));
+        assertTrue(YapeNotificationListenerService.isIncomingNotification(notification));
+        assertTrue(YapeNotificationListenerService.containsIncomingMoney(notification));
+        assertEquals("482", YapeNotificationListenerService.extractCode(notification));
+    }
+
+    @Test
     public void acceptsOnlyTheEightCharacterPairingCode() {
         assertTrue(YapeNotificationListenerService.isPairingCodeValid("AB12CD34"));
         assertTrue(!YapeNotificationListenerService.isPairingCodeValid("AB12-CD34"));

@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
 const args = process.argv.slice(2);
@@ -11,9 +11,12 @@ const releaseBuild = args.includes('--release');
 const expectedCertificateIndex = args.indexOf('--expected-cert-sha256');
 const expectedCertificate = expectedCertificateIndex >= 0 ? args[expectedCertificateIndex + 1]?.toLowerCase() : null;
 const outputDirectory = path.resolve(process.env.SUYA_ANDROID_OUTPUT || 'output/android');
+const androidBuildConfig = readFileSync(path.resolve('android/app/build.gradle'), 'utf8');
+const versionCode = androidBuildConfig.match(/^\s*versionCode\s+(\d+)\s*$/m)?.[1];
+const versionName = androidBuildConfig.match(/^\s*versionName\s+"([^"]+)"\s*$/m)?.[1];
+if (!versionCode || !versionName) throw new Error('No se pudo leer la versión Android de android/app/build.gradle.');
 const failures = [];
 const signerDigests = [];
-const versionPattern = /versionCode='9'\s+versionName='1\.8'/u;
 
 const expected = [
   {
@@ -42,7 +45,7 @@ const expected = [
   },
 ];
 
-const suffix = releaseBuild ? '-1.8-code9-release.apk' : '-1.8-code9-debug.apk';
+const suffix = `-${versionName}-code${versionCode}-${releaseBuild ? 'release' : 'debug'}.apk`;
 
 function fail(message) {
   failures.push(message);
@@ -107,8 +110,10 @@ for (const item of expected) {
   if (!/launchable-activity: name='[^']+'/u.test(badging)) {
     fail(`${fileName}: no contiene una actividad lanzable.`);
   }
-  if (!versionPattern.test(badging)) {
-    fail(`${fileName}: versión nativa inesperada; se esperaba 9/1.8.`);
+  const actualVersionCode = badging.match(/versionCode='(\d+)'/u)?.[1];
+  const actualVersionName = badging.match(/versionName='([^']+)'/u)?.[1];
+  if (actualVersionCode !== versionCode || actualVersionName !== versionName) {
+    fail(`${fileName}: versión nativa inesperada; se esperaba ${versionCode}/${versionName}.`);
   }
   if (releaseBuild && /application-debuggable/u.test(badging)) {
     fail(`${fileName}: un APK release no puede ser depurable.`);

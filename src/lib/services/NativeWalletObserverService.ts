@@ -6,6 +6,9 @@ interface NativeWalletObserverStatus {
   role: 'ready' | 'unconfigured' | string;
   pendingEvents?: number;
   queueFull?: boolean;
+  yapeNotificationsSeen?: number;
+  lastYapeResult?: string | null;
+  lastYapeAt?: string | null;
 }
 
 interface NativeWalletObserverPlugin {
