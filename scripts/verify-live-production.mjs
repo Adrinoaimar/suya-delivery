@@ -48,92 +48,97 @@ if (!functionsOnly) {
 }
 
 async function checkCustomerAnalyticsBundle() {
-  try {
-    // Cloudflare can briefly serve the previous HTML shell after a Pages
-    // promotion. A cache-busting audit URL must inspect the deployment that
-    // was just promoted, otherwise a valid release is rolled back by a stale
-    // cached index.html.
-    const auditUrl = new URL(origin);
-    auditUrl.searchParams.set('_suya_live_audit', Date.now().toString());
-    const response = await fetch(auditUrl, {
-      redirect: 'follow',
-      signal: AbortSignal.timeout(10_000),
-    });
-    const html = await response.text();
-    const scriptSources = [
-      ...new Set(
-        [...html.matchAll(/(?:src|href)=["']([^"']+\.js(?:\?[^"']*)?)["']/giu)].map(
-          (match) => new URL(match[1], origin).toString(),
-        ),
-      ),
-    ];
-    if (!scriptSources.length) {
-      failures.push('medidor de visitas: la página cliente no publicó bundles JavaScript.');
-      return;
-    }
-
-    const bundles = [];
-    const pending = [...scriptSources];
-    const inspected = new Set();
-    while (pending.length > 0 && inspected.size < 300) {
-      const scriptUrl = pending.shift();
-      if (!scriptUrl || inspected.has(scriptUrl)) continue;
-      inspected.add(scriptUrl);
-      const scriptResponse = await fetch(scriptUrl, {
+  let lastFailure = 'medidor de visitas: no se encontró un bundle publicado válido.';
+  const bundleCache = new Map();
+  for (let attempt = 0; attempt < 15; attempt += 1) {
+    try {
+      // Cloudflare can briefly serve the previous HTML shell after a Pages
+      // promotion. Re-fetch with a fresh URL while the new deployment propagates.
+      const auditUrl = new URL(origin);
+      auditUrl.searchParams.set('_suya_live_audit', `${Date.now()}-${attempt}`);
+      const response = await fetch(auditUrl, {
         redirect: 'follow',
         signal: AbortSignal.timeout(10_000),
       });
-      if (!scriptResponse.ok) continue;
-      const source = await scriptResponse.text();
-      bundles.push(source);
+      const html = await response.text();
+      const scriptSources = [
+        ...new Set(
+          [...html.matchAll(/(?:src|href)=["']([^"']+\.js(?:\?[^"']*)?)["']/giu)].map(
+            (match) => new URL(match[1], origin).toString(),
+          ),
+        ),
+      ];
+      const bundles = [];
+      const pending = [...scriptSources];
+      const inspected = new Set();
+      while (pending.length > 0 && inspected.size < 300) {
+        const scriptUrl = pending.shift();
+        if (!scriptUrl || inspected.has(scriptUrl)) continue;
+        inspected.add(scriptUrl);
+        const cachedSource = bundleCache.get(scriptUrl);
+        if (cachedSource) {
+          bundles.push(cachedSource);
+          continue;
+        }
+        const scriptResponse = await fetch(scriptUrl, {
+          redirect: 'follow',
+          signal: AbortSignal.timeout(10_000),
+        });
+        if (!scriptResponse.ok) continue;
+        const source = await scriptResponse.text();
+        bundleCache.set(scriptUrl, source);
+        bundles.push(source);
 
-      // Vite divide el cliente en chunks importados desde el bundle de entrada.
-      // La analítica puede quedar en cualquiera de ellos, por lo que inspeccionar
-      // solo los <script> del HTML produce falsos negativos durante un release.
-      for (const match of source.matchAll(/["']([^"']+\.js(?:\?[^"']*)?)["']/giu)) {
-        try {
-          const dependency = new URL(match[1], scriptUrl);
-          if (dependency.origin === new URL(origin).origin && !inspected.has(dependency.toString())) {
-            pending.push(dependency.toString());
+        // Vite divide el cliente en chunks importados desde el bundle de entrada.
+        // La analítica puede quedar en cualquiera de ellos.
+        for (const match of source.matchAll(/["']([^"']+\.js(?:\?[^"']*)?)["']/giu)) {
+          try {
+            const dependency = new URL(match[1], scriptUrl);
+            if (
+              dependency.origin === new URL(origin).origin &&
+              !inspected.has(dependency.toString())
+            ) {
+              pending.push(dependency.toString());
+            }
+          } catch {
+            // Una cadena terminada en .js que no sea URL no es una dependencia.
           }
-        } catch {
-          // Una cadena terminada en .js que no sea URL no es una dependencia.
         }
       }
+
+      const bundle = bundles.join('\n');
+      const missing = [];
+      if (!scriptSources.length) {
+        missing.push('la página cliente no publicó bundles JavaScript');
+      }
+      if (!bundle.includes('analyticsConsent')) {
+        missing.push('el bundle cliente no contiene el estado de consentimiento');
+      }
+      if (!bundle.includes('record_suya_analytics_visit')) {
+        missing.push('el bundle cliente no contiene el registro first-party');
+      }
+      const publishedSupabaseOrigin = bundle.match(
+        new RegExp(`https://${config.supabaseProjectRef}\\.supabase\\.co`, 'iu'),
+      )?.[0];
+      const publishedPublishableKey = bundle.match(/sb_publishable_[A-Za-z0-9._-]{20,}/u)?.[0];
+      if (!publishedSupabaseOrigin || !publishedPublishableKey) {
+        missing.push('el bundle no publicó la configuración pública de Supabase necesaria');
+      }
+      if (!missing.length) {
+        // La publishable key no es un secreto; solo se usa para una comprobación
+        // deliberadamente inválida y no mutante contra la RPC publicada.
+        liveSupabaseOrigin = publishedSupabaseOrigin;
+        livePublishableKey = publishedPublishableKey;
+        console.log(`${origin} medidor: bundle first-party activo`);
+        return;
+      }
+      lastFailure = `medidor de visitas: ${missing.join('; ')}.`;
+    } catch (error) {
+      lastFailure = `medidor de visitas: no se pudo inspeccionar el bundle (${error instanceof Error ? error.message : 'error de red'}).`;
     }
-    const bundle = bundles.join('\n');
-    if (!bundle.includes('analyticsConsent')) {
-      failures.push('medidor de visitas: el bundle cliente no contiene el estado de consentimiento.');
-    }
-    if (!bundle.includes('record_suya_analytics_visit')) {
-      failures.push('medidor de visitas: el bundle cliente no contiene el registro first-party.');
-    }
-    const publishedSupabaseOrigin = bundle.match(
-      new RegExp(`https://${config.supabaseProjectRef}\\.supabase\\.co`, 'iu'),
-    )?.[0];
-    const publishedPublishableKey = bundle.match(/sb_publishable_[A-Za-z0-9._-]{20,}/u)?.[0];
-    if (!publishedSupabaseOrigin || !publishedPublishableKey) {
-      failures.push(
-        'medidor de visitas: el bundle no publicó la configuración pública de Supabase necesaria.',
-      );
-    } else {
-      // La publishable key no es un secreto; solo se usa para una comprobación
-      // deliberadamente inválida y no mutante contra la RPC publicada.
-      liveSupabaseOrigin = publishedSupabaseOrigin;
-      livePublishableKey = publishedPublishableKey;
-    }
-    if (
-      failures.every(
-        (failure) => !failure.startsWith('medidor de visitas:'),
-      )
-    ) {
-      console.log(`${origin} medidor: bundle first-party activo`);
-    }
-  } catch (error) {
-    failures.push(
-      `medidor de visitas: no se pudo inspeccionar el bundle (${error instanceof Error ? error.message : 'error de red'}).`,
-    );
+    if (attempt < 14) await new Promise((resolve) => setTimeout(resolve, 2_000));
   }
+  failures.push(lastFailure);
 }
 
 if (!functionsOnly) await checkCustomerAnalyticsBundle();
