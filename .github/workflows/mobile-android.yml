@@ -84,10 +84,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          aapt2_path=$(find "$ANDROID_HOME/build-tools" -type f -name aapt2 -print | sort -V | tail -1)
-          apksigner_path=$(find "$ANDROID_HOME/build-tools" -type f -name apksigner -print | sort -V | tail -1)
+          build_tools="$ANDROID_HOME/build-tools/35.0.0"
+          aapt2_path="$build_tools/aapt2"
+          apksigner_path="$build_tools/apksigner"
           test -n "$aapt2_path"
           test -n "$apksigner_path"
+          test -x "$aapt2_path"
+          test -x "$apksigner_path"
           npm run verify:android-apks -- --aapt2 "$aapt2_path" --apksigner "$apksigner_path"
 
       - name: Regresión Android Keystore en emulador API 35
