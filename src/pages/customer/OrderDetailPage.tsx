@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { ArrowLeft, Receipt } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
@@ -25,6 +26,10 @@ export default function OrderDetailPage() {
   const status = useOrderStore((state) => state.status);
   const error = useOrderStore((state) => state.error);
   const refresh = useOrderStore((state) => state.refresh);
+  const refreshOrder = useOrderStore((state) => state.refreshOrder);
+  const refreshCurrentOrder = useCallback(() => {
+    void refreshOrder(id);
+  }, [id, refreshOrder]);
 
   if (!order) {
     if (status === 'idle' || status === 'loading') {
@@ -82,7 +87,10 @@ export default function OrderDetailPage() {
       <div className="grid gap-4 lg:grid-cols-[1fr_340px] lg:items-start">
         <div className="space-y-4">
           {isActive && <OrderCodes order={order} />}
-          <PaymentInstructions order={order} />
+          <PaymentInstructions
+            order={order}
+            onPartialPaymentCancelled={refreshCurrentOrder}
+          />
 
           <Card>
             <h2 className="mb-3 font-display text-[15px] font-bold">Seguimiento</h2>

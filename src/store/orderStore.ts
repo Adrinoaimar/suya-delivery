@@ -16,6 +16,7 @@ interface OrderState {
   loadingMore: boolean;
   hydrate: () => Promise<void>;
   refresh: () => Promise<void>;
+  refreshOrder: (id: string) => Promise<Order | undefined>;
   loadMore: () => Promise<void>;
   createOrder: (input: CreateOrderInput) => Promise<Order>;
   updateOrderStatus: (id: string, status: OrderStatus) => Promise<Order | undefined>;
@@ -61,6 +62,23 @@ export const useOrderStore = create<OrderState>((set, get) => ({
       if (generation === orderGeneration && requestId === orderRefreshRequest) {
         set({ status: 'error', error: errorMessage(error) });
       }
+    }
+  },
+
+  async refreshOrder(id) {
+    const generation = orderGeneration;
+    try {
+      const updated = await orderService.get(id);
+      if (!updated || generation !== orderGeneration) return updated;
+      set((state) => ({
+        orders: replaceOrder(state.orders, updated),
+        status: 'ready',
+        error: null,
+      }));
+      return updated;
+    } catch (error) {
+      if (generation === orderGeneration) set({ error: errorMessage(error) });
+      return undefined;
     }
   },
 

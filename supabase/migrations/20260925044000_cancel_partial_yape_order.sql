@@ -1,0 +1,270 @@
+-- A Yape matching the submitted code but below the expected total cancels the
+-- order atomically and keeps the observed deposit available for cashier review.
+
+create or replace function public.confirm_manual_wallet_payment_by_code_v2(
+  p_order_id uuid,
+  p_confirmation_code text,
+  p_guest_access_token text default null
+)
+returns table (
+  confirmation_status text,
+  payment_attempt_id uuid,
+  observation_id uuid,
+  observed_at timestamptz,
+  payer_display_name text,
+  observed_amount_cents bigint
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_order public.orders%rowtype;
+  v_attempt public.payment_attempts%rowtype;
+  v_observation public.wallet_observations%rowtype;
+  v_guest_ok boolean := false;
+  v_confirmation_code text := regexp_replace(trim(coalesce(p_confirmation_code, '')), '\s+', '', 'g');
+  v_matching_observations bigint := 0;
+  v_other_observations bigint := 0;
+  v_changed_rows integer := 0;
+begin
+  if p_order_id is null
+    or v_confirmation_code !~ '^[0-9]{3}$' then
+    raise exception 'valid three digit Yape code is required';
+  end if;
+
+  select * into v_order
+  from public.orders
+  where id = p_order_id
+  for update;
+  if not found then raise exception 'order not found'; end if;
+
+  if v_order.customer_id is null then
+    select exists (
+      select 1 from private.order_secrets s
+      where s.order_id = v_order.id
+        and p_guest_access_token is not null
+        and length(p_guest_access_token) between 32 and 128
+        and s.guest_access_token_hash is not null
+        and extensions.crypt(p_guest_access_token, s.guest_access_token_hash) = s.guest_access_token_hash
+    ) into v_guest_ok;
+    if not v_guest_ok then raise exception 'guest order token is invalid'; end if;
+  elsif (select auth.uid()) is null or v_order.customer_id <> (select auth.uid()) then
+    raise exception 'order owner required';
+  end if;
+
+  select * into v_attempt
+  from public.payment_attempts pa
+  where pa.order_id = v_order.id
+  order by pa.created_at desc
+  limit 1
+  for update;
+  if not found then raise exception 'payment attempt not found'; end if;
+  if v_attempt.method <> 'yape' then
+    raise exception 'three digit confirmation is only valid for Yape';
+  end if;
+
+  if v_order.status = 'cancelled' then
+    if v_order.cancellation_reason = 'partial_wallet_payment'
+      and v_attempt.status = 'failed'
+      and v_attempt.failure_code = 'partial_payment_review'
+      and v_attempt.observed_wallet_observation_id is not null then
+      select * into v_observation
+      from public.wallet_observations wo
+      where wo.id = v_attempt.observed_wallet_observation_id;
+      if found and v_observation.verification_status = 'under_review' then
+        return query select
+          'amount_mismatch'::text,
+          v_attempt.id,
+          v_observation.id,
+          v_observation.observed_at,
+          null::text,
+          v_observation.amount_cents::bigint;
+        return;
+      end if;
+    end if;
+    raise exception 'cancelled order cannot be paid';
+  end if;
+
+  if v_attempt.status = 'authorized' then
+    select * into v_observation
+    from public.wallet_observations wo
+    where wo.id = v_attempt.observed_wallet_observation_id;
+    return query select
+      'authorized'::text,
+      v_attempt.id,
+      v_observation.id,
+      v_observation.observed_at,
+      coalesce(v_observation.sender_name, v_attempt.payer_display_name),
+      v_observation.amount_cents::bigint;
+    return;
+  end if;
+  if v_attempt.status <> 'pending' then
+    raise exception 'payment attempt is no longer pending';
+  end if;
+
+  perform public.declare_manual_payment(
+    p_order_id,
+    v_confirmation_code,
+    null,
+    p_guest_access_token
+  );
+
+  select count(*) into v_matching_observations
+  from public.wallet_observations wo
+  where wo.restaurant_id = v_order.restaurant_id
+    and wo.verification_status in ('unverified', 'under_review')
+    and wo.provider = 'yape'
+    and wo.currency = 'PEN'
+    and ((v_attempt.receiver_account_id is not null and wo.receiver_account_id = v_attempt.receiver_account_id)
+      or (v_attempt.receiver_account_id is null and wo.receiver_account_id is null))
+    and wo.code_last4 = v_confirmation_code
+    and v_attempt.created_at <= wo.observed_at
+    and v_attempt.expires_at >= wo.observed_at;
+
+  if v_matching_observations = 0 then
+    select count(*) into v_other_observations
+    from public.wallet_observations wo
+    where wo.restaurant_id = v_order.restaurant_id
+      and wo.verification_status in ('unverified', 'under_review')
+      and wo.provider = 'yape'
+      and wo.currency = 'PEN'
+      and wo.amount_cents = round(v_attempt.amount * 100)
+      and ((v_attempt.receiver_account_id is not null and wo.receiver_account_id = v_attempt.receiver_account_id)
+        or (v_attempt.receiver_account_id is null and wo.receiver_account_id is null))
+      and wo.code_last4 <> v_confirmation_code
+      and v_attempt.created_at <= wo.observed_at
+      and v_attempt.expires_at >= wo.observed_at;
+
+    if v_other_observations = 1 then
+      return query select
+        'code_mismatch'::text,
+        v_attempt.id,
+        null::uuid,
+        null::timestamptz,
+        null::text,
+        null::bigint;
+      return;
+    end if;
+
+    if v_other_observations > 1 then
+      return query select
+        'ambiguous'::text,
+        v_attempt.id,
+        null::uuid,
+        null::timestamptz,
+        null::text,
+        null::bigint;
+      return;
+    end if;
+
+    return query select
+      'pending'::text,
+      v_attempt.id,
+      null::uuid,
+      null::timestamptz,
+      null::text,
+      null::bigint;
+    return;
+  end if;
+  if v_matching_observations <> 1 then
+    return query select
+      'ambiguous'::text,
+      v_attempt.id,
+      null::uuid,
+      null::timestamptz,
+      null::text,
+      null::bigint;
+    return;
+  end if;
+
+  select * into v_observation
+  from public.wallet_observations wo
+  where wo.restaurant_id = v_order.restaurant_id
+    and wo.verification_status in ('unverified', 'under_review')
+    and wo.provider = 'yape'
+    and wo.currency = 'PEN'
+    and ((v_attempt.receiver_account_id is not null and wo.receiver_account_id = v_attempt.receiver_account_id)
+      or (v_attempt.receiver_account_id is null and wo.receiver_account_id is null))
+    and wo.code_last4 = v_confirmation_code
+    and v_attempt.created_at <= wo.observed_at
+    and v_attempt.expires_at >= wo.observed_at
+  limit 1
+  for update;
+
+  if v_observation.amount_cents <> round(v_attempt.amount * 100) then
+    update public.wallet_observations
+    set verification_status = 'under_review'
+    where id = v_observation.id;
+
+    if v_observation.amount_cents < round(v_attempt.amount * 100)
+      and v_order.status in ('confirmed', 'preparing') then
+      perform set_config('suya.cancellation_mutation', '1', true);
+      update public.orders
+      set status = 'cancelled',
+          cancelled_at = now(),
+          cancellation_reason = 'partial_wallet_payment'
+      where id = v_order.id and status in ('confirmed', 'preparing');
+      get diagnostics v_changed_rows = row_count;
+      perform set_config('suya.cancellation_mutation', '0', true);
+      if v_changed_rows <> 1 then
+        raise exception 'partial payment could not cancel the order';
+      end if;
+
+      update public.payment_attempts
+      set observed_wallet_observation_id = v_observation.id,
+          failure_code = 'partial_payment_review',
+          updated_at = now()
+      where id = v_attempt.id and status = 'failed';
+      get diagnostics v_changed_rows = row_count;
+      if v_changed_rows <> 1 then
+        raise exception 'partial payment review could not be recorded';
+      end if;
+
+      return query select
+        'amount_mismatch'::text,
+        v_attempt.id,
+        v_observation.id,
+        v_observation.observed_at,
+        null::text,
+        v_observation.amount_cents::bigint;
+      return;
+    end if;
+
+    return query select
+      'amount_mismatch'::text,
+      v_attempt.id,
+      null::uuid,
+      null::timestamptz,
+      null::text,
+      v_observation.amount_cents::bigint;
+    return;
+  end if;
+
+  update public.wallet_observations
+  set verification_status = 'verified'
+  where id = v_observation.id;
+
+  update public.payment_attempts
+  set status = 'authorized',
+      payer_display_name = v_observation.sender_name,
+      provider_reference = 'wallet_observation:' || v_observation.id::text,
+      observed_wallet_observation_id = v_observation.id,
+      updated_at = now()
+  where id = v_attempt.id;
+
+  return query select
+    'authorized'::text,
+    v_attempt.id,
+    v_observation.id,
+    v_observation.observed_at,
+    v_observation.sender_name,
+    v_observation.amount_cents::bigint;
+end;
+$$;
+
+revoke all on function public.confirm_manual_wallet_payment_by_code_v2(uuid, text, text) from public;
+grant execute on function public.confirm_manual_wallet_payment_by_code_v2(uuid, text, text) to anon, authenticated;
+
+comment on function public.confirm_manual_wallet_payment_by_code_v2(uuid, text, text)
+  is 'Client Yape confirmation cancels a confirmed or preparing order on a code-matched partial payment, retains its observation for Caja review, and authorizes only one exact code, receiver, time and amount match.';

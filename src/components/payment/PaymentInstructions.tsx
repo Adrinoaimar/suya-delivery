@@ -13,8 +13,16 @@ import { formatDateTime, formatPrice, paymentLabel } from '@/utils/format';
 interface PaymentInstructionsProps {
   order: Pick<
     Order,
-    'id' | 'code' | 'total' | 'storeName' | 'paymentMethod' | 'paymentIntent' | 'status'
+    | 'id'
+    | 'code'
+    | 'total'
+    | 'storeName'
+    | 'paymentMethod'
+    | 'paymentIntent'
+    | 'status'
+    | 'cancellationReason'
   >;
+  onPartialPaymentCancelled?: () => void;
 }
 
 function amountMismatchMessage(
@@ -23,10 +31,23 @@ function amountMismatchMessage(
   storeName: string,
 ): string {
   if (observedAmountCents == null) {
-    return `El Yape no coincide con el total de ${formatPrice(orderAmount)}. La evidencia queda para revisión de Caja. Contacta a ${storeName} para solicitar la devolución del abono.`;
+    return `El monto recibido no coincide con el total de ${formatPrice(orderAmount)}. El pago queda para revisión de Caja y no se marcó como pagado. El teléfono de contacto de ${storeName} se agregará cuando el comercio lo confirme.`;
   }
   const observedAmount = formatPrice(observedAmountCents / 100);
-  return `Yape detectado: ${observedAmount}. Total del pedido: ${formatPrice(orderAmount)}. El abono no cubre el total y queda para revisión de Caja; el pago no se marcó como pagado. Contacta a ${storeName} para solicitar la devolución de ${observedAmount}. No realices otro pago hasta coordinarlo con el restaurante.`;
+  return `Yape detectado: ${observedAmount}. Total del pedido: ${formatPrice(orderAmount)}. El monto no coincide y queda para revisión de Caja; el pago no se marcó como pagado. El teléfono de contacto de ${storeName} se agregará cuando el comercio lo confirme. No realices otro pago hasta coordinarlo con el restaurante.`;
+}
+
+function partialPaymentCancelledMessage(
+  observedAmountCents: number | null,
+  orderAmount: number,
+  storeName: string,
+): string {
+  const observedAmount =
+    observedAmountCents == null ? null : formatPrice(observedAmountCents / 100);
+  const amountDetails = observedAmount
+    ? `Yape detectado: ${observedAmount}. Total del pedido: ${formatPrice(orderAmount)}.`
+    : `El abono recibido no cubrió el total de ${formatPrice(orderAmount)}.`;
+  return `El pedido se canceló automáticamente porque el Yape fue parcial. ${amountDetails} El pago no se marcó como pagado y el abono queda para revisión de Caja y gestión de devolución. El teléfono de contacto de ${storeName} se agregará cuando el comercio lo confirme. No realices otro pago para este pedido.`;
 }
 
 function statusLabel(status: PaymentIntent['status'], expired = false): string {
@@ -51,7 +72,7 @@ function savedPaymentEmail(orderId: string): string | null {
   }
 }
 
-export function PaymentInstructions({ order }: PaymentInstructionsProps) {
+export function PaymentInstructions({ order, onPartialPaymentCancelled }: PaymentInstructionsProps) {
   const cancelled = order.status === 'cancelled';
   const [intent, setIntent] = useState<PaymentIntent | null>(
     cancelled ? null : (order.paymentIntent ?? null),
@@ -74,7 +95,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   const [manualBusy, setManualBusy] = useState(false);
   const gatewayTokenBusyRef = useRef(false);
   const gatewaySessionKeyRef = useRef('');
-  const gatewaySessionKey = `${order.id}:${order.status}:${order.paymentIntent?.attemptId ?? ''}`;
+  const gatewaySessionKey = `${order.id}:${order.paymentIntent?.attemptId ?? ''}`;
 
   useEffect(() => {
     // Este componente vive en rutas que pueden cambiar de pedido o de intento sin desmontarse.
@@ -235,6 +256,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
           ),
           'warning',
         );
+        onPartialPaymentCancelled?.();
       } else if (result.status === 'code_mismatch' && notifyPending) {
         notificationService.notify(
           'El código no coincide con las notificaciones recibidas. Revisa los 3 dígitos o espera a que Observer sincronice.',
@@ -247,7 +269,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         );
       }
     },
-    [intent?.amount, order.storeName, order.total],
+    [intent?.amount, onPartialPaymentCancelled, order.storeName, order.total],
   );
 
   useEffect(() => {
@@ -291,7 +313,22 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
 
   const gatewayStatus = intent?.status;
 
-  if (cancelled || order.paymentMethod === 'cash') return null;
+  if (cancelled) {
+    if (order.cancellationReason !== 'partial_wallet_payment') return null;
+    return (
+      <Card className="border-red-200 bg-red-50/70" role="status">
+        <p className="font-semibold text-red-950">Pedido cancelado por pago parcial</p>
+        <p className="mt-1 text-sm text-red-900">
+          {partialPaymentCancelledMessage(
+            walletObservedAmountCents,
+            order.total,
+            order.storeName,
+          )}
+        </p>
+      </Card>
+    );
+  }
+  if (order.paymentMethod === 'cash') return null;
   if (loading) {
     return (
       <Card role="status" aria-busy="true">
@@ -787,7 +824,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
                       : walletConfirmationStatus === 'code_mismatch'
                         ? 'Código Yape no coincide'
                         : walletConfirmationStatus === 'amount_mismatch'
-                          ? 'Abono parcial detectado'
+                          ? 'Monto de Yape no coincide'
                           : 'Pago en revisión'}
                 </p>
                 <p className="mt-1 text-xs text-suya-muted">

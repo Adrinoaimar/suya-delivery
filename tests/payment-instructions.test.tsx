@@ -51,9 +51,17 @@ const pendingIntent: PaymentIntent = {
 function order(
   paymentIntent: PaymentIntent,
   status: Order['status'] = 'confirmed',
+  cancellationReason: string | null = null,
 ): Pick<
   Order,
-  'id' | 'code' | 'total' | 'storeName' | 'paymentMethod' | 'paymentIntent' | 'status'
+  | 'id'
+  | 'code'
+  | 'total'
+  | 'storeName'
+  | 'paymentMethod'
+  | 'paymentIntent'
+  | 'status'
+  | 'cancellationReason'
 > {
   return {
     id: paymentIntent.orderId,
@@ -63,6 +71,7 @@ function order(
     paymentMethod: paymentIntent.method,
     paymentIntent,
     status,
+    cancellationReason,
   };
 }
 
@@ -293,7 +302,8 @@ describe('PaymentInstructions', () => {
     );
   });
 
-  it('muestra el monto del Yape parcial y explica cómo solicitar la devolución', async () => {
+  it('actualiza el pedido tras un Yape parcial y muestra cancelación y revisión del abono', async () => {
+    const onPartialPaymentCancelled = vi.fn();
     mocks.confirmWalletPaymentByCode.mockResolvedValueOnce({
       status: 'amount_mismatch',
       attemptId: 'attempt-1',
@@ -302,7 +312,12 @@ describe('PaymentInstructions', () => {
       payerDisplayName: null,
       observedAmountCents: 100,
     });
-    render(<PaymentInstructions order={order({ ...pendingIntent, amount: 10 })} />);
+    const { rerender } = render(
+      <PaymentInstructions
+        order={order({ ...pendingIntent, amount: 10 })}
+        onPartialPaymentCancelled={onPartialPaymentCancelled}
+      />,
+    );
 
     await waitFor(() =>
       expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled(),
@@ -313,18 +328,44 @@ describe('PaymentInstructions', () => {
     await act(async () => screen.getByRole('button', { name: 'Confirmar pago' }).click());
 
     expect(mocks.confirmWalletPaymentByCode).toHaveBeenCalledWith('order-1', '482');
-    expect(screen.getByText('Abono parcial detectado')).toBeInTheDocument();
+    expect(screen.getByText('Monto de Yape no coincide')).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Yape detectado: S/ 1.00. Total del pedido: S/ 10.00. El abono no cubre el total y queda para revisión de Caja; el pago no se marcó como pagado. Contacta a Andá Paya Cevichería para solicitar la devolución de S/ 1.00. No realices otro pago hasta coordinarlo con el restaurante.',
+        'Yape detectado: S/ 1.00. Total del pedido: S/ 10.00. El monto no coincide y queda para revisión de Caja; el pago no se marcó como pagado. El teléfono de contacto de Andá Paya Cevichería se agregará cuando el comercio lo confirme. No realices otro pago hasta coordinarlo con el restaurante.',
+      ),
+    ).toBeInTheDocument();
+    expect(onPartialPaymentCancelled).toHaveBeenCalledOnce();
+
+    rerender(
+      <PaymentInstructions
+        order={order({ ...pendingIntent, amount: 10 }, 'cancelled', 'partial_wallet_payment')}
+        onPartialPaymentCancelled={onPartialPaymentCancelled}
+      />,
+    );
+    expect(screen.getByText('Pedido cancelado por pago parcial')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'El pedido se canceló automáticamente porque el Yape fue parcial. Yape detectado: S/ 1.00. Total del pedido: S/ 10.00. El pago no se marcó como pagado y el abono queda para revisión de Caja y gestión de devolución. El teléfono de contacto de Andá Paya Cevichería se agregará cuando el comercio lo confirme. No realices otro pago para este pedido.',
       ),
     ).toBeInTheDocument();
     expect(screen.queryByLabelText('Código Yape (3 dígitos)')).not.toBeInTheDocument();
     expect(screen.queryByText(/liberado para preparación/)).not.toBeInTheDocument();
     expect(mocks.notify).toHaveBeenCalledWith(
-      expect.stringContaining('solicitar la devolución de S/ 1.00'),
+      expect.stringContaining('no coincide'),
       'warning',
     );
+  });
+
+  it('conserva el mensaje de devolución al cargar un pedido ya cancelado por pago parcial', () => {
+    render(
+      <PaymentInstructions
+        order={order({ ...pendingIntent, amount: 10 }, 'cancelled', 'partial_wallet_payment')}
+      />,
+    );
+
+    expect(screen.getByText('Pedido cancelado por pago parcial')).toBeInTheDocument();
+    expect(screen.getByText(/teléfono de contacto de Andá Paya Cevichería se agregará/)).toBeInTheDocument();
+    expect(mocks.getIntent).not.toHaveBeenCalled();
   });
 
   it('al vincular el código Yape compara código y monto con Observer', async () => {
@@ -379,7 +420,7 @@ describe('PaymentInstructions', () => {
     expect(mocks.confirmWalletPaymentByCode).toHaveBeenNthCalledWith(2, 'order-1', '111');
     expect(mocks.confirmWalletPaymentByCode).toHaveBeenNthCalledWith(3, 'order-1', '813');
     expect(mocks.declarePayment).not.toHaveBeenCalled();
-    expect(await screen.findByText('Abono parcial detectado')).toBeInTheDocument();
+    expect(await screen.findByText('Monto de Yape no coincide')).toBeInTheDocument();
     expect(screen.getByText(/Yape detectado: S\/ 1\.00.*S\/ 10\.00/)).toBeInTheDocument();
   });
 

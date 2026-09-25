@@ -176,6 +176,22 @@ describe('contrato de pedidos async', () => {
     expect(useOrderStore.getState().status).toBe('ready');
   });
 
+  it('refresca un pedido concreto para reflejar la cancelación en su pantalla', async () => {
+    const previousOrder = { id: 'guest-order', status: 'confirmed' } as never;
+    const cancelledOrder = {
+      id: 'guest-order',
+      status: 'cancelled',
+      cancellationReason: 'partial_wallet_payment',
+    } as never;
+    useOrderStore.setState({ orders: [previousOrder], status: 'ready' });
+    const get = vi.spyOn(orderService, 'get').mockResolvedValue(cancelledOrder);
+
+    await useOrderStore.getState().refreshOrder('guest-order');
+
+    expect(get).toHaveBeenCalledWith('guest-order');
+    expect(useOrderStore.getState().orders).toEqual([cancelledOrder]);
+  });
+
   it('carga la siguiente página sin repetir pedidos y corta al llegar al final', async () => {
     const firstPage = Array.from({ length: 50 }, (_, index) => ({ id: `page-${index}` } as never));
     const lastPage = [{ id: 'page-50' } as never];

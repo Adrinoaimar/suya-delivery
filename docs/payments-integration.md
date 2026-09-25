@@ -40,6 +40,14 @@ Cada pedido digital nace con monto calculado por servidor y referencia única. Y
 Si el pedido se cancela, un trigger cierra cualquier intento pendiente como `failed` con motivo
 `order_cancelled`; además, la búsqueda y la RPC final rechazan pedidos cancelados o entregados.
 
+Cuando el cliente vincula los tres dígitos de una observación Yape con monto menor al intento,
+`confirm_manual_wallet_payment_by_code_v2` cancela atómicamente pedidos `confirmed` o `preparing`,
+marca el intento como `failed` con motivo `partial_payment_review` y asocia la observación
+`under_review` para que Caja gestione el abono. El abono nunca autoriza ni confirma el pedido. Si la
+orden ya fue recogida o está en ruta, el importe queda para revisión y no se revierte el despacho.
+El detalle del pedido informa de la cancelación y señala que el teléfono de contacto se añadirá
+cuando el comercio lo confirme.
+
 Si la notificación no muestra el código, caja puede copiarlo desde la constancia del cliente en **Dispositivos de pagos**. Suya guarda un fingerprint no reversible y solo muestra los últimos cuatro caracteres; también muestra el nombre visible del remitente y el cliente del pedido para resolver rápido una coincidencia.
 
 ## Culqi: Yape y tarjeta
