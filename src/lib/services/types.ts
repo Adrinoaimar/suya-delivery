@@ -489,7 +489,11 @@ export interface PaymentDeclaration {
   payerDisplayName: string | null;
 }
 
-export type WalletPaymentConfirmationStatus = 'pending' | 'authorized' | 'ambiguous';
+export type WalletPaymentConfirmationStatus =
+  | 'pending'
+  | 'authorized'
+  | 'ambiguous'
+  | 'amount_mismatch';
 
 export interface WalletPaymentConfirmation {
   status: WalletPaymentConfirmationStatus;

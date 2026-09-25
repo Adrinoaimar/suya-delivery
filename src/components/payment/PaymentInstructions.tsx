@@ -208,6 +208,11 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
           'Encontramos más de una notificación compatible. Caja debe revisar el pago antes de liberarlo.',
           'warning',
         );
+      } else if (result.status === 'amount_mismatch') {
+        notificationService.notify(
+          `El Yape recibido no coincide con el total de ${formatPrice(intent?.amount ?? order.total)}. El pago sigue pendiente y Caja revisará el abono. No hagas otro pago.`,
+          'warning',
+        );
       } else if (notifyPending) {
         notificationService.notify(
           'Pago registrado. Estamos validando identidad, monto y hora con la notificación.',
@@ -215,7 +220,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         );
       }
     },
-    [],
+    [intent?.amount, order.total],
   );
 
   useEffect(() => {
@@ -732,6 +737,8 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
                     ? 'Validando pago…'
                     : walletConfirmationStatus === 'ambiguous'
                       ? 'Pago requiere revisión de Caja'
+                      : walletConfirmationStatus === 'amount_mismatch'
+                        ? 'Monto distinto: revisión de Caja'
                       : 'Pago en revisión'}
                 </p>
                 <p className="mt-1 text-xs text-suya-muted">
@@ -739,7 +746,9 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
                     ? intent.method === 'yape'
                       ? 'Estamos esperando la notificación de Yape y comparando código, monto y hora. No vuelvas a pagar.'
                       : 'Estamos esperando la notificación de Lemon y comparando nombre, monto y hora. No vuelvas a pagar.'
-                    : 'No generes otra referencia. El restaurante conserva la evidencia y puede revisar el pago desde Suya Caja.'}
+                    : walletConfirmationStatus === 'amount_mismatch'
+                      ? `El Yape observado no coincide con el total de ${formatPrice(intent.amount)}. El pedido sigue pendiente. Caja revisará el abono; no hagas otro pago.`
+                      : 'No generes otra referencia. El restaurante conserva la evidencia y puede revisar el pago desde Suya Caja.'}
                 </p>
                 <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
                   <label className="min-w-0 flex-1 text-xs font-semibold text-suya-carbon">

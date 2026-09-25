@@ -285,6 +285,34 @@ describe('PaymentInstructions', () => {
     );
   });
 
+  it('mantiene pendiente un Yape de S/ 5 para un pedido de S/ 10 y deriva a Caja', async () => {
+    mocks.confirmWalletPaymentByCode.mockResolvedValueOnce({
+      status: 'amount_mismatch',
+      attemptId: 'attempt-1',
+      observationId: null,
+      observedAt: null,
+      payerDisplayName: null,
+    });
+    render(<PaymentInstructions order={order({ ...pendingIntent, amount: 10 })} />);
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled(),
+    );
+    fireEvent.change(screen.getByLabelText('Código de seguridad Yape'), {
+      target: { value: '482' },
+    });
+    await act(async () => screen.getByRole('button', { name: 'Confirmar pago' }).click());
+
+    expect(mocks.confirmWalletPaymentByCode).toHaveBeenCalledWith('order-1', '482');
+    expect(screen.getByText('Monto distinto: revisión de Caja')).toBeInTheDocument();
+    expect(screen.getByText(/total de S\/ 10\.00.*Caja revisará el abono/)).toBeInTheDocument();
+    expect(screen.queryByText(/liberado para preparación/)).not.toBeInTheDocument();
+    expect(mocks.notify).toHaveBeenCalledWith(
+      expect.stringContaining('El pago sigue pendiente y Caja revisará el abono'),
+      'warning',
+    );
+  });
+
   it('preserva la revisión y no ofrece un segundo cobro si el intento vencido ya fue declarado', async () => {
     const expiredIntent = { ...pendingIntent, expiresAt: '2020-01-01T00:00:00.000Z' };
     mocks.getPaymentDeclaration.mockResolvedValueOnce(null);

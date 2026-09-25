@@ -295,7 +295,7 @@ export class SupabasePaymentService implements PaymentService {
     if (!/^\d{3}$/.test(normalizedCode)) {
       throw new Error('Escribe el código Yape de 3 dígitos.');
     }
-    const { data, error } = await this.client.rpc('confirm_manual_wallet_payment_by_code', {
+    const { data, error } = await this.client.rpc('confirm_manual_wallet_payment_by_code_v2', {
       p_order_id: orderId,
       p_confirmation_code: normalizedCode,
       p_guest_access_token: guestToken(orderId, suppliedGuestAccessToken),
@@ -303,7 +303,7 @@ export class SupabasePaymentService implements PaymentService {
     if (error) throw new Error(error.message);
     const row = firstRow(data) as WalletPaymentConfirmationRow | null;
     const status = text(row?.confirmation_status) as WalletPaymentConfirmationStatus;
-    if (!['pending', 'authorized', 'ambiguous'].includes(status)) {
+    if (!['pending', 'authorized', 'ambiguous', 'amount_mismatch'].includes(status)) {
       throw new Error('Supabase devolvió un estado de confirmación inválido.');
     }
     const attemptId = text(row?.payment_attempt_id);
