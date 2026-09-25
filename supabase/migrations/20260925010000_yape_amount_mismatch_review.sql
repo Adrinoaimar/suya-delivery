@@ -11,7 +11,8 @@ returns table (
   payment_attempt_id uuid,
   observation_id uuid,
   observed_at timestamptz,
-  payer_display_name text
+  payer_display_name text,
+  observed_amount_cents bigint
 )
 language plpgsql
 security definer
@@ -71,7 +72,8 @@ begin
       v_attempt.id,
       v_observation.id,
       v_observation.observed_at,
-      coalesce(v_observation.sender_name, v_attempt.payer_display_name);
+      coalesce(v_observation.sender_name, v_attempt.payer_display_name),
+      v_observation.amount_cents::bigint;
     return;
   end if;
   if v_attempt.status <> 'pending' then
@@ -103,7 +105,8 @@ begin
       v_attempt.id,
       null::uuid,
       null::timestamptz,
-      null::text;
+      null::text,
+      null::bigint;
     return;
   end if;
   if v_matching_observations <> 1 then
@@ -112,7 +115,8 @@ begin
       v_attempt.id,
       null::uuid,
       null::timestamptz,
-      null::text;
+      null::text,
+      null::bigint;
     return;
   end if;
 
@@ -139,7 +143,8 @@ begin
       v_attempt.id,
       null::uuid,
       null::timestamptz,
-      null::text;
+      null::text,
+      v_observation.amount_cents::bigint;
     return;
   end if;
 
@@ -160,7 +165,8 @@ begin
     v_attempt.id,
     v_observation.id,
     v_observation.observed_at,
-    v_observation.sender_name;
+    v_observation.sender_name,
+    v_observation.amount_cents::bigint;
 end;
 $$;
 

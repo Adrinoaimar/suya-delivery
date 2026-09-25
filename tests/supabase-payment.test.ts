@@ -25,6 +25,28 @@ const intentRow = {
 };
 
 describe('SupabasePaymentService', () => {
+  it('devuelve el monto observado cuando el Yape no cubre el total', async () => {
+    const client = fakeClient({
+      data: [
+        {
+          confirmation_status: 'amount_mismatch',
+          payment_attempt_id: 'attempt-1',
+          observed_amount_cents: 100,
+        },
+      ],
+      error: null,
+    });
+
+    await expect(
+      new SupabasePaymentService(client).confirmWalletPaymentByCode('order-1', '813'),
+    ).resolves.toMatchObject({ status: 'amount_mismatch', observedAmountCents: 100 });
+    expect(client.rpc).toHaveBeenCalledWith('confirm_manual_wallet_payment_by_code_v2', {
+      p_order_id: 'order-1',
+      p_confirmation_code: '813',
+      p_guest_access_token: null,
+    });
+  });
+
   it('envía el token guest y mapea el importe server-side', async () => {
     const client = {
       rpc: vi.fn(async (name: string) =>

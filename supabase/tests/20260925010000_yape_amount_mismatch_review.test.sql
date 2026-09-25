@@ -3,7 +3,7 @@ begin;
 create extension if not exists pgtap with schema extensions;
 set local search_path = public, extensions;
 
-select plan(8);
+select plan(9);
 
 select has_function(
   'public', 'confirm_manual_wallet_payment_by_code_v2', array['uuid', 'text', 'text'],
@@ -52,6 +52,11 @@ select ok(
     and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
       like '%v_attempt.expires_at >= wo.observed_at%',
   'compara receptor, código y ventana del intento'
+);
+select ok(
+  pg_get_function_result('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
+    like '%observed_amount_cents bigint%',
+  'devuelve el monto observado para explicar un abono parcial al cliente'
 );
 
 select * from finish();

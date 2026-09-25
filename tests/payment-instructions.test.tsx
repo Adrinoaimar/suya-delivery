@@ -51,10 +51,14 @@ const pendingIntent: PaymentIntent = {
 function order(
   paymentIntent: PaymentIntent,
   status: Order['status'] = 'confirmed',
-): Pick<Order, 'id' | 'code' | 'total' | 'paymentMethod' | 'paymentIntent' | 'status'> {
+): Pick<
+  Order,
+  'id' | 'code' | 'total' | 'storeName' | 'paymentMethod' | 'paymentIntent' | 'status'
+> {
   return {
     id: paymentIntent.orderId,
     code: 'SUY-10001',
+    storeName: 'Andá Paya Cevichería',
     total: paymentIntent.amount,
     paymentMethod: paymentIntent.method,
     paymentIntent,
@@ -77,6 +81,7 @@ beforeEach(() => {
     observationId: null,
     observedAt: null,
     payerDisplayName: 'Otra Persona',
+    observedAmountCents: null,
   });
   mocks.confirmWalletPaymentByCode.mockResolvedValue({
     status: 'pending',
@@ -84,6 +89,7 @@ beforeEach(() => {
     observationId: null,
     observedAt: null,
     payerDisplayName: 'Otra Persona',
+    observedAmountCents: null,
   });
 });
 
@@ -189,6 +195,7 @@ describe('PaymentInstructions', () => {
       observationId: null,
       observedAt: null,
       payerDisplayName: 'Otra Persona',
+      observedAmountCents: null,
     });
     const { rerender } = render(<PaymentInstructions order={order(pendingIntent)} />);
 
@@ -237,6 +244,7 @@ describe('PaymentInstructions', () => {
       observationId: null,
       observedAt: null,
       payerDisplayName: 'Otra Persona',
+      observedAmountCents: null,
     });
     render(<PaymentInstructions order={order(pendingIntent)} />);
 
@@ -285,13 +293,14 @@ describe('PaymentInstructions', () => {
     );
   });
 
-  it('mantiene pendiente un Yape de S/ 5 para un pedido de S/ 10 y deriva a Caja', async () => {
+  it('muestra el monto del Yape parcial y explica cómo solicitar la devolución', async () => {
     mocks.confirmWalletPaymentByCode.mockResolvedValueOnce({
       status: 'amount_mismatch',
       attemptId: 'attempt-1',
       observationId: null,
       observedAt: null,
       payerDisplayName: null,
+      observedAmountCents: 100,
     });
     render(<PaymentInstructions order={order({ ...pendingIntent, amount: 10 })} />);
 
@@ -304,11 +313,16 @@ describe('PaymentInstructions', () => {
     await act(async () => screen.getByRole('button', { name: 'Confirmar pago' }).click());
 
     expect(mocks.confirmWalletPaymentByCode).toHaveBeenCalledWith('order-1', '482');
-    expect(screen.getByText('Monto distinto: revisión de Caja')).toBeInTheDocument();
-    expect(screen.getByText(/total de S\/ 10\.00.*Caja revisará el abono/)).toBeInTheDocument();
+    expect(screen.getByText('Abono parcial detectado')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Yape detectado: S/ 1.00. Total del pedido: S/ 10.00. El abono no cubre el total y queda para revisión de Caja; el pago no se marcó como pagado. Contacta a Andá Paya Cevichería para solicitar la devolución de S/ 1.00. No realices otro pago hasta coordinarlo con el restaurante.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText('Código Yape (3 dígitos)')).not.toBeInTheDocument();
     expect(screen.queryByText(/liberado para preparación/)).not.toBeInTheDocument();
     expect(mocks.notify).toHaveBeenCalledWith(
-      expect.stringContaining('El pago sigue pendiente y Caja revisará el abono'),
+      expect.stringContaining('solicitar la devolución de S/ 1.00'),
       'warning',
     );
   });
@@ -322,6 +336,7 @@ describe('PaymentInstructions', () => {
       observationId: null,
       observedAt: null,
       payerDisplayName: 'Otra Persona',
+      observedAmountCents: null,
     });
     render(<PaymentInstructions order={order(expiredIntent)} />);
 

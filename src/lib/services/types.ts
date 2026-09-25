@@ -490,10 +490,7 @@ export interface PaymentDeclaration {
 }
 
 export type WalletPaymentConfirmationStatus =
-  | 'pending'
-  | 'authorized'
-  | 'ambiguous'
-  | 'amount_mismatch';
+  'pending' | 'authorized' | 'ambiguous' | 'amount_mismatch';
 
 export interface WalletPaymentConfirmation {
   status: WalletPaymentConfirmationStatus;
@@ -501,6 +498,7 @@ export interface WalletPaymentConfirmation {
   observationId: string | null;
   observedAt: string | null;
   payerDisplayName: string | null;
+  observedAmountCents: number | null;
 }
 
 export interface PaymentService {

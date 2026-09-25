@@ -11,7 +11,22 @@ import type { Order, PaymentIntent } from '@/types';
 import { formatDateTime, formatPrice, paymentLabel } from '@/utils/format';
 
 interface PaymentInstructionsProps {
-  order: Pick<Order, 'id' | 'code' | 'total' | 'paymentMethod' | 'paymentIntent' | 'status'>;
+  order: Pick<
+    Order,
+    'id' | 'code' | 'total' | 'storeName' | 'paymentMethod' | 'paymentIntent' | 'status'
+  >;
+}
+
+function amountMismatchMessage(
+  observedAmountCents: number | null,
+  orderAmount: number,
+  storeName: string,
+): string {
+  if (observedAmountCents == null) {
+    return `El Yape no coincide con el total de ${formatPrice(orderAmount)}. La evidencia queda para revisión de Caja. Contacta a ${storeName} para solicitar la devolución del abono.`;
+  }
+  const observedAmount = formatPrice(observedAmountCents / 100);
+  return `Yape detectado: ${observedAmount}. Total del pedido: ${formatPrice(orderAmount)}. El abono no cubre el total y queda para revisión de Caja; el pago no se marcó como pagado. Contacta a ${storeName} para solicitar la devolución de ${observedAmount}. No realices otro pago hasta coordinarlo con el restaurante.`;
 }
 
 function statusLabel(status: PaymentIntent['status'], expired = false): string {
@@ -53,6 +68,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   const [declarationBusy, setDeclarationBusy] = useState(false);
   const [walletConfirmationStatus, setWalletConfirmationStatus] =
     useState<WalletPaymentConfirmationStatus | null>(null);
+  const [walletObservedAmountCents, setWalletObservedAmountCents] = useState<number | null>(null);
   const [gatewayBusy, setGatewayBusy] = useState(false);
   const [gatewayAwaitingWebhook, setGatewayAwaitingWebhook] = useState(false);
   const [manualBusy, setManualBusy] = useState(false);
@@ -75,6 +91,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
     setDeclarationKnown(false);
     setDeclarationBusy(false);
     setWalletConfirmationStatus(null);
+    setWalletObservedAmountCents(null);
     setGatewayBusy(false);
     setGatewayAwaitingWebhook(false);
     setManualBusy(false);
@@ -181,6 +198,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   const handleWalletConfirmationResult = useCallback(
     (result: WalletPaymentConfirmation, notifyPending = true) => {
       setWalletConfirmationStatus(result.status);
+      setWalletObservedAmountCents(result.observedAmountCents);
       if (result.status === 'authorized') {
         setIntent((current) =>
           current
@@ -210,7 +228,11 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         );
       } else if (result.status === 'amount_mismatch') {
         notificationService.notify(
-          `El Yape recibido no coincide con el total de ${formatPrice(intent?.amount ?? order.total)}. El pago sigue pendiente y Caja revisará el abono. No hagas otro pago.`,
+          amountMismatchMessage(
+            result.observedAmountCents,
+            intent?.amount ?? order.total,
+            order.storeName,
+          ),
           'warning',
         );
       } else if (notifyPending) {
@@ -220,7 +242,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
         );
       }
     },
-    [intent?.amount, order.total],
+    [intent?.amount, order.storeName, order.total],
   );
 
   useEffect(() => {
@@ -738,8 +760,8 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
                     : walletConfirmationStatus === 'ambiguous'
                       ? 'Pago requiere revisión de Caja'
                       : walletConfirmationStatus === 'amount_mismatch'
-                        ? 'Monto distinto: revisión de Caja'
-                      : 'Pago en revisión'}
+                        ? 'Abono parcial detectado'
+                        : 'Pago en revisión'}
                 </p>
                 <p className="mt-1 text-xs text-suya-muted">
                   {walletConfirmationStatus === 'pending'
@@ -747,71 +769,77 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
                       ? 'Estamos esperando la notificación de Yape y comparando código, monto y hora. No vuelvas a pagar.'
                       : 'Estamos esperando la notificación de Lemon y comparando nombre, monto y hora. No vuelvas a pagar.'
                     : walletConfirmationStatus === 'amount_mismatch'
-                      ? `El Yape observado no coincide con el total de ${formatPrice(intent.amount)}. El pedido sigue pendiente. Caja revisará el abono; no hagas otro pago.`
+                      ? amountMismatchMessage(
+                          walletObservedAmountCents,
+                          intent.amount,
+                          order.storeName,
+                        )
                       : 'No generes otra referencia. El restaurante conserva la evidencia y puede revisar el pago desde Suya Caja.'}
                 </p>
-                <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
-                  <label className="min-w-0 flex-1 text-xs font-semibold text-suya-carbon">
-                    {intent.method === 'yape'
-                      ? 'Código Yape (3 dígitos)'
-                      : 'Código de constancia o referencia'}
-                    <input
-                      value={evidenceCode}
-                      onChange={(event) =>
-                        setEvidenceCode(
-                          intent.method === 'yape'
-                            ? event.target.value.replace(/\D/g, '').slice(0, 3)
-                            : event.target.value,
-                        )
-                      }
-                      autoComplete="one-time-code"
-                      inputMode={intent.method === 'yape' ? 'numeric' : 'text'}
-                      maxLength={intent.method === 'yape' ? 3 : 64}
-                      placeholder={intent.method === 'yape' ? 'Ej. 384' : 'Ej. LM-123'}
-                      className="mt-1 h-11 w-full rounded-btn border border-suya-border bg-white px-3 text-sm font-normal outline-none focus:border-suya-green focus:ring-2 focus:ring-suya-green/20"
-                      disabled={submittingEvidence || evidenceSaved}
-                    />
-                  </label>
-                  {intent.method !== 'yape' && (
+                {walletConfirmationStatus !== 'amount_mismatch' && (
+                  <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
                     <label className="min-w-0 flex-1 text-xs font-semibold text-suya-carbon">
-                      Nombre del pagador (opcional)
+                      {intent.method === 'yape'
+                        ? 'Código Yape (3 dígitos)'
+                        : 'Código de constancia o referencia'}
                       <input
-                        value={payerDisplayName}
-                        onChange={(event) => setPayerDisplayName(event.target.value)}
-                        autoComplete="name"
-                        maxLength={120}
-                        placeholder="Si pagó otra persona"
+                        value={evidenceCode}
+                        onChange={(event) =>
+                          setEvidenceCode(
+                            intent.method === 'yape'
+                              ? event.target.value.replace(/\D/g, '').slice(0, 3)
+                              : event.target.value,
+                          )
+                        }
+                        autoComplete="one-time-code"
+                        inputMode={intent.method === 'yape' ? 'numeric' : 'text'}
+                        maxLength={intent.method === 'yape' ? 3 : 64}
+                        placeholder={intent.method === 'yape' ? 'Ej. 384' : 'Ej. LM-123'}
                         className="mt-1 h-11 w-full rounded-btn border border-suya-border bg-white px-3 text-sm font-normal outline-none focus:border-suya-green focus:ring-2 focus:ring-suya-green/20"
-                        disabled={submittingEvidence}
+                        disabled={submittingEvidence || evidenceSaved}
                       />
                     </label>
-                  )}
-                  {evidenceSaved ? (
-                    <Button type="button" variant="secondary" size="sm" onClick={editEvidence}>
-                      Cambiar código
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => void saveEvidence()}
-                      disabled={
-                        submittingEvidence ||
-                        (intent.method === 'yape'
-                          ? !/^\d{3}$/.test(evidenceCode.trim())
-                          : !evidenceCode.trim() && !payerDisplayName.trim())
-                      }
-                    >
-                      {submittingEvidence
-                        ? 'Guardando…'
-                        : intent.method === 'yape' || evidenceCode.trim()
-                          ? 'Vincular código'
-                          : 'Guardar pagador'}
-                    </Button>
-                  )}
-                </div>
-                {evidenceSaved && (
+                    {intent.method !== 'yape' && (
+                      <label className="min-w-0 flex-1 text-xs font-semibold text-suya-carbon">
+                        Nombre del pagador (opcional)
+                        <input
+                          value={payerDisplayName}
+                          onChange={(event) => setPayerDisplayName(event.target.value)}
+                          autoComplete="name"
+                          maxLength={120}
+                          placeholder="Si pagó otra persona"
+                          className="mt-1 h-11 w-full rounded-btn border border-suya-border bg-white px-3 text-sm font-normal outline-none focus:border-suya-green focus:ring-2 focus:ring-suya-green/20"
+                          disabled={submittingEvidence}
+                        />
+                      </label>
+                    )}
+                    {evidenceSaved ? (
+                      <Button type="button" variant="secondary" size="sm" onClick={editEvidence}>
+                        Cambiar código
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => void saveEvidence()}
+                        disabled={
+                          submittingEvidence ||
+                          (intent.method === 'yape'
+                            ? !/^\d{3}$/.test(evidenceCode.trim())
+                            : !evidenceCode.trim() && !payerDisplayName.trim())
+                        }
+                      >
+                        {submittingEvidence
+                          ? 'Guardando…'
+                          : intent.method === 'yape' || evidenceCode.trim()
+                            ? 'Vincular código'
+                            : 'Guardar pagador'}
+                      </Button>
+                    )}
+                  </div>
+                )}
+                {walletConfirmationStatus !== 'amount_mismatch' && evidenceSaved && (
                   <p className="mt-2 text-xs font-semibold text-suya-green-dark">
                     Código vinculado. Puedes cambiarlo mientras el pago siga pendiente.
                   </p>

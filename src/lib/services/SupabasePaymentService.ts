@@ -39,6 +39,7 @@ interface WalletPaymentConfirmationRow {
   observation_id?: unknown;
   observed_at?: unknown;
   payer_display_name?: unknown;
+  observed_amount_cents?: unknown;
 }
 
 function requireClient(): SupabaseClient {
@@ -282,6 +283,7 @@ export class SupabasePaymentService implements PaymentService {
       observationId: typeof row?.observation_id === 'string' ? row.observation_id : null,
       observedAt: typeof row?.observed_at === 'string' ? row.observed_at : null,
       payerDisplayName: typeof row?.payer_display_name === 'string' ? row.payer_display_name : null,
+      observedAmountCents: null,
     };
   }
 
@@ -314,6 +316,8 @@ export class SupabasePaymentService implements PaymentService {
       observationId: typeof row?.observation_id === 'string' ? row.observation_id : null,
       observedAt: typeof row?.observed_at === 'string' ? row.observed_at : null,
       payerDisplayName: typeof row?.payer_display_name === 'string' ? row.payer_display_name : null,
+      observedAmountCents:
+        row?.observed_amount_cents == null ? null : numberValue(row.observed_amount_cents),
     };
   }
 
