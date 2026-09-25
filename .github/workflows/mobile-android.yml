@@ -98,7 +98,9 @@ jobs:
         with:
           api-level: 35
           arch: x86_64
-          target: google_apis
+          # Keystore y las regresiones instrumentadas no necesitan Google
+          # Play Services; ATD reduce el arranque inestable del runner Linux.
+          target: aosp_atd
           script: bash android/gradlew -p android :app:connectedDebugAndroidTest --no-daemon
 
       - name: Publicar APK de repartidor
