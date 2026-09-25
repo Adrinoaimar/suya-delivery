@@ -1,5 +1,6 @@
--- Versioned Yape confirmation. A unique candidate with a different amount remains
--- pending for Caja review; a code collision is ambiguous. Legacy RPC stays intact.
+-- Server-side Yape comparison checks code, amount, receiver, and payment window.
+-- A single notification with the expected amount but another code reports mismatch;
+-- partial payments stay under review and multiple candidates remain ambiguous.
 
 create or replace function public.confirm_manual_wallet_payment_by_code_v2(
   p_order_id uuid,
@@ -25,6 +26,7 @@ declare
   v_guest_ok boolean := false;
   v_confirmation_code text := regexp_replace(trim(coalesce(p_confirmation_code, '')), '\s+', '', 'g');
   v_matching_observations bigint := 0;
+  v_other_observations bigint := 0;
 begin
   if p_order_id is null
     or v_confirmation_code !~ '^[0-9]{3}$' then
@@ -100,6 +102,41 @@ begin
     and v_attempt.expires_at >= wo.observed_at;
 
   if v_matching_observations = 0 then
+    select count(*) into v_other_observations
+    from public.wallet_observations wo
+    where wo.restaurant_id = v_order.restaurant_id
+      and wo.verification_status in ('unverified', 'under_review')
+      and wo.provider = 'yape'
+      and wo.currency = 'PEN'
+      and wo.amount_cents = round(v_attempt.amount * 100)
+      and ((v_attempt.receiver_account_id is not null and wo.receiver_account_id = v_attempt.receiver_account_id)
+        or (v_attempt.receiver_account_id is null and wo.receiver_account_id is null))
+      and wo.code_last4 <> v_confirmation_code
+      and v_attempt.created_at <= wo.observed_at
+      and v_attempt.expires_at >= wo.observed_at;
+
+    if v_other_observations = 1 then
+      return query select
+        'code_mismatch'::text,
+        v_attempt.id,
+        null::uuid,
+        null::timestamptz,
+        null::text,
+        null::bigint;
+      return;
+    end if;
+
+    if v_other_observations > 1 then
+      return query select
+        'ambiguous'::text,
+        v_attempt.id,
+        null::uuid,
+        null::timestamptz,
+        null::text,
+        null::bigint;
+      return;
+    end if;
+
     return query select
       'pending'::text,
       v_attempt.id,

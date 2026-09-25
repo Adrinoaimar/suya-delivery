@@ -327,6 +327,62 @@ describe('PaymentInstructions', () => {
     );
   });
 
+  it('al vincular el código Yape compara código y monto con Observer', async () => {
+    mocks.confirmWalletPaymentByCode
+      .mockResolvedValueOnce({
+        status: 'pending',
+        attemptId: 'attempt-1',
+        observationId: null,
+        observedAt: null,
+        payerDisplayName: null,
+        observedAmountCents: null,
+      })
+      .mockResolvedValueOnce({
+        status: 'code_mismatch',
+        attemptId: 'attempt-1',
+        observationId: null,
+        observedAt: null,
+        payerDisplayName: null,
+        observedAmountCents: null,
+      })
+      .mockResolvedValueOnce({
+        status: 'amount_mismatch',
+        attemptId: 'attempt-1',
+        observationId: null,
+        observedAt: null,
+        payerDisplayName: null,
+        observedAmountCents: 100,
+      });
+    render(<PaymentInstructions order={order({ ...pendingIntent, amount: 10 })} />);
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled(),
+    );
+    fireEvent.change(screen.getByLabelText('Código de seguridad Yape'), {
+      target: { value: '813' },
+    });
+    await act(async () => screen.getByRole('button', { name: 'Confirmar pago' }).click());
+
+    const linkCode = screen.getByLabelText('Código Yape (3 dígitos)');
+    fireEvent.change(linkCode, { target: { value: '111' } });
+    await act(async () => screen.getByRole('button', { name: 'Vincular código' }).click());
+    expect(await screen.findByText('Código Yape no coincide')).toBeInTheDocument();
+    expect(screen.getByLabelText('Código Yape (3 dígitos)')).toHaveValue('111');
+
+    fireEvent.change(screen.getByLabelText('Código Yape (3 dígitos)'), {
+      target: { value: '813' },
+    });
+    await act(async () => screen.getByRole('button', { name: 'Vincular código' }).click());
+
+    expect(mocks.confirmWalletPaymentByCode).toHaveBeenCalledTimes(3);
+    expect(mocks.confirmWalletPaymentByCode).toHaveBeenNthCalledWith(1, 'order-1', '813');
+    expect(mocks.confirmWalletPaymentByCode).toHaveBeenNthCalledWith(2, 'order-1', '111');
+    expect(mocks.confirmWalletPaymentByCode).toHaveBeenNthCalledWith(3, 'order-1', '813');
+    expect(mocks.declarePayment).not.toHaveBeenCalled();
+    expect(await screen.findByText('Abono parcial detectado')).toBeInTheDocument();
+    expect(screen.getByText(/Yape detectado: S\/ 1\.00.*S\/ 10\.00/)).toBeInTheDocument();
+  });
+
   it('preserva la revisión y no ofrece un segundo cobro si el intento vencido ya fue declarado', async () => {
     const expiredIntent = { ...pendingIntent, expiresAt: '2020-01-01T00:00:00.000Z' };
     mocks.getPaymentDeclaration.mockResolvedValueOnce(null);

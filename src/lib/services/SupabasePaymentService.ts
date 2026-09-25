@@ -305,7 +305,9 @@ export class SupabasePaymentService implements PaymentService {
     if (error) throw new Error(error.message);
     const row = firstRow(data) as WalletPaymentConfirmationRow | null;
     const status = text(row?.confirmation_status) as WalletPaymentConfirmationStatus;
-    if (!['pending', 'authorized', 'ambiguous', 'amount_mismatch'].includes(status)) {
+    if (
+      !['pending', 'authorized', 'ambiguous', 'code_mismatch', 'amount_mismatch'].includes(status)
+    ) {
       throw new Error('Supabase devolvió un estado de confirmación inválido.');
     }
     const attemptId = text(row?.payment_attempt_id);

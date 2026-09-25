@@ -235,6 +235,11 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
           ),
           'warning',
         );
+      } else if (result.status === 'code_mismatch' && notifyPending) {
+        notificationService.notify(
+          'El código no coincide con las notificaciones recibidas. Revisa los 3 dígitos o espera a que Observer sincronice.',
+          'warning',
+        );
       } else if (notifyPending) {
         notificationService.notify(
           'Pago registrado. Estamos validando identidad, monto y hora con la notificación.',
@@ -251,7 +256,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
       ? confirmationCode.trim()
       : payerDisplayName.trim();
     if (
-      walletConfirmationStatus !== 'pending' ||
+      (walletConfirmationStatus !== 'pending' && walletConfirmationStatus !== 'code_mismatch') ||
       intent?.status !== 'pending' ||
       !confirmationValue
     ) {
@@ -343,10 +348,28 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
     }
     setSubmittingEvidence(true);
     try {
+      if (isYapeWallet) {
+        const result = await paymentService.confirmWalletPaymentByCode(order.id, normalizedCode);
+        setConfirmationCode(normalizedCode);
+        if (result.status === 'pending') {
+          setEvidenceCode('');
+          setEvidenceSaved(true);
+          notificationService.notify(
+            'Código registrado. Esperamos la notificación de Observer para comparar código y monto.',
+            'success',
+          );
+          handleWalletConfirmationResult(result, false);
+          return;
+        } else {
+          setEvidenceSaved(false);
+        }
+        handleWalletConfirmationResult(result);
+        return;
+      }
       const saved = await paymentService.declarePayment(
         order.id,
         normalizedCode || null,
-        isYapeWallet ? null : normalizedPayerName || null,
+        normalizedPayerName || null,
       );
       if (!saved) throw new Error('No pudimos vincular la constancia al pedido.');
       setEvidenceCode('');
@@ -372,6 +395,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
   const editEvidence = () => {
     setEvidenceSaved(false);
     setEvidenceCode('');
+    setConfirmationCode('');
   };
 
   const renewManualIntent = async () => {
@@ -416,6 +440,7 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
       const result = isYapeWallet
         ? await paymentService.confirmWalletPaymentByCode(order.id, normalizedCode)
         : await paymentService.confirmWalletPayment(order.id, normalizedPayerName);
+      if (result.status === 'code_mismatch') setEvidenceCode(normalizedCode);
       handleWalletConfirmationResult(result);
     } catch (cause) {
       notificationService.notify(
@@ -759,22 +784,26 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
                     ? 'Validando pago…'
                     : walletConfirmationStatus === 'ambiguous'
                       ? 'Pago requiere revisión de Caja'
-                      : walletConfirmationStatus === 'amount_mismatch'
-                        ? 'Abono parcial detectado'
-                        : 'Pago en revisión'}
+                      : walletConfirmationStatus === 'code_mismatch'
+                        ? 'Código Yape no coincide'
+                        : walletConfirmationStatus === 'amount_mismatch'
+                          ? 'Abono parcial detectado'
+                          : 'Pago en revisión'}
                 </p>
                 <p className="mt-1 text-xs text-suya-muted">
                   {walletConfirmationStatus === 'pending'
                     ? intent.method === 'yape'
                       ? 'Estamos esperando la notificación de Yape y comparando código, monto y hora. No vuelvas a pagar.'
                       : 'Estamos esperando la notificación de Lemon y comparando nombre, monto y hora. No vuelvas a pagar.'
-                    : walletConfirmationStatus === 'amount_mismatch'
-                      ? amountMismatchMessage(
-                          walletObservedAmountCents,
-                          intent.amount,
-                          order.storeName,
-                        )
-                      : 'No generes otra referencia. El restaurante conserva la evidencia y puede revisar el pago desde Suya Caja.'}
+                    : walletConfirmationStatus === 'code_mismatch'
+                      ? 'No encontramos una notificación Yape con ese código. Verifica los 3 dígitos; si acabas de pagar, espera a que Observer sincronice. El pago sigue pendiente.'
+                      : walletConfirmationStatus === 'amount_mismatch'
+                        ? amountMismatchMessage(
+                            walletObservedAmountCents,
+                            intent.amount,
+                            order.storeName,
+                          )
+                        : 'No generes otra referencia. El restaurante conserva la evidencia y puede revisar el pago desde Suya Caja.'}
                 </p>
                 {walletConfirmationStatus !== 'amount_mismatch' && (
                   <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -841,7 +870,9 @@ export function PaymentInstructions({ order }: PaymentInstructionsProps) {
                 )}
                 {walletConfirmationStatus !== 'amount_mismatch' && evidenceSaved && (
                   <p className="mt-2 text-xs font-semibold text-suya-green-dark">
-                    Código vinculado. Puedes cambiarlo mientras el pago siga pendiente.
+                    {intent.method === 'yape'
+                      ? 'Código registrado. Suya seguirá comparándolo con Observer; puedes cambiarlo mientras el pago siga pendiente.'
+                      : 'Constancia registrada. Puedes cambiarla mientras el pago siga pendiente.'}
                   </p>
                 )}
               </>

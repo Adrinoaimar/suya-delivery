@@ -47,6 +47,26 @@ describe('SupabasePaymentService', () => {
     });
   });
 
+  it('acepta el resultado de código Yape distinto a una notificación del Observer', async () => {
+    const client = fakeClient({
+      data: [
+        {
+          confirmation_status: 'code_mismatch',
+          payment_attempt_id: 'attempt-1',
+          observation_id: null,
+          observed_at: null,
+          payer_display_name: null,
+          observed_amount_cents: null,
+        },
+      ],
+      error: null,
+    });
+
+    await expect(
+      new SupabasePaymentService(client).confirmWalletPaymentByCode('order-1', '111'),
+    ).resolves.toMatchObject({ status: 'code_mismatch', observedAmountCents: null });
+  });
+
   it('envía el token guest y mapea el importe server-side', async () => {
     const client = {
       rpc: vi.fn(async (name: string) =>
