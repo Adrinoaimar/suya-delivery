@@ -107,7 +107,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Suya-Rider-debug-${{ github.sha }}
-          path: output/android/Suya-Rider-debug.apk
+          path: output/android/Suya-Rider-*-debug.apk
           if-no-files-found: error
           retention-days: 14
 
@@ -115,7 +115,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Suya-Cliente-debug-${{ github.sha }}
-          path: output/android/Suya-Cliente-debug.apk
+          path: output/android/Suya-Cliente-*-debug.apk
           if-no-files-found: error
           retention-days: 14
 
@@ -123,7 +123,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Suya-Backoffice-debug-${{ github.sha }}
-          path: output/android/Suya-Backoffice-debug.apk
+          path: output/android/Suya-Backoffice-*-debug.apk
           if-no-files-found: error
           retention-days: 14
 
@@ -131,6 +131,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Suya-Wallet-Observer-debug-${{ github.sha }}
-          path: output/android/Suya-Wallet-Observer-debug.apk
+          path: output/android/Suya-Wallet-Observer-*-debug.apk
           if-no-files-found: error
           retention-days: 14
