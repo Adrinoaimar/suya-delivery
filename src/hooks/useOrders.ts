@@ -33,6 +33,7 @@ export function useOrderStatusNotifier(order: Order | undefined): void {
 export function orderRouteProgress(order: Order | undefined): number {
   if (!order) return 0;
   const progress: Record<OrderStatus, number> = {
+    pending_payment: 0,
     confirmed: 0,
     preparing: 0,
     picked_up: 0.1,

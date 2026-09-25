@@ -79,7 +79,7 @@ incompleta.
 
 | Área                  | Rutas                                                                                                                                                          |
 | --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Cliente               | `/`, `/stores`, `/store/:id`, `/search`, `/cart`, `/checkout`, `/orders`, `/orders/:id`, `/orders/:id/track`, `/promotions`, `/profile`, `/help`, `/rider/:id` |
+| Cliente               | `/`, `/stores`, `/store/:id`, `/search`, `/cart`, `/checkout`, `/orders`, `/orders/:id`, `/promotions`, `/profile`, `/help`, `/rider/:id` |
 | Repartidor            | `/rider`, `/rider/current`, `/rider/safety`, `/rider/history`, `/rider/earnings`, `/rider/settings`                                                            |
 | Desarrolladores       | `/developers/riders` — crear cuentas rider y restablecer claves (`platform_admin`)                                                                              |
 | Contacto de confianza | `/share/:token`                                                                                                                                                |
@@ -106,7 +106,7 @@ incompleta.
 - Checkout con efectivo y billeteras digitales Yape/Lemon mediante intentos server-side, referencia
   única y código de constancia; tarjeta y QR Yape dinámico se habilitan mediante Culqi cuando la
   pasarela está configurada.
-- Pedido con código `#SUY-XXXXX`, línea de tiempo de estados y seguimiento en mapa.
+- Pedido digital pendiente hasta que el pago quede confirmado; código de entrega visible después de la confirmación.
 - Panel del repartidor con disponibilidad, viaje activo, historial y ganancias demo, y rastreo de
   ubicación obligatorio mientras el turno está activo.
 - Módulo **Seguridad en ruta**: compartir ubicación, contacto de confianza, botón SOS y

@@ -338,8 +338,7 @@ export default function CheckoutPage() {
           : `Pedido reservado. Completa el pago de ${formatPrice(order.total)} con ${paymentLabel(method)}; se liberará a operaciones al validarlo.`,
         'success',
       );
-      const customerOrderPath =
-        method === 'cash' ? `/orders/${order.id}/track` : `/orders/${order.id}`;
+      const customerOrderPath = `/orders/${order.id}`;
       navigate(publicOrderUrl ?? customerOrderPath, {
         replace: true,
         state: publicOrderPath ? { guestOrder: order } : undefined,

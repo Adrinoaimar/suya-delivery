@@ -42,7 +42,7 @@ export default function OrdersPage() {
           icon={<Receipt className="h-6 w-6" />}
           size="page"
           title="Todavía no tienes pedidos"
-          description="Cuando hagas tu primer pedido lo verás aquí con su seguimiento."
+          description="Cuando hagas tu primer pedido, aquí podrás consultar su estado."
           action={<ButtonLink to="/stores">Explorar tiendas</ButtonLink>}
         />
       </div>

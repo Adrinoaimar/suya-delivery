@@ -51,6 +51,7 @@ export function formatRelative(timestamp: number, now: number = Date.now()): str
 }
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
+  pending_payment: 'Pendiente de pago',
   confirmed: 'Pedido confirmado',
   preparing: 'En preparación',
   picked_up: 'Repartidor recogió pedido',

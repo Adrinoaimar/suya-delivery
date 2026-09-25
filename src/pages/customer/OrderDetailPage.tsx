@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { ArrowLeft, Receipt } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
@@ -9,15 +9,12 @@ import { ErrorState } from '@/components/common/ErrorState';
 import { Skeleton } from '@/components/common/Skeleton';
 import { CartLine } from '@/components/order/CartLine';
 import { OrderCodes } from '@/components/order/OrderCodes';
-import { TrackingTimeline } from '@/components/order/TrackingTimeline';
 import { PaymentInstructions } from '@/components/payment/PaymentInstructions';
 import { useOrderStore } from '@/store/orderStore';
 import {
-  formatDateTime,
   formatPrice,
   orderStatusLabel,
   paymentLabel,
-  riderTrackingMessage,
 } from '@/utils/format';
 
 export default function OrderDetailPage() {
@@ -28,6 +25,10 @@ export default function OrderDetailPage() {
   const refresh = useOrderStore((state) => state.refresh);
   const refreshOrder = useOrderStore((state) => state.refreshOrder);
   const refreshCurrentOrder = useCallback(() => {
+    void refreshOrder(id);
+  }, [id, refreshOrder]);
+
+  useEffect(() => {
     void refreshOrder(id);
   }, [id, refreshOrder]);
 
@@ -60,7 +61,19 @@ export default function OrderDetailPage() {
     );
   }
 
-  const isActive = order.status !== 'delivered' && order.status !== 'cancelled';
+  const paymentAccepted = order.paymentMethod === 'cash' || order.paymentIntent?.status === 'authorized';
+  const canShowDeliveryCode = paymentAccepted && Boolean(order.deliveryCode) && (
+    order.status === 'confirmed' ||
+    order.status === 'preparing' ||
+    order.status === 'picked_up' ||
+    order.status === 'on_the_way' ||
+    order.status === 'delivered'
+  );
+  const visibleStatus =
+    order.status === 'pending_payment' ||
+    (order.status === 'confirmed' && !paymentAccepted)
+      ? 'pending_payment'
+      : order.status;
 
   return (
     <div className="shell space-y-4 py-4 lg:py-8">
@@ -75,32 +88,28 @@ export default function OrderDetailPage() {
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="section-title">{order.storeName}</h1>
-          <p className="text-sm text-[#6B7076]">
-            #{order.code} · {formatDateTime(order.createdAt)}
-          </p>
         </div>
-        <Badge tone={order.status === 'cancelled' ? 'danger' : 'lime'}>
-          {orderStatusLabel(order.status)}
+        <Badge
+          tone={
+            visibleStatus === 'cancelled'
+              ? 'danger'
+              : visibleStatus === 'pending_payment'
+                ? 'sun'
+                : 'lime'
+          }
+        >
+          {orderStatusLabel(visibleStatus)}
         </Badge>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px] lg:items-start">
         <div className="space-y-4">
-          {isActive && <OrderCodes order={order} />}
+          {canShowDeliveryCode && <OrderCodes order={order} />}
           <PaymentInstructions
             order={order}
             onPartialPaymentCancelled={refreshCurrentOrder}
+            onPaymentAccepted={refreshCurrentOrder}
           />
-
-          <Card>
-            <h2 className="mb-3 font-display text-[15px] font-bold">Seguimiento</h2>
-            <TrackingTimeline order={order} />
-            {isActive && (
-              <ButtonLink to={`/orders/${order.id}/track`} className="mt-4" fullWidth>
-                Ver en el mapa
-              </ButtonLink>
-            )}
-          </Card>
 
           <Card padded={false}>
             <h2 className="border-b border-suya-mist px-4 py-3 font-display text-[15px] font-bold">
@@ -121,15 +130,6 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="space-y-3">
-          {order.riderId && (
-            <Card>
-              <h2 className="mb-3 font-display text-[15px] font-bold">Repartidor</h2>
-              <p className="text-sm text-[#4A4F55]">
-                {riderTrackingMessage(order.status)}
-              </p>
-            </Card>
-          )}
-
           <Card>
             <h2 className="mb-3 font-display text-[15px] font-bold">Entrega</h2>
             <dl className="space-y-2 text-sm">

@@ -487,6 +487,10 @@ export class SupabaseOrderServiceImpl
     const user = userData.user ?? null;
     const publicMenuChannel = input.origin === 'suya_menu' || Boolean(input.tableId);
     if (!user && !publicMenuChannel) throw new Error('Inicia sesión para confirmar el pedido.');
+    const gatewayEnabled = import.meta.env.VITE_CULQI_GATEWAY_ENABLED === 'true';
+    if (input.paymentMethod === 'card' && !gatewayEnabled) {
+      throw new Error('El pago con tarjeta no está habilitado en esta aplicación.');
+    }
     if (user && !input.tableId) {
       const { error: profileError } = await this.client
         .from('profiles')
@@ -502,18 +506,27 @@ export class SupabaseOrderServiceImpl
 
     const needsGuestAccess = !user && publicMenuChannel;
     const { requestId, guestAccessToken } = await requestIdFor(input, needsGuestAccess);
-    const walletCheckout = input.paymentMethod === 'yape' || input.paymentMethod === 'lemon';
-    const rpcName = walletCheckout
+    const culqiCheckout =
+      gatewayEnabled && (input.paymentMethod === 'card' || input.paymentMethod === 'yape');
+    const walletCheckout =
+      !culqiCheckout && (input.paymentMethod === 'yape' || input.paymentMethod === 'lemon');
+    const rpcName = culqiCheckout
       ? input.tableId
-        ? 'create_table_order_with_payment'
+        ? 'create_table_order_with_culqi_payment'
         : input.origin === 'suya_menu'
-          ? 'create_menu_order_with_payment'
-          : 'create_delivery_order_with_payment'
-      : input.tableId
-        ? 'create_table_cash_order_with_customer'
-        : input.origin === 'suya_menu'
-          ? 'create_menu_order_with_customer'
-          : 'create_cash_order';
+          ? 'create_menu_order_with_culqi_payment'
+          : 'create_delivery_order_with_culqi_payment'
+      : walletCheckout
+        ? input.tableId
+          ? 'create_table_order_with_payment'
+          : input.origin === 'suya_menu'
+            ? 'create_menu_order_with_payment'
+            : 'create_delivery_order_with_payment'
+        : input.tableId
+          ? 'create_table_cash_order_with_customer'
+          : input.origin === 'suya_menu'
+            ? 'create_menu_order_with_customer'
+            : 'create_cash_order';
     const rpcPayload: Record<string, unknown> = {
       p_restaurant_id: input.storeId,
       p_items: input.items.map((item) => ({
@@ -538,7 +551,7 @@ export class SupabaseOrderServiceImpl
             p_delivery_longitude: input.deliveryPosition?.lng ?? null,
           }
         : {}),
-      ...(walletCheckout
+      ...(walletCheckout || culqiCheckout
         ? {
             p_method: input.paymentMethod,
           }

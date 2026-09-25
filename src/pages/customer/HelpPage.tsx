@@ -9,17 +9,17 @@ const FAQ = [
   {
     question: '¿Cómo hago un pedido?',
     answer:
-      'Elige un negocio, agrega productos al carrito y confirma en el checkout. Verás el seguimiento apenas se cree el pedido.',
+      'Elige un negocio, agrega productos al carrito y confirma en el checkout. En Mis pedidos puedes consultar el estado.',
   },
   {
     question: '¿Cómo pago?',
     answer:
-      'Puedes elegir efectivo, Yape o Lemon. En pagos digitales Suya crea una referencia única, muestra el monto exacto y el restaurante verifica el movimiento y la constancia antes de aceptarlo. Si hay un canal electrónico autorizado, el servidor actualiza el estado cuando recibe su confirmación.',
+      'Elige uno de los métodos habilitados y paga el monto exacto que aparece en pantalla. El servidor compara el pago con el pedido; el local lo recibe cuando el pago queda confirmado. Si Yape llega por un monto menor, el pedido se cancela automáticamente y Caja revisa el abono.',
   },
   {
-    question: '¿Puedo seguir mi pedido?',
+    question: '¿Dónde consulto mi pedido?',
     answer:
-      'Sí. En «Pedidos» abre el pedido en curso. Verás estados reales y GPS del repartidor cuando recoja el pedido.',
+      'Abre «Mis pedidos» para consultar su estado. Por ahora, el cliente no ve mapa ni GPS del repartidor.',
   },
   {
     question: '¿Cómo protegemos mi ubicación?',
@@ -46,7 +46,7 @@ export default function HelpPage() {
     <>
       <SeoHead
         title="Ayuda para pedidos y delivery en Sullana | Suya"
-        description="Encuentra respuestas sobre pedidos, pagos, seguimiento, privacidad y uso de Suya Delivery en Sullana."
+        description="Encuentra respuestas sobre pedidos, pagos, estado del pedido, privacidad y uso de Suya Delivery en Sullana."
         path="/help"
         schema={{
           '@context': 'https://schema.org',
@@ -55,7 +55,7 @@ export default function HelpPage() {
               '@type': 'WebPage',
               name: 'Centro de ayuda de Suya Delivery',
               description:
-                'Ayuda sobre pedidos, pagos, seguimiento y privacidad en Suya Delivery.',
+                'Ayuda sobre pedidos, pagos, estado del pedido y privacidad.',
               url: 'https://suyadelivery.com/help/',
               isPartOf: { '@id': 'https://suyadelivery.com/#website' },
               inLanguage: 'es-PE',

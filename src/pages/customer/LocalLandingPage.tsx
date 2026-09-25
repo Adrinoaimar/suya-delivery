@@ -27,7 +27,7 @@ const CONTENT: Record<LandingKind, LandingContent> = {
     path: '/delivery-sullana',
     title: 'Delivery en Sullana: comida y compras a domicilio | Suya',
     description:
-      'Encuentra delivery de comida, restaurantes, tiendas y negocios locales en Sullana con Suya. Revisa carta, total, pago y seguimiento antes de confirmar.',
+      'Encuentra delivery de comida, restaurantes, tiendas y negocios locales en Sullana con Suya. Revisa carta, total y pago antes de confirmar; consulta el estado en Mis pedidos.',
     eyebrow: 'Servicio local',
     heading: 'Delivery en Sullana para pedir comida y compras locales',
     intro:
@@ -50,13 +50,13 @@ const CONTENT: Record<LandingKind, LandingContent> = {
           'Explora restaurantes, tiendas y categorías disponibles.',
           'Compara carta, horario, calificación y costo de envío.',
           'Confirma el pedido solo después de revisar el total.',
-          'Sigue preparación y reparto desde la plataforma.',
+          'Consulta el estado del pedido desde Mis pedidos.',
         ],
       },
       {
-        title: 'Pagos y seguimiento del pedido',
+        title: 'Pagos y estado del pedido',
         paragraphs: [
-          'Suya presenta únicamente los métodos configurados por cada comercio. En pagos digitales verifica destinatario, monto y referencia. No compartas contraseñas ni códigos fuera del flujo oficial. Si el repartidor comparte GPS durante la etapa correspondiente, podrás consultar su ubicación.',
+          'Suya presenta únicamente los métodos configurados por cada comercio. En pagos digitales, ingresa el monto exacto solicitado; el local recibe el pedido cuando el pago se confirma. No compartas contraseñas ni códigos fuera del flujo oficial. Consulta el estado en Mis pedidos; el mapa y GPS del repartidor no se muestran al cliente.',
         ],
       },
     ],
@@ -65,7 +65,7 @@ const CONTENT: Record<LandingKind, LandingContent> = {
     path: '/comida-a-domicilio-sullana',
     title: 'Comida a domicilio en Sullana | Suya Delivery',
     description:
-      'Pide comida a domicilio en Sullana desde Suya: revisa restaurantes, cartas, precios, horarios, pagos y seguimiento del pedido en un solo lugar.',
+      'Pide comida a domicilio en Sullana desde Suya: revisa restaurantes, cartas, precios, horarios y pagos; consulta el estado del pedido en Mis pedidos.',
     eyebrow: 'Comida a domicilio',
     heading: 'Comida a domicilio en Sullana con información clara',
     intro:
@@ -82,13 +82,13 @@ const CONTENT: Record<LandingKind, LandingContent> = {
       {
         title: 'Pedido de comida paso a paso',
         paragraphs: [
-          'Abre una carta, selecciona productos y cantidades, revisa el carrito y completa la dirección. Suya muestra el método de pago configurado y el total antes de confirmar. Conserva la referencia dentro de la plataforma para consultar el pedido.',
+          'Abre una carta, selecciona productos y cantidades, revisa el carrito y completa la dirección. Suya muestra el método de pago configurado y el total antes de confirmar. Consulta el estado del pedido desde Mis pedidos.',
         ],
         items: [
           'Revisa ingredientes, cantidades y precio antes de agregar.',
           'Confirma dirección y referencias de entrega.',
           'Verifica destinatario y monto en pagos digitales.',
-          'Consulta estados mientras el restaurante prepara y entrega.',
+          'Consulta el estado del pedido desde Mis pedidos.',
         ],
       },
       {
@@ -127,12 +127,6 @@ const CONTENT: Record<LandingKind, LandingContent> = {
           'Horario y estado de recepción de pedidos.',
           'Calificación y costo de envío mostrado.',
           'Total, destinatario y referencia del pago.',
-        ],
-      },
-      {
-        title: 'Seguimiento del delivery',
-        paragraphs: [
-          'Después de confirmar, consulta el estado en Mis pedidos. Cuando existe reparto activo y el repartidor comparte GPS, Suya muestra la ubicación durante la etapa correspondiente. La dirección exacta se solicita solo cuando hace falta completar la entrega.',
         ],
       },
     ],

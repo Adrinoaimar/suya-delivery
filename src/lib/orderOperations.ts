@@ -10,5 +10,6 @@ export function isPendingDigitalPayment(order: PaymentStatusSource): boolean {
 }
 
 export function isOperationalOrder(order: Pick<Order, 'status'> & PaymentStatusSource): boolean {
+  if (order.status === 'pending_payment') return false;
   return terminalOrderStatuses.has(order.status) || !isPendingDigitalPayment(order);
 }

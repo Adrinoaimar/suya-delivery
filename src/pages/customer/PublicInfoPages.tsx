@@ -90,8 +90,8 @@ export function AboutPage() {
             <h2 className="font-display text-xl font-bold text-suya-carbon">Qué hacemos</h2>
             <p className="mt-2">
               Conectamos el catálogo del comercio, el carrito del cliente, la confirmación del pago
-              habilitado y el seguimiento del pedido. Cuando existe un reparto activo y el
-              repartidor comparte su ubicación, el cliente puede revisar el avance de la entrega.
+              habilitado y el estado del pedido. El cliente puede consultar ese estado desde Mis
+              pedidos; el mapa y el GPS del repartidor no se muestran.
               Suya también ofrece herramientas operativas separadas para comercios y repartidores.
             </p>
           </section>
@@ -168,7 +168,7 @@ export function ContactPage() {
             <h2 className="font-display text-xl font-bold text-suya-carbon">Antes de pedir</h2>
             <p className="mt-2">
               Consulta el <Link to="/help" className="font-semibold text-suya-green hover:underline">centro de ayuda</Link>{' '}
-              para revisar pagos, seguimiento, privacidad e instalación de la web como aplicación.
+              para revisar pagos, estado del pedido, privacidad e instalación de la web como aplicación.
               En emergencias reales usa los números oficiales 105 o 116.
             </p>
           </section>
@@ -257,13 +257,13 @@ export function TermsPage() {
     <>
       <SeoHead
         title="Términos de uso | Suya Delivery"
-        description="Revisa las condiciones para usar el catálogo, los pedidos, pagos y seguimiento de Suya Delivery en Sullana."
+        description="Revisa las condiciones para usar el catálogo, los pedidos, pagos y consulta de estado en Suya Delivery en Sullana."
         path="/terminos"
         schema={publicPageSchema(
           'WebPage',
           '/terminos',
           'Términos de uso de Suya Delivery',
-          'Revisa las condiciones para usar el catálogo, los pedidos, pagos y seguimiento de Suya Delivery en Sullana.',
+          'Revisa las condiciones para usar el catálogo, los pedidos, pagos y consulta de estado en Suya Delivery en Sullana.',
         )}
       />
       <PageShell>

@@ -1,10 +1,9 @@
-import { BellOff, ExternalLink, XCircle } from 'lucide-react';
-import { useState } from 'react';
+import { BellOff, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from '@/components/common/Modal';
 import { EmptyState } from '@/components/common/EmptyState';
 import { Button } from '@/components/common/Button';
-import { CodeDialog } from '@/components/order/CodeDialog';
+import { isPendingDigitalPayment } from '@/lib/orderOperations';
 import { useOrderStore } from '@/store/orderStore';
 import { formatDateTime, orderStatusLabel } from '@/utils/format';
 
@@ -19,9 +18,7 @@ interface NotificationsSheetProps {
  */
 export function NotificationsSheet({ open, onClose }: NotificationsSheetProps) {
   const orders = useOrderStore((state) => state.orders);
-  const cancelOrder = useOrderStore((state) => state.cancelOrder);
   const navigate = useNavigate();
-  const [cancelId, setCancelId] = useState<string | null>(null);
 
   const events = orders
     .flatMap((order) =>
@@ -30,7 +27,10 @@ export function NotificationsSheet({ open, onClose }: NotificationsSheetProps) {
         code: order.code,
         orderId: order.id,
         storeName: order.storeName,
-        status: event.status,
+        status:
+          event.status === 'confirmed' && isPendingDigitalPayment(order)
+            ? 'pending_payment'
+            : event.status,
         at: event.at,
         isLatest: order.history.at(-1)?.at === event.at,
       })),
@@ -59,17 +59,9 @@ export function NotificationsSheet({ open, onClose }: NotificationsSheetProps) {
                 <p className="text-xs text-[#9AA0A6]">{formatDateTime(event.at)}</p>
                 {event.isLatest && (
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <Button size="sm" variant="ghost" onClick={() => { onClose(); navigate(`/orders/${event.orderId}/track`); }}>
-                      <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /> Ver estado
+                    <Button size="sm" variant="ghost" onClick={() => { onClose(); navigate(`/orders/${event.orderId}`); }}>
+                      <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /> Ver pedido
                     </Button>
-                    {['confirmed', 'preparing', 'picked_up', 'on_the_way'].includes(event.status) && (
-                      <Button size="sm" variant="danger" onClick={() => setCancelId(event.orderId)}>
-                        <XCircle className="h-3.5 w-3.5" aria-hidden="true" /> Cancelar
-                      </Button>
-                    )}
-                    {['picked_up', 'on_the_way'].includes(event.status) && (
-                      <p className="basis-full text-xs text-[#6B7076]">Se cancelará con confirmación y código, aunque ya esté en ruta.</p>
-                    )}
                   </div>
                 )}
               </div>
@@ -77,11 +69,6 @@ export function NotificationsSheet({ open, onClose }: NotificationsSheetProps) {
           ))}
         </ul>
       )}
-      {cancelId && (() => {
-        const order = orders.find((item) => item.id === cancelId);
-        if (!order) return null;
-        return <CodeDialog open onClose={() => setCancelId(null)} title="¿Cancelar el pedido?" description="Escribe tu código de cancelación para confirmar." helper={`Código del pedido #${order.code}.`} confirmLabel="Cancelar pedido" tone="danger" onSubmit={(code) => cancelOrder(order.id, code)} onSuccess={() => setCancelId(null)} />;
-      })()}
     </Modal>
   );
 }

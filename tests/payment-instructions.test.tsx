@@ -107,8 +107,8 @@ describe('PaymentInstructions', () => {
     render(<PaymentInstructions order={order(pendingIntent, 'cancelled')} />);
 
     expect(screen.queryByText(/Paga con/)).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Confirmar pago' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Aún no pagué' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Vincular código' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Generar QR nuevo' })).not.toBeInTheDocument();
     await waitFor(() => expect(mocks.getIntent).not.toHaveBeenCalled());
     expect(mocks.getIntent).not.toHaveBeenCalled();
     expect(mocks.createIntent).not.toHaveBeenCalled();
@@ -116,7 +116,7 @@ describe('PaymentInstructions', () => {
 
   it('reflects server authorization when the parent order refreshes', () => {
     const { rerender } = render(<PaymentInstructions order={order(pendingIntent)} />);
-    expect(screen.getByText('Pendiente de verificación')).toBeInTheDocument();
+    expect(screen.getByText(/introduce el monto exacto del pedido/)).toBeInTheDocument();
 
     rerender(
       <PaymentInstructions
@@ -128,7 +128,7 @@ describe('PaymentInstructions', () => {
       />,
     );
 
-    expect(screen.getByText('Pago verificado')).toBeInTheDocument();
+    expect(screen.getByText('Pago confirmado')).toBeInTheDocument();
   });
 
   it('muestra el destinatario exacto junto al QR del negocio', () => {
@@ -144,7 +144,7 @@ describe('PaymentInstructions', () => {
 
     expect(screen.getByText('Destinatario:')).toBeInTheDocument();
     expect(screen.getByText('Andá Paya Cevichería')).toBeInTheDocument();
-    expect(screen.getByText('QR del negocio')).toBeInTheDocument();
+    expect(screen.getByText('Escanea el QR del negocio')).toBeInTheDocument();
   });
 
   it('oculta el QR y las acciones de pago cuando el intento ya fue autorizado', () => {
@@ -160,11 +160,10 @@ describe('PaymentInstructions', () => {
       />,
     );
 
-    expect(screen.getByText('Pago verificado')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Pago verificado con Yape' })).toBeInTheDocument();
-    expect(screen.queryByText('QR del negocio')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Confirmar pago' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Aún no pagué' })).not.toBeInTheDocument();
+    expect(screen.getByText('Pago confirmado')).toBeInTheDocument();
+    expect(screen.queryByText('Escanea el QR del negocio')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Vincular código' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Generar QR nuevo' })).not.toBeInTheDocument();
   });
 
   it('oculta el QR si el destinatario no fue validado', () => {
@@ -174,11 +173,9 @@ describe('PaymentInstructions', () => {
       />,
     );
 
-    expect(screen.queryByText('QR del negocio')).not.toBeInTheDocument();
+    expect(screen.queryByText('Escanea el QR del negocio')).not.toBeInTheDocument();
     expect(
-      screen.getByText(
-        'No pudimos validar el destinatario de este QR. No pagues todavía; vuelve a intentarlo o contacta al restaurante.',
-      ),
+      screen.getByText('No pudimos mostrar el QR. Contacta al restaurante antes de pagar.'),
     ).toBeInTheDocument();
   });
 
@@ -190,11 +187,9 @@ describe('PaymentInstructions', () => {
     );
 
     expect(
-      screen.getByText(
-        'No pudimos mostrar un QR válido del negocio. No pagues todavía; contacta al restaurante para validar el destinatario.',
-      ),
+      screen.getByText('No pudimos mostrar el QR. Contacta al restaurante antes de pagar.'),
     ).toBeInTheDocument();
-    expect(screen.queryByText(/Abre Yape/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Abrir Yape' })).not.toBeInTheDocument();
   });
 
   it('limpia la constancia al cambiar el intento del mismo pedido', async () => {
@@ -209,19 +204,14 @@ describe('PaymentInstructions', () => {
     const { rerender } = render(<PaymentInstructions order={order(pendingIntent)} />);
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled(),
+      expect(screen.getByRole('button', { name: 'Vincular código' })).toBeEnabled(),
     );
-    fireEvent.change(screen.getByLabelText('Código de seguridad Yape'), {
-      target: { value: '482' },
-    });
-    await act(async () => screen.getByRole('button', { name: 'Confirmar pago' }).click());
-    fireEvent.change(screen.getByLabelText('Código Yape (3 dígitos)'), {
-      target: { value: '384' },
-    });
+    const codeInput = screen.getByLabelText('Código de seguridad de Yape');
+    fireEvent.change(codeInput, { target: { value: '482' } });
     await act(async () => {
       screen.getByRole('button', { name: 'Vincular código' }).click();
     });
-    expect(await screen.findByRole('button', { name: 'Cambiar código' })).toBeInTheDocument();
+    expect(mocks.confirmWalletPaymentByCode).toHaveBeenCalledWith('order-1', '482');
 
     rerender(
       <PaymentInstructions
@@ -233,17 +223,8 @@ describe('PaymentInstructions', () => {
       />,
     );
 
-    await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled(),
-    );
-    fireEvent.change(screen.getByLabelText('Código de seguridad Yape'), {
-      target: { value: '482' },
-    });
-    await act(async () => screen.getByRole('button', { name: 'Confirmar pago' }).click());
-    await waitFor(() => expect(screen.getByLabelText('Código Yape (3 dígitos)')).toHaveValue(''));
-    expect(screen.getByRole('button', { name: 'Vincular código' })).toBeDisabled();
-    expect(screen.queryByRole('button', { name: 'Cambiar código' })).not.toBeInTheDocument();
-    expect(screen.getByText('SUYA-EF56GH78')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByLabelText('Código de seguridad de Yape')).toHaveValue(''));
+    expect(mocks.confirmWalletPaymentByCode).toHaveBeenCalledTimes(1);
   });
 
   it('permite corregir el código de la constancia mientras sigue pendiente', async () => {
@@ -258,28 +239,18 @@ describe('PaymentInstructions', () => {
     render(<PaymentInstructions order={order(pendingIntent)} />);
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled(),
+      expect(screen.getByRole('button', { name: 'Vincular código' })).toBeEnabled(),
     );
-    fireEvent.change(screen.getByLabelText('Código de seguridad Yape'), {
-      target: { value: '482' },
-    });
-    await act(async () => screen.getByRole('button', { name: 'Confirmar pago' }).click());
-    const input = screen.getByLabelText('Código Yape (3 dígitos)');
+    const input = screen.getByLabelText('Código de seguridad de Yape');
     expect(input).toHaveAttribute('inputmode', 'numeric');
     fireEvent.change(input, { target: { value: '384' } });
     await act(async () => {
       screen.getByRole('button', { name: 'Vincular código' }).click();
     });
-
-    expect(await screen.findByRole('button', { name: 'Cambiar código' })).toBeInTheDocument();
-    await act(async () => {
-      screen.getByRole('button', { name: 'Cambiar código' }).click();
-    });
-    expect(screen.getByLabelText('Código Yape (3 dígitos)')).toHaveValue('');
-    expect(screen.getByRole('button', { name: 'Vincular código' })).toBeDisabled();
-    fireEvent.change(screen.getByLabelText('Código Yape (3 dígitos)'), {
-      target: { value: '482' },
-    });
+    expect(await screen.findByText('Esperando confirmación del pago…')).toBeInTheDocument();
+    expect(input).toHaveValue('384');
+    fireEvent.change(input, { target: { value: '482' } });
+    expect(input).toHaveValue('482');
     expect(screen.getByRole('button', { name: 'Vincular código' })).toBeEnabled();
   });
 
@@ -287,17 +258,17 @@ describe('PaymentInstructions', () => {
     render(<PaymentInstructions order={order(pendingIntent)} />);
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled(),
+      expect(screen.getByRole('button', { name: 'Vincular código' })).toBeEnabled(),
     );
-    fireEvent.change(screen.getByLabelText('Código de seguridad Yape'), {
+    fireEvent.change(screen.getByLabelText('Código de seguridad de Yape'), {
       target: { value: '482' },
     });
-    await act(async () => screen.getByRole('button', { name: 'Confirmar pago' }).click());
+    await act(async () => screen.getByRole('button', { name: 'Vincular código' }).click());
 
     expect(mocks.confirmWalletPaymentByCode).toHaveBeenCalledWith('order-1', '482');
-    expect(screen.getByText('Validando pago…')).toBeInTheDocument();
+    expect(screen.getByText('Esperando confirmación del pago…')).toBeInTheDocument();
     expect(mocks.notify).toHaveBeenCalledWith(
-      'Pago registrado. Estamos validando identidad, monto y hora con la notificación.',
+      'Código vinculado. Esperamos la confirmación del pago.',
       'success',
     );
   });
@@ -307,7 +278,7 @@ describe('PaymentInstructions', () => {
     mocks.confirmWalletPaymentByCode.mockResolvedValueOnce({
       status: 'amount_mismatch',
       attemptId: 'attempt-1',
-      observationId: null,
+      observationId: 'observation-1',
       observedAt: null,
       payerDisplayName: null,
       observedAmountCents: 100,
@@ -320,18 +291,18 @@ describe('PaymentInstructions', () => {
     );
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled(),
+      expect(screen.getByRole('button', { name: 'Vincular código' })).toBeEnabled(),
     );
-    fireEvent.change(screen.getByLabelText('Código de seguridad Yape'), {
+    fireEvent.change(screen.getByLabelText('Código de seguridad de Yape'), {
       target: { value: '482' },
     });
-    await act(async () => screen.getByRole('button', { name: 'Confirmar pago' }).click());
+    await act(async () => screen.getByRole('button', { name: 'Vincular código' }).click());
 
     expect(mocks.confirmWalletPaymentByCode).toHaveBeenCalledWith('order-1', '482');
-    expect(screen.getByText('Monto de Yape no coincide')).toBeInTheDocument();
+    expect(screen.getByText('Pedido cancelado por pago parcial')).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Yape detectado: S/ 1.00. Total del pedido: S/ 10.00. El monto no coincide y queda para revisión de Caja; el pago no se marcó como pagado. El teléfono de contacto de Andá Paya Cevichería se agregará cuando el comercio lo confirme. No realices otro pago hasta coordinarlo con el restaurante.',
+        'Recibido: S/ 1.00. Total: S/ 10.00. Contacta a Andá Paya Cevichería para revisar el abono y coordinar la devolución; el número de contacto se añadirá cuando el restaurante lo confirme.',
       ),
     ).toBeInTheDocument();
     expect(onPartialPaymentCancelled).toHaveBeenCalledOnce();
@@ -345,13 +316,13 @@ describe('PaymentInstructions', () => {
     expect(screen.getByText('Pedido cancelado por pago parcial')).toBeInTheDocument();
     expect(
       screen.getByText(
-        'El pedido se canceló automáticamente porque el Yape fue parcial. Yape detectado: S/ 1.00. Total del pedido: S/ 10.00. El pago no se marcó como pagado y el abono queda para revisión de Caja y gestión de devolución. El teléfono de contacto de Andá Paya Cevichería se agregará cuando el comercio lo confirme. No realices otro pago para este pedido.',
+        'Recibido: S/ 1.00. Total: S/ 10.00. Contacta a Andá Paya Cevichería para revisar el abono y coordinar la devolución; el número de contacto se añadirá cuando el restaurante lo confirme.',
       ),
     ).toBeInTheDocument();
-    expect(screen.queryByLabelText('Código Yape (3 dígitos)')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Código de seguridad de Yape')).not.toBeInTheDocument();
     expect(screen.queryByText(/liberado para preparación/)).not.toBeInTheDocument();
     expect(mocks.notify).toHaveBeenCalledWith(
-      expect.stringContaining('no coincide'),
+      expect.stringContaining('Pedido cancelado automáticamente por pago parcial'),
       'warning',
     );
   });
@@ -364,7 +335,7 @@ describe('PaymentInstructions', () => {
     );
 
     expect(screen.getByText('Pedido cancelado por pago parcial')).toBeInTheDocument();
-    expect(screen.getByText(/teléfono de contacto de Andá Paya Cevichería se agregará/)).toBeInTheDocument();
+    expect(screen.getByText(/el número de contacto se añadirá cuando el restaurante lo confirme/)).toBeInTheDocument();
     expect(mocks.getIntent).not.toHaveBeenCalled();
   });
 
@@ -397,20 +368,20 @@ describe('PaymentInstructions', () => {
     render(<PaymentInstructions order={order({ ...pendingIntent, amount: 10 })} />);
 
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Confirmar pago' })).toBeEnabled(),
+      expect(screen.getByRole('button', { name: 'Vincular código' })).toBeEnabled(),
     );
-    fireEvent.change(screen.getByLabelText('Código de seguridad Yape'), {
+    fireEvent.change(screen.getByLabelText('Código de seguridad de Yape'), {
       target: { value: '813' },
     });
-    await act(async () => screen.getByRole('button', { name: 'Confirmar pago' }).click());
+    await act(async () => screen.getByRole('button', { name: 'Vincular código' }).click());
 
-    const linkCode = screen.getByLabelText('Código Yape (3 dígitos)');
+    const linkCode = screen.getByLabelText('Código de seguridad de Yape');
     fireEvent.change(linkCode, { target: { value: '111' } });
     await act(async () => screen.getByRole('button', { name: 'Vincular código' }).click());
-    expect(await screen.findByText('Código Yape no coincide')).toBeInTheDocument();
-    expect(screen.getByLabelText('Código Yape (3 dígitos)')).toHaveValue('111');
+    expect(await screen.findByText('El código no coincide. Revísalo.')).toBeInTheDocument();
+    expect(screen.getByLabelText('Código de seguridad de Yape')).toHaveValue('111');
 
-    fireEvent.change(screen.getByLabelText('Código Yape (3 dígitos)'), {
+    fireEvent.change(screen.getByLabelText('Código de seguridad de Yape'), {
       target: { value: '813' },
     });
     await act(async () => screen.getByRole('button', { name: 'Vincular código' }).click());
@@ -420,36 +391,26 @@ describe('PaymentInstructions', () => {
     expect(mocks.confirmWalletPaymentByCode).toHaveBeenNthCalledWith(2, 'order-1', '111');
     expect(mocks.confirmWalletPaymentByCode).toHaveBeenNthCalledWith(3, 'order-1', '813');
     expect(mocks.declarePayment).not.toHaveBeenCalled();
-    expect(await screen.findByText('Monto de Yape no coincide')).toBeInTheDocument();
-    expect(screen.getByText(/Yape detectado: S\/ 1\.00.*S\/ 10\.00/)).toBeInTheDocument();
+    expect(await screen.findByText('El monto no coincide; Caja revisará el abono.')).toBeInTheDocument();
+    expect(mocks.notify).toHaveBeenCalledWith(
+      expect.stringContaining('Yape recibido: S/ 1.00. El monto solicitado es S/ 10.00'),
+      'warning',
+    );
   });
 
   it('preserva la revisión y no ofrece un segundo cobro si el intento vencido ya fue declarado', async () => {
     const expiredIntent = { ...pendingIntent, expiresAt: '2020-01-01T00:00:00.000Z' };
-    mocks.getPaymentDeclaration.mockResolvedValueOnce(null);
-    mocks.confirmWalletPaymentByCode.mockResolvedValueOnce({
-      status: 'pending',
-      attemptId: 'attempt-1',
-      observationId: null,
-      observedAt: null,
+    mocks.getPaymentDeclaration.mockResolvedValueOnce({
+      declaredAt: '2026-09-24T18:00:00.000Z',
       payerDisplayName: 'Otra Persona',
-      observedAmountCents: null,
     });
     render(<PaymentInstructions order={order(expiredIntent)} />);
 
-    const paid = await screen.findByRole('button', { name: 'Confirmar pago' });
-    await waitFor(() => expect(paid).toBeEnabled());
-    fireEvent.change(screen.getByLabelText('Código de seguridad Yape'), {
-      target: { value: '482' },
-    });
-    await act(async () => paid.click());
-
-    expect(mocks.confirmWalletPaymentByCode).toHaveBeenCalledWith('order-1', '482');
-    expect(screen.getByText('Validando pago…')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Aún no pagué' })).not.toBeInTheDocument();
     expect(
-      screen.queryByRole('button', { name: 'Generar nueva referencia' }),
-    ).not.toBeInTheDocument();
+      await screen.findByText('Tu pago sigue en revisión. No vuelvas a pagar; Caja revisará el abono.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Generar QR nuevo' })).not.toBeInTheDocument();
+    expect(mocks.confirmWalletPaymentByCode).not.toHaveBeenCalled();
   });
 
   it('solo renueva una referencia vencida cuando el cliente declara que aún no pagó', async () => {
@@ -463,12 +424,12 @@ describe('PaymentInstructions', () => {
     mocks.createIntent.mockResolvedValueOnce(renewedIntent);
     render(<PaymentInstructions order={order(expiredIntent)} />);
 
-    const notPaid = await screen.findByRole('button', { name: 'Aún no pagué' });
+    const notPaid = await screen.findByRole('button', { name: 'Generar QR nuevo' });
     await waitFor(() => expect(notPaid).toBeEnabled());
     await act(async () => notPaid.click());
 
     expect(mocks.createIntent).toHaveBeenCalledWith('order-1', 'yape');
-    expect(screen.getByText('SUYA-NEWREF1')).toBeInTheDocument();
+    expect(screen.getByText(/introduce el monto exacto del pedido/)).toBeInTheDocument();
   });
 
   it('no invita a repetir un pago devuelto ni muestra su QR', () => {
@@ -480,13 +441,11 @@ describe('PaymentInstructions', () => {
     render(<PaymentInstructions order={order(refundedIntent)} />);
 
     expect(
-      screen.getByText(
-        'Este pago fue devuelto. No vuelvas a pagar desde esta pantalla; contacta al restaurante para revisar el siguiente paso.',
-      ),
+      screen.getByText('Pago devuelto'),
     ).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Confirmar pago' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Aún no pagué' })).not.toBeInTheDocument();
-    expect(screen.queryByText('QR del negocio')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Vincular código' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Generar QR nuevo' })).not.toBeInTheDocument();
+    expect(screen.queryByText('Escanea el QR del negocio')).not.toBeInTheDocument();
   });
 
   it('polls manual wallet intents while they remain pending', async () => {
@@ -513,14 +472,14 @@ describe('PaymentInstructions', () => {
     sessionStorage.setItem('suya.payment-email:order-1', 'cliente@example.com');
     render(<PaymentInstructions order={order(gatewayIntent)} />);
 
-    const button = screen.getByRole('button', { name: 'Abrir QR Yape' });
+    const button = screen.getByRole('button', { name: 'Abrir Yape' });
     await act(async () => {
       button.click();
     });
 
     expect(screen.getByRole('button', { name: 'Esperando confirmación…' })).toBeDisabled();
     expect(mocks.notify).toHaveBeenCalledWith(
-      'Pago enviado. El servidor actualizará esta pantalla cuando valide el pago.',
+      'Pago enviado. Esperamos la confirmación.',
       'success',
     );
     expect(screen.queryByText(/Culqi|webhook/i)).not.toBeInTheDocument();
@@ -536,12 +495,12 @@ describe('PaymentInstructions', () => {
     sessionStorage.setItem('suya.payment-email:order-1', 'cliente@example.com');
     render(<PaymentInstructions order={order(gatewayIntent)} />);
 
-    const button = screen.getByRole('button', { name: 'Abrir QR Yape' });
+    const button = screen.getByRole('button', { name: 'Abrir Yape' });
     await act(async () => {
       button.click();
     });
 
-    expect(screen.getByRole('button', { name: 'Abrir QR Yape' })).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Abrir Yape' })).not.toBeDisabled();
   });
 
   it('refresca el intento fallido para que un reintento no use la referencia vieja', async () => {
@@ -567,7 +526,7 @@ describe('PaymentInstructions', () => {
     });
 
     expect(mocks.getIntent).toHaveBeenCalledWith('order-1');
-    expect(screen.getByRole('button', { name: 'Reintentar pago' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Pagar con tarjeta' })).toBeEnabled();
   });
 
   it('fuerza un reintento nuevo si no puede refrescar el rechazo del servidor', async () => {
@@ -591,7 +550,7 @@ describe('PaymentInstructions', () => {
       screen.getByRole('button', { name: 'Pagar con tarjeta' }).click();
     });
 
-    expect(screen.getByRole('button', { name: 'Reintentar pago' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Pagar con tarjeta' })).toBeEnabled();
   });
 
   it('mantiene bloqueado el cargo si Culqi entrega el token antes de cerrar open', async () => {
@@ -623,13 +582,13 @@ describe('PaymentInstructions', () => {
     });
     await waitFor(() => expect(mocks.chargeCard).toHaveBeenCalled());
 
-    expect(screen.getByRole('button', { name: 'Procesando…' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Abriendo pago…' })).toBeDisabled();
 
     await act(async () => {
       rejectCharge(new Error('Culqi rechazó el pago'));
     });
 
-    expect(screen.getByRole('button', { name: 'Reintentar pago' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Pagar con tarjeta' })).toBeEnabled();
   });
 
   it('ignora un callback duplicado de token mientras el primer cargo sigue en curso', async () => {
@@ -662,7 +621,7 @@ describe('PaymentInstructions', () => {
     await waitFor(() => expect(mocks.chargeCard).toHaveBeenCalledTimes(1));
 
     resolveCharge('chr_test_duplicate_token');
-    await waitFor(() => expect(screen.getByText('Pago verificado')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText('Pago confirmado')).toBeInTheDocument());
     expect(screen.queryByRole('button', { name: 'Pagar con tarjeta' })).not.toBeInTheDocument();
     expect(screen.queryByText('Pago electrónico seguro')).not.toBeInTheDocument();
     expect(mocks.chargeCard).toHaveBeenCalledTimes(1);
@@ -692,13 +651,13 @@ describe('PaymentInstructions', () => {
     const { rerender } = render(<PaymentInstructions order={order(firstIntent)} />);
 
     await act(async () => {
-      screen.getByRole('button', { name: 'Abrir QR Yape' }).click();
+      screen.getByRole('button', { name: 'Abrir Yape' }).click();
     });
     expect(onToken).toBeTypeOf('function');
 
     rerender(<PaymentInstructions order={order(secondIntent)} />);
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: 'Abrir QR Yape' })).toBeInTheDocument(),
+      expect(screen.getByRole('button', { name: 'Abrir Yape' })).toBeInTheDocument(),
     );
 
     await act(async () => {
@@ -706,6 +665,6 @@ describe('PaymentInstructions', () => {
     });
 
     expect(mocks.chargeCard).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Abrir QR Yape' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Abrir Yape' })).toBeEnabled();
   });
 });

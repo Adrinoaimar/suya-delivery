@@ -92,7 +92,7 @@ describe('GuestOrderPage', () => {
     ).toBeInTheDocument();
   });
 
-  it('actualiza al recuperar conexión y muestra la última actualización', async () => {
+  it('actualiza al recuperar conexión sin añadir datos secundarios al comprobante', async () => {
     render(
       <MemoryRouter
         initialEntries={[{ pathname: '/pedido/order-refresh-1', state: { guestOrder } }]}
@@ -106,12 +106,10 @@ describe('GuestOrderPage', () => {
     expect(
       await screen.findByRole('heading', { name: 'Pedido enviado a tu mesa' }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/Actualizado/)).toBeInTheDocument();
-
     window.dispatchEvent(new Event('online'));
 
     await waitFor(() => expect(mocks.get).toHaveBeenCalledTimes(2));
-    expect(screen.getByText(/Actualizado/)).toBeInTheDocument();
+    expect(screen.queryByText(/Actualizado/)).not.toBeInTheDocument();
   });
 
   it('actualiza al volver al primer plano si el pedido estaba visible', async () => {

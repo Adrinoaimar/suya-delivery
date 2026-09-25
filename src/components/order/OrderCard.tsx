@@ -3,10 +3,12 @@ import { Link } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
 import { Price } from '@/components/common/Price';
 import { Thumb } from '@/components/common/Thumb';
+import { isPendingDigitalPayment } from '@/lib/orderOperations';
 import { formatDateTime, orderStatusLabel } from '@/utils/format';
 import type { Order } from '@/types';
 
 const TONES = {
+  pending_payment: 'sun',
   confirmed: 'lime',
   preparing: 'lime',
   picked_up: 'sun',
@@ -20,8 +22,12 @@ interface OrderCardProps {
 }
 
 export function OrderCard({ order }: OrderCardProps) {
-  const isActive = order.status !== 'delivered' && order.status !== 'cancelled';
-  const to = isActive ? `/orders/${order.id}/track` : `/orders/${order.id}`;
+  const to = `/orders/${order.id}`;
+  const visibleStatus =
+    order.status === 'pending_payment' ||
+    (order.status === 'confirmed' && isPendingDigitalPayment(order))
+      ? 'pending_payment'
+      : order.status;
 
   return (
     <article className="relative flex items-center gap-3 rounded-card border border-suya-mist bg-white p-3.5 shadow-card transition-shadow hover:shadow-soft">
@@ -36,7 +42,7 @@ export function OrderCard({ order }: OrderCardProps) {
               {order.storeName}
             </Link>
           </h3>
-          <Badge tone={TONES[order.status]}>{orderStatusLabel(order.status)}</Badge>
+          <Badge tone={TONES[visibleStatus]}>{orderStatusLabel(visibleStatus)}</Badge>
         </div>
         <p className="mt-0.5 truncate text-xs text-[#6B7076]">
           #{order.code} · {formatDateTime(order.createdAt)}

@@ -4,8 +4,8 @@ import { describe, expect, it } from 'vitest';
 
 const root = (path: string) => resolve(process.cwd(), path);
 
-describe('seguimiento visual del mapa', () => {
-  it('conserva el rastro real del rider y un control de mapa accesible', () => {
+describe('mapa de rider y privacidad del cliente', () => {
+  it('conserva navegación del rider y oculta el mapa al cliente', () => {
     const map = readFileSync(root('src/components/map/LeafletMap.tsx'), 'utf8');
     const customerTrack = readFileSync(root('src/pages/customer/OrderTrackPage.tsx'), 'utf8');
 
@@ -67,16 +67,12 @@ describe('seguimiento visual del mapa', () => {
     expect(readFileSync(root('src/pages/rider/RiderCurrentPage.tsx'), 'utf8')).toContain(
       'appendTrail(trail, reading.position)',
     );
-    expect(customerTrack).toContain('key={order.id}');
+    expect(customerTrack).toContain('to={`/orders/${id}`}');
+    expect(customerTrack).not.toContain('MapProvider');
     const riderHome = readFileSync(root('src/pages/rider/RiderHomePage.tsx'), 'utf8');
     expect(riderHome).toContain('<MapProvider');
     expect(riderHome).toContain('Mapa de tu ubicación y zona de reparto');
     expect(riderHome).toContain('h-[min(58dvh,520px)]');
     expect(riderHome).toContain('Siguiendo tu ruta de entrega');
-    expect(customerTrack).toContain('const mapPoints = useMemo(');
-    expect(customerTrack).toContain('locationHistory(order.id)');
-    expect(customerTrack).toContain('mergeTrails(history, trail)');
-    expect(customerTrack).toContain('riderTrail={cancelled ? [] : riderTrail}');
-    expect(customerTrack).toContain('h-[54%]');
   });
 });

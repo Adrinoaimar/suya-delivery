@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { CheckCircle2, CircleUserRound, Receipt, RefreshCw } from 'lucide-react';
 import { useLocation, useParams } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
@@ -8,8 +8,9 @@ import { EmptyState } from '@/components/common/EmptyState';
 import { SeoHead } from '@/components/common/SeoHead';
 import { OrderCodes } from '@/components/order/OrderCodes';
 import { PaymentInstructions } from '@/components/payment/PaymentInstructions';
+import { isPendingDigitalPayment } from '@/lib/orderOperations';
 import { consumeGuestOrderTokenFromHash, orderService } from '@/lib/services';
-import { formatDateTime, formatPrice, orderStatusLabel } from '@/utils/format';
+import { formatPrice, orderStatusLabel } from '@/utils/format';
 import type { Order } from '@/types';
 
 /** Public receipt for menu/QR orders. No customer session required. */
@@ -20,7 +21,7 @@ export default function GuestOrderPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-  const [lastUpdatedAt, setLastUpdatedAt] = useState<string | null>(null);
+  const refreshOrder = useCallback(() => setReloadKey((value) => value + 1), []);
   const seoHead = (
     <SeoHead
       title="Comprobante de pedido | Suya Delivery"
@@ -44,7 +45,6 @@ export default function GuestOrderPage() {
       .then((value) => {
         if (active) {
           setOrder(value ?? null);
-          if (value) setLastUpdatedAt(new Date().toISOString());
           setError(value ? null : 'No encontramos este pedido.');
         }
       })
@@ -70,12 +70,6 @@ export default function GuestOrderPage() {
       document.removeEventListener('visibilitychange', refreshOnResume);
     };
   }, []);
-
-  function refresh(): void {
-    setError(null);
-    setLoading(true);
-    setReloadKey((value) => value + 1);
-  }
 
   if (loading) {
     return (
@@ -110,6 +104,17 @@ export default function GuestOrderPage() {
 
   const tableOrder = order.origin === 'table_qr';
   const closed = order.status === 'delivered' || order.status === 'cancelled';
+  const paymentPending =
+    order.status === 'pending_payment' ||
+    (order.status === 'confirmed' && isPendingDigitalPayment(order));
+  const paymentAccepted = order.paymentMethod === 'cash' || order.paymentIntent?.status === 'authorized';
+  const visibleStatus = paymentPending ? 'pending_payment' : order.status;
+  const canShowDeliveryCode =
+    order.status === 'confirmed' ||
+    order.status === 'preparing' ||
+    order.status === 'picked_up' ||
+    order.status === 'on_the_way' ||
+    order.status === 'delivered';
   return (
     <>
       {seoHead}
@@ -117,28 +122,43 @@ export default function GuestOrderPage() {
         <section className="rounded-card bg-suya-green p-6 text-white shadow-soft sm:p-8">
           <div className="flex items-start gap-3">
             <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/15">
-              <CheckCircle2 className="h-7 w-7" aria-hidden="true" />
+              {paymentPending ? (
+                <Receipt className="h-7 w-7" aria-hidden="true" />
+              ) : (
+                <CheckCircle2 className="h-7 w-7" aria-hidden="true" />
+              )}
             </span>
             <div className="min-w-0">
               <p className="text-sm text-white/75">Suya Menús</p>
               <h1 className="mt-1 font-display text-2xl font-bold sm:text-3xl">
-                {tableOrder ? 'Pedido enviado a tu mesa' : 'Pedido confirmado'}
+                {paymentPending
+                  ? 'Completa el pago'
+                  : tableOrder
+                    ? 'Pedido enviado a tu mesa'
+                    : 'Pedido confirmado'}
               </h1>
               <p className="mt-2 text-sm text-white/80">
-                Guarda este enlace para consultar el estado sin crear una cuenta.
+                {paymentPending
+                  ? 'El local recibirá el pedido cuando el pago quede confirmado.'
+                  : 'Guarda este enlace para consultar tu pedido sin crear una cuenta.'}
               </p>
             </div>
           </div>
           <div className="mt-6 flex flex-wrap items-center gap-2">
-            <Badge tone="lime">{orderStatusLabel(order.status)}</Badge>
-            <span className="text-sm text-white/80">
-              #{order.code} · {formatDateTime(order.createdAt)}
-            </span>
+            <Badge tone={paymentPending ? 'sun' : order.status === 'cancelled' ? 'danger' : 'lime'}>
+              {orderStatusLabel(visibleStatus)}
+            </Badge>
           </div>
         </section>
 
-        {!closed && !tableOrder && order.deliveryCode && <OrderCodes order={order} />}
-        <PaymentInstructions order={order} />
+        {!closed && !tableOrder && paymentAccepted && canShowDeliveryCode && order.deliveryCode && (
+          <OrderCodes order={order} />
+        )}
+        <PaymentInstructions
+          order={order}
+          onPaymentAccepted={refreshOrder}
+          onPartialPaymentCancelled={refreshOrder}
+        />
 
         <div className="grid gap-4 lg:grid-cols-[1fr_300px] lg:items-start">
           <Card>
@@ -147,12 +167,14 @@ export default function GuestOrderPage() {
                 <h2 className="font-display text-lg font-bold">{order.storeName}</h2>
                 <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-[#68716C]">
                   <p>{tableOrder ? 'Pedido en mesa' : 'Entrega a domicilio'}</p>
-                  {lastUpdatedAt && (
-                    <p aria-live="polite">Actualizado {formatDateTime(lastUpdatedAt)}</p>
-                  )}
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={refresh} aria-label="Actualizar estado">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={refreshOrder}
+                aria-label="Actualizar estado"
+              >
                 <RefreshCw className="h-4 w-4" aria-hidden="true" />
                 Actualizar
               </Button>

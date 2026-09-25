@@ -6,6 +6,7 @@ import type { Order, OrderStatus } from '@/types';
 import { formatTime, orderStatusLabel } from '@/utils/format';
 
 const ICONS: Record<OrderStatus, LucideIcon> = {
+  pending_payment: Receipt,
   confirmed: Receipt,
   preparing: ChefHat,
   picked_up: PackageCheck,

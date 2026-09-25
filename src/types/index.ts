@@ -141,7 +141,13 @@ export interface CartItem {
 }
 
 export type OrderStatus =
-  'confirmed' | 'preparing' | 'picked_up' | 'on_the_way' | 'delivered' | 'cancelled';
+  | 'pending_payment'
+  | 'confirmed'
+  | 'preparing'
+  | 'picked_up'
+  | 'on_the_way'
+  | 'delivered'
+  | 'cancelled';
 
 export const ORDER_FLOW: OrderStatus[] = [
   'confirmed',
