@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Bell, ChevronDown, MapPin, ShoppingBag, User } from 'lucide-react';
+import { Bell, ChevronDown, Download, MapPin, ShoppingBag, User } from 'lucide-react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { CounterBadge } from '@/components/common/Badge';
 import { Logo } from '@/components/common/Logo';
@@ -79,6 +79,14 @@ export function DesktopHeader() {
           <div className="ml-auto w-full max-w-xs">
             <SearchInput value={query} onChange={setQuery} onSubmit={submitSearch} />
           </div>
+
+          <Link
+            to="/descargar"
+            className="press hidden min-h-12 shrink-0 items-center gap-2 rounded-btn bg-suya-green px-4 text-sm font-semibold text-white hover:bg-suya-green-dark xl:flex"
+          >
+            <Download aria-hidden="true" className="h-4 w-4" />
+            Descargar app
+          </Link>
 
           <div className="flex shrink-0 items-center gap-1">
             <button

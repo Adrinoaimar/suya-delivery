@@ -6,6 +6,7 @@ const INTERNAL_COLUMNS = [
     title: 'Suya Delivery',
     links: [
       { to: '/stores', label: 'Tiendas' },
+      { to: '/descargar', label: 'Descargar aplicación' },
       { to: '/nosotros', label: 'Sobre Suya' },
     ],
   },

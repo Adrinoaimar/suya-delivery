@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, Heart, Sparkles, Store as StoreIcon, TicketPercent } from 'lucide-react';
+import { ArrowRight, Download, Heart, Sparkles, Store as StoreIcon, TicketPercent } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Link, useNavigate } from 'react-router-dom';
 import { ButtonLink } from '@/components/common/Button';
@@ -18,6 +18,33 @@ import type { AppOffer } from '@/types';
 import { useCartStore } from '@/store/cartStore';
 import { useUserStore } from '@/store/userStore';
 import { isStoreAcceptingOrders } from '@/utils/schedule';
+
+function DownloadAppCallout() {
+  return (
+    <Link
+      to="/descargar"
+      className="group flex min-h-16 items-center justify-between gap-3 rounded-card border border-suya-border bg-suya-ivory p-3 transition-colors hover:border-suya-green/30 hover:bg-white sm:p-4"
+    >
+      <span className="flex min-w-0 items-center gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-suya-green text-white">
+          <Download aria-hidden="true" className="h-5 w-5" />
+        </span>
+        <span className="min-w-0">
+          <span className="block font-display text-sm font-bold text-suya-carbon sm:text-base">
+            ¿Quieres descargar Suya?
+          </span>
+          <span className="mt-0.5 block text-xs text-suya-muted sm:text-sm">
+            Revisa las opciones para Android e iOS.
+          </span>
+        </span>
+      </span>
+      <ArrowRight
+        aria-hidden="true"
+        className="h-5 w-5 shrink-0 text-suya-green transition-transform group-hover:translate-x-0.5"
+      />
+    </Link>
+  );
+}
 
 export default function HomePage() {
   const navigate = useNavigate();
@@ -156,6 +183,9 @@ export default function HomePage() {
                 Ver tiendas
               </ButtonLink>
             </div>
+            <div className="mt-5 max-w-md">
+              <DownloadAppCallout />
+            </div>
             <dl className="mt-9 flex gap-8">
               <div>
                 <dt className="text-sm text-suya-muted">Negocios</dt>
@@ -245,6 +275,9 @@ export default function HomePage() {
             <p className="mt-1 text-sm text-suya-muted">Comida y negocios locales cerca de ti.</p>
           </div>
           <SearchInput value={query} onChange={setQuery} onSubmit={submitSearch} />
+          <div className="mt-3">
+            <DownloadAppCallout />
+          </div>
         </section>
 
         {/* Sin categorías cargadas el carril quedaría reducido al acceso «Más». */}

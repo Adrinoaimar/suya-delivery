@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useCartStore } from '@/store/cartStore';
 
 const HomePage = lazy(() => import('@/pages/customer/HomePage'));
+const DownloadAppPage = lazy(() => import('@/pages/customer/DownloadAppPage'));
 const StoresPage = lazy(() => import('@/pages/customer/StoresPage'));
 const StoreDetailPage = lazy(() => import('@/pages/customer/StoreDetailPage'));
 const SearchPage = lazy(() => import('@/pages/customer/SearchPage'));
@@ -92,6 +93,7 @@ export function CustomerRoutes() {
         <Route path="pedido/:id" element={<GuestOrderPage />} />
         <Route element={<CustomerLayout />}>
           <Route index element={<HomePage />} />
+          <Route path="descargar" element={<DownloadAppPage />} />
           <Route path="stores" element={<StoresPage />} />
           <Route path="store/:id" element={<StoreDetailPage />} />
           <Route path="search" element={<SearchPage />} />
