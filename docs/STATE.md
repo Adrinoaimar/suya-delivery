@@ -11,8 +11,9 @@ Actualizado: 26 de septiembre de 2026 (`America/Lima`)
 - Typecheck, lint, 399 pruebas, build web local y escaneo local de secretos pasaron. El preflight
   productivo local no dispone de variables protegidas; CI sí obtuvo configuración y pasó.
 - Android se muestra «Descarga en preparación» e iOS «Próximamente». Falta generar/publicar la APK
-  release actual firmada con el certificado estable y configurar `VITE_ANDROID_APK_URL`; no se
-  publicó APK debug ni antigua como si fuera la versión vigente.
+  release actual firmada con el certificado estable y configurar `VITE_ANDROID_APK_URL` en GitHub;
+  el workflow ya pasa esa variable opcional al build. No se publicó APK debug ni antigua como si
+  fuera la versión vigente.
 - Evidencia y pendientes: `docs/execution/F39.md`.
 
 ## F37 — SQL y APK Android 1.8
