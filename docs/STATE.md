@@ -1,6 +1,19 @@
 # Estado de ejecución
 
-Actualizado: 24 de septiembre de 2026 (`America/Lima`)
+Actualizado: 26 de septiembre de 2026 (`America/Lima`)
+
+## F39 — Descarga de la app en la web, 2026-09-26
+
+- Se publicó en `main` el commit `dd85133`. La portada de Customer muestra «¿Quieres descargar
+  Suya?» en escritorio y móvil; el enlace abre `/descargar`. Header y footer también enlazan la página.
+- Cloudflare Pages workflow `36281009074` pasó gates, build de las tres apps, auditoría, smoke y
+  promoción con rollback. La portada y `/descargar` se verificaron en `https://suyadelivery.com`.
+- Typecheck, lint, 399 pruebas, build web local y escaneo local de secretos pasaron. El preflight
+  productivo local no dispone de variables protegidas; CI sí obtuvo configuración y pasó.
+- Android se muestra «Descarga en preparación» e iOS «Próximamente». Falta generar/publicar la APK
+  release actual firmada con el certificado estable y configurar `VITE_ANDROID_APK_URL`; no se
+  publicó APK debug ni antigua como si fuera la versión vigente.
+- Evidencia y pendientes: `docs/execution/F39.md`.
 
 ## F37 — SQL y APK Android 1.8
 
