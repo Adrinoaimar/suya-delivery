@@ -6,8 +6,9 @@ Actualizado: 26 de septiembre de 2026 (`America/Lima`)
 
 - Se publicó en `main` el commit `dd85133`. La portada de Customer muestra «¿Quieres descargar
   Suya?» en escritorio y móvil; el enlace abre `/descargar`. Header y footer también enlazan la página.
-- Cloudflare Pages workflow `36281009074` pasó gates, build de las tres apps, auditoría, smoke y
-  promoción con rollback. La portada y `/descargar` se verificaron en `https://suyadelivery.com`.
+- Commit de seguimiento `a6b6940` conecta `vars.VITE_ANDROID_APK_URL` al build. Cloudflare Pages
+  workflows `36281009074` y `36281366386` pasaron gates, build de las tres apps, auditoría, smoke y
+  promoción con rollback. Portada y `/descargar` se verificaron en `https://suyadelivery.com`.
 - Typecheck, lint, 399 pruebas, build web local y escaneo local de secretos pasaron. El preflight
   productivo local no dispone de variables protegidas; CI sí obtuvo configuración y pasó.
 - Android se muestra «Descarga en preparación» e iOS «Próximamente». Falta generar/publicar la APK
