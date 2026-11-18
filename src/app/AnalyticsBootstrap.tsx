@@ -11,14 +11,16 @@ import {
 
 function ConsentBanner({
   onChange,
+  inline,
 }: {
+  inline: boolean;
   onChange: (value: Exclude<AnalyticsConsent, null>) => void;
 }) {
   return (
     <aside
-      role="dialog"
+      role={inline ? undefined : "dialog"}
       aria-label="Preferencias de analítica"
-      className="fixed inset-x-3 bottom-3 z-[80] mx-auto max-w-xl rounded-2xl border border-suya-mist bg-white p-4 shadow-soft"
+      className={`mx-auto max-w-xl rounded-2xl border border-suya-mist bg-white p-4 shadow-soft ${inline ? "my-4 w-[calc(100%-1.5rem)]" : "fixed inset-x-3 bottom-3 z-[80]"}`}
     >
       <p className="font-display text-sm font-bold text-suya-carbon">Ayúdanos a mejorar Suya</p>
       <p className="mt-1 text-xs leading-5 text-suya-muted">
@@ -66,6 +68,7 @@ export function AnalyticsBootstrap() {
 
   return (
     <ConsentBanner
+      inline={/(?:^|\/)(?:checkout|orders|pedido)(?:\/|$)/.test(location.pathname)}
       onChange={(value) => {
         setAnalyticsConsent(value);
         setConsent(value);

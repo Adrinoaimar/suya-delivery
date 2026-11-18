@@ -56,8 +56,10 @@ select ok(
   'la tolerancia tardía se limita a propuestas'
 );
 select ok(
-  (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) like '%payment_declared_at%'),
-  'la verificación final revalida la declaración y la ventana'
+  (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure)
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
   (select pg_get_functiondef('private.write_audit_log()'::regprocedure) like '%payer_code_hmac%'),

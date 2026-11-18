@@ -5,7 +5,7 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUp,
-  Bike,
+  Crosshair,
   CornerUpLeft,
   CornerUpRight,
   LocateFixed,
@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import type { LucideIcon } from 'lucide-react';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { assetUrl } from '@/utils/asset';
 import { cn } from '@/lib/cn';
 import {
   fetchDrivingRoute,
@@ -57,11 +59,15 @@ export default function LeafletMap({
   rider,
   riderTrail: historicalTrail = EMPTY_TRAIL,
   className,
+  variant,
+  riderStale = false,
   label,
   interactive = true,
   navigation = false,
   navigationTarget,
 }: MapViewProps) {
+  const reduceMotion = usePrefersReducedMotion();
+  const tracking = variant === 'tracking';
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const originMarkerRef = useRef<L.Marker | null>(null);
@@ -89,7 +95,8 @@ export default function LeafletMap({
   >('idle');
   const [nextInstruction, setNextInstruction] = useState<RouteInstruction | null>(null);
   const [mapExpanded, setMapExpanded] = useState(false);
-  const [mapTheme, setMapTheme] = useState<MapTheme>(storedMapTheme);
+  const [themePreference, setMapTheme] = useState<MapTheme>(storedMapTheme);
+  const mapTheme = tracking ? 'day' : themePreference;
   const [routeAuthorization, setRouteAuthorization] = useState<string | null>(null);
   const riderLat = rider?.lat;
   const riderLng = rider?.lng;
@@ -230,10 +237,11 @@ export default function LeafletMap({
     }
     if (!riderTrailLineRef.current) {
       riderTrailLineRef.current = L.polyline(riderTrailRef.current, {
-        color: '#8CC63F',
-        weight: 5,
+        color: tracking ? '#14583E' : '#8CC63F',
+        className: tracking ? 'suya-tracking-map-trail' : undefined,
+        weight: tracking ? 5.5 : 5,
         opacity: 0.96,
-        dashArray: '1 10',
+        dashArray: tracking ? undefined : '1 10',
         lineCap: 'round',
         lineJoin: 'round',
         interactive: false,
@@ -241,7 +249,7 @@ export default function LeafletMap({
     } else {
       riderTrailLineRef.current.setLatLngs(riderTrailRef.current);
     }
-  }, [historicalTrail]);
+  }, [historicalTrail, tracking]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -394,7 +402,8 @@ export default function LeafletMap({
     const plan = routePlan;
     if (!plan) return;
 
-    plan.alternatives.forEach((alternative) => {
+    const alternatives = tracking ? [] : plan.alternatives;
+    alternatives.forEach((alternative) => {
       L.polyline(toLatLngs(alternative.geometry), {
         color: '#0E6B44',
         weight: 5,
@@ -414,8 +423,9 @@ export default function LeafletMap({
       interactive: false,
     }).addTo(layer);
     L.polyline(toLatLngs(plan.geometry), {
-      color: '#0E6B44',
-      weight: 6,
+      color: tracking ? '#397952' : '#0E6B44',
+      weight: tracking ? 4 : 6,
+      dashArray: tracking ? '7 7' : undefined,
       opacity: 0.98,
       lineCap: 'round',
       lineJoin: 'round',
@@ -426,7 +436,7 @@ export default function LeafletMap({
       map.fitBounds(routeBoundsRef.current.pad(0.2), { animate: false });
       hasFittedRouteRef.current = true;
     }
-  }, [destinationLat, destinationLng, navigation, points, routingRiderLat, routingRiderLng, routePlan]);
+  }, [destinationLat, destinationLng, navigation, points, routingRiderLat, routingRiderLng, routePlan, tracking]);
 
   useEffect(() => {
     if (
@@ -475,10 +485,11 @@ export default function LeafletMap({
       riderTrailRef.current = [...riderTrailRef.current, position].slice(-MAX_TRACK_POINTS);
       if (!riderTrailLineRef.current) {
         riderTrailLineRef.current = L.polyline(riderTrailRef.current, {
-          color: '#8CC63F',
-          weight: 5,
+          color: tracking ? '#14583E' : '#8CC63F',
+          className: tracking ? 'suya-tracking-map-trail' : undefined,
+          weight: tracking ? 5.5 : 5,
           opacity: 0.96,
-          dashArray: '1 10',
+          dashArray: tracking ? undefined : '1 10',
           lineCap: 'round',
           lineJoin: 'round',
           interactive: false,
@@ -488,18 +499,32 @@ export default function LeafletMap({
       }
     }
 
+    const firstReading = !riderMarkerRef.current;
     if (!riderMarkerRef.current) {
-      riderMarkerRef.current = L.marker(position, { icon: riderIcon(), zIndexOffset: 1000 })
+      riderMarkerRef.current = L.marker(position, { icon: riderIcon(tracking), zIndexOffset: 1000 })
         .addTo(map)
         .bindTooltip('Tu repartidor', { direction: 'top' });
     } else {
-      riderMarkerRef.current.setLatLng(position);
+      const marker = riderMarkerRef.current;
+      const previous = marker.getLatLng();
+      marker.setLatLng(position);
+      const pin = marker.getElement()?.querySelector<HTMLElement>('.suya-map-pin--rider');
+      if (pin && !previous.equals(position)) {
+        pin.getAnimations?.().forEach((animation) => animation.cancel());
+        const offset = map.latLngToLayerPoint(previous).subtract(map.latLngToLayerPoint(position));
+        if (!reduceMotion && !document.hidden && offset.distanceTo([0, 0]) <= 120) {
+          pin.animate?.([
+            { transform: `translate(${offset.x}px, ${offset.y}px)` },
+            { transform: 'translate(0, 0)' },
+          ], { duration: 420, easing: 'ease-out' });
+        }
+      }
     }
 
-    if (!map.getBounds().pad(-0.25).contains(position)) {
-      map.panTo(position, { animate: true, duration: 0.8 });
+    if ((navigation || firstReading) && !map.getBounds().pad(-0.25).contains(position)) {
+      map.panTo(position, { animate: !reduceMotion, duration: 0.5 });
     }
-  }, [historicalTrail, rider]);
+  }, [historicalTrail, rider, navigation, reduceMotion, tracking]);
 
   useEffect(() => {
     if (!mapExpanded) return undefined;
@@ -521,13 +546,19 @@ export default function LeafletMap({
   function recenterRoute() {
     const map = mapRef.current;
     const bounds = routeBoundsRef.current;
-    if (map && bounds?.isValid()) map.fitBounds(bounds.pad(0.25), { animate: true, duration: 0.5 });
+    if (!map || !bounds?.isValid()) return;
+    const viewBounds = L.latLngBounds(bounds.getSouthWest(), bounds.getNorthEast());
+    if (tracking && rider) viewBounds.extend([rider.lat, rider.lng]);
+    map.fitBounds(viewBounds.pad(0.22), { maxZoom: tracking ? 16 : undefined, animate: !reduceMotion, duration: 0.5 });
   }
 
   return (
     <div
       className={cn(
         'isolate h-full w-full',
+        tracking && 'suya-map-tracking',
+        tracking && mapExpanded && 'suya-map-tracking--expanded',
+        tracking && riderStale && 'suya-map-tracking--stale',
         mapTheme === 'night' && 'suya-map-theme-night',
         !mapExpanded && 'relative',
         mapExpanded && 'fixed inset-0 z-[60] bg-suya-carbon',
@@ -538,11 +569,43 @@ export default function LeafletMap({
         ref={containerRef}
         role="img"
         aria-label={label ?? 'Mapa de la ruta en Sullana'}
-        className="h-full w-full"
+        className={cn('h-full w-full', tracking && 'overflow-hidden rounded-[20px]')}
       />
-      {interactive && (
+      {interactive && tracking && (
+        <div className="absolute right-3 top-[calc(0.75rem+env(safe-area-inset-top))] z-[500] grid gap-2">
+          <div className="grid overflow-hidden rounded-2xl border border-suya-border bg-white shadow-card">
+            <button type="button" aria-label={mapExpanded ? 'Salir del mapa completo' : 'Ver mapa completo'}
+              aria-pressed={mapExpanded} onClick={() => setMapExpanded(!mapExpanded)} className="suya-tracking-map-control">
+              {mapExpanded ? <Minimize2 aria-hidden="true" /> : <Maximize2 aria-hidden="true" />}
+            </button>
+            {points.length > 1 && (
+              <button type="button" aria-label="Centrar mapa en la ruta" onClick={recenterRoute} className="suya-tracking-map-control border-t border-suya-border">
+                <LocateFixed aria-hidden="true" />
+              </button>
+            )}
+            {rider && (
+              <button type="button" aria-label="Centrar en el repartidor" className="suya-tracking-map-control border-t border-suya-border"
+                onClick={() => mapRef.current?.setView([rider.lat, rider.lng], Math.max(16, mapRef.current.getZoom()), { animate: !reduceMotion })}>
+                <Crosshair aria-hidden="true" />
+              </button>
+            )}
+          </div>
+          <div className="hidden overflow-hidden rounded-2xl border border-suya-border bg-white shadow-card sm:grid">
+            <button type="button" aria-label="Acercar mapa" onClick={() => mapRef.current?.zoomIn()} className="suya-tracking-map-control"><Plus aria-hidden="true" /></button>
+            <button type="button" aria-label="Alejar mapa" onClick={() => mapRef.current?.zoomOut()} className="suya-tracking-map-control border-t border-suya-border"><Minus aria-hidden="true" /></button>
+          </div>
+        </div>
+      )}
+      {interactive && !tracking && (
         <div className="absolute right-3 top-[calc(0.75rem+env(safe-area-inset-top))] z-[500] flex flex-col items-end gap-2">
           <div className="flex gap-2">
+            {rider && !navigation && (
+              <button type="button" aria-label="Centrar en el repartidor" title="Centrar en el repartidor"
+                className="press grid h-11 w-11 place-items-center rounded-full bg-suya-green text-white shadow-card"
+                onClick={() => mapRef.current?.setView([rider.lat, rider.lng], Math.max(16, mapRef.current.getZoom()), { animate: !reduceMotion })}>
+                <Crosshair className="h-5 w-5" aria-hidden="true" />
+              </button>
+            )}
             {points.length > 1 && (
               <button
                 type="button"
@@ -678,9 +741,9 @@ export default function LeafletMap({
           </p>
         </div>
       )}
-      {(rider || (routePlan && routePlan.alternatives.length > 0) || tileError) && (
+      {((!tracking && (rider || (routePlan && routePlan.alternatives.length > 0))) || tileError) && (
         <div className="pointer-events-none absolute bottom-3 left-3 z-[500] flex max-w-[52%] flex-col items-start gap-1.5">
-          {rider && (
+          {rider && !tracking && (
             <div
               className={cn(
                 'flex max-w-full items-center gap-2 rounded-full px-3 py-2 text-[11px] font-semibold shadow-card ring-1 ring-black/10',
@@ -691,7 +754,7 @@ export default function LeafletMap({
               <span className="truncate">Recorrido real</span>
             </div>
           )}
-          {routePlan && routePlan.alternatives.length > 0 && (
+          {!tracking && routePlan && routePlan.alternatives.length > 0 && (
             <div
               className={cn(
                 'flex max-w-full items-center gap-2 rounded-full px-3 py-2 text-[11px] font-semibold shadow-card ring-1 ring-black/10',
@@ -791,12 +854,12 @@ function escapeHtml(value: string): string {
   );
 }
 
-function divIcon(html: string, size: number): L.DivIcon {
+function divIcon(html: string, size: number, anchorY = size / 2): L.DivIcon {
   return L.divIcon({
     html,
     className: 'suya-map-marker',
     iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
+    iconAnchor: [size / 2, anchorY],
   });
 }
 
@@ -808,8 +871,22 @@ function destinationIcon(): L.DivIcon {
   return markerIcon(MapPin, 'suya-map-pin--destination', 42, 'Punto de entrega');
 }
 
-function riderIcon(): L.DivIcon {
-  return markerIcon(Bike, 'suya-map-pin--rider', 46, 'Repartidor');
+function riderIcon(tracking: boolean): L.DivIcon {
+  if (tracking) {
+    const pin = renderToStaticMarkup(
+      <span className="suya-map-pin--rider suya-tracking-rider-pin" role="img" aria-label="Repartidor Suya">
+        <MapPin size={48} strokeWidth={1.4} aria-hidden="true" focusable="false" />
+        <b aria-hidden="true">S</b>
+      </span>,
+    );
+    return divIcon(pin, 48, 44);
+  }
+  const pin = renderToStaticMarkup(
+    <span className="suya-map-pin suya-map-pin--rider" role="img" aria-label="Repartidor Suya">
+      <img src={assetUrl('/brand/rider.svg')} alt="" width={42} height={34} style={{ width: 42, height: 34 }} loading="eager" decoding="async" />
+    </span>,
+  );
+  return divIcon(pin, 48);
 }
 
 function markerIcon(Icon: LucideIcon, variant: string, size: number, label: string): L.DivIcon {

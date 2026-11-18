@@ -56,7 +56,7 @@ describe('SEO local de Suya Delivery', () => {
     ]) {
       expect(sitemap).toContain(`https://suyadelivery.com${route}/`);
     }
-    expect(sitemap).toContain('<lastmod>2026-09-21</lastmod>');
+    expect(sitemap).toContain('<lastmod>2026-09-26</lastmod>');
     expect(robots).toContain('Sitemap: https://suyadelivery.com/sitemap.xml');
     expect(llms).toContain('# Suya Delivery');
     expect(llms).toContain('https://suyadelivery.com/stores');

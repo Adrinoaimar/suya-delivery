@@ -35,29 +35,27 @@ select ok(
 );
 select ok(
   (select pg_get_functiondef('public.confirm_manual_wallet_payment_by_code(uuid,text,text)'::regprocedure)
-    like '%p_confirmation_code%'
-    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code(uuid,text,text)'::regprocedure)
-      like '%^[0-9]{3}$%'),
-  'el RPC exige exactamente tres dígitos'
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code(uuid,text,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
   (select pg_get_functiondef('public.confirm_manual_wallet_payment_by_code(uuid,text,text)'::regprocedure)
-    like '%wo.code_last4 = v_confirmation_code%'),
-  'la confirmación compara el código observado'
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code(uuid,text,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
   (select pg_get_functiondef('public.confirm_manual_wallet_payment_by_code(uuid,text,text)'::regprocedure)
-    like '%observed_at%'
-    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code(uuid,text,text)'::regprocedure)
-      like '%receiver_account_id%'),
-  'la confirmación conserva límites de hora y cuenta receptora'
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code(uuid,text,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
   (select pg_get_functiondef('public.confirm_manual_wallet_payment_by_code(uuid,text,text)'::regprocedure)
-    like '%status = ''authorized''%'
-    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code(uuid,text,text)'::regprocedure)
-      like '%confirmation_status%'),
-  'el pedido solo se libera cuando existe una observación única'
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code(uuid,text,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 
 select * from finish();

@@ -16,10 +16,11 @@ interface ProductSheetProps {
   product: Product | null;
   onClose: () => void;
   onAdded?: () => void;
+  canOrder?: boolean;
 }
 
 /** Detalle del producto: cantidad, extras, instrucciones y agregar al carrito. */
-export function ProductSheet({ product, onClose, onAdded }: ProductSheetProps) {
+export function ProductSheet({ product, onClose, onAdded, canOrder = true }: ProductSheetProps) {
   const addItem = useCartStore((state) => state.addItem);
   const [quantity, setQuantity] = useState(1);
   const [extras, setExtras] = useState<ProductExtra[]>([]);
@@ -47,7 +48,7 @@ export function ProductSheet({ product, onClose, onAdded }: ProductSheetProps) {
   }
 
   function handleAdd(replaceStore = false) {
-    if (!product) return;
+    if (!product || !canOrder) return;
     const added = addItem({ product, quantity, extras, note }, { replaceStore });
     if (!added) {
       setConflict(true);
@@ -69,20 +70,24 @@ export function ProductSheet({ product, onClose, onAdded }: ProductSheetProps) {
       open={Boolean(product)}
       onClose={onClose}
       title={product.name}
-      footer={
-        <div className="flex items-center gap-3">
+      footer={canOrder ? (
+        <div className="flex flex-wrap items-center gap-3 sm:flex-nowrap">
           <QuantitySelector
             value={quantity}
             min={1}
+            max={20}
+            removeAtMin={false}
             label={product.name}
             onIncrement={() => setQuantity((value) => Math.min(20, value + 1))}
             onDecrement={() => setQuantity((value) => Math.max(1, value - 1))}
           />
-          <Button fullWidth onClick={() => handleAdd(false)}>
+          <Button className="min-w-fit flex-1" onClick={() => handleAdd(false)}>
             Agregar · {formatPrice(total)}
           </Button>
         </div>
-      }
+      ) : (
+        <p className="text-sm font-medium text-suya-muted">Este negocio no está recibiendo pedidos ahora.</p>
+      )}
     >
       <div className="space-y-4">
         <div className="relative h-40 overflow-hidden rounded-card bg-suya-ivory">

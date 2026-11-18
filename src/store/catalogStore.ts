@@ -135,15 +135,17 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
   async loadStores(force = false) {
     const status = get().storesStatus;
     if (!force && (status === 'ready' || status === 'loading')) return;
+    const backgroundRefresh = force && status === 'ready';
 
     const requestToken = ++storesRequestToken;
-    set({ storesStatus: 'loading', storesError: null });
+    set({ storesStatus: backgroundRefresh ? 'ready' : 'loading', storesError: null });
     try {
       const stores = await withLoadTimeout(storeService.listStores());
       if (requestToken !== storesRequestToken) return;
       set({ stores, storesStatus: 'ready', storesError: null });
     } catch {
       if (requestToken !== storesRequestToken) return;
+      if (backgroundRefresh) return;
       set({ storesStatus: 'error', storesError: loadErrorMessage(CATALOG_ERROR_MESSAGE) });
     }
   },
@@ -180,14 +182,16 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
   async loadCategories(force = false) {
     const status = get().categoriesStatus;
     if (!force && (status === 'ready' || status === 'loading')) return;
+    const backgroundRefresh = force && status === 'ready';
     const requestToken = ++categoriesRequestToken;
-    set({ categoriesStatus: 'loading', categoriesError: null });
+    set({ categoriesStatus: backgroundRefresh ? 'ready' : 'loading', categoriesError: null });
     try {
       const categories = await withLoadTimeout(storeService.listCategories());
       if (requestToken !== categoriesRequestToken) return;
       set({ categories, categoriesStatus: 'ready', categoriesError: null });
     } catch {
       if (requestToken !== categoriesRequestToken) return;
+      if (backgroundRefresh) return;
       set({ categoriesStatus: 'error', categoriesError: loadErrorMessage(CATALOG_ERROR_MESSAGE) });
     }
   },
@@ -195,11 +199,15 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
   async loadProducts(storeId, force = false) {
     const status = get().productsStatus[storeId] ?? 'idle';
     if (!force && (status === 'ready' || status === 'loading')) return;
+    const backgroundRefresh = force && status === 'ready';
 
     const requestToken = (productsRequestTokens.get(storeId) ?? 0) + 1;
     productsRequestTokens.set(storeId, requestToken);
     set((state) => ({
-      productsStatus: { ...state.productsStatus, [storeId]: 'loading' },
+      productsStatus: {
+        ...state.productsStatus,
+        [storeId]: backgroundRefresh ? 'ready' : 'loading',
+      },
       productsError: { ...state.productsError, [storeId]: null },
     }));
     try {
@@ -211,6 +219,7 @@ export const useCatalogStore = create<CatalogState>((set, get) => ({
       }));
     } catch {
       if (productsRequestTokens.get(storeId) !== requestToken) return;
+      if (backgroundRefresh) return;
       set((state) => ({
         productsStatus: { ...state.productsStatus, [storeId]: 'error' },
         productsError: { ...state.productsError, [storeId]: loadErrorMessage(PRODUCTS_ERROR_MESSAGE) },

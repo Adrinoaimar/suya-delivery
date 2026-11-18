@@ -1,4 +1,6 @@
 import { Capacitor } from '@capacitor/core';
+import { App } from '@capacitor/app';
+import { supportsOrderNotifications } from '@/lib/nativeOrderNotifications';
 
 const UPDATE_BASE_URL = 'https://suyadelivery.com/mobile-updates';
 const UPDATE_ORIGIN = 'https://suyadelivery.com';
@@ -13,6 +15,7 @@ interface MobileUpdateManifest {
   url: string;
   checksum: string;
   signature: string;
+  minimumNativeVersionCode?: number;
 }
 
 function isManifest(value: unknown, expectedRole: string): value is MobileUpdateManifest {
@@ -47,11 +50,12 @@ function isManifest(value: unknown, expectedRole: string): value is MobileUpdate
  * from Pages. A role can never install another role's bundle.
  */
 export async function syncMobileLiveUpdate(): Promise<void> {
-  if (!Capacitor.isNativePlatform()) return;
+  if (!Capacitor.isNativePlatform() || import.meta.env.VITE_PROFILED_OBSERVER === 'true') return;
 
   try {
     const { LiveUpdate } = await import('@capawesome/capacitor-live-update');
     await LiveUpdate.ready();
+    if (import.meta.env.VITE_DISABLE_MOBILE_LIVE_UPDATE === 'true') return;
 
     const mobileRole = import.meta.env.VITE_MOBILE_ROLE?.trim();
     if (!mobileRole || !MOBILE_ROLES.has(mobileRole)) return;
@@ -69,6 +73,13 @@ export async function syncMobileLiveUpdate(): Promise<void> {
 
       const manifest: unknown = await response.json();
       if (!isManifest(manifest, mobileRole)) return;
+
+      if (supportsOrderNotifications()) {
+        const { build } = await App.getInfo();
+        const minimum = manifest.minimumNativeVersionCode;
+        // La versión nativa de avisos requiere un bundle web compatible.
+        if (typeof minimum !== 'number' || !Number.isInteger(minimum) || minimum < 18 || minimum > Number(build)) return;
+      }
 
       const { bundleId: currentBundleId } = await LiveUpdate.getCurrentBundle();
       if (currentBundleId === manifest.bundleId) return;

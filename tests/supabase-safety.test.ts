@@ -76,7 +76,7 @@ describe('SupabaseSafetyServiceImpl', () => {
 
   it('carga solo coordenadas válidas del historial reciente del pedido', async () => {
     const query = locationClientWith([
-      { latitude: '-4.8910', longitude: '-80.6910' },
+      { latitude: '-4.8910', longitude: '-80.6910', captured_at: '2026-11-17T18:30:02Z' },
       { latitude: '-4.8900', longitude: '-80.6900' },
       { latitude: 91, longitude: -80.692 },
     ]);
@@ -84,10 +84,10 @@ describe('SupabaseSafetyServiceImpl', () => {
 
     await expect(service.locationHistory('order-1')).resolves.toEqual([
       { lat: -4.89, lng: -80.69 },
-      { lat: -4.891, lng: -80.691 },
+      { lat: -4.891, lng: -80.691, capturedAt: '2026-11-17T18:30:02Z' },
     ]);
     expect(query.from).toHaveBeenCalledWith('rider_locations');
-    expect(query.select).toHaveBeenCalledWith('latitude, longitude');
+    expect(query.select).toHaveBeenCalledWith('latitude, longitude, captured_at');
     expect(query.eq).toHaveBeenCalledWith('order_id', 'order-1');
     expect(query.order).toHaveBeenCalledWith('captured_at', { ascending: false });
     expect(query.limit).toHaveBeenCalledWith(180);

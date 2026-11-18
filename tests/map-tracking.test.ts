@@ -4,10 +4,11 @@ import { describe, expect, it } from 'vitest';
 
 const root = (path: string) => resolve(process.cwd(), path);
 
-describe('mapa de rider y privacidad del cliente', () => {
-  it('conserva navegación del rider y oculta el mapa al cliente', () => {
+describe('mapa de rider y seguimiento de cliente', () => {
+  it('conserva navegación del rider y habilita mapa para pedidos pagados del cliente', () => {
     const map = readFileSync(root('src/components/map/LeafletMap.tsx'), 'utf8');
     const customerTrack = readFileSync(root('src/pages/customer/OrderTrackPage.tsx'), 'utf8');
+    const trackingPanel = readFileSync(root('src/components/order/OrderTrackingPanel.tsx'), 'utf8');
 
     expect(map).toContain('riderTrailLineRef');
     expect(map).toContain('historicalTrail');
@@ -17,7 +18,7 @@ describe('mapa de rider y privacidad del cliente', () => {
     expect(map).toContain('setLatLngs(riderTrailRef.current)');
     expect(map).toContain('Si la última lectura falla, conserva el rastro histórico');
     expect(map).toContain('if (historicalTrail.length === 0)');
-    expect(map).toContain("color: '#8CC63F'");
+    expect(map).toContain("color: tracking ? '#14583E' : '#8CC63F'");
     expect(map).toContain('LocateFixed');
     expect(map).toContain('zoomControl: false');
     expect(map).toContain('Acercar mapa');
@@ -69,6 +70,14 @@ describe('mapa de rider y privacidad del cliente', () => {
     );
     expect(customerTrack).toContain('to={`/orders/${id}`}');
     expect(customerTrack).not.toContain('MapProvider');
+    expect(trackingPanel).toContain('safetyOperationsService.subscribeLocation');
+    expect(trackingPanel).toContain('locationHistory(order.id)');
+    expect(trackingPanel).toContain("order.origin !== 'table_qr'");
+    expect(trackingPanel).toContain('order.paymentIntent?.status === \'authorized\'');
+    expect(trackingPanel).toContain('<MapProvider');
+    expect(readFileSync(root('src/pages/customer/OrderDetailPage.tsx'), 'utf8')).toContain(
+      '<OrderTrackingPanel order={{ ...order, status: visibleStatus }} />',
+    );
     const riderHome = readFileSync(root('src/pages/rider/RiderHomePage.tsx'), 'utf8');
     expect(riderHome).toContain('<MapProvider');
     expect(riderHome).toContain('Mapa de tu ubicación y zona de reparto');

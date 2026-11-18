@@ -23,7 +23,7 @@ public final class SuyaWalletObserverPlugin extends Plugin {
     public void pair(PluginCall call) {
         String pairingCode = call.getString("pairingCode", "").trim();
         if (!YapeNotificationListenerService.isPairingCodeValid(pairingCode)) {
-            call.reject("El código de emparejamiento debe tener 8 caracteres hexadecimales.");
+            call.reject("El código de emparejamiento debe tener 8 o 16 caracteres hexadecimales.");
             return;
         }
         Context context = getContext();
@@ -34,7 +34,7 @@ public final class SuyaWalletObserverPlugin extends Plugin {
         PAIRING_EXECUTOR.execute(() -> {
             boolean paired = YapeNotificationListenerService.pairDevice(context, pairingCode);
             if (!paired) {
-                call.reject("El código es inválido, expiró o ya fue utilizado.");
+                call.reject("Comprueba el código de este puesto. Puede haber vencido, pertenecer a otro puesto o estar en uso.");
                 return;
             }
             call.resolve(status());
@@ -67,6 +67,7 @@ public final class SuyaWalletObserverPlugin extends Plugin {
 
     private JSObject status() {
         JSObject result = new JSObject();
+        result.put("slot", BuildConfig.SUYA_WALLET_OBSERVER_SLOT);
         result.put("configured", YapeNotificationListenerService.isDeviceConfigured(getContext()));
         result.put("notificationAccess", hasNotificationAccess(getContext()));
         result.put("role", BuildConfig.SUYA_SUPABASE_URL.isEmpty() ? "unconfigured" : "ready");

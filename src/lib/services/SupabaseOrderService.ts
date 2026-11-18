@@ -233,6 +233,7 @@ function mapOrder(row: OrderRow, codes?: OrderCodes): Order {
 
   return {
     id: row.id,
+    customerId: row.customer_id,
     code: row.code,
     storeId: row.restaurant_id,
     storeName: restaurantName(row),
@@ -471,12 +472,14 @@ export class SupabaseOrderServiceImpl
   async get(id: string): Promise<Order | undefined> {
     const { data: userData, error: userError } = await this.client.auth.getUser();
     if (userError && !isMissingSession(userError)) throw new Error(userError.message);
-    const row = await this.row(id);
-    if (!row) {
-      const guest = await this.guestRow(id, readGuestOrderToken(id) ?? '');
-      if (!guest) return undefined;
-      return mapGuestOrder(guest, await this.payments.getIntent(guest.order_id));
+    const token = readGuestOrderToken(id);
+    if (token) {
+      const guest = await this.guestRow(id, token);
+      if (guest) return mapGuestOrder(guest, await this.payments.getIntent(guest.order_id, token));
     }
+    if (!userData.user) return undefined;
+    const row = await this.row(id);
+    if (!row) return undefined;
     const codes = userData.user?.id === row.customer_id ? await this.codes(row.id) : undefined;
     return { ...mapOrder(row, codes), paymentIntent: await this.payments.getIntent(row.id) };
   }
@@ -488,7 +491,13 @@ export class SupabaseOrderServiceImpl
     const publicMenuChannel = input.origin === 'suya_menu' || Boolean(input.tableId);
     if (!user && !publicMenuChannel) throw new Error('Inicia sesión para confirmar el pedido.');
     const gatewayEnabled = import.meta.env.VITE_CULQI_GATEWAY_ENABLED === 'true';
-    if (input.paymentMethod === 'card' && !gatewayEnabled) {
+    const { data: gatewayConfig } = input.paymentMethod === 'card'
+      ? await this.client.rpc('gateway_config_public', { p_restaurant_id: input.storeId })
+      : { data: null };
+    const officialCheckout = (gatewayConfig?.available === true || gatewayConfig?.test_available === true) && input.paymentMethod === 'card';
+    const checkoutOptions = input.paymentMethod === 'card' && !gatewayEnabled && !officialCheckout
+      ? await this.payments.getCheckoutPaymentOptions(input.storeId).catch(() => null) : null;
+    if (input.paymentMethod === 'card' && !gatewayEnabled && !officialCheckout && !checkoutOptions?.supportsCard) {
       throw new Error('El pago con tarjeta no está habilitado en esta aplicación.');
     }
     if (user && !input.tableId) {
@@ -506,11 +515,17 @@ export class SupabaseOrderServiceImpl
 
     const needsGuestAccess = !user && publicMenuChannel;
     const { requestId, guestAccessToken } = await requestIdFor(input, needsGuestAccess);
+    const routedYape = gatewayEnabled && input.paymentMethod === 'yape' &&
+      (await this.payments.getCheckoutPaymentOptions(input.storeId))?.activeProvider === 'observer_routing';
     const culqiCheckout =
-      gatewayEnabled && (input.paymentMethod === 'card' || input.paymentMethod === 'yape');
+      !routedYape && !officialCheckout && gatewayEnabled && (input.paymentMethod === 'card' || input.paymentMethod === 'yape');
     const walletCheckout =
-      !culqiCheckout && (input.paymentMethod === 'yape' || input.paymentMethod === 'lemon');
-    const rpcName = culqiCheckout
+      !officialCheckout && !culqiCheckout && (input.paymentMethod === 'yape' || input.paymentMethod === 'lemon' || input.paymentMethod === 'card');
+    const rpcName = officialCheckout
+      ? input.tableId ? 'create_table_order_with_gateway_payment'
+        : input.origin === 'suya_menu' ? 'create_menu_order_with_gateway_payment'
+          : 'create_delivery_order_with_gateway_payment'
+      : culqiCheckout
       ? input.tableId
         ? 'create_table_order_with_culqi_payment'
         : input.origin === 'suya_menu'
@@ -551,7 +566,7 @@ export class SupabaseOrderServiceImpl
             p_delivery_longitude: input.deliveryPosition?.lng ?? null,
           }
         : {}),
-      ...(walletCheckout || culqiCheckout
+      ...(walletCheckout || culqiCheckout || officialCheckout
         ? {
             p_method: input.paymentMethod,
           }
@@ -612,7 +627,8 @@ export class SupabaseOrderServiceImpl
     if (before.status === 'delivered' || before.status === 'cancelled') {
       return { ok: false, reason: 'already_closed' };
     }
-    const { data, error } = await this.client.rpc('cancel_order_with_code', {
+    const cancellationRpc = before.paymentMethod === 'cash' ? 'cancel_order_with_code' : 'cancel_unpaid_order_with_code';
+    const { data, error } = await this.client.rpc(cancellationRpc, {
       target_order: before.id,
       supplied_code: code.trim(),
     });
@@ -653,7 +669,10 @@ export class SupabaseOrderServiceImpl
       .channel(`orders-${crypto.randomUUID()}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, listener)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'payment_attempts' }, listener)
-      .subscribe();
+      .subscribe((status) => {
+        // La reconexión puede haber dejado eventos entre los dos canales.
+        if (status === 'SUBSCRIBED') listener();
+      });
     return () => {
       void this.client.removeChannel(channel);
     };

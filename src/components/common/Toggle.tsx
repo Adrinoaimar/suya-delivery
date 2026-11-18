@@ -45,6 +45,7 @@ export function Toggle({
             y el recorrido se desplaza fuera del interruptor. */}
         <span
           aria-hidden="true"
+          data-light-surface
           className={cn(
             'absolute left-1 top-3 h-5 w-5 rounded-full bg-white shadow-card transition-transform',
             checked ? 'translate-x-5' : 'translate-x-0',

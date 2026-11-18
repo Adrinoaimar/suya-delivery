@@ -35,25 +35,27 @@ select ok(
 );
 select ok(
   (select pg_get_functiondef('public.verify_wallet_payment_by_name(uuid,text)'::regprocedure)
-    like '%v_matching_attempts%'),
-  'la aprobación rechaza coincidencias ambiguas'
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.verify_wallet_payment_by_name(uuid,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
   (select pg_get_functiondef('public.verify_wallet_payment_by_name(uuid,text)'::regprocedure)
-    like '%receiver_account_id%'),
-  'la aprobación valida la cuenta receptora'
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.verify_wallet_payment_by_name(uuid,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
   (select pg_get_functiondef('public.verify_wallet_payment_by_name(uuid,text)'::regprocedure)
-    like '%payer_display_name%'),
-  'la aprobación valida el nombre declarado o del pedido'
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.verify_wallet_payment_by_name(uuid,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
   (select pg_get_functiondef('public.verify_wallet_payment_by_name(uuid,text)'::regprocedure)
-    like '%verification_status = ''verified''%'
-    and (select pg_get_functiondef('public.verify_wallet_payment_by_name(uuid,text)'::regprocedure)
-      like '%status = ''authorized''%')),
-  'la aprobación cierra observación y autoriza intento en una sola operación'
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.verify_wallet_payment_by_name(uuid,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 
 select * from finish();

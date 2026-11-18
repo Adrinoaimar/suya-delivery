@@ -11,6 +11,22 @@ Aplicaciones publicadas:
 > Los bundles productivos usan Supabase y rechazan configuración incompleta o proveedores mock.
 > Los mocks solo se cargan en desarrollo y pruebas explícitas.
 
+
+## Cobros: actualización del 16/11/2026
+
+El módulo configurable de Mercado Pago Checkout Pro está integrado en el código, con webhook HMAC,
+consulta oficial server-to-server, cifrado de credenciales y conciliación. Backoffice →
+**Configuración de cobros — SUYA Delivery**. Su activación exige cuenta habilitada, conexión y webhook
+verificados; no se activa sólo por guardar un QR o Access Token. Culqi permanece como integración
+opcional reforzada. Las notificaciones Android y códigos personales ahora sólo generan indicios
+pendientes; no autorizan ni cancelan pedidos.
+
+**No está desplegado ni validado con dinero real.** QA sigue pausado por instrucción del usuario.
+Las pruebas SQL remotas y sandbox autenticado están pendientes. Consulta
+[SUYA_PAYMENT_SETUP.md](SUYA_PAYMENT_SETUP.md) y [SUYA_PAYMENT_RESEARCH.md](SUYA_PAYMENT_RESEARCH.md)
+para requisitos, costos, evidencia y activación. No se ha acreditado una oferta DNI + comisión cero +
+confirmación automática cloud.
+
 Marketplace de delivery de **Sullana, Piura, Perú**. Web app responsive **mobile-first**
 construida con React + TypeScript + Vite + Tailwind CSS. Las aplicaciones usan el proyecto
 Supabase remoto exclusivo de Suya; el repositorio no requiere una base de datos local ni Docker.
@@ -73,6 +89,16 @@ El build de cliente genera rutas SEO estáticas, `robots.txt`, `sitemap.xml` y `
 La release no es apta si `npm run verify:live` reporta funciones, MIME SEO o configuración remota
 incompleta.
 
+Para reconstruir la web de un despliegue, abre el commit registrado en Cloudflare Pages, usa Node 22,
+ejecuta `npm ci` y aplica las variables de producción de `.github/workflows/cloudflare-pages.yml`.
+`npm run build:apps` genera los bundles en `dist/customer`, `dist/backoffice` y `dist/rider`.
+Los paquetes OTA firmados se publican por separado y tienen su propio identificador y checksum.
+
+Andá Paya Restaurante y Donde Joel aceptan efectivo mientras se validan sus cobros digitales.
+En un pedido con QR de billetera vencido, el cliente puede enviar un reclamo. Caja lo consulta por
+restaurante en `/wallets`, coteja el comprobante con la billetera receptora y marca la revisión.
+El reclamo y su revisión no cambian el estado del pedido ni del pago.
+
 ---
 
 ## Qué incluye
@@ -103,9 +129,9 @@ incompleta.
   carta autorizada. La carta original permanece visible en la galería hasta conciliar precios y
   datos operativos.
 - Carrito persistente de un solo negocio, con extras, notas y cálculo de envío.
-- Checkout con efectivo y billeteras digitales Yape/Lemon mediante intentos server-side, referencia
-  única y código de constancia; tarjeta y QR Yape dinámico se habilitan mediante Culqi cuando la
-  pasarela está configurada.
+- Checkout con efectivo, recepción Yape/Lemon con revisión y solicitudes oficiales Mercado Pago por
+  cuenta de restaurante verificada; tarjeta y Yape Culqi permanecen opcionales. El servidor calcula
+  el importe y sólo una fuente financiera oficial autoriza automáticamente el pedido.
 - Pedido digital pendiente hasta que el pago quede confirmado; código de entrega visible después de la confirmación.
 - Panel del repartidor con disponibilidad, viaje activo, historial y ganancias demo, y rastreo de
   ubicación obligatorio mientras el turno está activo.
@@ -127,7 +153,7 @@ base de datos deben estar configurados para ejecutar `npm run db:test` o `npm ru
 | Backend `supabase`   | Catálogo, pedidos, auth, RLS, realtime, pagos manuales, caja y observador de billeteras. |
 | Backend de desarrollo | El frontend puede ejecutarse localmente; persistencia real usa Supabase remoto. Los servicios mock quedan solo para pruebas explícitas. |
 | Mapa                 | Leaflet + OpenStreetMap; el rider solicita geometría e indicaciones al proxy autenticado `route-driving`. No se dibuja una línea recta como ruta vial. |
-| Pagos                | Efectivo y Yape/Lemon manuales con intento server-side, QR público del negocio y verificación por evidencia; Culqi solo cuando está configurado. |
+| Pagos                | Efectivo, QR Yape/Lemon con declaración pendiente, Culqi opcional y Mercado Pago configurable por API/webhook oficial. Sin aprobación por notificación Android. Ver guía de activación. |
 | Observador           | APK Android opt-in; captura notificaciones permitidas, cifra la cola en Android Keystore y nunca marca un pedido como pagado por sí sola. |
 | Ubicación y seguridad | GPS real, rastreo autorizado, SOS e incidentes persistentes en Supabase. |
 | Analítica             | First-party, opt-in, un visitante único por día mediante digest; agregados visibles solo a `platform_admin`. |

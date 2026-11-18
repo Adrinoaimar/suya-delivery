@@ -25,7 +25,10 @@ import {
   locationService,
   notificationService,
   offerService,
+  paymentGatewayService,
+  paymentService,
 } from '@/lib/services';
+import type { PublicCheckoutPaymentOptions } from '@/lib/services';
 import { useCatalogStore } from '@/store/catalogStore';
 import { cartTotals, useCartStore } from '@/store/cartStore';
 import { useOrderStore } from '@/store/orderStore';
@@ -80,19 +83,72 @@ export default function CheckoutPage() {
     reference: identity?.defaultReference ?? '',
   });
   const [method, setMethod] = useState<PaymentMethod>('cash');
+  const [officialGatewayAvailable, setOfficialGatewayAvailable] = useState(false);
+  const [officialGatewayTest, setOfficialGatewayTest] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [walletUnavailable, setWalletUnavailable] = useState(false);
   const [deliveryPosition, setDeliveryPosition] = useState<LatLng | null>(null);
   const [locating, setLocating] = useState(false);
   const [offerInput, setOfferInput] = useState(offerCode ?? '');
   const [offers, setOffers] = useState<AppOffer[]>([]);
+  const [gatewayOptions, setGatewayOptions] = useState<PublicCheckoutPaymentOptions | null>(null);
   const isMenuOrder = orderOrigin === 'suya_menu' || Boolean(tableContext?.tableId);
   const isDeliveryOrder = !isMenuOrder;
   const isGuestMenuOrder = isMenuOrder && !identity;
   const culqiGatewayEnabled =
     import.meta.env.VITE_CULQI_GATEWAY_ENABLED === 'true' &&
     Boolean(import.meta.env.VITE_CULQI_PUBLIC_KEY?.trim());
-  const needsGatewayEmail = culqiGatewayEnabled && (method === 'yape' || method === 'card');
+  const usingCulqi = culqiGatewayEnabled && !(officialGatewayAvailable && method === 'card');
+  const observerCheckout = gatewayOptions?.activeProvider === 'observer_routing';
+  const cashOnly = gatewayOptions?.activeProvider === 'cash_only';
+  const showDigitalMethods = !cashOnly && (import.meta.env.VITE_BACKEND !== 'supabase' || gatewayOptions !== null);
+  const yapeUnavailable = observerCheckout && !gatewayOptions.supportsYape;
+  const lemonUnavailable = observerCheckout && !gatewayOptions.supportsLemon;
+  const selectedWalletUnavailable = (method !== 'cash' && !showDigitalMethods)
+    || (method === 'yape' && yapeUnavailable) || (method === 'lemon' && lemonUnavailable);
+  const needsGatewayEmail = usingCulqi && (method === 'card' || (method === 'yape' && !observerCheckout));
+
+  useEffect(() => {
+    let active = true;
+    setOfficialGatewayAvailable(false);
+    setOfficialGatewayTest(false);
+    if (storeId) void paymentGatewayService.availability(storeId).then((availability) => {
+      if (active) {
+        setOfficialGatewayAvailable(availability.available || availability.testAvailable === true);
+        setOfficialGatewayTest(availability.testAvailable === true && !availability.available);
+      }
+    }).catch(() => active && setOfficialGatewayAvailable(false));
+    return () => { active = false; };
+  }, [storeId]);
+
+  const cardGatewayAvailable = culqiGatewayEnabled || officialGatewayAvailable || Boolean(gatewayOptions?.supportsCard);
+  useEffect(() => {
+    if (!storeId) {
+      setGatewayOptions(null);
+      return;
+    }
+    let active = true;
+    let latest = 0;
+    const refreshPaymentOptions = () => {
+      if (document.visibilityState === 'hidden') return;
+      const request = ++latest;
+      void paymentService.getCheckoutPaymentOptions?.(storeId).then((options) => {
+        if (active && request === latest && options) setGatewayOptions(options);
+      }).catch(() => undefined);
+    };
+    setGatewayOptions(null);
+    refreshPaymentOptions();
+    const interval = window.setInterval(refreshPaymentOptions, 15_000);
+    window.addEventListener('focus', refreshPaymentOptions);
+    document.addEventListener('visibilitychange', refreshPaymentOptions);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.removeEventListener('focus', refreshPaymentOptions);
+      document.removeEventListener('visibilitychange', refreshPaymentOptions);
+    };
+  }, [storeId]);
 
   useEffect(() => {
     if (!Capacitor.isNativePlatform()) return;
@@ -213,10 +269,10 @@ export default function CheckoutPage() {
     if (digits.length < 6 || digits.length > 15) next.phone = 'Escribe un teléfono válido.';
     if (needsGatewayEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()))
       next.email = 'Escribe un correo válido para abrir el checkout seguro.';
-    if (culqiGatewayEnabled && (method === 'yape' || method === 'card') && total < 6) {
+    if (usingCulqi && (method === 'yape' || method === 'card') && total < 6) {
       next.payment = 'El pago electrónico requiere un mínimo de S/ 6.00.';
     }
-    if (culqiGatewayEnabled && method === 'yape' && total > 500) {
+    if (usingCulqi && method === 'yape' && total > 500) {
       next.payment = 'El pago con Yape admite hasta S/ 500.00 por orden.';
     }
 
@@ -254,7 +310,7 @@ export default function CheckoutPage() {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!store) return;
+    if (!store || submitting || selectedWalletUnavailable) return;
     if (!validate()) {
       notificationService.notify(
         `Revisa los datos ${isTableOrder ? 'del pedido' : 'de entrega'}: falta algo antes de confirmar.`,
@@ -273,6 +329,7 @@ export default function CheckoutPage() {
       return;
     }
 
+    setWalletUnavailable(false);
     setSubmitting(true);
     try {
       let tableSessionId = tableContext?.sessionId ?? undefined;
@@ -348,7 +405,11 @@ export default function CheckoutPage() {
         error instanceof Error
           ? error.message
           : 'No pudimos crear el pedido. Inténtalo nuevamente.';
-      notificationService.notify(message, 'danger');
+      if (message.includes('wallet_observer_unavailable')) {
+        setWalletUnavailable(true);
+      } else {
+        notificationService.notify(message, 'danger');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -577,25 +638,41 @@ export default function CheckoutPage() {
                 {
                   value: 'yape' as const,
                   label: 'Yape',
-                  description: culqiGatewayEnabled ? 'QR de pago' : 'QR + constancia',
+                  description:
+                    observerCheckout
+                      ? 'Escanea y paga'
+                      : gatewayOptions?.activeProvider === 'static_qr'
+                      ? 'QR AutoCloud 0%'
+                      : gatewayOptions?.activeProvider === 'mercado_pago'
+                        ? 'Aprobación OTP'
+                        : gatewayOptions?.activeProvider === 'taypi_qr'
+                          ? 'QR dinámico'
+                          : culqiGatewayEnabled
+                            ? 'QR de pago'
+                            : 'QR + constancia',
                   icon: QrCode,
-                  disabled: false,
+                  disabled: yapeUnavailable,
                 },
                 {
                   value: 'lemon' as const,
-                  label: 'Lemon',
-                  description: 'Billetera + referencia',
+                  label: observerCheckout ? 'Lemon' : 'Lemon / Plin',
+                  description:
+                    observerCheckout
+                      ? 'Escanea y paga'
+                      : gatewayOptions?.activeProvider === 'static_qr'
+                      ? 'QR AutoCloud'
+                      : 'Billetera + referencia',
                   icon: WalletCards,
-                  disabled: false,
+                  disabled: lemonUnavailable,
                 },
                 {
                   value: 'card' as const,
-                  label: 'Tarjeta',
-                  description: culqiGatewayEnabled ? 'Pago seguro' : 'No disponible',
+                  label: officialGatewayTest ? 'Prueba Mercado Pago' : officialGatewayAvailable ? 'Pago en línea' : 'Tarjeta',
+                  description: officialGatewayTest ? 'Solo administración · sin dinero real' : officialGatewayAvailable ? 'Mercado Pago · medios habilitados' : culqiGatewayEnabled ? 'Pago seguro' : 'No disponible',
                   icon: CreditCard,
-                  disabled: !culqiGatewayEnabled,
+                  disabled: !cardGatewayAvailable,
                 },
-              ].map((option) => {
+              ].filter((option) => option.value === 'cash' || showDigitalMethods).map((option) => {
                 const Icon = option.icon;
                 const selected = method === option.value;
                 return (
@@ -603,7 +680,7 @@ export default function CheckoutPage() {
                     key={option.value}
                     type="button"
                     disabled={option.disabled}
-                    onClick={() => setMethod(option.value)}
+                    onClick={() => { setWalletUnavailable(false); setMethod(option.value); }}
                     aria-pressed={selected}
                     className={`rounded-btn border p-3 text-left transition ${selected ? 'border-suya-green bg-suya-lime-soft' : 'border-suya-border bg-white'} ${option.disabled ? 'cursor-not-allowed opacity-50' : 'hover:border-suya-green/60'}`}
                   >
@@ -617,7 +694,7 @@ export default function CheckoutPage() {
                     </span>
                     {option.disabled && (
                       <span className="mt-1 block text-[11px] font-semibold text-[#8A6100]">
-                        {culqiGatewayEnabled ? 'Próximamente' : 'No configurado'}
+                        {option.value === 'card' ? 'No configurado' : 'Temporalmente sin servicio'}
                       </span>
                     )}
                   </button>
@@ -634,9 +711,11 @@ export default function CheckoutPage() {
               </p>
             ) : (
               <p className="mt-3 rounded-btn bg-suya-sun-soft px-3 py-2 text-xs text-[#5E511F]">
-                {culqiGatewayEnabled && (method === 'yape' || method === 'card')
-                  ? 'Al confirmar se crea un intento con monto exacto. El canal autorizado procesa el pago y el servidor actualiza su estado.'
-                  : 'Al confirmar se crea una referencia única y el servidor calcula el monto. Luego verás el QR del negocio o las instrucciones para pagar; conserva la constancia porque ayuda a caja a revisar pagos parecidos.'}
+                {(officialGatewayAvailable || culqiGatewayEnabled) && (method === 'yape' || method === 'card')
+                  ? officialGatewayTest && method === 'card'
+                    ? 'Prueba de sandbox: usa comprador y medios de prueba oficiales. El pedido permanecerá retenido incluso si la prueba se aprueba.'
+                    : 'Al confirmar se crea un intento con monto exacto. El canal autorizado procesa el pago y el servidor actualiza su estado.'
+                  : 'El QR estático solo permite recibir dinero. El pedido seguirá pendiente hasta la verificación bancaria; una captura, código o notificación no confirma el abono.'}
               </p>
             )}
             {errors.payment && (
@@ -687,9 +766,14 @@ export default function CheckoutPage() {
                 <dd className="font-display font-bold">{formatPrice(total)}</dd>
               </div>
             </dl>
-            <Button type="submit" fullWidth size="lg" className="mt-4" disabled={submitting}>
+            {(walletUnavailable || selectedWalletUnavailable) && (
+              <p role="alert" className="mt-4 rounded-btn bg-suya-sun-soft p-3 text-sm">
+                Por ahora no hay un QR disponible. Tu carrito sigue guardado. Reintenta o elige otro medio de pago.
+              </p>
+            )}
+            <Button type="submit" fullWidth size="lg" className="mt-4" disabled={submitting || selectedWalletUnavailable} aria-busy={submitting}>
               {submitting
-                ? 'Procesando…'
+                ? (method === 'cash' ? 'Procesando…' : 'Preparando tu pago…')
                 : `${method === 'cash' ? 'Confirmar pedido' : 'Continuar con pago'} · ${formatPrice(total)}`}
             </Button>
             <p className="mt-2 text-center text-xs text-[#6B7076]">

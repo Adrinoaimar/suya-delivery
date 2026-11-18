@@ -20,25 +20,25 @@ select ok(
 
 select ok(
   (select pg_get_functiondef('public.claim_culqi_order_creation_secure(uuid,text,text)'::regprocedure)
-    like '%private.require_payment_attempt_actor%'),
+    like '%service_role%'),
   'reservar orden Culqi valida identidad antes de delegar'
 );
 
 select ok(
   (select pg_get_functiondef('public.claim_culqi_payment_secure(uuid,text,text)'::regprocedure)
-    like '%private.require_payment_attempt_actor%'),
+    like '%service_role%'),
   'reservar cargo Culqi valida identidad antes de delegar'
 );
 
 select ok(
   (select pg_get_functiondef('public.authorize_culqi_payment_secure(uuid,text,text,text,text)'::regprocedure)
-    like '%private.require_payment_attempt_actor%'),
+    like '%service_role%'),
   'autorizar cargo Culqi valida identidad antes de delegar'
 );
 
 select ok(
   (select pg_get_functiondef('public.fail_culqi_payment_claim_secure(uuid,text,text,text)'::regprocedure)
-    like '%private.require_payment_attempt_actor%'),
+    like '%service_role%'),
   'fallar reserva Culqi valida identidad antes de delegar'
 );
 
@@ -69,9 +69,9 @@ select ok(
 select ok(
   has_function_privilege('anon', 'public.create_culqi_payment_intent_secure(uuid,text,text)', 'execute')
     and has_function_privilege('authenticated', 'public.create_culqi_payment_intent_secure(uuid,text,text)', 'execute')
-    and has_function_privilege('anon', 'public.claim_culqi_payment_secure(uuid,text,text)', 'execute')
-    and has_function_privilege('authenticated', 'public.claim_culqi_payment_secure(uuid,text,text)', 'execute'),
-  'los wrappers seguros conservan acceso guest y autenticado'
+    and not has_function_privilege('anon', 'public.claim_culqi_payment_secure(uuid,text,text)', 'execute')
+    and not has_function_privilege('authenticated', 'public.claim_culqi_payment_secure(uuid,text,text)', 'execute'),
+  'crear intento conserva acceso al cliente, pero reservar y finalizar solo al servidor'
 );
 
 select * from finish();

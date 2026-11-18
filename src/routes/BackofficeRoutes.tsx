@@ -1,3 +1,4 @@
+import AutomaticPaymentSettingsPage from '@/pages/backoffice/AutomaticPaymentSettingsPage';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { BackofficeLayout } from '@/layouts/BackofficeLayout';
 import { BackofficePage } from '@/pages/backoffice/BackofficePage';
@@ -13,6 +14,7 @@ import WalletsOperationsPage from '@/pages/backoffice/WalletsOperationsPage';
 import RidersOperationsPage from '@/pages/backoffice/RidersOperationsPage';
 import CashRegisterPage from '@/pages/backoffice/CashRegisterPage';
 import DeveloperRidersPage from '@/pages/backoffice/DeveloperRidersPage';
+import PaymentSettingsPage from '@/pages/backoffice/PaymentSettingsPage';
 
 export function BackofficeRoutes() {
   return (
@@ -21,7 +23,7 @@ export function BackofficeRoutes() {
         path="login"
         element={
           <LoginPage
-            title="Acceso de operaciones"
+            title="Ingresa a Suya Empresas"
             allowed={['platform_admin', 'restaurant_staff']}
             defaultPath="/"
           />
@@ -36,6 +38,7 @@ export function BackofficeRoutes() {
           <Route path="catalog" element={<CatalogPage />} />
           <Route path="offers" element={<OffersPage />} />
           <Route path="wallets" element={<WalletsOperationsPage />} />
+          <Route path="payments" element={<PaymentSettingsPage />} />
           <Route path="cash" element={<CashRegisterPage />} />
           <Route path="riders" element={<RidersOperationsPage />} />
           <Route element={<RequireAccess anyOf={['platform_admin']} />}>
@@ -50,15 +53,7 @@ export function BackofficeRoutes() {
               }
             />
           </Route>
-          <Route
-            path="settings"
-            element={
-              <BackofficePage
-                title="Configuración"
-                description="Parámetros de operación y seguridad."
-              />
-            }
-          />
+          <Route path="settings" element={<AutomaticPaymentSettingsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

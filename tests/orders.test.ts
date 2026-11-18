@@ -48,6 +48,24 @@ describe('contrato de pedidos async', () => {
     useOrderStore.getState().reset();
   });
 
+  it('refresca en segundo plano y conserva los códigos del detalle abierto', async () => {
+    const order = await createOrder(new MockOrderServiceImpl());
+    useOrderStore.setState({ orders: [order], status: 'ready' });
+    const list = vi.spyOn(orderService, 'list').mockResolvedValueOnce([
+      { ...order, status: 'preparing', deliveryCode: '', cancelCode: '' },
+    ]);
+    const refresh = useOrderStore.getState().refresh({ background: true });
+    expect(useOrderStore.getState().status).toBe('ready');
+    await refresh;
+    expect(useOrderStore.getState().orders[0]).toMatchObject({
+      status: 'preparing', deliveryCode: order.deliveryCode, cancelCode: order.cancelCode,
+    });
+    list.mockRejectedValueOnce(new Error('Conexión interrumpida'));
+    await useOrderStore.getState().refresh({ background: true });
+    expect(useOrderStore.getState()).toMatchObject({ status: 'ready', error: null });
+    expect(useOrderStore.getState().orders[0].status).toBe('preparing');
+  });
+
   it('crea un pedido sin asignar repartidor aleatorio', async () => {
     const service = new MockOrderServiceImpl();
     const order = await service.create({

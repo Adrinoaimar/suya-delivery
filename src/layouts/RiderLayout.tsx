@@ -40,7 +40,7 @@ const SECONDARY: NavItem[] = [
 function linkClasses(isActive: boolean): string {
   return cn(
     'flex min-h-12 items-center gap-3 rounded-btn px-3 text-sm font-medium transition-colors',
-    isActive ? 'bg-suya-lime text-suya-carbon' : 'text-white/75 hover:bg-white/10',
+    isActive ? 'bg-suya-lime-soft text-suya-green-dark' : 'text-white/85 hover:bg-white/10',
   );
 }
 
@@ -55,7 +55,7 @@ export function RiderLayout() {
   return (
     <div className="rider-shell flex min-h-dvh flex-col bg-[var(--suya-rider)] text-white lg:flex-row">
       {/* Barra lateral en escritorio */}
-      <aside className="suya-lens-dark sticky top-0 hidden h-dvh w-64 shrink-0 flex-col p-4 lg:flex">
+      <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col border-r border-white/15 bg-suya-green-dark p-4 lg:flex">
         <Link to="/rider" className="mb-6 flex items-center gap-2">
           <LogoMark tone="onDark" className="h-9 w-9" />
           <span className="flex flex-col leading-none">
@@ -93,7 +93,7 @@ export function RiderLayout() {
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Cabecera móvil */}
-        <header className="suya-lens-dark sticky top-0 z-30 flex items-center gap-2 px-3 pb-2 pt-[calc(8px+env(safe-area-inset-top))] lg:hidden">
+        <header className="sticky top-0 z-30 flex items-center gap-2 border-b border-white/15 bg-suya-green-dark px-3 pb-2 pt-[calc(8px+env(safe-area-inset-top))] lg:hidden">
           <Link
             to="/rider"
             aria-label="Panel del repartidor"
@@ -102,7 +102,7 @@ export function RiderLayout() {
             <LogoMark tone="onDark" className="h-9 w-9" />
           </Link>
           <div className="min-w-0 flex-1">
-            <p className="font-display text-[15px] font-bold leading-tight">Panel repartidor</p>
+            <p className="font-display text-[15px] font-bold leading-tight">Suya Repartidor</p>
             <p className="flex items-center gap-1.5 text-xs text-white/70">
               <span
                 aria-hidden="true"
@@ -130,7 +130,7 @@ export function RiderLayout() {
         {/* Navegación inferior móvil */}
         <nav
           aria-label="Navegación del repartidor"
-          className="rider-bottom-nav suya-lens-dark fixed inset-x-3 bottom-[calc(var(--rider-nav-gap)+env(safe-area-inset-bottom,0px))] z-30 rounded-card lg:hidden"
+          className="rider-bottom-nav fixed inset-x-3 bottom-[calc(var(--rider-nav-gap)+env(safe-area-inset-bottom,0px))] z-30 rounded-card border border-white/15 bg-suya-green-dark lg:hidden"
         >
           <ul className="mx-auto flex max-w-md">
             {PRIMARY.map((item) => (
@@ -141,7 +141,7 @@ export function RiderLayout() {
                   className={({ isActive }) =>
                     cn(
                       'flex h-16 flex-col items-center justify-center gap-1 rounded-btn text-[11px] font-semibold',
-                      isActive ? 'bg-white/10 text-suya-lime' : 'text-white/65',
+                      isActive ? 'bg-suya-lime-soft text-suya-green-dark' : 'text-white/85',
                     )
                   }
                 >

@@ -20,6 +20,9 @@ jobs:
       ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS }}
       CULQI_WEBHOOK_USERNAME: ${{ secrets.CULQI_WEBHOOK_USERNAME }}
       CULQI_WEBHOOK_PASSWORD: ${{ secrets.CULQI_WEBHOOK_PASSWORD }}
+      PAYMENT_CREDENTIALS_KEY: ${{ secrets.PAYMENT_CREDENTIALS_KEY }}
+      PAYMENT_RECONCILE_TOKEN: ${{ secrets.PAYMENT_RECONCILE_TOKEN }}
+      PAYMENT_CUSTOMER_ORIGIN: https://suyadelivery.com
     steps:
       - uses: actions/checkout@v4
       - name: Validar credenciales y orígenes de producción
@@ -69,6 +72,13 @@ jobs:
           {
             printf 'SUPABASE_SERVICE_ROLE_KEY=%s\n' "$SUPABASE_SERVICE_ROLE_KEY"
             printf 'ALLOWED_ORIGINS=%s\n' "$ALLOWED_ORIGINS"
+            printf 'PAYMENT_CUSTOMER_ORIGIN=%s\n' "$PAYMENT_CUSTOMER_ORIGIN"
+            if [ -n "$PAYMENT_CREDENTIALS_KEY" ]; then
+              printf 'PAYMENT_CREDENTIALS_KEY=%s\n' "$PAYMENT_CREDENTIALS_KEY"
+            fi
+            if [ -n "$PAYMENT_RECONCILE_TOKEN" ]; then
+              printf 'PAYMENT_RECONCILE_TOKEN=%s\n' "$PAYMENT_RECONCILE_TOKEN"
+            fi
             if [ "$VITE_CULQI_GATEWAY_ENABLED" = "true" ]; then
               printf 'CULQI_SECRET_KEY=%s\n' "$CULQI_SECRET_KEY"
               printf 'CULQI_WEBHOOK_USERNAME=%s\n' "$CULQI_WEBHOOK_USERNAME"
@@ -89,8 +99,16 @@ jobs:
         run: supabase functions deploy charge-culqi-card --project-ref cggxooilzhqlcnofgtmi
       - name: Desplegar webhook Culqi
         run: supabase functions deploy culqi-webhook --project-ref cggxooilzhqlcnofgtmi
+      - name: Desplegar configuración y cobros oficiales
+        run: supabase functions deploy payment-gateway --project-ref cggxooilzhqlcnofgtmi
+      - name: Desplegar webhook financiero autenticado
+        run: supabase functions deploy payment-webhook --project-ref cggxooilzhqlcnofgtmi
       - name: Desplegar rutas viales autenticadas
         run: supabase functions deploy route-driving --project-ref cggxooilzhqlcnofgtmi
+      - name: Desplegar motor de pasarela multi-proveedor (Yape OTP, TAYPI QR, Gmail AutoCloud)
+        run: supabase functions deploy payment-gateway --no-verify-jwt --project-ref cggxooilzhqlcnofgtmi
+      - name: Desplegar receptor de webhooks y puente DKIM AutoCloud
+        run: supabase functions deploy payment-webhook --no-verify-jwt --project-ref cggxooilzhqlcnofgtmi
       - name: Auditar migraciones y funciones live
         env:
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}

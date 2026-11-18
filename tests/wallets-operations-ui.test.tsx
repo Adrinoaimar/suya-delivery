@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import WalletsOperationsPage from '@/pages/backoffice/WalletsOperationsPage';
 import { useAuthStore } from '@/store/authStore';
@@ -9,6 +9,10 @@ import type { Store } from '@/types';
 
 const mocks = vi.hoisted(() => ({
   listStores: vi.fn(),
+  listObserverRoutes: vi.fn(),
+  listExpiredWalletClaims: vi.fn(),
+  reviewExpiredWalletClaim: vi.fn(),
+  changeObserverRoute: vi.fn(),
   listDevices: vi.fn(),
   listObservations: vi.fn(),
   listPaymentAccounts: vi.fn(),
@@ -26,6 +30,10 @@ vi.mock('@/lib/services', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/services')>()),
   storeService: { listStores: mocks.listStores },
   walletObserverService: {
+    listObserverRoutes: mocks.listObserverRoutes,
+    listExpiredWalletClaims: mocks.listExpiredWalletClaims,
+    reviewExpiredWalletClaim: mocks.reviewExpiredWalletClaim,
+    changeObserverRoute: mocks.changeObserverRoute,
     listDevices: mocks.listDevices,
     listObservations: mocks.listObservations,
     listPaymentAccounts: mocks.listPaymentAccounts,
@@ -80,9 +88,11 @@ const identity: AuthIdentity = {
 };
 
 beforeEach(() => {
+  mocks.listExpiredWalletClaims.mockResolvedValue([]);
   vi.clearAllMocks();
   useAuthStore.setState({ status: 'authenticated', identity, error: null });
   mocks.listStores.mockResolvedValue([restaurant]);
+  mocks.listObserverRoutes.mockResolvedValue([]);
   mocks.listDevices.mockResolvedValue([]);
   mocks.listPaymentAccounts.mockResolvedValue([]);
   mocks.createPairing.mockResolvedValue({
@@ -115,6 +125,44 @@ afterEach(() => {
 });
 
 describe('WalletsOperationsPage', () => {
+  it('muestra el reclamo del restaurante y lo retira al marcarlo como revisado', async () => {
+    mocks.listExpiredWalletClaims.mockResolvedValueOnce([{
+      attemptId: 'attempt-expired', orderCode: 'PEDIDO-PRUEBA', method: 'yape', amount: 1,
+      payerName: 'Clara Ejemplo', receiptReference: '047', reportedAt: '2026-11-18T20:00:00Z',
+    }]);
+    mocks.reviewExpiredWalletClaim.mockResolvedValueOnce(true);
+    render(<WalletsOperationsPage />);
+
+    expect(await screen.findByText(/Pedido PEDIDO-PRUEBA/)).toBeVisible();
+    expect(screen.getByText('Referencia: 047')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Marcar revisado' }));
+    await waitFor(() => expect(screen.queryByText(/Pedido PEDIDO-PRUEBA/)).not.toBeInTheDocument());
+    expect(mocks.reviewExpiredWalletClaim).toHaveBeenCalledWith('restaurant-1', 'attempt-expired');
+  });
+  it('guarda el QR de Jean en el segundo puesto y conserva la reserva desactivada', async () => {
+    mocks.listObserverRoutes.mockResolvedValue([1, 2, 3].flatMap((priority) =>
+      ['yape', 'lemon'].map((provider) => ({
+        priority, provider, deviceId: null, heartbeatAt: null, recipient: null,
+        qrPayload: null, version: null, enabled: false, checkoutEnabled: false,
+        autoSettle: false, health: 'missing_qr',
+      })),
+    ));
+    mocks.changeObserverRoute.mockResolvedValue(null);
+    render(<WalletsOperationsPage />);
+    fireEvent.click(await screen.findByText('Configurar puestos de cobro'));
+    const jean = within(await screen.findByRole('region', { name: 'Jean' }));
+    fireEvent.click(jean.getAllByRole('button', { name: 'Cargar QR' })[0]);
+    fireEvent.change(jean.getByLabelText('Destinatario · Yape de Jean'), { target: { value: 'Jean Prueba' } });
+    fireEvent.change(jean.getByLabelText('Contenido del QR · Yape de Jean'), { target: { value: '000201-fixture-yape' } });
+    fireEvent.click(jean.getByRole('button', { name: 'Guardar QR' }));
+    await waitFor(() => expect(mocks.changeObserverRoute).toHaveBeenCalledWith(restaurant.id, {
+      kind: 'save', priority: 2, provider: 'yape', recipient: 'Jean Prueba', qrPayload: '000201-fixture-yape',
+    }));
+    const reserve = within(screen.getByRole('region', { name: 'Reserva' }));
+    expect(reserve.getAllByText('Falta QR')).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'Activar asignación' })).toBeDisabled();
+  });
+
   it('permite completar el código cuando la notificación solo trae los últimos cuatro', async () => {
     render(<WalletsOperationsPage />);
 
@@ -128,36 +176,13 @@ describe('WalletsOperationsPage', () => {
     );
   });
 
-  it('permite verificar y aprobar una observación por nombre', async () => {
+  it('conserva la observación como indicio sin ofrecer aprobación por nombre', async () => {
     render(<WalletsOperationsPage />);
-
-    const payerInput = await screen.findByLabelText('Nombre del pagador para Ana Uno');
-    expect(payerInput).toHaveValue('Ana Uno');
-    await act(async () => {
-      screen.getByRole('button', { name: 'Verificar y aprobar' }).click();
-    });
-
-    expect(mocks.verifyObservationByName).toHaveBeenCalledWith('observation-1', 'Ana Uno');
-    expect(mocks.notify).toHaveBeenCalledWith(
-      'Pago verificado y aprobado para preparación.',
-      'success',
-    );
-  });
-
-  it('rechaza un nombre que no coincide con el remitente observado', async () => {
-    render(<WalletsOperationsPage />);
-
-    const payerInput = await screen.findByLabelText('Nombre del pagador para Ana Uno');
-    fireEvent.change(payerInput, { target: { value: 'Otra Persona' } });
-    await act(async () => {
-      screen.getByRole('button', { name: 'Verificar y aprobar' }).click();
-    });
-
+    await screen.findByRole('heading', { name: 'Últimas observaciones' });
+    expect(await screen.findByText(/Solo indicio: no autoriza el pedido/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Verificar y aprobar' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Verificar pago' })).not.toBeInTheDocument();
     expect(mocks.verifyObservationByName).not.toHaveBeenCalled();
-    expect(mocks.notify).toHaveBeenCalledWith(
-      'El nombre debe coincidir con el remitente de la notificación.',
-      'warning',
-    );
   });
 
   it('preselecciona la primera cuenta antes de terminar las cargas secundarias', async () => {
@@ -265,14 +290,10 @@ describe('WalletsOperationsPage', () => {
     expect(await screen.findByText(/Hay 2 pedidos compatibles/)).toBeInTheDocument();
     expect(screen.getByText('Pista: el remitente coincide con el cliente.')).toBeInTheDocument();
     expect(
-      screen.getByText('Pista: confirma el código completo antes de verificar.'),
+      screen.getByText('Pista para revisión; el código no demuestra el abono.'),
     ).toBeInTheDocument();
-    expect(screen.getAllByRole('button', { name: 'Verificar pago' })).toHaveLength(2);
-    expect(
-      screen
-        .getAllByRole('button', { name: 'Verificar pago' })
-        .every((button) => (button as HTMLButtonElement).disabled),
-    ).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Verificar pago' })).not.toBeInTheDocument();
+    expect(screen.getAllByText('Requiere verificación bancaria')).toHaveLength(2);
   });
 
   it('limpia la conciliación pendiente al cambiar de restaurante', async () => {

@@ -173,8 +173,14 @@ export interface PaymentIntent {
   provider: string;
   providerReference: string | null;
   qrPayload: string | null;
+  observerRouted?: boolean;
+  /** Enlace emitido por la API oficial; nunca implica que el dinero ya se recibió. */
+  checkoutUrl?: string | null;
+  gatewayState?: string | null;
+  environment?: 'test' | 'live';
   /** Label configured by the restaurant for the exact receiver account. */
   receiverLabel?: string | null;
+  receiverPhone?: string | null;
 }
 
 export interface OrderStatusEvent {
@@ -192,6 +198,7 @@ export interface CustomerInfo {
 
 export interface Order {
   id: string;
+  customerId?: string | null;
   code: string;
   storeId: string;
   storeName: string;
@@ -230,6 +237,10 @@ export interface Order {
 export interface LatLng {
   lat: number;
   lng: number;
+}
+
+export interface RiderLocationPoint extends LatLng {
+  capturedAt?: string;
 }
 
 export interface RoutePoint extends LatLng {

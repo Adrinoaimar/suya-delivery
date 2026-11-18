@@ -1,57 +1,43 @@
-import { useEffect, useState } from 'react';
-import { ArrowRight, Download, Heart, Sparkles, Store as StoreIcon, TicketPercent } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowRight, Download, ShoppingBag, TicketPercent } from 'lucide-react';
 import { Capacitor } from '@capacitor/core';
 import { Link, useNavigate } from 'react-router-dom';
-import { ButtonLink } from '@/components/common/Button';
 import { SectionHeader } from '@/components/common/Card';
 import { ErrorState } from '@/components/common/ErrorState';
-import { Logo } from '@/components/common/Logo';
 import { SeoHead } from '@/components/common/SeoHead';
 import { SearchInput } from '@/components/common/SearchInput';
 import { StoreListSkeleton } from '@/components/common/Skeleton';
 import { CategoryRail } from '@/components/marketplace/CategoryRail';
+import { HomeProductShelf } from '@/components/marketplace/HomeProductShelf';
 import { StoreCard } from '@/components/marketplace/StoreCard';
+import { HomeBannerPhotos } from '@/components/marketing/HomeBannerPhotos';
 import { LocalDeliveryContent } from '@/components/marketing/LocalDeliveryContent';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { useCatalogStore } from '@/store/catalogStore';
 import { offerService } from '@/lib/services';
 import type { AppOffer } from '@/types';
+import { assetUrl } from '@/utils/asset';
+import { useOrderStore } from '@/store/orderStore';
 import { useCartStore } from '@/store/cartStore';
 import { useUserStore } from '@/store/userStore';
 import { isStoreAcceptingOrders } from '@/utils/schedule';
 
-function DownloadAppCallout() {
-  return (
-    <Link
-      to="/descargar"
-      className="group flex min-h-16 items-center justify-between gap-3 rounded-card border border-suya-border bg-suya-ivory p-3 transition-colors hover:border-suya-green/30 hover:bg-white sm:p-4"
-    >
-      <span className="flex min-w-0 items-center gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-suya-green text-white">
-          <Download aria-hidden="true" className="h-5 w-5" />
-        </span>
-        <span className="min-w-0">
-          <span className="block font-display text-sm font-bold text-suya-carbon sm:text-base">
-            ¿Quieres descargar Suya?
-          </span>
-          <span className="mt-0.5 block text-xs text-suya-muted sm:text-sm">
-            Revisa las opciones para Android e iOS.
-          </span>
-        </span>
-      </span>
-      <ArrowRight
-        aria-hidden="true"
-        className="h-5 w-5 shrink-0 text-suya-green transition-transform group-hover:translate-x-0.5"
-      />
-    </Link>
-  );
-}
-
 export default function HomePage() {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
+  const featuredGrid = useRef<HTMLDivElement>(null);
+  const reduceMotion = usePrefersReducedMotion();
+  const compact = useMediaQuery('(max-width: 639px)');
   const pushSearch = useUserStore((state) => state.pushSearch);
   const favorites = useUserStore((state) => state.favorites);
   const setOfferCode = useCartStore((state) => state.setOfferCode);
+  const deliveryInTransit = useOrderStore((state) => state.orders.find((order) =>
+    order.origin !== 'table_qr' && (order.status === 'picked_up' || order.status === 'on_the_way') &&
+    (order.paymentMethod === 'cash' || order.paymentIntent?.status === 'authorized'),
+  ));
+  const cartCount = useCartStore((state) => state.items.reduce((sum, item) => sum + item.quantity, 0));
+  const cartStoreId = useCartStore((state) => state.storeId);
   const [offers, setOffers] = useState<AppOffer[]>([]);
 
   const stores = useCatalogStore((state) => state.stores);
@@ -86,11 +72,37 @@ export default function HomePage() {
   const storesLoading = storesStatus === 'idle' || storesStatus === 'loading';
   const categoriesLoading = categoriesStatus === 'idle' || categoriesStatus === 'loading';
   const storesReady = storesStatus === 'ready';
-  const featured = stores.filter((store) => store.isFeatured);
-  const locals = stores.filter((store) => store.isLocal);
-  const comingSoon = stores.filter((store) => store.isComingSoon);
-  const recommended = [...stores].sort((a, b) => b.rating - a.rating).slice(0, 4);
+
+  useEffect(() => {
+    const grid = featuredGrid.current;
+    if (!grid || reduceMotion || typeof IntersectionObserver === 'undefined') return;
+
+    const observer = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.intersectionRatio < 0.18) continue;
+        entry.target.setAttribute('data-entered', '');
+        observer.unobserve(entry.target);
+      }
+    }, { threshold: 0.18 });
+
+    for (const card of grid.children) {
+      if (!card.hasAttribute('data-entered')) observer.observe(card);
+    }
+    return () => observer.disconnect();
+  }, [reduceMotion, stores, storesLoading, storesError]);
+
+  const catalog = stores.filter((store) => !store.isComingSoon);
+  const featuredInCatalog = catalog.filter((store) => store.isFeatured);
+  const featured = (featuredInCatalog.length > 0 ? featuredInCatalog : catalog)
+    .map((store) => ({ store, open: isStoreAcceptingOrders(store) }))
+    .sort((a, b) => Number(b.open) - Number(a.open))
+    .slice(0, 6)
+    .map(({ store }) => store);
+  const highlightedIds = new Set(featured.map((store) => store.id));
+  const locals = catalog.filter((store) => store.isLocal && !highlightedIds.has(store.id));
   const favoriteStores = stores.filter((store) => favorites.includes(store.id));
+
+  const cartStoreName = cartCount > 0 ? stores.find((store) => store.id === cartStoreId)?.name : undefined;
 
   function submitSearch() {
     const term = query.trim();
@@ -159,134 +171,62 @@ export default function HomePage() {
           ],
         }}
       />
-      <div className="motion-enter lg:pb-8">
-      {/* Hero de escritorio */}
-      <section className="hidden px-6 pt-8 lg:block">
-        <div className="suya-lens shell grid grid-cols-[0.9fr_1.1fr] items-center gap-10 overflow-hidden rounded-promo px-10 py-12 xl:px-14">
-          <div>
-            <span className="inline-flex items-center gap-2 rounded-full bg-suya-lime-soft px-3 py-1 text-xs font-semibold text-suya-green-dark">
-              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-              Hecho para Sullana
-            </span>
-            <h1 className="mt-4 font-display text-5xl font-bold leading-[1.05]">
-              <span className="block">Delivery en Sullana,</span>
-              <span className="block">de tu ciudad a tu puerta.</span>
-            </h1>
-            <p className="mt-4 max-w-md text-lg text-suya-muted">
-              Restaurantes, tiendas y negocios de Sullana en un solo lugar.
-            </p>
-            <div className="mt-7 flex gap-3">
-              <ButtonLink to="/search" size="lg">
-                Pedir ahora
-              </ButtonLink>
-              <ButtonLink to="/stores" size="lg" variant="secondary">
-                Ver tiendas
-              </ButtonLink>
-            </div>
-            <div className="mt-5 max-w-md">
-              <DownloadAppCallout />
-            </div>
-            <dl className="mt-9 flex gap-8">
-              <div>
-                <dt className="text-sm text-suya-muted">Negocios</dt>
-                <dd className="font-display text-2xl font-bold">
-                  {storesReady ? stores.length : '…'}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-sm text-suya-muted">Canales</dt>
-                <dd className="font-display text-2xl font-bold">App y web</dd>
-              </div>
-              <div>
-                <dt className="text-sm text-suya-muted">Cobertura</dt>
-                <dd className="font-display text-2xl font-bold">Sullana</dd>
-              </div>
-            </dl>
-          </div>
-
-          {/* Composición: mapa + teléfono + repartidor */}
-          <div className="relative h-[380px]">
-            <div className="absolute inset-0 overflow-hidden rounded-promo border border-suya-border bg-suya-lime-soft shadow-soft">
-              <div
-                aria-hidden="true"
-                className="absolute -right-10 -top-16 h-56 w-56 rounded-full bg-white/65"
-              />
-              <div
-                aria-hidden="true"
-                className="absolute -bottom-20 left-24 h-64 w-64 rounded-full bg-suya-sun-soft/80"
-              />
-              <div className="relative flex h-full flex-col justify-between p-8">
-                <div className="max-w-xs rounded-card border border-suya-border bg-white/90 p-4 shadow-card">
-                  <div className="mb-3 rounded-xl border border-suya-mist/70 bg-suya-ivory/75 px-3 py-2">
-                    <Logo variant="master" size="sm" className="h-8 max-w-[150px]" />
-                  </div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-suya-green">
-                    Cobertura inicial
-                  </p>
-                  <p className="mt-1 font-display text-2xl font-bold">Sullana</p>
-                  <p className="mt-1 text-sm text-suya-muted">
-                    Ubicación exacta se solicita solo al confirmar un pedido.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 text-sm font-semibold text-suya-green-dark">
-                  <span className="h-3 w-3 rounded-full bg-suya-green" /> Negocios locales
-                  conectados
-                </div>
-              </div>
-            </div>
-            <div className="absolute -bottom-2 right-6 w-[212px] overflow-hidden rounded-promo border-[7px] border-suya-carbon bg-white shadow-soft">
-              <div className="bg-suya-green px-3 py-2.5 text-white">
-                <Logo size="sm" tone="onDark" />
-              </div>
-              <div className="space-y-2 p-3">
-                <div className="rounded-btn bg-suya-lime-soft px-2.5 py-2">
-                  <p className="text-[11px] font-semibold text-suya-green-dark">En camino</p>
-                  <p className="text-[11px] text-suya-muted">Llega en 12–18 min</p>
-                </div>
-                <div className="h-2 w-4/5 rounded-full bg-suya-mist" />
-                <div className="h-2 w-3/5 rounded-full bg-suya-mist" />
-                <div className="flex items-center gap-2 rounded-btn border border-suya-mist p-2">
-                  <span className="h-7 w-7 rounded-full bg-suya-sun" aria-hidden="true" />
-                  <div className="flex-1 space-y-1">
-                    <div className="h-1.5 w-3/4 rounded-full bg-suya-mist" />
-                    <div className="h-1.5 w-1/2 rounded-full bg-suya-mist" />
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+      <div className="shell space-y-4 pb-7 pt-3 sm:space-y-6 sm:pt-5 lg:pb-12">
+        <div className="lg:max-w-2xl">
+          <SearchInput
+            value={query}
+            onChange={setQuery}
+            onSubmit={submitSearch}
+            placeholder="Busca un negocio o un plato"
+            variant="solid"
+            className="min-w-0"
+          />
         </div>
-      </section>
 
-      <div className="shell space-y-8 pt-5 lg:space-y-10 lg:pt-10">
-        {/* Buscador móvil */}
-        <section className="lg:hidden">
-          <div className="mb-4 px-1">
-            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-suya-green">
-              Descubre Sullana
-            </p>
-            <div
-              role="heading"
-              aria-level={1}
-              className="mt-1 font-display text-[30px] font-bold leading-tight tracking-[-0.045em]"
-            >
+        {deliveryInTransit && (
+          <Link to={`/orders/${deliveryInTransit.id}`} className="motion-enter press flex min-h-16 items-center gap-3 rounded-card bg-suya-green-dark p-3 text-white">
+            <img src={assetUrl('/brand/rider.svg')} alt="" width={56} height={44} loading="eager" decoding="async"
+              className="h-11 w-14 shrink-0 rounded-xl bg-suya-lime-soft" />
+            <span className="min-w-0 flex-1">
+              <span className="block font-display font-bold">Seguir mi entrega</span>
+              <span className="block truncate text-sm text-white/80">{deliveryInTransit.storeName}</span>
+            </span>
+            <ArrowRight aria-hidden="true" className="mr-1 h-5 w-5 shrink-0" />
+          </Link>
+        )}
+
+        {cartCount > 0 && (
+          <Link to="/cart" className="motion-enter press flex min-h-16 items-center gap-3 rounded-card border border-suya-green/20 bg-suya-lime-soft p-3 text-suya-green-dark">
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-suya-green text-white">
+              <ShoppingBag aria-hidden="true" className="h-5 w-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-display font-bold">Continuar mi pedido</span>
+              <span className="block truncate text-sm">{cartCount} {cartCount === 1 ? 'producto' : 'productos'}{cartStoreName && ` · ${cartStoreName}`}</span>
+            </span>
+            <ArrowRight aria-hidden="true" className="mr-1 h-5 w-5 shrink-0" />
+          </Link>
+        )}
+
+        <section className="grid min-h-[144px] grid-cols-[1.38fr_1fr] overflow-hidden rounded-promo bg-suya-green-dark text-white sm:min-h-[206px] sm:grid-cols-[1.25fr_1fr]">
+          <div className="home-hero-copy flex flex-col items-start justify-center px-4 py-2.5 min-[390px]:px-5 sm:p-7 lg:px-10">
+            <h1 className="text-balance font-display text-[24px] font-bold leading-[1.06] tracking-tight text-white sm:max-w-[460px] sm:text-4xl lg:text-[46px]">
               Delivery en Sullana, a un toque.
-            </div>
-            <p className="mt-1 text-sm text-suya-muted">Comida y negocios locales cerca de ti.</p>
+            </h1>
+            <p className="mt-2 hidden text-sm font-medium text-white/90 sm:block sm:text-base">
+              Pide a tus restaurantes y negocios locales.
+            </p>
+            <Link
+              to="/stores"
+              className="press mt-1 inline-flex min-h-11 items-center gap-1.5 rounded-btn text-[13px] font-bold text-white hover:underline focus-visible:outline-white sm:mt-3 sm:bg-white sm:px-4 sm:text-sm sm:text-suya-green-dark sm:hover:bg-suya-lime-soft sm:hover:no-underline"
+            >
+              Ver negocios <ArrowRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
           </div>
-          <SearchInput value={query} onChange={setQuery} onSubmit={submitSearch} />
-          <div className="mt-3">
-            <DownloadAppCallout />
-          </div>
+          <HomeBannerPhotos reduceMotion={reduceMotion} />
         </section>
 
-        {/* Sin categorías cargadas el carril quedaría reducido al acceso «Más». */}
-        {(categoriesLoading || categories.length > 0) && (
-          <section>
-            <SectionHeader title="Explora por categoría" />
-            <CategoryRail categories={categories} loading={categoriesLoading} />
-          </section>
-        )}
+        <HomeProductShelf />
 
         {Capacitor.isNativePlatform() && offers.length > 0 && (
           <section aria-label="Ofertas exclusivas de la app">
@@ -334,133 +274,74 @@ export default function HomePage() {
           </section>
         )}
 
+        <section>
+          <SectionHeader
+            title="Destacados en Sullana"
+            className="mb-2"
+            action={
+              <Link
+                to="/stores"
+                className="inline-flex min-h-11 shrink-0 items-center gap-1 text-sm font-bold text-suya-green hover:underline"
+              >
+                Ver todo <ArrowRight aria-hidden="true" className="h-4 w-4" />
+              </Link>
+            }
+          />
+          {(categoriesLoading || categories.length > 0) && (
+            <CategoryRail categories={categories} loading={categoriesLoading} className="mb-3" />
+          )}
+          {storesError ? (
+            <ErrorState description={storesError} onRetry={() => void loadStores(true)} />
+          ) : storesLoading ? (
+            <div role="status" aria-busy="true">
+              <span className="sr-only">Cargando negocios…</span>
+              <StoreListSkeleton count={3} />
+            </div>
+          ) : featured.length > 0 ? (
+            <div ref={featuredGrid} className="home-featured-grid grid gap-2.5 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+              {featured.map((store, index) => (
+                <StoreCard key={store.id} store={store} layout={compact ? 'row' : 'grid'} priorityImage={index < 2} />
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-suya-muted">Aún no hay negocios publicados.</p>
+          )}
+        </section>
+
         {storesReady && favoriteStores.length > 0 && (
           <section>
-            <SectionHeader
-              title="Tus favoritos"
-              action={
-                <Link
-                  to="/stores"
-                  className="-mr-2 inline-flex min-h-12 items-center gap-1 px-2 text-sm font-semibold text-suya-green"
-                >
-                  Ver todo <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
-              }
-            />
-            <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {favoriteStores.slice(0, 4).map((store) => (
-                <StoreCard key={store.id} store={store} />
+            <SectionHeader title="Tus favoritos" />
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {favoriteStores.slice(0, 3).map((store) => (
+                <StoreCard key={store.id} store={store} layout={compact ? 'row' : 'grid'} />
               ))}
             </div>
           </section>
         )}
 
-        <section>
-          <SectionHeader
-            title="Tiendas destacadas"
-            subtitle="Los favoritos de Sullana esta semana"
-            action={
-              <Link
-                to="/stores"
-                className="-mr-2 inline-flex min-h-12 items-center gap-1 px-2 text-sm font-semibold text-suya-green"
-              >
-                Ver todo <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
-            }
-          />
-          {storesError ? (
-            <ErrorState description={storesError} onRetry={() => void loadStores(true)} />
-          ) : storesLoading ? (
-            <div role="status" aria-busy="true">
-              <span className="sr-only">Cargando tiendas…</span>
-              <StoreListSkeleton count={4} />
-            </div>
-          ) : (
-            <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {featured.map((store, index) => (
-                <StoreCard key={store.id} store={store} priorityImage={index < 2} />
-              ))}
-            </div>
-          )}
-        </section>
-
-        {storesReady && stores.length > 1 && (
+        {storesReady && locals.length > 0 && (
           <section>
-            <SectionHeader
-              title="Negocios locales"
-              subtitle="Emprendimientos sullaneros en la plataforma"
-            />
-            <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {locals.map((store) => (
+            <SectionHeader title="Más negocios de Sullana" />
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {locals.slice(0, 6).map((store) => (
                 <StoreCard key={store.id} store={store} layout="row" />
               ))}
             </div>
           </section>
         )}
 
-        {storesReady && comingSoon.length > 0 && (
-          <section>
-            <SectionHeader
-              title="Próximamente en Suya"
-              subtitle="Marcas que estamos preparando para Sullana"
-              action={
-                <Link
-                  to="/stores"
-                  className="-mr-2 inline-flex min-h-12 items-center gap-1 px-2 text-sm font-semibold text-suya-green"
-                >
-                  Ver todo <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
-              }
-            />
-            <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {comingSoon.slice(0, 8).map((store) => (
-                <StoreCard key={store.id} store={store} />
-              ))}
-            </div>
-          </section>
+        {!Capacitor.isNativePlatform() && (
+          <Link
+            to="/descargar"
+            className="flex min-h-14 items-center gap-3 rounded-btn border border-suya-border bg-suya-ivory px-4 py-2.5 text-sm font-bold text-suya-green hover:bg-suya-lime-soft"
+          >
+            <Download aria-hidden="true" className="h-5 w-5 shrink-0" />
+            Descargar la app de Suya
+            <ArrowRight aria-hidden="true" className="ml-auto h-4 w-4 shrink-0" />
+          </Link>
         )}
-
-        {storesReady && stores.length > 1 && (
-          <section>
-            <SectionHeader
-              title="Recomendados para ti"
-              subtitle="Mejor calificados y abiertos ahora"
-            />
-            <div className="motion-stagger grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              {recommended
-                .filter((store) => isStoreAcceptingOrders(store))
-                .map((store) => (
-                  <StoreCard key={store.id} store={store} />
-                ))}
-            </div>
-          </section>
-        )}
-
-        {/* Banner editorial */}
-        <section className="motion-enter suya-lens-dark overflow-hidden rounded-promo px-5 py-7 text-white sm:px-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="max-w-lg">
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold">
-                <Heart className="h-3.5 w-3.5" aria-hidden="true" />
-                Compra cerca, recibe rápido
-              </span>
-              <h2 className="mt-3 font-display text-2xl font-bold sm:text-3xl">
-                Apoyamos a los negocios de Sullana
-              </h2>
-              <p className="mt-2 text-white/85">
-                Cada pedido en un comercio local se queda en la ciudad. Suya Delivery conecta a las
-                tiendas de tu barrio con tu puerta.
-              </p>
-            </div>
-            <ButtonLink to="/stores" variant="sun" size="lg" className="shrink-0">
-              <StoreIcon className="h-4 w-4" aria-hidden="true" />
-              Explorar negocios
-            </ButtonLink>
-          </div>
-        </section>
 
         <LocalDeliveryContent />
-      </div>
       </div>
     </>
   );

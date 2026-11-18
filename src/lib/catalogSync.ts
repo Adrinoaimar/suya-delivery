@@ -3,7 +3,7 @@ import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
 /** Evento interno para que las cartas públicas se vuelvan a consultar sin recargar la página. */
 export const CATALOG_INVALIDATED_EVENT = 'suya:catalog-invalidated';
 
-export const CATALOG_REFRESH_INTERVAL_MS = 15_000;
+export const CATALOG_REFRESH_INTERVAL_MS = 5 * 60_000;
 
 type CatalogListener = () => void;
 type CatalogInvalidationSource = 'mutation' | 'sync';

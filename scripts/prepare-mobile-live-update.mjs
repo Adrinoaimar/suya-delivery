@@ -9,6 +9,11 @@ const outputDir = path.join(repoRoot, 'dist', 'customer', 'mobile-updates');
 const bundleId = process.env.GITHUB_SHA ?? `local-${Date.now()}`;
 const baseUrl = process.env.SUYA_LIVE_UPDATE_BASE_URL ?? 'https://suyadelivery.com';
 const privateKey = process.env.SUYA_LIVE_UPDATE_PRIVATE_KEY;
+const androidConfig = await readFile(path.join(repoRoot, 'android', 'app', 'build.gradle'), 'utf8');
+const customerNativeVersion = Number(androidConfig.match(/^\s*versionCode\s+(\d+)\s*$/m)?.[1]);
+if (!Number.isSafeInteger(customerNativeVersion) || customerNativeVersion < 1) {
+  throw new Error('No se pudo determinar la versión nativa del cliente.');
+}
 const roles = ['customer', 'rider', 'backoffice', 'walletobserver', 'unified'];
 
 if (!privateKey) throw new Error('Falta SUYA_LIVE_UPDATE_PRIVATE_KEY para firmar los bundles móviles.');
@@ -55,6 +60,7 @@ async function prepareRole(role) {
     version: 1,
     role,
     bundleId,
+    ...(role === 'customer' ? { minimumNativeVersionCode: customerNativeVersion } : {}),
     url: `${baseUrl}/mobile-updates/${role}/${archiveName}`,
     checksum,
     signature,

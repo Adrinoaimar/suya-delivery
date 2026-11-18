@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { CSSProperties } from 'react';
 import {
   ArrowLeft,
@@ -10,7 +10,7 @@ import {
   ShoppingBag,
   Store as StoreIcon,
 } from 'lucide-react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
 import { ButtonLink } from '@/components/common/Button';
 import { EmptyState } from '@/components/common/EmptyState';
@@ -50,6 +50,8 @@ function themeStyle(theme: Store['theme']): CSSProperties | undefined {
 export default function StoreDetailPage() {
   const { id = '' } = useParams();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const linkedProductId = searchParams.get('producto');
   const unavailableSeo = (
     <SeoHead
       title="Negocio no encontrado | Suya Delivery"
@@ -68,6 +70,27 @@ export default function StoreDetailPage() {
   const loadProducts = useCatalogStore((state) => state.loadProducts);
   const [selected, setSelected] = useState<Product | null>(null);
   const [section, setSection] = useState<string | null>(null);
+  const linkedProduct = productsData?.find((product) => product.id === linkedProductId) ?? null;
+  const shownProduct = selected?.storeId === id ? selected : linkedProduct;
+
+  function closeProduct() {
+    setSelected(null);
+    if (!linkedProductId) return;
+
+    const next = new URLSearchParams(searchParams);
+    next.delete('producto');
+    setSearchParams(next, { replace: true, state: location.state });
+  }
+
+  const menuSections = useMemo(() => {
+    const groups = new Map<string, Product[]>();
+    for (const product of productsData ?? []) {
+      const group = groups.get(product.section);
+      if (group) group.push(product);
+      else groups.set(product.section, [product]);
+    }
+    return groups;
+  }, [productsData]);
 
   const favorites = useUserStore((state) => state.favorites);
   const toggleFavorite = useUserStore((state) => state.toggleFavorite);
@@ -159,15 +182,14 @@ export default function StoreDetailPage() {
     );
   }
 
-  const products = productsData ?? [];
   const productsLoading = productsStatus !== 'ready' && productsError === null;
 
   const informationalOnly = isInformationalStore(store);
   const comingSoon = store.isComingSoon === true;
   const open = isStoreAcceptingOrders(store);
   const isFavorite = favorites.includes(store.id);
-  const sections = [...new Set(products.map((product) => product.section))];
-  const visibleSections = section ? sections.filter((name) => name === section) : sections;
+  const sections = [...menuSections.keys()];
+  const visibleSections = section && menuSections.has(section) ? sections.filter((name) => name === section) : sections;
   const totals = cartTotals(items, store, FREE_DELIVERY_THRESHOLD);
   const cartMatchesStore = cartStoreId === store.id && items.length > 0;
   const theme = store.theme;
@@ -409,12 +431,7 @@ export default function StoreDetailPage() {
             )}
           </section>
 
-          {store.gallery && (
-            <div className="motion-enter">
-              <StoreGallery gallery={store.gallery} storeName={store.name} />
-            </div>
-          )}
-
+          <h2 className="font-display text-2xl font-bold tracking-tight">Carta del negocio</h2>
           {/* Categorías internas */}
           <nav
             aria-label="Categorías del negocio"
@@ -424,10 +441,10 @@ export default function StoreDetailPage() {
               <button
                 type="button"
                 onClick={() => setSection(null)}
-                aria-pressed={section === null}
+                aria-pressed={(section === null || !menuSections.has(section))}
                 className={cn(
                   'press h-11 shrink-0 rounded-full border px-4 text-sm font-medium transition-colors',
-                  section === null
+                  (section === null || !menuSections.has(section))
                     ? theme
                       ? 'border-[var(--store-primary)] bg-[var(--store-primary)] text-[var(--store-on-primary)]'
                       : 'border-suya-green bg-suya-green text-white'
@@ -479,9 +496,7 @@ export default function StoreDetailPage() {
                     {name}
                   </h2>
                   <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
-                    {products
-                      .filter((product) => product.section === name)
-                      .map((product) => (
+                    {menuSections.get(name)?.map((product) => (
                         <ProductCard
                           key={product.id}
                           product={product}
@@ -515,11 +530,17 @@ export default function StoreDetailPage() {
               </p>
             )}
           </div>
+          {store.gallery && (
+            <div className="motion-enter">
+              <StoreGallery gallery={store.gallery} storeName={store.name} />
+            </div>
+          )}
+
         </div>
 
         {/* Barra flotante del carrito */}
         {cartMatchesStore && (
-          <div className="fixed inset-x-0 bottom-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom))] z-20 px-4 pb-3 lg:bottom-6">
+          <div className="motion-enter fixed inset-x-0 bottom-[calc(var(--bottom-nav-h)+env(safe-area-inset-bottom))] z-20 px-4 pb-3 lg:bottom-6">
             <Link
               to="/cart"
               className={cn(
@@ -529,14 +550,14 @@ export default function StoreDetailPage() {
             >
               <span className="flex items-center gap-2 font-display font-semibold">
                 <ShoppingBag className="h-5 w-5" aria-hidden="true" />
-                Ver carrito ({totals.count})
+                Ver carrito <span key={totals.count} className="suya-value-in rounded-full bg-white/20 px-2 tabular-nums">{totals.count}</span>
               </span>
               <span className="font-display font-bold">{formatPrice(totals.total)}</span>
             </Link>
           </div>
         )}
 
-        <ProductSheet product={selected} onClose={() => setSelected(null)} />
+        <ProductSheet product={shownProduct} onClose={closeProduct} canOrder={open} />
       </div>
     </>
   );

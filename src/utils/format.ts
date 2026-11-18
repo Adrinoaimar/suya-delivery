@@ -64,6 +64,12 @@ export function orderStatusLabel(status: OrderStatus): string {
   return STATUS_LABELS[status];
 }
 
+export function orderNotificationItemLabel(items: readonly { name: string }[]): string | null {
+  const first = items[0]?.name.trim();
+  if (!first) return null;
+  return items.length > 1 ? `${first} y ${items.length - 1} más` : first;
+}
+
 /** Copy shown beside an assigned rider, aligned with the current delivery phase. */
 export function riderTrackingMessage(status: OrderStatus): string {
   if (status === 'picked_up') {

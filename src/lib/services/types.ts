@@ -10,6 +10,7 @@ import type {
   Category,
   CustomerInfo,
   LatLng,
+  RiderLocationPoint,
   Order,
   OrderStatus,
   PaymentMethod,
@@ -163,6 +164,7 @@ export interface WalletObserverDevice {
   restaurantId: string;
   label: string;
   active: boolean;
+  autoSettleOrders?: boolean;
   lastSeenAt: string | null;
 }
 
@@ -207,6 +209,7 @@ export interface WalletObservation {
   /** Hora en que el servidor recibió la observación; no es la hora bancaria. */
   receivedAt?: string | null;
   verification: string;
+  observerRouted?: boolean;
   origin: WalletObservationOrigin;
 }
 
@@ -232,7 +235,94 @@ export interface RestaurantPaymentAccount {
   active: boolean;
 }
 
+export interface GatewayConfigRecord {
+  id: string;
+  restaurantId: string;
+  provider: 'mercado_pago' | 'taypi_qr' | 'culqi' | 'izipay' | 'static_qr';
+  environment: 'sandbox' | 'production';
+  active: boolean;
+  verificationMode: 'automatic_cloud' | 'assisted_manual';
+  accountLabel: string;
+  publicKey: string | null;
+  merchantCode: string | null;
+  qrPayload: string | null;
+  hasSecretKey: boolean;
+  secretKeyLast4: string | null;
+  hasWebhookSecret: boolean;
+  webhookSecretLast4: string | null;
+  connectionStatus: 'untested' | 'connected' | 'failed';
+  lastVerifiedAt: string | null;
+  lastSafeTestPassed: boolean;
+  lastSafeTestAt: string | null;
+  updatedAt: string;
+}
+
+export interface SaveGatewayConfigRecordInput {
+  restaurantId: string;
+  provider: 'mercado_pago' | 'taypi_qr' | 'culqi' | 'izipay' | 'static_qr';
+  environment: 'sandbox' | 'production';
+  accountLabel: string;
+  publicKey?: string | null;
+  secretKey?: string | null;
+  webhookSecret?: string | null;
+  merchantCode?: string | null;
+  qrPayload?: string | null;
+  active: boolean;
+}
+
+export interface PaymentReconciliationExceptionItem {
+  id: string;
+  restaurantId: string;
+  orderId: string | null;
+  paymentAttemptId: string | null;
+  provider: string;
+  externalTransactionId: string | null;
+  expectedAmountCents: number | null;
+  receivedAmountCents: number | null;
+  exceptionType: string;
+  resolutionStatus: 'open' | 'refund_pending' | 'refunded' | 'resolved_dismissed';
+  resolutionNote: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+}
+
+export interface WalletObserverRoute {
+  priority: number;
+  provider: 'yape' | 'lemon';
+  deviceId: string | null;
+  heartbeatAt: string | null;
+  autoSettle: boolean;
+  recipient: string | null;
+  qrPayload: string | null;
+  version: string | null;
+  enabled: boolean;
+  checkoutEnabled: boolean;
+  health: string;
+}
+
+export type WalletObserverRouteAction =
+  | { kind: 'save'; priority: number; provider: WalletObserverRoute['provider']; recipient: string; qrPayload: string }
+  | { kind: 'enable'; route: WalletObserverRoute; enabled: boolean }
+  | { kind: 'bind'; priority: number; deviceId: string }
+  | { kind: 'pair'; priority: number; label: string }
+  | { kind: 'checkout'; enabled: boolean };
+
+export interface ExpiredWalletClaim {
+  attemptId: string;
+  orderCode: string;
+  method: 'yape' | 'lemon';
+  amount: number;
+  payerName: string;
+  receiptReference: string | null;
+  reportedAt: string;
+}
+
 export interface WalletObserverService {
+  listExpiredWalletClaims?(restaurantId: string): Promise<ExpiredWalletClaim[]>;
+  reviewExpiredWalletClaim?(restaurantId: string, attemptId: string): Promise<boolean>;
+  listObserverRoutes?(restaurantId: string): Promise<WalletObserverRoute[]>;
+  changeObserverRoute?(restaurantId: string, action: WalletObserverRouteAction): Promise<string | null>;
+  verifyRoutedObservation?(observationId: string, paymentAttemptId: string): Promise<boolean>;
   listDevices(restaurantIds: string[]): Promise<WalletObserverDevice[]>;
   createPairing(
     restaurantId: string,
@@ -245,6 +335,7 @@ export interface WalletObserverService {
     receiverAccountId?: string | null,
   ): Promise<CreatedWalletObserverDevice>;
   setDeviceActive(deviceId: string, active: boolean): Promise<boolean>;
+  setDeviceAutoSettle?(deviceId: string, enabled: boolean): Promise<boolean>;
   rotateDevice(deviceId: string): Promise<CreatedWalletObserverDevice>;
   listObservations(restaurantIds: string[]): Promise<WalletObservation[]>;
   listPaymentCandidates(observationId: string): Promise<WalletPaymentCandidate[]>;
@@ -259,6 +350,26 @@ export interface WalletObserverService {
     qrPayload: string | null;
     active: boolean;
   }): Promise<RestaurantPaymentAccount>;
+  listGatewayConfigs?(restaurantId: string): Promise<GatewayConfigRecord[]>;
+  saveGatewayConfig?(input: SaveGatewayConfigRecordInput): Promise<GatewayConfigRecord>;
+  testGatewayConnection?(
+    restaurantId: string,
+    provider: GatewayConfigRecord['provider'],
+  ): Promise<{ ok: boolean; message: string }>;
+  recordGatewayTestResult?(
+    restaurantId: string,
+    provider: GatewayConfigRecord['provider'],
+    connectionOk: boolean,
+    safeTestOk: boolean,
+  ): Promise<boolean>;
+  listReconciliationExceptions?(
+    restaurantId: string,
+  ): Promise<PaymentReconciliationExceptionItem[]>;
+  resolveReconciliationException?(
+    exceptionId: string,
+    resolutionStatus: 'refund_pending' | 'refunded' | 'resolved_dismissed',
+    resolutionNote: string,
+  ): Promise<boolean>;
 }
 
 export type ManagedRiderStatus = 'offline' | 'available' | 'busy' | 'suspended';
@@ -455,8 +566,8 @@ export interface SafetyOperationsService {
   }): Promise<string>;
   resolveSos(incidentId: string): Promise<boolean>;
   latestLocation(orderId: string): Promise<LatLng | null>;
-  locationHistory(orderId: string): Promise<LatLng[]>;
-  subscribeLocation(orderId: string, listener: (position: LatLng) => void): () => void;
+  locationHistory(orderId: string): Promise<RiderLocationPoint[]>;
+  subscribeLocation(orderId: string, listener: (position: RiderLocationPoint) => void): () => void;
 }
 
 export type LocationPermission = 'unknown' | 'granted' | 'denied' | 'unsupported';
@@ -492,6 +603,9 @@ export interface PaymentDeclaration {
 export type WalletPaymentConfirmationStatus =
   'pending' | 'authorized' | 'ambiguous' | 'code_mismatch' | 'amount_mismatch';
 
+export type RoutedYapeVerification =
+  'authorized' | 'code_mismatch' | 'unobserved' | 'name_required' | 'review' | 'retry_limit' | 'expired';
+
 export interface WalletPaymentConfirmation {
   status: WalletPaymentConfirmationStatus;
   attemptId: string;
@@ -499,6 +613,15 @@ export interface WalletPaymentConfirmation {
   observedAt: string | null;
   payerDisplayName: string | null;
   observedAmountCents: number | null;
+}
+
+export interface PublicCheckoutPaymentOptions {
+  activeProvider: string;
+  verificationMode: 'automatic_cloud' | 'assisted_manual';
+  accountLabel: string | null;
+  supportsYape: boolean;
+  supportsLemon: boolean;
+  supportsCard: boolean;
 }
 
 export interface PaymentService {
@@ -537,6 +660,20 @@ export interface PaymentService {
     customerEmail?: string | null,
     guestAccessToken?: string | null,
   ): Promise<string>;
+  chargeYapeOtp?(
+    intent: PaymentIntent,
+    phoneNumber: string,
+    otp: string,
+    customerEmail?: string | null,
+    guestAccessToken?: string | null,
+  ): Promise<string>;
+  getCheckoutPaymentOptions?(restaurantId: string): Promise<PublicCheckoutPaymentOptions | null>;
+  createDynamicQr?(intent: PaymentIntent, guestAccessToken?: string | null): Promise<string | null>;
+  verifyRoutedYapeCode?(orderId: string, code: string, payerDisplayName: string | null): Promise<RoutedYapeVerification>;
+  retryRoutedPayment?(orderId: string, guestAccessToken?: string | null): Promise<void>;
+  syncAutoCloudForOrder?(orderId: string, guestAccessToken?: string | null): Promise<void>;
+  getExpiredWalletClaim?(orderId: string, attemptId: string): Promise<string | null>;
+  reportExpiredWalletClaim?(orderId: string, attemptId: string, payerName: string, receiptReference: string | null): Promise<string>;
   getIntent(orderId: string, guestAccessToken?: string | null): Promise<PaymentIntent | null>;
 }
 

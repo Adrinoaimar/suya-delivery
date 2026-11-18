@@ -99,16 +99,19 @@ select is((select count(*) from public.list_wallet_payment_candidates('b7900000-
   2::bigint, 'el listado muestra la colisión de código completo');
 select throws_ok(
   $$ select public.verify_wallet_payment('b7900000-0000-0000-0000-000000000001', 'b7700000-0000-0000-0000-000000000001') $$,
-  'payment identity is ambiguous; full operation code required',
-  'la colisión de código completo no se autoriza');
+  'La notificación no acredita el abono. Verifica el movimiento en el canal oficial del proveedor; esta vía no permite autorizar pagos.',
+  'la evidencia Android nunca basta para autorizar un pago'
+);
 reset role;
 delete from public.payment_attempts where id = 'b7700000-0000-0000-0000-000000000002';
 set local role authenticated;
-select lives_ok(
+select throws_ok(
   $$ select public.verify_wallet_payment('b7900000-0000-0000-0000-000000000001', 'b7700000-0000-0000-0000-000000000001') $$,
-  'una coincidencia única sí se verifica');
+  'La notificación no acredita el abono. Verifica el movimiento en el canal oficial del proveedor; esta vía no permite autorizar pagos.',
+  'la evidencia Android nunca basta para autorizar un pago'
+);
 select is((select status::text from public.payment_attempts where id = 'b7700000-0000-0000-0000-000000000001'),
-  'authorized', 'la autorización actualiza el intento exacto');
+  'pending', 'la evidencia no autoriza el intento');
 
 select ok(
   exists (
@@ -189,8 +192,8 @@ insert into public.wallet_observations (
 select set_config('role', 'authenticated', true);
 select throws_ok(
   $$ select public.verify_wallet_payment('b7900000-0000-0000-0000-000000000002', 'b7700000-0000-0000-0000-000000000003') $$,
-  'P0001', 'wallet evidence already consumed; review duplicate',
-  'un segundo dispositivo no puede reutilizar evidencia ya consumida'
+  'La notificación no acredita el abono. Verifica el movimiento en el canal oficial del proveedor; esta vía no permite autorizar pagos.',
+  'la evidencia Android nunca basta para autorizar un pago'
 );
 select is(
   (select status::text from public.payment_attempts where id = 'b7700000-0000-0000-0000-000000000003'),
@@ -231,13 +234,14 @@ insert into public.wallet_observations (
   3000, 'PEN', now()
 );
 select set_config('role', 'authenticated', true);
-select lives_ok(
+select throws_ok(
   $$ select public.verify_wallet_payment('b7900000-0000-0000-0000-000000000003', 'b7700000-0000-0000-0000-000000000004') $$,
-  'un sufijo compartido no bloquea un código completo diferente'
+  'La notificación no acredita el abono. Verifica el movimiento en el canal oficial del proveedor; esta vía no permite autorizar pagos.',
+  'la evidencia Android nunca basta para autorizar un pago'
 );
 select is(
   (select status::text from public.payment_attempts where id = 'b7700000-0000-0000-0000-000000000004'),
-  'authorized', 'el pago con identidad completa distinta se autoriza para revisión'
+  'pending', 'la evidencia con identidad distinta también requiere confirmación financiera'
 );
 
 select set_config('role', 'postgres', true);

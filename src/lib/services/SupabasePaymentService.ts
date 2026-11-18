@@ -5,6 +5,7 @@ import type {
   PaymentDeclaration,
   PaymentResult,
   PaymentService,
+  RoutedYapeVerification,
   WalletPaymentConfirmation,
   WalletPaymentConfirmationStatus,
 } from './types';
@@ -22,6 +23,10 @@ interface PaymentIntentRow {
   provider?: unknown;
   provider_reference?: unknown;
   qr_payload?: unknown;
+  observer_routed?: unknown;
+  checkout_url?: unknown;
+  gateway_state?: unknown;
+  environment?: unknown;
 }
 
 interface PaymentReceiverLabelRow {
@@ -80,6 +85,10 @@ function mapIntent(row: PaymentIntentRow): PaymentIntent {
     provider: text(row.provider, 'wallet_observer'),
     providerReference: typeof row.provider_reference === 'string' ? row.provider_reference : null,
     qrPayload: typeof row.qr_payload === 'string' ? row.qr_payload : null,
+    ...(row.observer_routed === true ? { observerRouted: true } : {}),
+    checkoutUrl: typeof row.checkout_url === 'string' ? row.checkout_url : null,
+    gatewayState: typeof row.gateway_state === 'string' ? row.gateway_state : null,
+    ...(row.environment === 'test' || row.environment === 'live' ? { environment: row.environment } : {}),
   };
   if (!intent.attemptId || !intent.orderId || !intent.checkoutReference) {
     throw new Error('Supabase no devolvió los datos completos del pago.');
@@ -112,14 +121,21 @@ export class SupabasePaymentService implements PaymentService {
     intent: PaymentIntent,
     suppliedGuestAccessToken?: string | null,
   ): Promise<PaymentIntent> {
-    if (intent.method === 'card' || intent.provider === 'culqi') return intent;
-    const { data, error } = await this.client.rpc('get_payment_receiver_label', {
+    if (intent.method === 'card' || intent.provider === 'culqi' || intent.provider === 'mercadopago') return intent;
+    const args = {
       p_order_id: intent.orderId,
       p_guest_access_token: guestToken(intent.orderId, suppliedGuestAccessToken),
-    });
+    };
+    const [{ data, error }, phone] = await Promise.all([
+      this.client.rpc('get_payment_receiver_label', args),
+      intent.method === 'yape' && intent.observerRouted && intent.status === 'pending'
+        ? this.client.rpc('get_payment_receiver_phone', args).abortSignal(AbortSignal.timeout(4000))
+        : null,
+    ]);
     if (error) throw new Error(error.message);
     const label = text(firstReceiverLabel(data)?.account_label).trim();
-    return { ...intent, receiverLabel: label || null };
+    const receiverPhone = typeof phone?.data === 'string' && /^9\d{8}$/.test(phone.data) ? phone.data : null;
+    return { ...intent, receiverLabel: label || null, ...(receiverPhone ? { receiverPhone } : {}) };
   }
 
   async authorize(method: PaymentMethod, amount: number): Promise<PaymentResult> {
@@ -147,6 +163,23 @@ export class SupabasePaymentService implements PaymentService {
     if (!orderId) throw new Error('No pudimos identificar el pedido para iniciar el pago.');
     if (method === 'cash') throw new Error('El efectivo no requiere intento digital.');
     const token = guestToken(orderId, guestAccessToken);
+    if (method === 'card' || method === 'yape') {
+      // El servidor decide el proveedor por restaurante; ningún flag de build activa cobros.
+      const { data: current } = await this.client.rpc('get_payment_intent', {
+        p_order_id: orderId, p_guest_access_token: token,
+      });
+      const existing = firstRow(current);
+      if (existing?.observer_routed === true) return this.withReceiverLabel(mapIntent(existing), token);
+      if (existing?.provider === 'mercadopago') {
+        const { data, error } = await this.client.functions.invoke('payment-gateway', {
+          body: { action: 'create', orderId, method, guestAccessToken: token },
+        });
+        if (error || data?.error) throw new Error('No pudimos abrir el cobro. Reintenta con el mismo pedido.');
+        const row = firstRow(data?.paymentIntent);
+        if (!row) throw new Error('El proveedor no devolvió la solicitud de cobro.');
+        return mapIntent(row);
+      }
+    }
     const gatewayEnabled = import.meta.env.VITE_CULQI_GATEWAY_ENABLED === 'true';
     if (gatewayEnabled && (method === 'card' || method === 'yape')) {
       const { data, error } = await this.client.functions.invoke('create-culqi-order', {
@@ -164,9 +197,6 @@ export class SupabasePaymentService implements PaymentService {
       if (!row) throw new Error('La pasarela no devolvió el intento de pago.');
       return this.withReceiverLabel(mapIntent(row), token);
     }
-    if (method === 'card') {
-      throw new Error('El pago con tarjeta no está habilitado en esta aplicación.');
-    }
     const { data, error } = await this.client.rpc('refresh_payment_intent', {
       p_order_id: orderId,
       p_method: method,
@@ -176,6 +206,50 @@ export class SupabasePaymentService implements PaymentService {
     const row = firstRow(data);
     if (!row) throw new Error('Supabase no devolvió el intento de pago.');
     return this.withReceiverLabel(mapIntent(row), token);
+  }
+
+  async getCheckoutPaymentOptions(restaurantId: string) {
+    if (!restaurantId) return null;
+    try {
+      const { data, error } = await this.client.rpc('get_public_checkout_payment_options', {
+        p_restaurant_id: restaurantId,
+      });
+      if (error) return null;
+      const row = firstRow(data) as Record<string, unknown> | null;
+      if (!row) return null;
+      return {
+        activeProvider: text(row.active_provider, 'wallet_observer'),
+        verificationMode:
+          row.verification_mode === 'automatic_cloud'
+            ? ('automatic_cloud' as const)
+            : ('assisted_manual' as const),
+        accountLabel: typeof row.account_label === 'string' ? row.account_label : null,
+        supportsYape: Boolean(row.supports_yape),
+        supportsLemon: Boolean(row.supports_lemon),
+        supportsCard: Boolean(row.supports_card),
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  async createDynamicQr(
+    intent: PaymentIntent,
+    suppliedGuestAccessToken?: string | null,
+  ): Promise<string | null> {
+    const { data, error } = await this.client.functions.invoke('payment-gateway', {
+      body: {
+        action: 'create_dynamic_qr',
+        attemptId: intent.attemptId,
+        orderId: intent.orderId,
+        guestAccessToken: guestToken(intent.orderId, suppliedGuestAccessToken),
+      },
+    });
+    if (error) throw new Error(error.message);
+    if (data && typeof data === 'object' && 'qrPayload' in data && typeof data.qrPayload === 'string') {
+      return data.qrPayload;
+    }
+    return null;
   }
 
   async chargeCard(
@@ -208,6 +282,44 @@ export class SupabasePaymentService implements PaymentService {
         ? data.providerReference
         : '';
     if (!reference) throw new Error('Culqi no devolvió la referencia del cargo.');
+    return reference;
+  }
+
+  async chargeYapeOtp(
+    intent: PaymentIntent,
+    phoneNumber: string,
+    otp: string,
+    customerEmail?: string | null,
+    suppliedGuestAccessToken?: string | null,
+  ): Promise<string> {
+    const cleanPhone = phoneNumber.replace(/\D/g, '');
+    const cleanOtp = otp.replace(/\D/g, '');
+    if (!/^9\d{8}$/.test(cleanPhone)) {
+      throw new Error('Escribe un número de celular Yape válido de 9 dígitos.');
+    }
+    if (!/^\d{6}$/.test(cleanOtp)) {
+      throw new Error('Escribe el código de aprobación de 6 dígitos de la app Yape.');
+    }
+    const { data, error } = await this.client.functions.invoke('payment-gateway', {
+      body: {
+        action: 'charge_yape_otp',
+        attemptId: intent.attemptId,
+        orderId: intent.orderId,
+        phoneNumber: cleanPhone,
+        otp: cleanOtp,
+        customerEmail: customerEmail?.trim() || null,
+        guestAccessToken: guestToken(intent.orderId, suppliedGuestAccessToken),
+      },
+    });
+    if (error) throw new Error(error.message);
+    if (data && typeof data === 'object' && 'error' in data && typeof data.error === 'string') {
+      throw new Error(data.error);
+    }
+    const reference =
+      data && typeof data === 'object' && typeof data.providerReference === 'string'
+        ? data.providerReference
+        : '';
+    if (!reference) throw new Error('La pasarela no devolvió la referencia del cobro Yape.');
     return reference;
   }
 
@@ -342,6 +454,57 @@ export class SupabasePaymentService implements PaymentService {
     };
   }
 
+  async getExpiredWalletClaim(orderId: string, attemptId: string): Promise<string | null> {
+    const { data, error } = await this.client.rpc('get_expired_wallet_qr_claim', {
+      p_order_id: orderId, p_payment_attempt_id: attemptId, p_guest_access_token: guestToken(orderId),
+    }).abortSignal(AbortSignal.timeout(8000));
+    if (error) throw new Error(error.message);
+    return typeof data === 'string' ? data : null;
+  }
+
+  async reportExpiredWalletClaim(orderId: string, attemptId: string, payerName: string, receiptReference: string | null): Promise<string> {
+    const { data, error } = await this.client.rpc('report_expired_wallet_qr', {
+      p_order_id: orderId, p_payment_attempt_id: attemptId, p_payer_name: payerName,
+      p_receipt_reference: receiptReference, p_guest_access_token: guestToken(orderId),
+    }).abortSignal(AbortSignal.timeout(10000));
+    if (error || typeof data !== 'string') throw new Error('No se pudo guardar el reclamo.');
+    return data;
+  }
+
+  async verifyRoutedYapeCode(orderId: string, code: string, payerDisplayName: string | null): Promise<RoutedYapeVerification> {
+    const { data, error } = await this.client.rpc('verify_routed_yape_code', {
+      p_order_id: orderId,
+      p_code: code,
+      p_payer_display_name: payerDisplayName,
+      p_guest_access_token: guestToken(orderId),
+    }).abortSignal(AbortSignal.timeout(10_000));
+    if (error) throw new Error(error.message);
+    if (data === 'authorized' || data === 'code_mismatch' || data === 'unobserved' ||
+      data === 'name_required' || data === 'review' || data === 'retry_limit' || data === 'expired') return data;
+    throw new Error('Respuesta de verificación inválida.');
+  }
+
+  async retryRoutedPayment(orderId: string, suppliedGuestAccessToken?: string | null): Promise<void> {
+    const { error } = await this.client.rpc('retry_routed_wallet_payment', {
+      p_order_id: orderId,
+      p_guest_access_token: guestToken(orderId, suppliedGuestAccessToken),
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  async syncAutoCloudForOrder(orderId: string, guestAccessToken?: string | null): Promise<void> {
+    if (!orderId) return;
+    await this.client.functions
+      .invoke('payment-gateway', {
+        body: {
+          action: 'sync_gmail_autocloud',
+          orderId,
+          guestAccessToken: guestToken(orderId, guestAccessToken),
+        },
+      })
+      .catch(() => undefined);
+  }
+
   async getIntent(
     orderId: string,
     guestAccessToken?: string | null,
@@ -354,6 +517,14 @@ export class SupabasePaymentService implements PaymentService {
     });
     if (error) throw new Error(error.message);
     const row = firstRow(data);
+    if (row?.provider === 'mercadopago') {
+      const { data: gateway, error: gatewayError } = await this.client.rpc('get_gateway_payment_intent', {
+        p_order_id: orderId, p_guest_access_token: token,
+      });
+      if (gatewayError) throw new Error('No pudimos consultar el estado del cobro.');
+      const gatewayRow = firstRow(gateway);
+      return gatewayRow ? mapIntent(gatewayRow) : null;
+    }
     return row ? this.withReceiverLabel(mapIntent(row), token) : null;
   }
 }

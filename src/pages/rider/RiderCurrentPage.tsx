@@ -97,7 +97,7 @@ export default function RiderCurrentPage() {
   if (!active) {
     return (
       <div className="mx-auto w-full max-w-3xl px-4 py-8 lg:px-8">
-        <div className="rounded-card border border-white/10 bg-white/5 p-8 text-center text-white">
+        <div className="motion-enter rounded-card border border-white/10 bg-suya-green-dark p-8 text-center text-white">
           <Navigation className="mx-auto h-8 w-8 text-suya-lime" aria-hidden="true" />
           <h1 className="mt-3 font-display text-xl font-bold">Sin viaje activo</h1>
           <p className="mt-1 text-sm text-white/70">
@@ -132,12 +132,15 @@ export default function RiderCurrentPage() {
     <div className="mx-auto w-full max-w-4xl space-y-4 px-4 py-5 lg:px-8 lg:py-8">
       <header className="text-white">
         <h1 className="font-display text-2xl font-bold">Viaje actual</h1>
-        <p className="text-sm text-white/70">
-          #{active.code} · {orderStatusLabel(active.status)}
-        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
+          <span className="font-medium text-white/75">#{active.code}</span>
+          <span aria-live="polite" className="rounded-full bg-suya-lime-soft px-3 py-1 font-semibold text-suya-green-dark">
+            <span key={active.status} className="suya-value-in inline-block">{orderStatusLabel(active.status)}</span>
+          </span>
+        </div>
       </header>
 
-      <div className="relative h-[min(66dvh,600px)] min-h-[390px] overflow-hidden rounded-card border border-white/10 shadow-card sm:h-[min(70dvh,680px)] sm:min-h-[460px]">
+      <div className="relative isolate h-[clamp(260px,38dvh,440px)] overflow-hidden rounded-card border border-white/10 shadow-card sm:h-[min(70dvh,680px)] sm:min-h-[460px]">
         {mapReady ? (
           <MapProvider
             key={active.id}
@@ -163,7 +166,7 @@ export default function RiderCurrentPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
-        <section className="rounded-card bg-white p-4">
+        <section className="rounded-card bg-white p-5 text-suya-carbon">
           <h2 className="font-display text-[15px] font-bold">Entrega</h2>
           <p className="mt-1 flex items-start gap-1.5 text-sm text-[#4A4F55]">
             <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-suya-green" aria-hidden="true" />
@@ -185,8 +188,11 @@ export default function RiderCurrentPage() {
                 </li>
               ))}
             </ul>
-            <p className="mt-2 flex justify-between font-display font-bold">
-              Total a cobrar <span>{formatPrice(active.total)}</span>
+            <p className="mt-3 flex flex-wrap justify-between gap-2 rounded-xl bg-suya-ivory px-3 py-3 font-display font-bold">
+              {active.paymentMethod === 'cash'
+                ? 'Cobrar al entregar'
+                : active.paymentIntent?.status === 'authorized' ? 'Pago verificado' : 'Total del pedido'}
+              <span>{formatPrice(active.total)}</span>
             </p>
           </div>
 
@@ -219,7 +225,7 @@ export default function RiderCurrentPage() {
           </div>
         </section>
 
-        <section className="rounded-card bg-white p-4">
+        <section className="rounded-card bg-white p-5 text-suya-carbon">
           <h2 className="mb-3 font-display text-[15px] font-bold">Estado del pedido</h2>
           <TrackingTimeline order={active} compact />
 

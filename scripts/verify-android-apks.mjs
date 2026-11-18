@@ -8,6 +8,7 @@ const aapt2 = aapt2Index >= 0 ? args[aapt2Index + 1] : process.env.AAPT2 || 'aap
 const apksignerIndex = args.indexOf('--apksigner');
 const apksigner = apksignerIndex >= 0 ? args[apksignerIndex + 1] : process.env.APKSIGNER || 'apksigner';
 const releaseBuild = args.includes('--release');
+const profiledObservers = args.includes('--profiled-observers');
 const expectedCertificateIndex = args.indexOf('--expected-cert-sha256');
 const expectedCertificate = expectedCertificateIndex >= 0 ? args[expectedCertificateIndex + 1]?.toLowerCase() : null;
 const outputDirectory = path.resolve(process.env.SUYA_ANDROID_OUTPUT || 'output/android');
@@ -22,7 +23,7 @@ const expected = [
   {
     artifactPrefix: 'Suya-Cliente',
     packageName: 'com.suya.app',
-    label: 'Suya Cliente',
+    label: 'Suya Delivery',
     observerEnabled: false,
   },
   {
@@ -34,7 +35,7 @@ const expected = [
   {
     artifactPrefix: 'Suya-Backoffice',
     packageName: 'com.suya.backoffice',
-    label: 'Suya Backoffice',
+    label: 'Suya Empresas',
     observerEnabled: false,
   },
   {
@@ -44,6 +45,18 @@ const expected = [
     observerEnabled: true,
   },
 ];
+
+if (profiledObservers) {
+  expected.pop();
+  for (const label of ['Adriano', 'Jean', 'Reserva']) {
+    expected.push({
+      artifactPrefix: `Suya-Caja-${label}`,
+      packageName: `com.suya.walletobserver.${label.toLowerCase()}`,
+      label: `Suya Caja · ${label}`,
+      observerEnabled: true,
+    });
+  }
+}
 
 const suffix = `-${versionName}-code${versionCode}-${releaseBuild ? 'release' : 'debug'}.apk`;
 
@@ -149,7 +162,7 @@ for (const item of expected) {
 }
 
 if (signerDigests.length === expected.length && new Set(signerDigests).size !== 1) {
-  fail('Los cuatro APK no comparten el mismo certificado.');
+  fail('Las APK no comparten el mismo certificado.');
 }
 
 if (failures.length) {

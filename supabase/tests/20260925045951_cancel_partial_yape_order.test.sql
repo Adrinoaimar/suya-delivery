@@ -18,34 +18,28 @@ select ok(
   'el cambio conserva security definer con search_path vacío'
 );
 select ok(
-  pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-    like '%v_observation.amount_cents < round(v_attempt.amount * 100)%'
-    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-      like '%v_order.status in (''confirmed'', ''preparing'')%',
-  'solo un abono menor al total en pedido confirmado o en preparación inicia cancelación automática'
+  (select pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
-  pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-    like '%set verification_status = ''under_review''%'
-    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-      like '%cancellation_reason = ''partial_wallet_payment''%',
-  'conserva el abono para Caja y registra la causa de cancelación'
+  (select pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
-  pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-    like '%set_config(''suya.cancellation_mutation'', ''1'', true)%'
-    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-      like '%set observed_wallet_observation_id = v_observation.id%'
-    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-      like '%failure_code = ''partial_payment_review''%',
-  'usa el contexto interno de cancelación y deja la observación asociada a revisión'
+  (select pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
-  pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-    like '%v_order.cancellation_reason = ''partial_wallet_payment''%'
-    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-      like '%v_attempt.failure_code = ''partial_payment_review''%',
-  'un reintento devuelve el mismo resultado sin repetir la cancelación'
+  (select pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 
 select * from finish();

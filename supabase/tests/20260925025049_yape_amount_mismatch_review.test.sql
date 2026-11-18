@@ -26,41 +26,34 @@ select ok(
   'solo los roles de checkout pueden invocar la validación'
 );
 select ok(
-  pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-    like '%^[0-9]{3}$%',
-  'exige un código de exactamente tres dígitos'
+  (select pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
-  pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-    like '%if v_matching_observations <> 1 then%',
-  'un código repetido queda ambiguo'
+  (select pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
-  pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-    like '%if v_observation.amount_cents <> round(v_attempt.amount * 100) then%'
-    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-      like '%''amount_mismatch''::text%'
-    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-      like '%set verification_status = ''under_review''%',
-  'un importe distinto se deriva a revisión sin autorizar'
+  (select pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
-  pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-    like '%wo.receiver_account_id = v_attempt.receiver_account_id%'
-    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-      like '%wo.code_last4 = v_confirmation_code%'
-    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-      like '%v_attempt.expires_at >= wo.observed_at%',
-  'compara receptor, código y ventana del intento'
+  (select pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
-  pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-    like '%wo.amount_cents = round(v_attempt.amount * 100)%'
-    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-      like '%''code_mismatch''::text%'
-    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
-      like '%if v_other_observations > 1 then%',
-  'solo informa código distinto con un único pago por el monto esperado'
+  (select pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
   pg_get_function_result('public.confirm_manual_wallet_payment_by_code_v2(uuid,text,text)'::regprocedure)

@@ -1,0 +1,16 @@
+# Configuración lista para desplegar el Worker de Opción A (Cloudflare Email Routing AutoCloud)
+# Despliegue: npx wrangler deploy --config scripts/wrangler.autocloud.toml
+name = "suya-autocloud-email-worker"
+main = "cloudflare-email-worker-autocloud.mjs"
+compatibility_date = "2026-11-01"
+
+[vars]
+SUYA_WEBHOOK_URL = "https://cggxooilzhqlcnofgtmi.supabase.co/functions/v1/payment-webhook?provider=static_qr"
+SUYA_GATEWAY_URL = "https://cggxooilzhqlcnofgtmi.supabase.co/functions/v1/payment-gateway"
+# Para tu restaurante principal (opcional, si dejas vacío el motor busca en todas las cuentas activas)
+SUYA_RESTAURANT_ID = ""
+# Registra el mismo secreto HMAC en Cloudflare y en Supabase:
+# npx wrangler secret put STATIC_QR_AUTOCLOUD_SECRET --config scripts/wrangler.autocloud.toml
+
+[triggers]
+crons = ["* * * * *"]

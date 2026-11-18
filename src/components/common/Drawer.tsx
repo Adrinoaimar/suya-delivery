@@ -38,7 +38,7 @@ export function Drawer({ open, onClose, title, side = 'left', children }: Drawer
         className={cn(
           // Crea una superficie opaca y un stacking context propio: Leaflet usa
           // z-index altos y no debe verse a través del menú del APK.
-          'suya-drawer-panel absolute inset-y-0 z-10 isolate flex w-[84%] max-w-xs overflow-hidden bg-white text-suya-carbon shadow-soft',
+          'suya-drawer-panel absolute inset-y-0 z-10 isolate flex flex-col w-[84%] max-w-xs overflow-hidden bg-white text-suya-carbon shadow-soft',
           side === 'left' ? 'left-0 animate-drawer-left' : 'right-0 animate-drawer-right',
         )}
       >

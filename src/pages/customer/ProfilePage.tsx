@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Heart, User } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Heart, LogOut, User } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { ErrorState } from '@/components/common/ErrorState';
@@ -16,6 +16,9 @@ import { useAuthStore } from '@/store/authStore';
 export default function ProfilePage() {
   const identity = useAuthStore((state) => state.identity);
   const updateProfile = useAuthStore((state) => state.updateProfile);
+  const signOut = useAuthStore((state) => state.signOut);
+  const navigate = useNavigate();
+  const [signingOut, setSigningOut] = useState(false);
   const preferences = useUserStore((state) => state.preferences);
   const favorites = useUserStore((state) => state.favorites);
   const setPreferences = useUserStore((state) => state.setPreferences);
@@ -106,6 +109,8 @@ export default function ProfilePage() {
           <Card>
             <h2 className="font-display text-[15px] font-bold">Preferencias</h2>
             <div className="mt-3 space-y-4">
+              <Toggle label="Modo oscuro" checked={preferences.darkMode}
+                onChange={(value) => setPreferences({ darkMode: value })} />
               <Toggle
                 label="Avisos de pedidos"
                 description="Muestra un aviso cuando cambie el estado."
@@ -120,6 +125,15 @@ export default function ProfilePage() {
               />
             </div>
           </Card>
+
+          <Button variant="secondary" fullWidth disabled={signingOut} onClick={() => {
+            setSigningOut(true);
+            void signOut().then(() => navigate('/', { replace: true }))
+              .catch(() => notificationService.notify('No pudimos cerrar sesión. Vuelve a intentarlo.', 'danger'))
+              .finally(() => setSigningOut(false));
+          }}>
+            <LogOut aria-hidden="true" className="h-4 w-4" /> {signingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}
+          </Button>
 
 
         </div>

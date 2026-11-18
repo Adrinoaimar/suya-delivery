@@ -31,7 +31,7 @@ export function MapUnavailable({
             <p className="mt-1 text-sm leading-5 text-[#4A4F55]">
               {audience === 'rider'
                 ? 'No dibujamos una ruta con coordenadas inventadas. Usa la dirección y confirma el punto con el cliente.'
-                : 'El repartidor verá la ruta cuando ambos puntos estén confirmados.'}
+                : 'El mapa estará disponible cuando el negocio y tu dirección tengan coordenadas confirmadas. No mostramos ubicaciones aproximadas.'}
             </p>
           </div>
         </div>

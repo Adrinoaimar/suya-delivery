@@ -18,6 +18,7 @@ import { SupabaseDeveloperRiderAccountService } from './SupabaseDeveloperRiderAc
 import { SupabaseAnalyticsService } from './SupabaseAnalyticsService';
 import { CashPaymentServiceImpl } from './CashPaymentService';
 import { SupabasePaymentService } from './SupabasePaymentService';
+import { SupabasePaymentGatewayService } from './SupabasePaymentGatewayService';
 import { Capacitor } from '@capacitor/core';
 import { CapacitorLocationService } from './CapacitorLocationService';
 import { BrowserLocationService } from './BrowserLocationService';
@@ -38,6 +39,9 @@ import type {
   CashRegisterService,
   AnalyticsService,
 } from './types';
+
+export const paymentGatewayService = new SupabasePaymentGatewayService();
+export type { PaymentGatewayService, PaymentGatewayConfig, GatewayAdminResult, GatewayPaymentRow } from './SupabasePaymentGatewayService';
 
 let resolvedAnalyticsService: Promise<AnalyticsService> | null = null;
 function resolveAnalyticsService(): Promise<AnalyticsService> {
@@ -156,6 +160,9 @@ export const developerRiderAccountService: DeveloperRiderAccountService = {
 };
 
 let resolvedWalletObserverService: Promise<WalletObserverService> | null = null;
+const localGatewayConfigs = new Map<string, import('./types').GatewayConfigRecord>();
+const localReconciliationExceptions: import('./types').PaymentReconciliationExceptionItem[] = [];
+
 function resolveWalletObserverService(): Promise<WalletObserverService> {
   if (resolvedWalletObserverService) return resolvedWalletObserverService;
   resolvedWalletObserverService =
@@ -198,11 +205,123 @@ function resolveWalletObserverService(): Promise<WalletObserverService> {
           async savePaymentAccount() {
             throw new Error('La configuración de billeteras requiere Supabase.');
           },
+          async listGatewayConfigs(restaurantId) {
+            return [...localGatewayConfigs.values()].filter(
+              (cfg) => cfg.restaurantId === restaurantId,
+            );
+          },
+          async saveGatewayConfig(input) {
+            const key = `${input.restaurantId}:${input.provider}`;
+            const existing = localGatewayConfigs.get(key);
+            const secretTrimmed = input.secretKey?.trim() || '';
+            const webhookTrimmed = input.webhookSecret?.trim() || '';
+            const hasSecretKey = Boolean(secretTrimmed) || Boolean(existing?.hasSecretKey);
+            const hasWebhookSecret = Boolean(webhookTrimmed) || Boolean(existing?.hasWebhookSecret);
+            const verificationMode =
+              input.provider === 'static_qr' && !hasWebhookSecret
+                ? 'assisted_manual'
+                : 'automatic_cloud';
+            if (input.active) {
+              for (const [k, v] of localGatewayConfigs.entries()) {
+                if (v.restaurantId === input.restaurantId && v.provider !== input.provider) {
+                  localGatewayConfigs.set(k, { ...v, active: false });
+                }
+              }
+            }
+            const saved: import('./types').GatewayConfigRecord = {
+              id: existing?.id ?? `cfg-${input.restaurantId}-${input.provider}`,
+              restaurantId: input.restaurantId,
+              provider: input.provider,
+              environment: input.environment,
+              active: Boolean(input.active),
+              verificationMode,
+              accountLabel: input.accountLabel.trim(),
+              publicKey: input.publicKey?.trim() || existing?.publicKey || null,
+              merchantCode: input.merchantCode?.trim() || existing?.merchantCode || null,
+              qrPayload: input.qrPayload?.trim() || existing?.qrPayload || null,
+              hasSecretKey,
+              secretKeyLast4: secretTrimmed
+                ? secretTrimmed.slice(-4)
+                : (existing?.secretKeyLast4 ?? null),
+              hasWebhookSecret,
+              webhookSecretLast4: webhookTrimmed
+                ? webhookTrimmed.slice(-4)
+                : (existing?.webhookSecretLast4 ?? null),
+              connectionStatus: existing?.connectionStatus ?? 'connected',
+              lastVerifiedAt:
+                existing?.lastVerifiedAt ?? new Date().toISOString(),
+              lastSafeTestAt: existing?.lastSafeTestAt ?? null,
+              lastSafeTestPassed: existing?.lastSafeTestPassed ?? false,
+              updatedAt: new Date().toISOString(),
+            };
+            localGatewayConfigs.set(key, saved);
+            return saved;
+          },
+          async testGatewayConnection(restaurantId, provider) {
+            const key = `${restaurantId}:${provider}`;
+            const existing = localGatewayConfigs.get(key);
+            if (existing) {
+              localGatewayConfigs.set(key, {
+                ...existing,
+                connectionStatus: 'connected',
+                lastVerifiedAt: new Date().toISOString(),
+              });
+            }
+            return {
+              ok: true,
+              message: `Conexión y formato verificados para ${provider}.`,
+            };
+          },
+          async recordGatewayTestResult(restaurantId, provider, connectionOk, safeTestOk) {
+            const key = `${restaurantId}:${provider}`;
+            const existing = localGatewayConfigs.get(key);
+            if (existing) {
+              localGatewayConfigs.set(key, {
+                ...existing,
+                connectionStatus: connectionOk ? 'connected' : 'failed',
+                lastSafeTestAt: new Date().toISOString(),
+                lastSafeTestPassed: safeTestOk,
+              });
+            }
+            return true;
+          },
+          async listReconciliationExceptions(restaurantId) {
+            return localReconciliationExceptions.filter(
+              (item) => item.restaurantId === restaurantId,
+            );
+          },
+          async resolveReconciliationException(exceptionId, resolutionStatus, resolutionNote) {
+            const idx = localReconciliationExceptions.findIndex((item) => item.id === exceptionId);
+            if (idx >= 0) {
+              localReconciliationExceptions[idx] = {
+                ...localReconciliationExceptions[idx],
+                resolutionStatus,
+                resolutionNote,
+                resolvedAt: new Date().toISOString(),
+              };
+            }
+            return true;
+          },
         });
   return resolvedWalletObserverService;
 }
 
 export const walletObserverService: WalletObserverService = {
+  async listExpiredWalletClaims(restaurantId) {
+    return (await resolveWalletObserverService()).listExpiredWalletClaims?.(restaurantId) ?? [];
+  },
+  async reviewExpiredWalletClaim(restaurantId, attemptId) {
+    return (await resolveWalletObserverService()).reviewExpiredWalletClaim?.(restaurantId, attemptId) ?? false;
+  },
+  async listObserverRoutes(restaurantId) {
+    return (await resolveWalletObserverService()).listObserverRoutes?.(restaurantId) ?? [];
+  },
+  async changeObserverRoute(restaurantId, action) {
+    return (await resolveWalletObserverService()).changeObserverRoute?.(restaurantId, action) ?? null;
+  },
+  async verifyRoutedObservation(observationId, paymentAttemptId) {
+    return (await resolveWalletObserverService()).verifyRoutedObservation?.(observationId, paymentAttemptId) ?? false;
+  },
   async listDevices(restaurantIds) {
     return (await resolveWalletObserverService()).listDevices(restaurantIds);
   },
@@ -222,6 +341,10 @@ export const walletObserverService: WalletObserverService = {
   },
   async setDeviceActive(deviceId, active) {
     return (await resolveWalletObserverService()).setDeviceActive(deviceId, active);
+  },
+  async setDeviceAutoSettle(deviceId, enabled) {
+    const svc = await resolveWalletObserverService();
+    return svc.setDeviceAutoSettle ? svc.setDeviceAutoSettle(deviceId, enabled) : false;
   },
   async rotateDevice(deviceId) {
     return (await resolveWalletObserverService()).rotateDevice(deviceId);
@@ -249,6 +372,43 @@ export const walletObserverService: WalletObserverService = {
   },
   async savePaymentAccount(input) {
     return (await resolveWalletObserverService()).savePaymentAccount(input);
+  },
+  async listGatewayConfigs(restaurantId) {
+    const svc = await resolveWalletObserverService();
+    return svc.listGatewayConfigs ? svc.listGatewayConfigs(restaurantId) : [];
+  },
+  async saveGatewayConfig(input) {
+    const svc = await resolveWalletObserverService();
+    if (!svc.saveGatewayConfig) {
+      throw new Error('La configuración de cobros requiere Supabase.');
+    }
+    return svc.saveGatewayConfig(input);
+  },
+  async testGatewayConnection(restaurantId, provider) {
+    const svc = await resolveWalletObserverService();
+    if (!svc.testGatewayConnection) {
+      return { ok: provider === 'static_qr', message: 'Comprobación local completada.' };
+    }
+    return svc.testGatewayConnection(restaurantId, provider);
+  },
+  async recordGatewayTestResult(restaurantId, provider, connectionOk, safeTestOk) {
+    const svc = await resolveWalletObserverService();
+    return svc.recordGatewayTestResult
+      ? svc.recordGatewayTestResult(restaurantId, provider, connectionOk, safeTestOk)
+      : true;
+  },
+  async listReconciliationExceptions(restaurantId) {
+    const svc = await resolveWalletObserverService();
+    return svc.listReconciliationExceptions
+      ? svc.listReconciliationExceptions(restaurantId)
+      : [];
+  },
+  async resolveReconciliationException(exceptionId, resolutionStatus, resolutionNote) {
+    const svc = await resolveWalletObserverService();
+    if (!svc.resolveReconciliationException) {
+      throw new Error('La resolución de excepciones requiere Supabase.');
+    }
+    return svc.resolveReconciliationException(exceptionId, resolutionStatus, resolutionNote);
   },
 };
 
@@ -577,6 +737,22 @@ function resolvePaymentService(): PaymentService {
   return resolvedPaymentService;
 }
 export const paymentService: PaymentService = {
+  async getExpiredWalletClaim(orderId, attemptId) {
+    return resolvePaymentService().getExpiredWalletClaim?.(orderId, attemptId) ?? null;
+  },
+  async reportExpiredWalletClaim(orderId, attemptId, payerName, receiptReference) {
+    const report = resolvePaymentService().reportExpiredWalletClaim?.(orderId, attemptId, payerName, receiptReference);
+    if (!report) throw new Error('El envío de reclamos no está disponible.');
+    return report;
+  },
+  async verifyRoutedYapeCode(orderId, code, payerDisplayName) {
+    const service = resolvePaymentService();
+    if (!service.verifyRoutedYapeCode) throw new Error('La verificación de Yape no está disponible.');
+    return service.verifyRoutedYapeCode(orderId, code, payerDisplayName);
+  },
+  async retryRoutedPayment(orderId, guestAccessToken) {
+    await resolvePaymentService().retryRoutedPayment?.(orderId, guestAccessToken);
+  },
   authorize(method, amount) {
     return resolvePaymentService().authorize(method, amount);
   },
@@ -613,6 +789,21 @@ export const paymentService: PaymentService = {
   },
   chargeCard(intent, tokenId, customerEmail, guestAccessToken) {
     return resolvePaymentService().chargeCard(intent, tokenId, customerEmail, guestAccessToken);
+  },
+  chargeYapeOtp(intent, phoneNumber, otp, customerEmail, guestAccessToken) {
+    const svc = resolvePaymentService();
+    if (!svc.chargeYapeOtp) {
+      return Promise.reject(new Error('El cobro automático Yape OTP no está disponible.'));
+    }
+    return svc.chargeYapeOtp(intent, phoneNumber, otp, customerEmail, guestAccessToken);
+  },
+  getCheckoutPaymentOptions(restaurantId) {
+    const svc = resolvePaymentService();
+    return svc.getCheckoutPaymentOptions ? svc.getCheckoutPaymentOptions(restaurantId) : Promise.resolve(null);
+  },
+  createDynamicQr(intent, guestAccessToken) {
+    const svc = resolvePaymentService();
+    return svc.createDynamicQr ? svc.createDynamicQr(intent, guestAccessToken) : Promise.resolve(null);
   },
   getIntent(orderId, guestAccessToken) {
     return resolvePaymentService().getIntent(orderId, guestAccessToken);

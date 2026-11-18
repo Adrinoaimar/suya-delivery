@@ -11,6 +11,7 @@ import {
 import { Capacitor } from '@capacitor/core';
 import { Button } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
+import { LogoMark } from '@/components/common/Logo';
 import { notificationService, nativeWalletObserver } from '@/lib/services';
 import type { NativeWalletObserverStatus } from '@/lib/services/NativeWalletObserverService';
 
@@ -63,6 +64,8 @@ export default function WalletObserverPage() {
   const [status, setStatus] = useState<NativeWalletObserverStatus | null>(null);
   const [pairingCode, setPairingCode] = useState('');
   const [busy, setBusy] = useState(false);
+  const slot = status?.slot ? ['Adriano', 'Jean', 'Reserva'][status.slot - 1] : null;
+  const pairingReady = slot ? /^[A-F0-9]{16}$/.test(pairingCode) : /^(?:[A-F0-9]{8}|[A-F0-9]{16})$/.test(pairingCode);
 
   const refresh = useCallback(() => {
     if (!isAndroid) return;
@@ -86,8 +89,8 @@ export default function WalletObserverPage() {
 
   const pair = async () => {
     const normalizedCode = pairingCode.trim().toUpperCase();
-    if (!/^[A-F0-9]{8}$/.test(normalizedCode)) {
-      notificationService.notify('Escribe el código de emparejamiento de 8 caracteres.', 'warning');
+    if (!pairingReady) {
+      notificationService.notify(slot ? `Escribe el código de 16 caracteres de ${slot}.` : 'Escribe el código de emparejamiento.', 'warning');
       return;
     }
     setBusy(true);
@@ -136,13 +139,16 @@ export default function WalletObserverPage() {
   };
 
   return (
-    <main id="contenido" className="min-h-screen bg-suya-ivory px-4 py-8 text-suya-carbon sm:px-6">
+    <main id="contenido" className="min-h-dvh bg-suya-ivory px-4 pb-8 pt-[calc(1rem+env(safe-area-inset-top))] text-suya-carbon sm:px-6">
       <div className="mx-auto flex max-w-lg flex-col gap-4">
-        <header className="rounded-card bg-suya-green p-5 text-white shadow-soft">
-          <p className="text-xs font-bold uppercase tracking-[.18em] text-suya-lime">Suya Caja</p>
-          <h1 className="mt-2 font-display text-2xl font-bold">Conexión de caja</h1>
-          <p className="mt-2 text-sm text-white/80">
-            Vincula este teléfono para mantener la evidencia de pagos sincronizada con operaciones.
+        <header className="motion-fade rounded-card bg-suya-green-dark p-5 text-white">
+          <div className="flex items-center gap-2.5">
+            <LogoMark tone="onDark" className="h-9 w-9 shrink-0" />
+            <h1 className="font-display text-2xl font-bold">{slot ? `Suya Caja · ${slot}` : 'Suya Caja'}</h1>
+          </div>
+          <p className="mt-2 text-sm text-white/90">
+            {status?.configured && status.notificationAccess ? 'Acceso a notificaciones activado.'
+              : 'Vincula el teléfono y activa el acceso a notificaciones.'}
           </p>
         </header>
 
@@ -152,7 +158,7 @@ export default function WalletObserverPage() {
           </Card>
         )}
 
-        <Card>
+        {!status?.configured && <Card>
           <div className="flex items-start gap-3">
             <span className="rounded-2xl bg-suya-lime-soft p-3 text-suya-green">
               <KeyRound className="h-5 w-5" aria-hidden="true" />
@@ -160,8 +166,7 @@ export default function WalletObserverPage() {
             <div>
               <h2 className="font-semibold">Emparejamiento de caja</h2>
               <p className="mt-1 text-sm text-suya-muted">
-                Escribe el código de un solo uso que aparece en Backoffice. La credencial interna se
-                guarda cifrada en este teléfono y nunca se muestra.
+                Genera el código de un solo uso en Suya Empresas, en Dispositivos de pagos.
               </p>
             </div>
           </div>
@@ -175,16 +180,16 @@ export default function WalletObserverPage() {
                 setPairingCode(
                   event.target.value
                     .replace(/[^a-fA-F0-9]/g, '')
-                    .slice(0, 8)
+                    .slice(0, 16)
                     .toUpperCase(),
                 )
               }
               autoComplete="off"
               spellCheck={false}
               inputMode="text"
-              maxLength={8}
-              pattern="[A-Fa-f0-9]{8}"
-              placeholder="Ej. AB12CD34"
+              maxLength={16}
+              pattern="(?:[A-Fa-f0-9]{8}|[A-Fa-f0-9]{16})"
+              placeholder={slot ? 'Código de 16 caracteres' : 'Código de Caja'}
               className="mt-1 h-12 w-full rounded-btn border border-suya-border bg-white px-3 font-mono text-xs outline-none focus:border-suya-green focus:ring-2 focus:ring-suya-green/20"
               disabled={!isAndroid || busy}
             />
@@ -192,12 +197,12 @@ export default function WalletObserverPage() {
           <Button
             className="mt-3 w-full"
             onClick={() => void pair()}
-            disabled={!isAndroid || busy || !pairingCode.trim()}
+            disabled={!isAndroid || busy || !pairingReady}
           >
             <LockKeyhole className="h-4 w-4" aria-hidden="true" />
             {busy ? 'Emparejando…' : 'Emparejar teléfono'}
           </Button>
-        </Card>
+        </Card>}
 
         <Card className="border-suya-green/20 bg-white">
           <div className="flex items-start gap-3">
@@ -264,13 +269,12 @@ export default function WalletObserverPage() {
         </Card>
 
         <Card className="border-suya-sun/60 bg-suya-sun-soft text-sm">
-          Android 15 y posteriores pueden ocultar códigos de verificación a los listeners de terceros.
-          Observer solo recibe los campos que Android expone; si el código no aparece, escríbelo desde
-          Yape en el checkout y revisa el pago en Caja.
+          Si Android oculta el código de Yape, revisa el abono desde Dispositivos de pagos
+          en Suya Empresas.
         </Card>
 
         <p className="px-1 text-center text-xs text-suya-muted">
-          La sincronización conserva evidencia mínima y nunca autoriza un pago automáticamente.
+          Suya Caja reporta el abono. El servidor verifica el pago y actualiza el pedido.
         </p>
       </div>
     </main>

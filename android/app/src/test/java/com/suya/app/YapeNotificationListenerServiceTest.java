@@ -15,7 +15,7 @@ public class YapeNotificationListenerServiceTest {
         );
 
         assertEquals("Yape", fields[0]);
-        assertEquals("Recibiste S/ 30.00 Código de operación: 482901", fields[6]);
+        assertEquals("Recibiste S/ 30.00\nCódigo de operación: 482901", fields[6]);
     }
 
     @Test
@@ -66,6 +66,16 @@ public class YapeNotificationListenerServiceTest {
     }
 
     @Test
+    public void recognizesIncomingLemonNotificationInSpanish() {
+        String notification = "Lemon Cash ¡Recibiste S/ 25.00! De: Carlos Mendoza. Operación: LEM908172";
+
+        assertTrue(YapeNotificationListenerService.isIncomingNotification(notification));
+        assertTrue(YapeNotificationListenerService.containsIncomingMoney(notification));
+        assertEquals("LEM908172", YapeNotificationListenerService.extractCode(notification));
+        assertEquals("Carlos Mendoza", YapeNotificationListenerService.extractSenderName(notification));
+    }
+
+    @Test
     public void acceptsOnlyTheEightCharacterPairingCode() {
         assertTrue(YapeNotificationListenerService.isPairingCodeValid("AB12CD34"));
         assertTrue(!YapeNotificationListenerService.isPairingCodeValid("AB12-CD34"));
@@ -92,6 +102,20 @@ public class YapeNotificationListenerServiceTest {
                         "Yape recibido S/ 30.00. De: Ana María Torres. Código de operación: 482901"
                 )
         );
+    }
+
+    @Test
+    public void extractsYapeSenderFromAnIndependentNotificationLine() {
+        assertEquals("Clara Elena Torres", YapeNotificationListenerService.extractSenderNameFromFields(
+                new String[]{"Yape", "Recibiste S/ 1.00\nPagador: Clara Elena Torres\nCódigo: 482"},
+                "Recibiste S/ 1.00 Pagador: Clara Elena Torres Código: 482"
+        ));
+        assertEquals("Clara Elena Torres", YapeNotificationListenerService.extractSenderName(
+                "Clara Elena Torres te yapeó S/ 1.00"
+        ));
+        assertEquals(null, YapeNotificationListenerService.extractSenderName(
+                "Recibiste S/ 1.00. Código de seguridad: 482"
+        ));
     }
 
     @Test

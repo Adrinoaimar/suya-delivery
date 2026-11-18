@@ -55,10 +55,13 @@ async function updateAttempt(
 ): Promise<boolean> {
   const response = await fetch(`${supabaseUrl}/rest/v1/payment_attempts?id=eq.${encodeURIComponent(attemptId)}&status=eq.pending`, {
     method: 'PATCH',
-    headers: { ...serviceHeaders(serviceRoleKey), Prefer: 'return=minimal' },
+    headers: { ...serviceHeaders(serviceRoleKey), Prefer: 'return=representation' },
     body: JSON.stringify({ ...patch, updated_at: new Date().toISOString() }),
   });
-  if (response.ok) return true;
+  if (response.ok) {
+    const rows: unknown = await response.json();
+    return Array.isArray(rows) && rows.length === 1;
+  }
   console.error('Payment attempt webhook update failed', response.status);
   return false;
 }
@@ -93,9 +96,9 @@ Deno.serve(async (request) => {
   if (!/^ord_(?:test|live)_[A-Za-z0-9_-]+$/.test(providerReference)) return json({ received: true });
 
   const providerUrl = `https://api.culqi.com/v2/orders/${encodeURIComponent(providerReference)}`;
-  const providerResponse = await fetch(providerUrl, { headers: { Authorization: `Bearer ${culqiSecretKey}` } });
-  if (!providerResponse.ok) return json({ error: 'No se pudo verificar la orden Culqi.' }, 502);
-  const providerOrder = await providerResponse.json() as { id?: unknown; state?: unknown; amount?: unknown; currency_code?: unknown };
+  const providerResponse = await fetch(providerUrl, { headers: { Authorization: `Bearer ${culqiSecretKey}` }, signal: AbortSignal.timeout(10_000) }).catch(() => null);
+  if (!providerResponse?.ok) return json({ error: 'No se pudo verificar la orden Culqi.' }, 502);
+  const providerOrder = await providerResponse.json() as { id?: unknown; state?: unknown; amount?: unknown; currency_code?: unknown; paid_at?: unknown; metadata?: { suya_order_id?: unknown; suya_payment_attempt_id?: unknown } };
   if (text(providerOrder.id) !== providerReference || providerOrder.currency_code !== 'PEN') {
     return json({ error: 'Orden Culqi inconsistente.' }, 422);
   }
@@ -103,12 +106,16 @@ Deno.serve(async (request) => {
   const attemptsUrl = new URL(`${supabaseUrl}/rest/v1/payment_attempts`);
   attemptsUrl.searchParams.set('provider', 'eq.culqi');
   attemptsUrl.searchParams.set('provider_reference', `eq.${providerReference}`);
-  attemptsUrl.searchParams.set('select', 'id,amount,status');
+  attemptsUrl.searchParams.set('select', 'id,order_id,amount,status,expires_at');
   const attemptsResponse = await fetch(attemptsUrl, { headers: serviceHeaders(serviceRoleKey) });
   if (!attemptsResponse.ok) return json({ error: 'No se pudo localizar el intento.' }, 502);
-  const attempts = await attemptsResponse.json() as Array<{ id?: string; amount?: number | string; status?: string }>;
+  const attempts = await attemptsResponse.json() as Array<{ id?: string; order_id?: string; amount?: number | string; status?: string; expires_at?: string }>;
   const attempt = attempts[0];
   if (!attempt?.id) return json({ received: true });
+  if (providerOrder.metadata?.suya_order_id !== attempt.order_id
+    || providerOrder.metadata?.suya_payment_attempt_id !== attempt.id) {
+    return json({ error: 'La orden Culqi no corresponde al pedido.' }, 422);
+  }
   if (Math.round(Number(attempt.amount) * 100) !== Number(providerOrder.amount)) {
     const updated = await updateAttempt(supabaseUrl, serviceRoleKey, attempt.id, {
       status: 'failed',
@@ -119,13 +126,30 @@ Deno.serve(async (request) => {
   }
 
   const state = text(providerOrder.state).toLowerCase();
+  if (attempt.status === 'authorized') return json({ received: true });
   if (state === 'paid') {
+    const paidAt = Number(providerOrder.paid_at) * 1000;
+    const expiresAt = Date.parse(attempt.expires_at ?? '');
+    if (attempt.status !== 'pending' || !Number.isFinite(paidAt) || paidAt <= 0
+      || !Number.isFinite(expiresAt) || paidAt > expiresAt) {
+      // El dinero puede existir aunque el pedido ya no sea atendible. Conserva
+      // el movimiento para revisión y nunca reabre ni despacha una orden cerrada.
+      const reviewResponse = await fetch(`${supabaseUrl}/rest/v1/payment_attempts?id=eq.${encodeURIComponent(attempt.id)}&provider_reference=eq.${encodeURIComponent(providerReference)}`, {
+        method: 'PATCH',
+        headers: { ...serviceHeaders(serviceRoleKey), Prefer: 'return=representation' },
+        body: JSON.stringify({ failure_code: 'culqi_late_or_closed_payment_review', updated_at: new Date().toISOString() }),
+      });
+      if (!reviewResponse.ok) return json({ error: 'No se pudo registrar el pago para revisión.' }, 502);
+      const reviewed: unknown = await reviewResponse.json();
+      if (!Array.isArray(reviewed) || reviewed.length !== 1) return json({ error: 'No se pudo registrar el pago para revisión.' }, 502);
+      return json({ received: true, review_required: true });
+    }
     const updated = await updateAttempt(supabaseUrl, serviceRoleKey, attempt.id, {
       status: 'authorized',
       failure_code: null,
     });
     if (!updated) return json({ error: 'No se pudo registrar la autorización Culqi.' }, 502);
-  } else if (['expired', 'deleted', 'failed'].includes(state)) {
+  } else if (attempt.status === 'pending' && ['expired', 'deleted', 'failed'].includes(state)) {
     const updated = await updateAttempt(supabaseUrl, serviceRoleKey, attempt.id, {
       status: 'failed',
       failure_code: `culqi_order_${state}`,

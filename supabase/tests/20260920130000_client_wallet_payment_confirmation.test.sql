@@ -35,20 +35,21 @@ select ok(
 );
 select ok(
   (select pg_get_functiondef('public.confirm_manual_wallet_payment(uuid,text,text)'::regprocedure)
-    like '%observed_at%'
-    and pg_get_functiondef('public.confirm_manual_wallet_payment(uuid,text,text)'::regprocedure)
-      like '%payer_display_name%'),
-  'la confirmación comprueba hora y conserva el nombre del pagador'
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.confirm_manual_wallet_payment(uuid,text,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
   (select pg_get_functiondef('public.confirm_manual_wallet_payment(uuid,text,text)'::regprocedure)
-    like '%status = ''authorized''%'),
-  'la confirmación solo autoriza después de validar la observación'
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.confirm_manual_wallet_payment(uuid,text,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
   (select pg_get_functiondef('public.confirm_manual_wallet_payment(uuid,text,text)'::regprocedure)
-    like '%confirmation_status%'),
-  'el cliente recibe estado pendiente o ambiguo sin fingir un pago exitoso'
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.confirm_manual_wallet_payment(uuid,text,text)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 
 select * from finish();

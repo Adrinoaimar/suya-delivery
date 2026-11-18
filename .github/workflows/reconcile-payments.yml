@@ -1,0 +1,29 @@
+name: Conciliar cobros oficiales de SUYA
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: suya-official-payment-reconciliation
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    if: vars.PAYMENT_RECONCILIATION_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Consultar la API oficial y conciliar sin exponer credenciales
+        env:
+          PAYMENT_GATEWAY_URL: ${{ secrets.PAYMENT_GATEWAY_URL }}
+          PAYMENT_RECONCILE_TOKEN: ${{ secrets.PAYMENT_RECONCILE_TOKEN }}
+        run: node scripts/reconcile-payments.mjs

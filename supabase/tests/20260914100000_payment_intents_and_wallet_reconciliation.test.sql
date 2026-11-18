@@ -210,10 +210,10 @@ select ok(
   'solo backoffice verifica observaciones'
 );
 select ok(
-  has_function_privilege('anon', 'public.claim_culqi_payment_secure(uuid,text,text)', 'execute')
-    and has_function_privilege('anon', 'public.authorize_culqi_payment_secure(uuid,text,text,text,text)', 'execute')
-    and has_function_privilege('anon', 'public.fail_culqi_payment_claim_secure(uuid,text,text,text)', 'execute'),
-  'cliente y guest usan RPCs Culqi reservadas'
+  not has_function_privilege('anon', 'public.claim_culqi_payment_secure(uuid,text,text)', 'execute')
+    and not has_function_privilege('anon', 'public.authorize_culqi_payment_secure(uuid,text,text,text,text)', 'execute')
+    and not has_function_privilege('anon', 'public.fail_culqi_payment_claim_secure(uuid,text,text,text)', 'execute'),
+  'el cliente no puede reservar ni finalizar cargos Culqi'
 );
 select ok(
   not has_function_privilege('authenticated', 'public.authorize_culqi_card_payment(uuid,text,text)', 'execute'),
@@ -233,12 +233,16 @@ select ok(
   'la renovación solo reemplaza intentos expirados'
 );
 select ok(
-  (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) like '%verification_status = ''verified''%'),
-  'la verificación cambia el estado de la evidencia'
+  (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure)
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
-  (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) like '%status = ''authorized''%'),
-  'la verificación autoriza el intento'
+  (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure)
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
   (select pg_get_functiondef('public.authorize_culqi_payment(uuid,text,text,text,text)'::regprocedure)
@@ -250,9 +254,9 @@ select ok(
   'reservar creación Culqi usa security definer'
 );
 select ok(
-  has_function_privilege('anon', 'public.claim_culqi_order_creation_secure(uuid,text,text)', 'execute')
-    and has_function_privilege('authenticated', 'public.claim_culqi_order_creation_secure(uuid,text,text)', 'execute'),
-  'cliente y guest pueden reservar una sola creación Culqi'
+  not has_function_privilege('anon', 'public.claim_culqi_order_creation_secure(uuid,text,text)', 'execute')
+    and not has_function_privilege('authenticated', 'public.claim_culqi_order_creation_secure(uuid,text,text)', 'execute'),
+  'el cliente no puede reservar la creación externa Culqi'
 );
 select ok(
   (select pg_get_functiondef('public.claim_culqi_order_creation(uuid,text,text)'::regprocedure)
@@ -266,13 +270,15 @@ select ok(
 );
 select ok(
   (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure)
-    like '%v_attempt.provider <> ''wallet_observer''%'),
-  'la verificación no puede autorizar una tentativa Culqi'
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
   (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure)
-    like '%payment identity is ambiguous%'),
-  'un sufijo ambiguo exige el código completo'
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
   (select pg_get_functiondef('public.list_wallet_payment_candidates(uuid)'::regprocedure) like '%payer_code_last4%'),
@@ -288,13 +294,16 @@ select ok(
   'la evidencia del cliente delega en la declaración HMAC server-side'
 );
 select ok(
-  (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) like '%payment identity%'),
-  'la verificación rechaza identidad incompleta'
+  (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure)
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
   (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure)
-    like '%v_attempt.created_at > v_observation.observed_at%'),
-  'la verificación rechaza intentos creados después de la notificación'
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
   not has_table_privilege('authenticated', 'public.restaurant_payment_accounts', 'SELECT'),
@@ -395,6 +404,9 @@ select lives_ok(
   $$ select * from public.create_culqi_payment_intent_secure('a6300000-0000-0000-0000-000000000003', 'yape') $$,
   'cliente uno crea intento Culqi de S/30'
 );
+reset role;
+set local request.jwt.claims = '{"role":"service_role"}';
+set local role service_role;
 select lives_ok(
   $$ select * from public.claim_culqi_order_creation_secure(
     (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000003'), 'yape'
@@ -514,26 +526,28 @@ select is(
   'a6300000-0000-0000-0000-000000000002',
   'el segundo código no cruza al cliente uno'
 );
-select lives_ok(
+select throws_ok(
   $$ select public.verify_wallet_payment(
     'a6600000-0000-0000-0000-000000000001',
     (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000001')
   ) $$,
-  'caja autoriza el primer pago exacto'
+  'La notificación no acredita el abono. Verifica el movimiento en el canal oficial del proveedor; esta vía no permite autorizar pagos.',
+  'la evidencia Android nunca basta para autorizar un pago'
 );
-select lives_ok(
+select throws_ok(
   $$ select public.verify_wallet_payment(
     'a6600000-0000-0000-0000-000000000002',
     (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000002')
   ) $$,
-  'caja autoriza el segundo pago exacto'
+  'La notificación no acredita el abono. Verifica el movimiento en el canal oficial del proveedor; esta vía no permite autorizar pagos.',
+  'la evidencia Android nunca basta para autorizar un pago'
 );
 select is(
   (select count(*) from public.payment_attempts where order_id in (
     'a6300000-0000-0000-0000-000000000001', 'a6300000-0000-0000-0000-000000000002'
   ) and status = 'authorized'),
-  2::bigint,
-  'los dos pagos iguales quedan autorizados en su pedido correcto'
+  0::bigint,
+  'dos pagos del mismo importe permanecen sin autorización financiera'
 );
 
 -- Negative identity loop: a notification exposing only the same last four
@@ -597,8 +611,8 @@ select throws_ok(
     'a6600000-0000-0000-0000-000000000003',
     (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000005')
   ) $$,
-  'payment identity is ambiguous; full operation code required',
-  'la verificación rechaza el sufijo ambiguo'
+  'La notificación no acredita el abono. Verifica el movimiento en el canal oficial del proveedor; esta vía no permite autorizar pagos.',
+  'la evidencia Android nunca basta para autorizar un pago'
 );
 
 select lives_ok(
@@ -620,12 +634,13 @@ select is(
   1::bigint,
   'el código completo reduce los candidatos a un solo pedido'
 );
-select lives_ok(
+select throws_ok(
   $$ select public.verify_wallet_payment(
     'a6600000-0000-0000-0000-000000000003',
     (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000005')
   ) $$,
-  'el código completo autoriza únicamente el pedido correcto'
+  'La notificación no acredita el abono. Verifica el movimiento en el canal oficial del proveedor; esta vía no permite autorizar pagos.',
+  'la evidencia Android nunca basta para autorizar un pago'
 );
 
 -- Temporal negative: an observation cannot authorize a payment created later,
@@ -667,8 +682,8 @@ select throws_ok(
     'a6600000-0000-0000-0000-000000000004',
     (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000007')
   ) $$,
-  'wallet observation does not match payment identity',
-  'la verificación rechaza pagos creados después de la observación'
+  'La notificación no acredita el abono. Verifica el movimiento en el canal oficial del proveedor; esta vía no permite autorizar pagos.',
+  'la evidencia Android nunca basta para autorizar un pago'
 );
 reset role;
 
@@ -742,8 +757,8 @@ select throws_ok(
     'a6600000-0000-0000-0000-000000000005',
     (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000008')
   ) $$,
-  'cancelled order cannot be verified',
-  'la autorización final rechaza un pedido cancelado'
+  'La notificación no acredita el abono. Verifica el movimiento en el canal oficial del proveedor; esta vía no permite autorizar pagos.',
+  'la evidencia Android nunca basta para autorizar un pago'
 );
 reset role;
 
@@ -775,8 +790,8 @@ select throws_ok(
     'a6600000-0000-0000-0000-000000000003',
     (select id from public.payment_attempts where order_id = 'a6300000-0000-0000-0000-000000000005')
   ) $$,
-  'payment identity is ambiguous; full operation code required',
-  'dos códigos completos idénticos no autorizan el primer pedido'
+  'La notificación no acredita el abono. Verifica el movimiento en el canal oficial del proveedor; esta vía no permite autorizar pagos.',
+  'la evidencia Android nunca basta para autorizar un pago'
 );
 select is(
   (select count(*) from public.payment_attempts

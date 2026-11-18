@@ -9,6 +9,8 @@ export interface MapViewProps {
   rider?: LatLng | null;
   /** Posiciones recientes del repartidor para reconstruir el rastro al abrir el seguimiento. */
   riderTrail?: LatLng[];
+  variant?: 'tracking';
+  riderStale?: boolean;
   className?: string;
   /** Etiqueta accesible: el mapa es una imagen, no un control. */
   label?: string;

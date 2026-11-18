@@ -17,7 +17,7 @@ export function BottomNavigation() {
   return (
     <nav
       aria-label="Navegación principal"
-      className="suya-lens-nav fixed inset-x-4 bottom-[calc(var(--bottom-nav-gap)+env(safe-area-inset-bottom,0px))] z-30 rounded-promo p-1.5 lg:hidden"
+      className="fixed inset-x-0 bottom-0 z-30 border-t border-suya-border bg-white px-2 pb-safe-bottom lg:hidden"
     >
       <ul className="mx-auto flex max-w-md gap-0.5">
         {ITEMS.map((item) => {
@@ -29,7 +29,7 @@ export function BottomNavigation() {
                 end={item.end}
                 className={({ isActive }) =>
                   cn(
-                    'relative flex h-[60px] min-h-12 flex-col items-center justify-center gap-1 rounded-[19px] text-[11px] font-semibold transition-[color,background-color,transform] active:scale-[0.97]',
+                    'relative flex h-[60px] flex-col items-center justify-center gap-0.5 rounded-btn text-[11px] font-semibold transition-colors hover:bg-suya-ivory',
                     isActive ? 'text-suya-green' : 'text-suya-muted',
                   )
                 }
@@ -38,13 +38,13 @@ export function BottomNavigation() {
                   <>
                     <span
                       className={cn(
-                        'relative rounded-xl px-3 py-1 transition-[background-color,color,box-shadow]',
-                        isActive && 'bg-suya-green text-white shadow-[0_8px_20px_rgba(11,112,72,.24)]',
+                        'relative rounded-full px-3 py-1 transition-colors',
+                        isActive && 'bg-suya-lime-soft text-suya-green-dark',
                       )}
                     >
                       <Icon
                         aria-hidden="true"
-                        className={cn('h-[22px] w-[22px]', isActive && 'stroke-[2.4]')}
+                        className={cn('h-[22px] w-[22px]', isActive && 'suya-value-in stroke-[2.4]')}
                       />
                       {item.to === '/orders' && hasActiveOrder && (
                         <>

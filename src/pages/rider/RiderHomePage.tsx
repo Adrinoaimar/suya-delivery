@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Bike, Navigation, ShieldCheck } from 'lucide-react';
+import { Bike, ChevronRight, Navigation, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Toggle } from '@/components/common/Toggle';
 import { MapProvider } from '@/components/map/MapProvider';
@@ -90,13 +90,65 @@ export default function RiderHomePage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-5 lg:px-8 lg:py-8">
-      <header className="pb-1 text-white">
-        <p className="text-sm text-white/70">Hola,</p>
-        <h1 className="font-display text-2xl font-bold">{riderName}</h1>
+      <header className="motion-enter pb-1 text-white">
+        <p className="text-sm font-medium text-white/75">Hola,</p>
+        <h1 className="break-words font-display text-3xl font-bold tracking-tight">{riderName}</h1>
       </header>
 
+      {/* Disponibilidad */}
+      <section
+        className={cn(
+          'rounded-card border border-white/20 bg-suya-green-dark p-5',
+          available && 'border-suya-lime/50',
+        )}
+      >
+        <h2 className="mb-2 font-display text-xs font-semibold uppercase tracking-widest text-suya-lime-soft">Tu turno</h2>
+        <Toggle
+          label={available ? 'Disponible' : 'No disponible'}
+          description={
+            availabilityBusy
+              ? 'Actualizando tu disponibilidad…'
+              : available
+              ? 'Recibes pedidos en Sullana con tu ubicación activa.'
+              : 'Activa tu turno y el GPS para recibir pedidos cercanos.'
+          }
+          checked={available}
+          disabled={availabilityBusy}
+          tone="sun"
+          className="[&_span]:text-white [&_span.text-sm]:text-white/80"
+          onChange={changeAvailability}
+        />
+      </section>
+
+      {/* Viaje activo */}
+      <section className="rounded-card border border-white/15 bg-white p-5 text-suya-carbon">
+        <h2 className="flex items-center gap-2 font-display text-[15px] font-bold">
+          <Navigation className="h-5 w-5 text-suya-green" aria-hidden="true" />
+          Viaje actual
+        </h2>
+        {active ? (
+          <div className="motion-enter mt-2" key={active.id}>
+            <p className="font-display text-lg font-bold">{active.storeName}</p>
+            <p className="text-sm text-suya-muted" aria-live="polite">
+              #{active.code} · {orderStatusLabel(active.status)}
+            </p>
+            <p className="mt-1 text-sm text-suya-muted">Entregar en: {active.customer.address}</p>
+            <Link
+              to="/rider/current"
+              className="press mt-3 inline-flex h-12 items-center rounded-btn bg-suya-lime px-4 font-display text-sm font-semibold text-suya-carbon"
+            >
+              Abrir viaje <ChevronRight className="ml-2 h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
+        ) : (
+          <p className="mt-2 text-sm text-suya-muted">
+            No tienes un viaje asignado. Tu próxima entrega aparecerá aquí.
+          </p>
+        )}
+      </section>
+
       {/* Mapa principal: el repartidor puede orientarse desde Inicio, incluso sin viaje activo. */}
-      <section className="relative h-[min(58dvh,520px)] min-h-[340px] overflow-hidden rounded-card border border-white/10 bg-suya-carbon shadow-card">
+      <section className="relative isolate h-[clamp(240px,34dvh,360px)] sm:h-[min(58dvh,520px)] overflow-hidden rounded-card border border-white/10 bg-suya-carbon shadow-card">
         <MapProvider
           points={mapPoints}
           origin={mapOrigin}
@@ -105,7 +157,7 @@ export default function RiderHomePage() {
           label="Mapa de tu ubicación y zona de reparto"
           navigation={guidingToDelivery}
         />
-        <div className="pointer-events-none absolute inset-x-3 bottom-3 z-[500] flex items-center justify-between gap-3 rounded-2xl bg-suya-carbon/85 px-3.5 py-3 text-white shadow-card backdrop-blur-sm">
+        <div className="pointer-events-none absolute inset-x-3 bottom-3 z-[500] flex items-center justify-between gap-3 rounded-2xl bg-suya-carbon px-3.5 py-3 text-white shadow-card">
           <span className="flex min-w-0 items-center gap-2 text-sm font-semibold">
             <span
               aria-hidden="true"
@@ -115,67 +167,13 @@ export default function RiderHomePage() {
               )}
             />
             <span className="truncate">
-              {guidingToDelivery
-                ? 'Siguiendo tu ruta de entrega'
-                : reading
-                  ? 'Ubicación activa'
-                  : 'Activa el GPS para ubicarte'}
+              {!reading
+                ? 'Activa el GPS para ubicarte'
+                : guidingToDelivery ? 'Siguiendo tu ruta de entrega' : 'Ubicación activa'}
             </span>
           </span>
           <span className="shrink-0 text-xs text-white/65">Sullana</span>
         </div>
-      </section>
-
-      {/* Disponibilidad */}
-      <section
-        className={cn(
-          'suya-lens-dark rounded-card p-4 transition-colors',
-          available && 'border-suya-lime/50',
-        )}
-      >
-        <Toggle
-          label={available ? 'Disponible' : 'No disponible'}
-          description={
-            availabilityBusy
-              ? 'Actualizando tu disponibilidad…'
-              : available
-              ? 'Estás recibiendo pedidos en Sullana. Tu ubicación permanece activa mientras dure el turno.'
-              : 'Actívalo para recibir pedidos cercanos. Suya necesita tu ubicación durante toda la conexión.'
-          }
-          checked={available}
-          disabled={availabilityBusy}
-          tone="sun"
-          className="[&_span]:text-white"
-          onChange={changeAvailability}
-        />
-      </section>
-
-      {/* Viaje activo */}
-      <section className="suya-lens-dark rounded-card p-4 text-white">
-        <h2 className="flex items-center gap-2 font-display text-[15px] font-bold">
-          <Navigation className="h-4 w-4 text-suya-lime" aria-hidden="true" />
-          Viaje actual
-        </h2>
-        {active ? (
-          <div className="mt-2">
-            <p className="font-display text-lg font-bold">{active.storeName}</p>
-            <p className="text-sm text-white/70">
-              #{active.code} · {orderStatusLabel(active.status)}
-            </p>
-            <p className="mt-1 text-sm text-white/70">Entregar en: {active.customer.address}</p>
-            <Link
-              to="/rider/current"
-              className="press mt-3 inline-flex h-12 items-center rounded-btn bg-suya-lime px-4 font-display text-sm font-semibold text-suya-carbon"
-            >
-              Abrir viaje
-            </Link>
-          </div>
-        ) : (
-          <p className="mt-2 text-sm text-white/70">
-            No tienes un viaje asignado. Operaciones te avisará cuando exista una entrega
-            disponible.
-          </p>
-        )}
       </section>
 
       <Link

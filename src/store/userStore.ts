@@ -5,12 +5,14 @@ export interface Preferences {
   locationLabel: string;
   reduceMotion: boolean;
   notifications: boolean;
+  darkMode: boolean;
 }
 
 const DEFAULT_PREFERENCES: Preferences = {
   locationLabel: 'Sullana, Perú',
   reduceMotion: false,
   notifications: true,
+  darkMode: false,
 };
 
 export const LOCATION_OPTIONS = [
@@ -32,7 +34,7 @@ interface UserState {
 }
 
 export const useUserStore = create<UserState>((set, get) => ({
-  preferences: readLocal<Preferences>(STORAGE_KEYS.preferences, DEFAULT_PREFERENCES),
+  preferences: { ...DEFAULT_PREFERENCES, ...readLocal<Partial<Preferences>>(STORAGE_KEYS.preferences, {}) },
   favorites: readLocal<string[]>(STORAGE_KEYS.favorites, []),
   recentSearches: readLocal<string[]>(STORAGE_KEYS.recentSearches, []),
 

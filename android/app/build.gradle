@@ -2,7 +2,14 @@ apply plugin: 'com.android.application'
 
 def suyaAndroidAppId = System.getenv('SUYA_ANDROID_APP_ID') ?: 'com.suya.app'
 def suyaAndroidAppName = System.getenv('SUYA_ANDROID_APP_NAME') ?: 'Suya'
-def suyaWalletObserverEnabled = suyaAndroidAppId == 'com.suya.walletobserver' ? 'true' : 'false'
+def observerSlots = [
+    'com.suya.walletobserver.adriano': 1,
+    'com.suya.walletobserver.jean': 2,
+    'com.suya.walletobserver.reserva': 3,
+]
+def suyaObserverSlot = observerSlots.get(suyaAndroidAppId, 0)
+def suyaWalletObserverEnabled = suyaAndroidAppId == 'com.suya.walletobserver' || suyaObserverSlot > 0
+
 def suyaSupabaseUrl = (System.getenv('VITE_SUPABASE_URL') ?: '').replace('\\', '\\\\').replace('"', '\\"')
 def suyaSupabasePublishableKey = (System.getenv('VITE_SUPABASE_PUBLISHABLE_KEY') ?: '').replace('\\', '\\\\').replace('"', '\\"')
 def suyaReleaseSigning = [
@@ -41,14 +48,14 @@ android {
         applicationId suyaAndroidAppId
         manifestPlaceholders = [
             suyaAppName: suyaAndroidAppName,
-            suyaWalletObserverEnabled: suyaWalletObserverEnabled,
+            suyaWalletObserverEnabled: suyaWalletObserverEnabled.toString(),
         ]
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        // Fuerza el retorno al bundle nativo al actualizar una instalación que
-        // pudiera tener pendiente el OTA incorrecto de Suya Cliente.
-        versionCode 11
-        versionName "1.10"
+        versionCode 23
+        versionName "1.22"
+        buildConfigField "boolean", "SUYA_WALLET_OBSERVER_ENABLED", suyaWalletObserverEnabled.toString()
+        buildConfigField "int", "SUYA_WALLET_OBSERVER_SLOT", suyaObserverSlot.toString()
         buildConfigField "String", "SUYA_SUPABASE_URL", "\"${suyaSupabaseUrl}\""
         buildConfigField "String", "SUYA_SUPABASE_PUBLISHABLE_KEY", "\"${suyaSupabasePublishableKey}\""
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"

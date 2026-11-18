@@ -1,5 +1,37 @@
 # Integración de pagos reales
 
+> **Actualización 16/11/2026:** el estado vigente está en [SUYA_PAYMENT_SETUP.md](../SUYA_PAYMENT_SETUP.md) y [SUYA_PAYMENT_RESEARCH.md](../SUYA_PAYMENT_RESEARCH.md). La nueva migración retira la aprobación por observación Android/nombre/código y restringe finalizadores Culqi al servidor. Mercado Pago se configura desde el panel, con API y webhook autenticados. Los apartados históricos siguientes describen versiones previas y NO habilitan esos mecanismos de aprobación. QA permanece pausado por instrucción del usuario; cambios sin desplegar y sin sandbox real verificado.
+
+## Asignación de QR por Suya Caja
+
+En **Operaciones → Dispositivos de pagos → Configurar puestos de cobro**, configura Adriano,
+Jean o Reserva. Cada puesto tiene su APK de Suya Caja 1.13 y un QR independiente
+para Yape y Lemon. Adriano puede recuperar sus QR precargados.
+Para Jean y Reserva, guarda la imagen oficial o el contenido leído del QR y el
+nombre que debe mostrar la billetera al cliente.
+
+1. Instala la APK de cada puesto y empareja el dispositivo con el código de
+   un solo uso de ese puesto. Activa el acceso a notificaciones en Android y
+   revisa la señal y el estado de cada billetera.
+2. Comprueba el destinatario con un escaneo y recibe un abono de prueba por ruta.
+   El panel exige evidencia observada en el dispositivo antes de habilitar el QR.
+3. Activa la asignación cuando haya una ruta disponible. Suya usa Adriano, luego
+   Jean y luego Reserva según la salud de la billetera elegida. Si falta señal por
+   tres minutos, la ruta deja de recibir nuevos pedidos.
+4. Revisa los abonos en Caja y habilita, por dispositivo, la confirmación automática
+   cuando la cuenta esté comprobada. Suya usa el receptor y la versión del QR,
+   monto, nombre y código observado cuando corresponde. Los casos ambiguos y
+   tardíos se verifican desde la cuenta receptora antes de confirmar en el panel.
+
+El QR y su destinatario quedan fijados al pedido. Si una ruta se desconecta después
+de asignar un intento, el evento reenviado puede conciliarse con la cuenta original.
+Caja puede revisar un abono si vence la ventana. Resuelve los abonos informados
+y espera que venzan los demás cobros pendientes antes de cambiar un QR o reemplazar
+el dispositivo. El cambio crea una nueva versión y conserva la anterior para los
+avisos capturados antes del cambio que llegan con retraso. Comprueba la señal con la
+pantalla apagada en cada equipo, ya que Android puede diferir la ejecución en
+segundo plano.
+
 ## Estado actual
 
 El checkout habilita efectivo, Yape, Lemon y tarjeta cuando Culqi está configurado. Para Yape/Lemon

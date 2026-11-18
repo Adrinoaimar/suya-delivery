@@ -2,6 +2,7 @@ import { registerPlugin } from '@capacitor/core';
 
 interface NativeWalletObserverStatus {
   configured: boolean;
+  slot?: number;
   notificationAccess: boolean;
   role: 'ready' | 'unconfigured' | string;
   pendingEvents?: number;

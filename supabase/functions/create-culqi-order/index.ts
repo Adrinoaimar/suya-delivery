@@ -203,11 +203,7 @@ Deno.serve(async (request) => {
   // second Culqi order for the same Suya payment attempt.
   const claimResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/claim_culqi_order_creation_secure`, {
     method: 'POST',
-    headers: {
-      apikey: anonKey,
-      Authorization: rpcAuthorization,
-      'Content-Type': 'application/json',
-    },
+    headers: serviceHeaders(serviceRoleKey),
     body: JSON.stringify({
       p_payment_attempt_id: intent.attempt_id,
       p_method: method,
@@ -245,7 +241,10 @@ Deno.serve(async (request) => {
   if (!Number.isFinite(expiration) || expiration <= Math.floor(Date.now() / 1000)) {
     return json({ error: 'El intento de pago ya venció.' }, 409, origin);
   }
-  const culqiResponse = await fetch('https://api.culqi.com/v2/orders', {
+  let culqiResponse: Response;
+  try {
+    culqiResponse = await fetch('https://api.culqi.com/v2/orders', {
+    signal: AbortSignal.timeout(15_000),
     method: 'POST',
     headers: {
       Authorization: `Bearer ${culqiSecretKey}`,
@@ -270,7 +269,11 @@ Deno.serve(async (request) => {
       },
     }),
   });
+  } catch {
+    return json({ error: 'No se pudo conocer el resultado de Culqi. No repitas el pago; requiere conciliación.' }, 502, origin);
+  }
   if (!culqiResponse.ok) {
+    if (culqiResponse.status >= 500) return json({ error: 'Culqi no confirmó el resultado. No repitas el pago; requiere conciliación.' }, 502, origin);
     console.error('Culqi order creation failed', culqiResponse.status);
     await fetch(`${supabaseUrl}/rest/v1/payment_attempts?id=eq.${text(intent.attempt_id)}&status=eq.pending&gateway_order_claim_digest=eq.${claimDigest}`, {
       method: 'PATCH',

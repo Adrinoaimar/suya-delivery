@@ -90,8 +90,8 @@ export function AboutPage() {
             <h2 className="font-display text-xl font-bold text-suya-carbon">Qué hacemos</h2>
             <p className="mt-2">
               Conectamos el catálogo del comercio, el carrito del cliente, la confirmación del pago
-              habilitado y el estado del pedido. El cliente puede consultar ese estado desde Mis
-              pedidos; el mapa y el GPS del repartidor no se muestran.
+              habilitado y el estado del pedido. El cliente puede consultar el avance desde Mis
+              pedidos y ver en el mapa la ubicación del repartidor durante la entrega.
               Suya también ofrece herramientas operativas separadas para comercios y repartidores.
             </p>
           </section>

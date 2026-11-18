@@ -133,6 +133,23 @@ describe('GuestOrderPage', () => {
     await waitFor(() => expect(mocks.get).toHaveBeenCalledTimes(2));
   });
 
+  it('mantiene el comprobante visible al actualizar un pago autorizado', async () => {
+    const paid: Order = { ...guestOrder, paymentMethod: 'yape', paymentIntent: {
+      attemptId: 'paid-guest', orderId: guestOrder.id, method: 'yape', status: 'authorized',
+      amount: 25, currency: 'PEN', checkoutReference: 'REF-PAID', expiresAt: '2099-01-01T00:00:00Z',
+      provider: 'wallet_observer', providerReference: null, qrPayload: null,
+    } };
+    mocks.get.mockResolvedValueOnce(paid).mockImplementationOnce(() => new Promise(() => {}));
+    render(<MemoryRouter initialEntries={['/pedido/order-refresh-1']}>
+      <Routes><Route path="/pedido/:id" element={<GuestOrderPage />} /></Routes>
+    </MemoryRouter>);
+    const refresh = await screen.findByRole('button', { name: 'Actualizar estado' });
+    expect(mocks.get).toHaveBeenCalledTimes(1);
+    fireEvent.click(refresh);
+    expect(screen.getByRole('heading', { name: 'Pedido enviado a tu mesa' })).toBeInTheDocument();
+    expect(screen.queryByText('Cargando comprobante…')).not.toBeInTheDocument();
+  });
+
   it('no pinta el estado de navegación si el servidor no autoriza el pedido', async () => {
     mocks.get.mockResolvedValueOnce(undefined);
 

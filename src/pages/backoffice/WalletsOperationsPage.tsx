@@ -11,6 +11,9 @@ import { notificationService, storeService, walletObserverService } from '@/lib/
 import { useAuthStore } from '@/store/authStore';
 import { useBackofficeContextStore } from '@/store/backofficeContextStore';
 import { formatDateTime, formatPrice } from '@/utils/format';
+import { WalletObserverRoutingPanel } from '@/components/payment/WalletObserverRoutingPanel';
+import { ExpiredWalletClaimsPanel } from '@/components/payment/ExpiredWalletClaimsPanel';
+import { PaymentGatewayConfigPanel } from '@/components/payment/PaymentGatewayConfigPanel';
 import type { Store } from '@/types';
 import type {
   WalletObservation,
@@ -56,7 +59,7 @@ function senderMatchesCustomer(senderName: string | null, customerName: string):
 }
 
 function observationStatus(value: string): { label: string; tone: 'neutral' | 'sun' | 'lime' } {
-  if (/verified|confirmed|confirmado/i.test(value)) return { label: 'Verificado', tone: 'lime' };
+  if (['verified', 'confirmed', 'confirmado'].includes(value)) return { label: 'Verificado', tone: 'lime' };
   if (/pending|review/i.test(value)) return { label: 'En revisión', tone: 'sun' };
   return { label: 'Solo observación', tone: 'neutral' };
 }
@@ -87,11 +90,8 @@ export default function WalletsOperationsPage() {
   const [candidateObservationId, setCandidateObservationId] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<WalletPaymentCandidate[]>([]);
   const [candidateLoading, setCandidateLoading] = useState(false);
-  const [verifyingAttemptId, setVerifyingAttemptId] = useState<string | null>(null);
-  const [manualPayerNames, setManualPayerNames] = useState<Record<string, string>>({});
-  const [manualVerifyingObservationId, setManualVerifyingObservationId] = useState<string | null>(
-    null,
-  );
+  const [bankCheckedId, setBankCheckedId] = useState<string | null>(null);
+  const [verifyingPayment, setVerifyingPayment] = useState(false);
   const [observationCodeId, setObservationCodeId] = useState<string | null>(null);
   const [observationCode, setObservationCode] = useState('');
   const [savingObservationCode, setSavingObservationCode] = useState(false);
@@ -208,9 +208,6 @@ export default function WalletsOperationsPage() {
     setCandidateObservationId(null);
     setCandidates([]);
     setCandidateLoading(false);
-    setVerifyingAttemptId(null);
-    setManualPayerNames({});
-    setManualVerifyingObservationId(null);
     setObservationCodeId(null);
     setObservationCode('');
     setNewPairing(null);
@@ -333,6 +330,35 @@ export default function WalletsOperationsPage() {
     }
   };
 
+  const setDeviceAutoSettle = async (device: WalletObserverDevice, enabled: boolean) => {
+    if (deviceActionId || !walletObserverService.setDeviceAutoSettle) return;
+    setDeviceActionId(device.id);
+    try {
+      const saved = await walletObserverService.setDeviceAutoSettle(device.id, enabled);
+      if (!saved) throw new Error('El servidor no encontró el dispositivo.');
+      setDevices((current) =>
+        current.map((entry) =>
+          entry.id === device.id ? { ...entry, autoSettleOrders: enabled } : entry,
+        ),
+      );
+      notificationService.notify(
+        enabled
+          ? 'Auto-confirmación activada para las notificaciones push de este dispositivo.'
+          : 'Auto-confirmación pausada; el dispositivo solo registrará indicios.',
+        'success',
+      );
+    } catch (cause) {
+      notificationService.notify(
+        cause instanceof Error
+          ? cause.message
+          : 'No pudimos actualizar la auto-confirmación del dispositivo.',
+        'danger',
+      );
+    } finally {
+      setDeviceActionId(null);
+    }
+  };
+
   const findCandidates = async (observationId: string) => {
     const requestId = ++candidateRequestRef.current;
     const restaurantAtStart = activeRestaurantId;
@@ -340,6 +366,7 @@ export default function WalletsOperationsPage() {
     setCandidateLoading(true);
     setCandidates([]);
     try {
+      setBankCheckedId(null);
       const nextCandidates = await walletObserverService.listPaymentCandidates(observationId);
       if (
         requestId !== candidateRequestRef.current ||
@@ -356,64 +383,6 @@ export default function WalletsOperationsPage() {
       );
     } finally {
       if (requestId === candidateRequestRef.current) setCandidateLoading(false);
-    }
-  };
-
-  const verifyCandidate = async (observationId: string, paymentAttemptId: string) => {
-    const restaurantAtStart = activeRestaurantId;
-    setVerifyingAttemptId(paymentAttemptId);
-    try {
-      const verified = await walletObserverService.verifyObservation(
-        observationId,
-        paymentAttemptId,
-      );
-      if (!verified) throw new Error('El servidor no verificó la operación.');
-      if (useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart) return;
-      notificationService.notify('Pago verificado y vinculado al pedido.', 'success');
-      setCandidateObservationId(null);
-      setCandidates([]);
-      await load();
-    } catch (cause) {
-      notificationService.notify(
-        cause instanceof Error ? cause.message : 'No pudimos verificar el pago.',
-        'danger',
-      );
-    } finally {
-      setVerifyingAttemptId(null);
-    }
-  };
-
-  const verifyObservationByName = async (observation: WalletObservation) => {
-    const payerName = manualPayerNames[observation.id] ?? observation.senderName ?? '';
-    if (!payerName.trim()) {
-      notificationService.notify('Escribe el nombre que aparece en la notificación.', 'warning');
-      return;
-    }
-    if (normalizedPersonName(payerName) !== normalizedPersonName(observation.senderName)) {
-      notificationService.notify(
-        'El nombre debe coincidir con el remitente de la notificación.',
-        'warning',
-      );
-      return;
-    }
-    const restaurantAtStart = activeRestaurantId;
-    setManualVerifyingObservationId(observation.id);
-    try {
-      const verified = await walletObserverService.verifyObservationByName(
-        observation.id,
-        payerName,
-      );
-      if (!verified) throw new Error('El servidor no aprobó la operación.');
-      if (useBackofficeContextStore.getState().activeRestaurantId !== restaurantAtStart) return;
-      notificationService.notify('Pago verificado y aprobado para preparación.', 'success');
-      await load();
-    } catch (cause) {
-      notificationService.notify(
-        cause instanceof Error ? cause.message : 'No pudimos verificar el pago por nombre.',
-        'danger',
-      );
-    } finally {
-      setManualVerifyingObservationId(null);
     }
   };
 
@@ -441,6 +410,23 @@ export default function WalletsOperationsPage() {
       );
     } finally {
       setSavingObservationCode(false);
+    }
+  };
+
+  const verifyRoutedPayment = async (observationId: string, paymentAttemptId: string) => {
+    if (verifyingPayment || bankCheckedId !== paymentAttemptId) return;
+    setVerifyingPayment(true);
+    try {
+      const ok = await walletObserverService.verifyRoutedObservation?.(observationId, paymentAttemptId);
+      if (!ok) throw new Error('El abono ya se usó, cambió el pedido o la cuenta no coincide.');
+      setBankCheckedId(null);
+      setCandidateObservationId(null);
+      notificationService.notify('Pago verificado. Pedido enviado a operaciones.', 'success');
+      await load();
+    } catch (cause) {
+      notificationService.notify(cause instanceof Error ? cause.message : 'No pudimos verificar el pago.', 'danger');
+    } finally {
+      setVerifyingPayment(false);
     }
   };
 
@@ -503,8 +489,7 @@ export default function WalletsOperationsPage() {
           </p>
           <h1 className="font-display text-2xl font-bold">Dispositivos de pagos</h1>
           <p className="mt-1 max-w-2xl text-sm text-suya-muted">
-            Conecta el celular de caja que observa las notificaciones de Yape, Plin, Lemon y otras
-            billeteras. Las nuevas observaciones aparecen automáticamente cada 15 segundos.
+            Consulta quién recibe los pagos y revisa los abonos que necesitan atención.
           </p>
         </div>
         <Button variant="secondary" onClick={() => void load()} disabled={loading}>
@@ -513,22 +498,7 @@ export default function WalletsOperationsPage() {
         </Button>
       </div>
 
-      <Card variant="glass" className="border-suya-green/20">
-        <div className="flex items-start gap-3">
-          <div className="rounded-2xl bg-suya-lime-soft p-3 text-suya-green">
-            <KeyRound className="h-5 w-5" aria-hidden="true" />
-          </div>
-          <div>
-            <p className="font-semibold">Conecta un celular de caja</p>
-            <p className="mt-1 text-sm text-suya-muted">
-              Genera un código de un solo uso para emparejar el observador de pagos en el celular de
-              caja. Este dispositivo observa pagos; no es el celular del repartidor ni confirma
-              pagos automáticamente.
-            </p>
-          </div>
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-          {canSelectRestaurant ? (
+      <div className="max-w-sm">{canSelectRestaurant ? (
             <label className="text-sm font-semibold">
               Cuenta de restaurante
               <select
@@ -554,7 +524,276 @@ export default function WalletsOperationsPage() {
                   'Restaurante pendiente de vincular'}
               </p>
             </div>
-          )}
+          )}</div>
+
+      {activeRestaurantId && (
+        <>
+          <ExpiredWalletClaimsPanel key={`claims-${activeRestaurantId}`} restaurantId={activeRestaurantId} />
+          <WalletObserverRoutingPanel key={activeRestaurantId} restaurantId={activeRestaurantId}
+            accounts={paymentAccounts} devices={visibleDevices} onDevicesChanged={() => void load()} />
+        </>
+      )}
+
+      <section aria-labelledby="wallet-observations-title">
+        <div className="mb-3 flex items-center gap-2">
+          <Eye className="h-5 w-5 text-suya-green" />
+          <h2 id="wallet-observations-title" className="font-display text-lg font-bold">
+            Últimas observaciones
+          </h2>
+        </div>
+        <Card className="mb-3 border-suya-sun/50 bg-suya-sun-soft/45">
+          <p className="font-semibold">Observaciones para revisión</p>
+          <p className="mt-1 text-sm text-suya-muted">
+            Revisa en la billetera receptora los abonos con coincidencias ambiguas o recibidos fuera de plazo.
+          </p>
+        </Card>
+        {loading ? (
+          <Card role="status" className="p-8 text-center text-sm text-suya-muted">
+            Cargando observaciones…
+          </Card>
+        ) : visibleObservations.length === 0 ? (
+          <EmptyState
+            icon={<WalletCards className="h-6 w-6" />}
+            title="Todavía no hay notificaciones detectadas"
+            description="Cuando el celular reciba una notificación compatible, aparecerá aquí con nombre, código y monto."
+          />
+        ) : (
+          <div className="overflow-hidden rounded-card border border-suya-border bg-white">
+            <div className="divide-y divide-suya-mist">
+              {visibleObservations.map((observation) => {
+                const status = observationStatus(observation.verification);
+                const origin = observation.origin ?? {
+                  packageName: null,
+                  appLabel: null,
+                  channelId: null,
+                  category: null,
+                  groupKey: null,
+                  tag: null,
+                  notificationId: null,
+                  flags: null,
+                  contentFingerprint: null,
+                  operationKind: null,
+                  notificationWhen: null,
+                };
+                return (
+                  <div
+                    key={observation.id}
+                    className="grid gap-2 px-4 py-3 sm:grid-cols-[1.4fr_1fr_auto_auto] sm:items-center"
+                  >
+                    <div>
+                      <p className="font-semibold">
+                        {observation.senderName ?? 'Nombre no disponible'}
+                      </p>
+                      <p className="text-xs text-suya-muted">
+                        {providerLabel(observation.provider)} ·{' '}
+                        {storeNames.get(observation.restaurantId) ?? 'Restaurante'}
+                      </p>
+                      <p className="text-xs text-suya-muted">
+                        Notificación: {dateLabel(observation.observedAt)} · Servidor:{' '}
+                        {dateLabel(observation.receivedAt)}
+                      </p>
+                      <details className="mt-1 text-xs text-suya-muted">
+                        <summary className="cursor-pointer font-semibold text-suya-green">
+                          Ver origen técnico
+                        </summary>
+                        <div className="mt-1 space-y-0.5 rounded-lg bg-suya-ivory p-2 font-mono text-[11px]">
+                          <p>Aplicación: {origin.appLabel ?? 'No disponible'}</p>
+                          <p>Paquete: {origin.packageName ?? 'No disponible'}</p>
+                          <p>Tipo: {operationKindLabel(origin.operationKind)}</p>
+                          <p>Canal: {origin.channelId ?? 'No disponible'}</p>
+                          <p>Categoría: {origin.category ?? 'No disponible'}</p>
+                          <p>
+                            Evento: {origin.notificationId ?? 'No disponible'}
+                            {origin.tag ? ` · etiqueta ${origin.tag}` : ''}
+                          </p>
+                          <p>Banderas Android: {origin.flags ?? 'No disponible'}</p>
+                          {origin.groupKey && <p>Grupo: {origin.groupKey}</p>}
+                          {origin.notificationWhen && (
+                            <p>Hora interna: {dateLabel(origin.notificationWhen)}</p>
+                          )}
+                          {origin.contentFingerprint && (
+                            <p>Huella: {origin.contentFingerprint.slice(0, 16)}…</p>
+                          )}
+                        </div>
+                      </details>
+                    </div>
+                    <p className="text-sm">
+                      Código:{' '}
+                      <span className="font-mono font-semibold">
+                        {observation.codeLast4 ? `••••${observation.codeLast4}` : 'No disponible'}
+                      </span>
+                    </p>
+                    <p className="font-display text-lg font-bold">
+                      {formatPrice(observation.amountCents / 100)}{' '}
+                      <span className="font-sans text-xs font-semibold text-suya-muted">
+                        {observation.currency}
+                      </span>
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge tone={status.tone}>{status.label}</Badge>
+                      {(observation.provider === 'yape' || observation.provider === 'lemon') &&
+                        observation.verification !== 'verified' && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => void findCandidates(observation.id)}
+                            disabled={candidateLoading && candidateObservationId === observation.id}
+                          >
+                            {candidateLoading && candidateObservationId === observation.id
+                              ? 'Buscando…'
+                              : 'Buscar pedido'}
+                          </Button>
+                        )}
+                    </div>
+                    {observation.verification !== 'verified' && (
+                      <div className="flex flex-wrap items-end gap-2 sm:col-span-4">
+                        <p className="text-xs text-suya-muted">
+                          {observation.observerRouted ? 'En revisión. Contrasta el abono en la billetera receptora.'
+                            : 'Solo indicio: no autoriza el pedido. Requiere confirmación financiera oficial.'}
+                        </p>
+                        {observation.codeLast4 && observationCodeId !== observation.id ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setObservationCodeId(observation.id);
+                              setObservationCode('');
+                            }}
+                          >
+                            Agregar código completo
+                          </Button>
+                        ) : (
+                          <>
+                            <label className="min-w-52 flex-1 text-xs font-semibold text-suya-muted">
+                              Código visible en la constancia
+                              <input
+                                value={observationCodeId === observation.id ? observationCode : ''}
+                                onFocus={() => setObservationCodeId(observation.id)}
+                                onChange={(event) => {
+                                  setObservationCodeId(observation.id);
+                                  setObservationCode(event.target.value);
+                                }}
+                                maxLength={64}
+                                inputMode="text"
+                                placeholder="Ej. 384 o 482913"
+                                className="mt-1 h-10 w-full rounded-btn border border-suya-border bg-white px-3 text-sm font-normal"
+                                disabled={savingObservationCode}
+                              />
+                            </label>
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => void saveObservationCode(observation.id)}
+                              disabled={
+                                savingObservationCode || observationCodeId !== observation.id
+                              }
+                            >
+                              {savingObservationCode ? 'Guardando…' : 'Agregar código'}
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    )}
+                    {candidateObservationId === observation.id && (
+                      <div className="rounded-btn border border-suya-sun/60 bg-suya-sun-soft p-3 sm:col-span-4">
+                        <p className="text-xs font-semibold uppercase tracking-[.14em] text-suya-muted">
+                          Pedidos compatibles
+                        </p>
+                        {candidateLoading ? (
+                          <p className="mt-2 text-sm text-suya-muted">
+                            Comparando monto, billetera y ventana de tiempo…
+                          </p>
+                        ) : candidates.length === 0 ? (
+                          <p className="mt-2 text-sm text-suya-muted">
+                            No hay coincidencias exactas pendientes. No autorices esta fila
+                            manualmente desde el cliente.
+                          </p>
+                        ) : (
+                          <div className="mt-2 space-y-2">
+                            {candidates.length > 1 && (
+                              <p className="rounded-xl border border-suya-sun/60 bg-white p-2.5 text-sm text-suya-carbon">
+                                Hay {candidates.length} pedidos compatibles. Agrega el código
+                                completo de la constancia para identificar uno solo antes de
+                                verificar.
+                              </p>
+                            )}
+                            {candidates.map((candidate) => (
+                              <div
+                                key={candidate.paymentAttemptId}
+                                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-suya-border bg-white p-2.5 text-sm"
+                              >
+                                <div>
+                                  <p className="font-semibold">
+                                    Pedido #{candidate.orderCode} · {formatPrice(candidate.amount)}
+                                  </p>
+                                  <p className="text-xs text-suya-muted">
+                                    Cliente: {candidate.customerName} · Referencia{' '}
+                                    {candidate.checkoutReference} · Remitente:{' '}
+                                    {candidate.senderName ?? 'no disponible'}
+                                  </p>
+                                  {candidate.senderName && (
+                                    <p
+                                      className={cn(
+                                        'mt-1 text-xs font-semibold',
+                                        senderMatchesCustomer(
+                                          candidate.senderName,
+                                          candidate.customerName,
+                                        )
+                                          ? 'text-suya-green-dark'
+                                          : 'text-suya-sun-dark',
+                                      )}
+                                    >
+                                      {senderMatchesCustomer(
+                                        candidate.senderName,
+                                        candidate.customerName,
+                                      )
+                                        ? 'Pista: el remitente coincide con el cliente.'
+                                        : 'Pista para revisión; el código no demuestra el abono.'}
+                                    </p>
+                                  )}
+                                </div>
+                                {observation.observerRouted ? (
+                                  <div className="space-y-2">
+                                    <label className="flex min-h-11 items-center gap-2 text-xs">
+                                      <input type="checkbox" checked={bankCheckedId === candidate.paymentAttemptId}
+                                        onChange={(event) => setBankCheckedId(event.target.checked ? candidate.paymentAttemptId : null)} />
+                                      Verifiqué este abono en la billetera receptora.
+                                    </label>
+                                    <Button size="sm" type="button" disabled={verifyingPayment || bankCheckedId !== candidate.paymentAttemptId}
+                                      onClick={() => void verifyRoutedPayment(observation.id, candidate.paymentAttemptId)}>Confirmar pago</Button>
+                                  </div>
+                                ) : <p className="text-xs font-semibold text-suya-muted">Requiere verificación bancaria</p>}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </section>
+
+      <Card variant="glass" className="border-suya-green/20">
+        <div className="flex items-start gap-3">
+          <div className="rounded-2xl bg-suya-lime-soft p-3 text-suya-green">
+            <KeyRound className="h-5 w-5" aria-hidden="true" />
+          </div>
+          <div>
+            <p className="font-semibold">Conecta un celular de caja</p>
+            <p className="mt-1 text-sm text-suya-muted">
+              Genera un código de un solo uso para emparejar el observador de pagos en el celular de
+              caja cuando la cuenta usa el emparejamiento anterior.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
           <label className="text-sm font-semibold">
             Nombre del dispositivo
             <input
@@ -702,10 +941,30 @@ export default function WalletsOperationsPage() {
                     {dateLabel(device.lastSeenAt)}
                   </p>
                 </div>
-                <Badge tone={device.active ? 'lime' : 'neutral'}>
-                  {device.active ? 'Activo' : 'Inactivo'}
-                </Badge>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Badge tone={device.active ? 'lime' : 'neutral'}>
+                    {device.active ? 'Activo' : 'Inactivo'}
+                  </Badge>
+                  {device.autoSettleOrders && (
+                    <Badge tone="lime">Auto-confirma pedidos</Badge>
+                  )}
+                </div>
                 <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+                  {device.active && (
+                    <Button
+                      type="button"
+                      variant={device.autoSettleOrders ? 'secondary' : 'primary'}
+                      size="sm"
+                      onClick={() =>
+                        void setDeviceAutoSettle(device, !device.autoSettleOrders)
+                      }
+                      disabled={deviceActionId !== null}
+                    >
+                      {device.autoSettleOrders
+                        ? 'Pausar auto-confirmación'
+                        : 'Activar auto-confirmación'}
+                    </Button>
+                  )}
                   <Button
                     type="button"
                     variant="ghost"
@@ -726,288 +985,6 @@ export default function WalletsOperationsPage() {
         )}
       </section>
 
-      <section aria-labelledby="wallet-observations-title">
-        <div className="mb-3 flex items-center gap-2">
-          <Eye className="h-5 w-5 text-suya-green" />
-          <h2 id="wallet-observations-title" className="font-display text-lg font-bold">
-            Últimas observaciones
-          </h2>
-        </div>
-        <Card className="mb-3 border-suya-sun/50 bg-suya-sun-soft/45">
-          <p className="font-semibold">Verificación manual por nombre</p>
-          <p className="mt-1 text-sm text-suya-muted">
-            En cada notificación puedes corregir o confirmar el nombre del pagador. «Verificar y
-            aprobar» solo autoriza el pago si el servidor encuentra un único pedido pendiente con el
-            mismo nombre, monto, billetera, cuenta receptora y ventana de tiempo.
-          </p>
-        </Card>
-        {loading ? (
-          <Card role="status" className="p-8 text-center text-sm text-suya-muted">
-            Cargando observaciones…
-          </Card>
-        ) : visibleObservations.length === 0 ? (
-          <EmptyState
-            icon={<WalletCards className="h-6 w-6" />}
-            title="Todavía no hay notificaciones detectadas"
-            description="Cuando el celular reciba una notificación compatible, aparecerá aquí con nombre, código y monto."
-          />
-        ) : (
-          <div className="overflow-hidden rounded-card border border-suya-border bg-white">
-            <div className="divide-y divide-suya-mist">
-              {visibleObservations.map((observation) => {
-                const status = observationStatus(observation.verification);
-                const origin = observation.origin ?? {
-                  packageName: null,
-                  appLabel: null,
-                  channelId: null,
-                  category: null,
-                  groupKey: null,
-                  tag: null,
-                  notificationId: null,
-                  flags: null,
-                  contentFingerprint: null,
-                  operationKind: null,
-                  notificationWhen: null,
-                };
-                return (
-                  <div
-                    key={observation.id}
-                    className="grid gap-2 px-4 py-3 sm:grid-cols-[1.4fr_1fr_auto_auto] sm:items-center"
-                  >
-                    <div>
-                      <p className="font-semibold">
-                        {observation.senderName ?? 'Nombre no disponible'}
-                      </p>
-                      <p className="text-xs text-suya-muted">
-                        {providerLabel(observation.provider)} ·{' '}
-                        {storeNames.get(observation.restaurantId) ?? 'Restaurante'}
-                      </p>
-                      <p className="text-xs text-suya-muted">
-                        Notificación: {dateLabel(observation.observedAt)} · Servidor:{' '}
-                        {dateLabel(observation.receivedAt)}
-                      </p>
-                      <details className="mt-1 text-xs text-suya-muted">
-                        <summary className="cursor-pointer font-semibold text-suya-green">
-                          Ver origen técnico
-                        </summary>
-                        <div className="mt-1 space-y-0.5 rounded-lg bg-suya-ivory p-2 font-mono text-[11px]">
-                          <p>Aplicación: {origin.appLabel ?? 'No disponible'}</p>
-                          <p>Paquete: {origin.packageName ?? 'No disponible'}</p>
-                          <p>Tipo: {operationKindLabel(origin.operationKind)}</p>
-                          <p>Canal: {origin.channelId ?? 'No disponible'}</p>
-                          <p>Categoría: {origin.category ?? 'No disponible'}</p>
-                          <p>
-                            Evento: {origin.notificationId ?? 'No disponible'}
-                            {origin.tag ? ` · etiqueta ${origin.tag}` : ''}
-                          </p>
-                          <p>Banderas Android: {origin.flags ?? 'No disponible'}</p>
-                          {origin.groupKey && <p>Grupo: {origin.groupKey}</p>}
-                          {origin.notificationWhen && (
-                            <p>Hora interna: {dateLabel(origin.notificationWhen)}</p>
-                          )}
-                          {origin.contentFingerprint && (
-                            <p>Huella: {origin.contentFingerprint.slice(0, 16)}…</p>
-                          )}
-                        </div>
-                      </details>
-                    </div>
-                    <p className="text-sm">
-                      Código:{' '}
-                      <span className="font-mono font-semibold">
-                        {observation.codeLast4 ? `••••${observation.codeLast4}` : 'No disponible'}
-                      </span>
-                    </p>
-                    <p className="font-display text-lg font-bold">
-                      {formatPrice(observation.amountCents / 100)}{' '}
-                      <span className="font-sans text-xs font-semibold text-suya-muted">
-                        {observation.currency}
-                      </span>
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge tone={status.tone}>{status.label}</Badge>
-                      {(observation.provider === 'yape' || observation.provider === 'lemon') &&
-                        observation.verification !== 'verified' && (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => void findCandidates(observation.id)}
-                            disabled={candidateLoading && candidateObservationId === observation.id}
-                          >
-                            {candidateLoading && candidateObservationId === observation.id
-                              ? 'Buscando…'
-                              : 'Buscar pedido'}
-                          </Button>
-                        )}
-                    </div>
-                    {observation.verification !== 'verified' && (
-                      <div className="flex flex-wrap items-end gap-2 sm:col-span-4">
-                        {(observation.provider === 'yape' || observation.provider === 'lemon') && (
-                          <label className="min-w-52 flex-1 text-xs font-semibold text-suya-muted">
-                            Nombre del pagador
-                            <input
-                              aria-label={`Nombre del pagador para ${observation.senderName ?? observation.id}`}
-                              value={
-                                manualPayerNames[observation.id] ?? observation.senderName ?? ''
-                              }
-                              onChange={(event) => {
-                                setManualPayerNames((current) => ({
-                                  ...current,
-                                  [observation.id]: event.target.value,
-                                }));
-                              }}
-                              maxLength={120}
-                              autoComplete="off"
-                              placeholder="Ej. Clara Elena Navarro Tocto"
-                              className="mt-1 h-10 w-full rounded-btn border border-suya-border bg-white px-3 text-sm font-normal"
-                              disabled={manualVerifyingObservationId !== null}
-                            />
-                          </label>
-                        )}
-                        {(observation.provider === 'yape' || observation.provider === 'lemon') && (
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => void verifyObservationByName(observation)}
-                            disabled={
-                              manualVerifyingObservationId !== null || verifyingAttemptId !== null
-                            }
-                          >
-                            {manualVerifyingObservationId === observation.id
-                              ? 'Verificando…'
-                              : 'Verificar y aprobar'}
-                          </Button>
-                        )}
-                        {observation.codeLast4 && observationCodeId !== observation.id ? (
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setObservationCodeId(observation.id);
-                              setObservationCode('');
-                            }}
-                          >
-                            Agregar código completo
-                          </Button>
-                        ) : (
-                          <>
-                            <label className="min-w-52 flex-1 text-xs font-semibold text-suya-muted">
-                              Código visible en la constancia
-                              <input
-                                value={observationCodeId === observation.id ? observationCode : ''}
-                                onFocus={() => setObservationCodeId(observation.id)}
-                                onChange={(event) => {
-                                  setObservationCodeId(observation.id);
-                                  setObservationCode(event.target.value);
-                                }}
-                                maxLength={64}
-                                inputMode="text"
-                                placeholder="Ej. 384 o 482913"
-                                className="mt-1 h-10 w-full rounded-btn border border-suya-border bg-white px-3 text-sm font-normal"
-                                disabled={savingObservationCode}
-                              />
-                            </label>
-                            <Button
-                              type="button"
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => void saveObservationCode(observation.id)}
-                              disabled={
-                                savingObservationCode || observationCodeId !== observation.id
-                              }
-                            >
-                              {savingObservationCode ? 'Guardando…' : 'Agregar código'}
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    )}
-                    {candidateObservationId === observation.id && (
-                      <div className="rounded-btn border border-suya-sun/60 bg-suya-sun-soft p-3 sm:col-span-4">
-                        <p className="text-xs font-semibold uppercase tracking-[.14em] text-suya-muted">
-                          Pedidos compatibles
-                        </p>
-                        {candidateLoading ? (
-                          <p className="mt-2 text-sm text-suya-muted">
-                            Comparando monto, billetera y ventana de tiempo…
-                          </p>
-                        ) : candidates.length === 0 ? (
-                          <p className="mt-2 text-sm text-suya-muted">
-                            No hay coincidencias exactas pendientes. No autorices esta fila
-                            manualmente desde el cliente.
-                          </p>
-                        ) : (
-                          <div className="mt-2 space-y-2">
-                            {candidates.length > 1 && (
-                              <p className="rounded-xl border border-suya-sun/60 bg-white p-2.5 text-sm text-suya-carbon">
-                                Hay {candidates.length} pedidos compatibles. Agrega el código
-                                completo de la constancia para identificar uno solo antes de
-                                verificar.
-                              </p>
-                            )}
-                            {candidates.map((candidate) => (
-                              <div
-                                key={candidate.paymentAttemptId}
-                                className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-suya-border bg-white p-2.5 text-sm"
-                              >
-                                <div>
-                                  <p className="font-semibold">
-                                    Pedido #{candidate.orderCode} · {formatPrice(candidate.amount)}
-                                  </p>
-                                  <p className="text-xs text-suya-muted">
-                                    Cliente: {candidate.customerName} · Referencia{' '}
-                                    {candidate.checkoutReference} · Remitente:{' '}
-                                    {candidate.senderName ?? 'no disponible'}
-                                  </p>
-                                  {candidate.senderName && (
-                                    <p
-                                      className={cn(
-                                        'mt-1 text-xs font-semibold',
-                                        senderMatchesCustomer(
-                                          candidate.senderName,
-                                          candidate.customerName,
-                                        )
-                                          ? 'text-suya-green-dark'
-                                          : 'text-suya-sun-dark',
-                                      )}
-                                    >
-                                      {senderMatchesCustomer(
-                                        candidate.senderName,
-                                        candidate.customerName,
-                                      )
-                                        ? 'Pista: el remitente coincide con el cliente.'
-                                        : 'Pista: confirma el código completo antes de verificar.'}
-                                    </p>
-                                  )}
-                                </div>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  onClick={() =>
-                                    void verifyCandidate(observation.id, candidate.paymentAttemptId)
-                                  }
-                                  disabled={verifyingAttemptId !== null || candidates.length !== 1}
-                                >
-                                  {verifyingAttemptId === candidate.paymentAttemptId
-                                    ? 'Verificando…'
-                                    : 'Verificar pago'}
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </section>
-
       <Card className="flex items-start gap-3 bg-[#F7FAF8]">
         <Check className="mt-0.5 h-5 w-5 shrink-0 text-suya-green" />
         <p className="text-sm text-suya-muted">
@@ -1015,6 +992,14 @@ export default function WalletsOperationsPage() {
           reemplaza la confirmación oficial de la billetera ni marca un pedido como pagado.
         </p>
       </Card>
+
+      {activeRestaurantId && (
+        <PaymentGatewayConfigPanel
+          restaurantId={activeRestaurantId}
+          restaurantName={storeNames.get(activeRestaurantId)}
+          defaultProvider="static_qr"
+        />
+      )}
     </div>
   );
 }

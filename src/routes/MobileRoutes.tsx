@@ -1,3 +1,4 @@
+import AutomaticPaymentSettingsPage from '@/pages/backoffice/AutomaticPaymentSettingsPage';
 import { Suspense, lazy } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { RequireAccess } from './RequireAccess';
@@ -20,8 +21,10 @@ const TablesOperationsPage = lazy(() => import('@/pages/backoffice/TablesOperati
 const CatalogPage = lazy(() => import('@/pages/backoffice/CatalogPage'));
 const OffersPage = lazy(() => import('@/pages/backoffice/OffersPage'));
 const WalletsOperationsPage = lazy(() => import('@/pages/backoffice/WalletsOperationsPage'));
+
 const CashRegisterPage = lazy(() => import('@/pages/backoffice/CashRegisterPage'));
 const RidersOperationsPage = lazy(() => import('@/pages/backoffice/RidersOperationsPage'));
+const PaymentSettingsPage = lazy(() => import('@/pages/backoffice/PaymentSettingsPage'));
 const BackofficePage = lazy(() =>
   import('@/pages/backoffice/BackofficePage').then((module) => ({
     default: module.BackofficePage,
@@ -35,7 +38,7 @@ function MobileRiderRoutes() {
         path="login"
         element={
           <BackofficeLoginPage
-            title="Acceso de repartidor"
+            title="Ingresa a Suya Repartidor"
             allowed={['rider']}
             defaultPath="/rider"
           />
@@ -73,7 +76,7 @@ function MobileBackofficeRoutes() {
         path="login"
         element={
           <BackofficeLoginPage
-            title="Acceso de operaciones"
+            title="Ingresa a Suya Empresas"
             allowed={['platform_admin', 'restaurant_staff']}
             defaultPath="/backoffice"
           />
@@ -96,6 +99,7 @@ function MobileBackofficeRoutes() {
           <Route path="catalog" element={<CatalogPage />} />
           <Route path="offers" element={<OffersPage />} />
           <Route path="wallets" element={<WalletsOperationsPage />} />
+          <Route path="payments" element={<PaymentSettingsPage />} />
           <Route path="cash" element={<CashRegisterPage />} />
           <Route path="riders" element={<RidersOperationsPage />} />
           <Route element={<RequireAccess anyOf={['platform_admin']} />}>
@@ -109,15 +113,7 @@ function MobileBackofficeRoutes() {
               }
             />
           </Route>
-          <Route
-            path="settings"
-            element={
-              <BackofficePage
-                title="Configuración"
-                description="Parámetros de operación y seguridad."
-              />
-            }
-          />
+          <Route path="settings" element={<AutomaticPaymentSettingsPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/backoffice" replace />} />

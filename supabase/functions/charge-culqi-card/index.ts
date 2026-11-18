@@ -50,11 +50,6 @@ function phone(value: string): string {
   return (digits.length === 9 ? `+51${digits}` : digits ? `+${digits}` : '+51000000000').slice(0, 20);
 }
 
-async function sha256Hex(value: string): Promise<string> {
-  const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(value));
-  return Array.from(new Uint8Array(bytes), (byte) => byte.toString(16).padStart(2, '0')).join('');
-}
-
 const supabaseUrl = Deno.env.get('SUPABASE_URL');
 const anonKey = Deno.env.get('SUPABASE_ANON_KEY');
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
@@ -90,9 +85,18 @@ Deno.serve(async (request) => {
   const rpcAuthorization = incomingAuthorization?.startsWith('Bearer ')
     ? incomingAuthorization : `Bearer ${anonKey}`;
   const guestAccessToken = typeof body.guestAccessToken === 'string' ? body.guestAccessToken : null;
-  const claimResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/claim_culqi_payment_secure`, {
+  // Valida al propietario con su JWT/token antes de usar el canal privilegiado.
+  const actorResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/check_culqi_payment_actor_secure`, {
     method: 'POST',
     headers: { apikey: anonKey, Authorization: rpcAuthorization, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ p_payment_attempt_id: body.attemptId, p_guest_access_token: guestAccessToken }),
+  });
+  if (!actorResponse.ok || await actorResponse.json() !== true) {
+    return json({ error: 'No tienes acceso a este intento de pago.' }, 403, origin);
+  }
+  const claimResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/claim_culqi_payment_secure`, {
+    method: 'POST',
+    headers: serviceHeaders(serviceRoleKey),
     body: JSON.stringify({
       p_payment_attempt_id: body.attemptId,
       p_method: body.method,
@@ -123,7 +127,7 @@ Deno.serve(async (request) => {
   if (!customerEmail) {
     await fetch(`${supabaseUrl}/rest/v1/rpc/fail_culqi_payment_claim_secure`, {
       method: 'POST',
-      headers: { apikey: anonKey, Authorization: rpcAuthorization, 'Content-Type': 'application/json' },
+      headers: serviceHeaders(serviceRoleKey),
       body: JSON.stringify({
         p_payment_attempt_id: context.attempt_id,
         p_claim_token: claimToken,
@@ -151,16 +155,23 @@ Deno.serve(async (request) => {
     description: `Suya pedido ${text(context.order_code, 'pago')}`.slice(0, 80),
     metadata: { suya_order_id: text(context.order_id), suya_payment_attempt_id: text(context.attempt_id) },
   };
-  const chargeResponse = await fetch('https://api.culqi.com/v2/charges', {
+  let chargeResponse: Response;
+  try {
+    chargeResponse = await fetch('https://api.culqi.com/v2/charges', {
+    signal: AbortSignal.timeout(15_000),
     method: 'POST',
     headers: { Authorization: `Bearer ${culqiSecretKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(chargeBody),
   });
+  } catch {
+    return json({ error: 'No se pudo conocer el resultado del cargo. No vuelvas a pagar; requiere conciliación.' }, 502, origin);
+  }
   if (!chargeResponse.ok) {
+    if (chargeResponse.status >= 500) return json({ error: 'Culqi no confirmó el resultado del cargo. No vuelvas a pagar.' }, 502, origin);
     console.error(`Culqi ${body.method} charge failed`, chargeResponse.status);
     await fetch(`${supabaseUrl}/rest/v1/rpc/fail_culqi_payment_claim_secure`, {
       method: 'POST',
-      headers: { apikey: anonKey, Authorization: rpcAuthorization, 'Content-Type': 'application/json' },
+      headers: serviceHeaders(serviceRoleKey),
       body: JSON.stringify({
         p_payment_attempt_id: context.attempt_id,
         p_claim_token: claimToken,
@@ -170,15 +181,19 @@ Deno.serve(async (request) => {
     });
     return json({ error: 'Culqi rechazó el pago. Revisa los datos e intenta nuevamente.' }, 402, origin);
   }
-  const charge = await chargeResponse.json() as { id?: unknown; duplicated?: unknown };
+  const charge = await chargeResponse.json() as { id?: unknown; duplicated?: unknown; amount?: unknown; currency_code?: unknown; capture?: unknown; metadata?: { suya_order_id?: unknown; suya_payment_attempt_id?: unknown } };
   const providerReference = text(charge.id);
-  if (!/^chr_(?:test|live)_[A-Za-z0-9_-]+$/.test(providerReference)) {
+  if (!/^chr_(?:test|live)_[A-Za-z0-9_-]+$/.test(providerReference)
+    || Number(charge.amount) !== amount || charge.currency_code !== 'PEN'
+    || (isCard && charge.capture !== true)
+    || charge.metadata?.suya_order_id !== text(context.order_id)
+    || charge.metadata?.suya_payment_attempt_id !== text(context.attempt_id)) {
     return json({ error: 'Culqi devolvió un cargo inválido.' }, 502, origin);
   }
 
   const authorizeResponse = await fetch(`${supabaseUrl}/rest/v1/rpc/authorize_culqi_payment_secure`, {
     method: 'POST',
-    headers: { apikey: anonKey, Authorization: rpcAuthorization, 'Content-Type': 'application/json' },
+    headers: serviceHeaders(serviceRoleKey),
     body: JSON.stringify({
       p_payment_attempt_id: context.attempt_id,
       p_method: body.method,
@@ -187,24 +202,9 @@ Deno.serve(async (request) => {
       p_guest_access_token: guestAccessToken,
     }),
   });
-  if (!authorizeResponse.ok) {
-    // The charge succeeded. Complete only the same short-lived claim; never
-    // authorize an unrelated pending attempt as a fallback.
-    const claimDigest = await sha256Hex(claimToken);
-    const fallback = await fetch(
-      `${supabaseUrl}/rest/v1/payment_attempts?id=eq.${text(context.attempt_id)}&status=eq.pending&gateway_claim_digest=eq.${claimDigest}`,
-      {
-        method: 'PATCH',
-        headers: { ...serviceHeaders(serviceRoleKey), Prefer: 'return=minimal' },
-        body: JSON.stringify({
-          status: 'authorized',
-          provider_reference: providerReference,
-          gateway_claim_digest: null,
-          gateway_claimed_at: null,
-        }),
-      },
-    );
-    if (!fallback.ok) return json({ error: 'Cobro exitoso; conciliación pendiente en back office.' }, 502, origin);
+  if (!authorizeResponse.ok || await authorizeResponse.json() !== true) {
+    // El cargo pudo completarse, pero no se declara confirmado sin persistencia atómica.
+    return json({ error: 'Cobro recibido por Culqi; conciliación pendiente. No vuelvas a pagar.' }, 502, origin);
   }
   return json({ status: 'authorized', providerReference }, 200, origin);
 });

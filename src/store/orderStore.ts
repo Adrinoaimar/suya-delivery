@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { orderService } from '@/lib/services';
 import type { CodeResult, CreateOrderInput } from '@/lib/services';
-import type { Order, OrderStatus } from '@/types';
+import type { Order, OrderStatus, PaymentIntent } from '@/types';
 
 type LoadStatus = 'idle' | 'loading' | 'ready' | 'error';
 const ORDER_PAGE_SIZE = 50;
@@ -15,7 +15,7 @@ interface OrderState {
   hasMore: boolean;
   loadingMore: boolean;
   hydrate: () => Promise<void>;
-  refresh: () => Promise<void>;
+  refresh: (options?: { background?: boolean }) => Promise<void>;
   refreshOrder: (id: string) => Promise<Order | undefined>;
   loadMore: () => Promise<void>;
   createOrder: (input: CreateOrderInput) => Promise<Order>;
@@ -31,6 +31,28 @@ function replaceOrder(orders: Order[], updated: Order): Order[] {
   const exists = orders.some((order) => order.id === updated.id);
   if (!exists) return [updated, ...orders];
   return orders.map((order) => (order.id === updated.id ? updated : order));
+}
+
+function preservePaymentDetails(payment: Order['paymentIntent'], previous: Order['paymentIntent']) {
+  if (!payment || !previous || payment.attemptId !== previous.attemptId) return payment;
+  const merged = { ...previous, ...payment, qrPayload: payment.qrPayload ?? previous.qrPayload };
+  const keys = Object.keys(merged) as (keyof PaymentIntent)[];
+  return keys.every((key) => merged[key] === previous[key]) ? previous : merged;
+}
+
+// La consulta del listado no incluye códigos ni los datos reservados del intento de pago.
+function preserveOrderDetails(orders: Order[], previous: Order[]): Order[] {
+  const details = new Map(previous.map((order) => [order.id, order]));
+  return orders.map((order) => {
+    const prior = details.get(order.id);
+    if (!prior) return order;
+    return {
+      ...order,
+      deliveryCode: order.deliveryCode || prior.deliveryCode,
+      cancelCode: order.cancelCode || prior.cancelCode,
+      paymentIntent: preservePaymentDetails(order.paymentIntent, prior.paymentIntent),
+    };
+  });
 }
 
 function errorMessage(error: unknown): string {
@@ -49,17 +71,29 @@ export const useOrderStore = create<OrderState>((set, get) => ({
     await get().refresh();
   },
 
-  async refresh() {
+  async refresh({ background = false } = {}) {
+    if (background && get().loadingMore) return;
     const generation = orderGeneration;
     const requestId = ++orderRefreshRequest;
-    set({ status: 'loading', error: null, hasMore: false, loadingMore: false });
+    const keepVisible = background && get().status === 'ready';
+    if (!keepVisible) set({ status: 'loading', error: null, hasMore: false, loadingMore: false });
     try {
-      const orders = await orderService.list({ offset: 0, limit: ORDER_PAGE_SIZE });
+      const pageCount = keepVisible ? Math.max(1, Math.ceil(get().orders.length / ORDER_PAGE_SIZE)) : 1;
+      const pages = await Promise.all(Array.from({ length: pageCount }, (_, index) =>
+        orderService.list({ offset: index * ORDER_PAGE_SIZE, limit: ORDER_PAGE_SIZE }),
+      ));
       if (generation === orderGeneration && requestId === orderRefreshRequest) {
-        set({ orders, status: 'ready', error: null, hasMore: orders.length === ORDER_PAGE_SIZE, loadingMore: false });
+        const latest = [...new Map(pages.flat().map((order) => [order.id, order])).values()];
+        set((state) => ({
+          orders: keepVisible ? preserveOrderDetails(latest, state.orders) : latest,
+          status: 'ready',
+          error: null,
+          hasMore: pages.at(-1)?.length === ORDER_PAGE_SIZE,
+          loadingMore: false,
+        }));
       }
     } catch (error) {
-      if (generation === orderGeneration && requestId === orderRefreshRequest) {
+      if (generation === orderGeneration && requestId === orderRefreshRequest && !keepVisible) {
         set({ status: 'error', error: errorMessage(error) });
       }
     }

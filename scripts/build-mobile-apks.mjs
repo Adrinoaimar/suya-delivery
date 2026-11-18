@@ -19,7 +19,7 @@ const targets = {
   customer: {
     build: 'customer',
     appId: 'com.suya.app',
-    appName: 'Suya Cliente',
+    appName: 'Suya Delivery',
     oauthScheme: 'com.suya.app',
     artifactPrefix: 'Suya-Cliente',
   },
@@ -33,7 +33,7 @@ const targets = {
   backoffice: {
     build: 'backoffice',
     appId: 'com.suya.backoffice',
-    appName: 'Suya Backoffice',
+    appName: 'Suya Empresas',
     oauthScheme: 'com.suya.backoffice',
     artifactPrefix: 'Suya-Backoffice',
   },
@@ -46,15 +46,27 @@ const targets = {
   },
 };
 
+const standardTargets = Object.keys(targets);
+for (const [suffix, label] of [['adriano', 'Adriano'], ['jean', 'Jean'], ['reserva', 'Reserva']]) {
+  const appId = `com.suya.walletobserver.${suffix}`;
+  targets[`observer-${suffix}`] = {
+    ...targets.walletobserver,
+    appId,
+    appName: `Suya Caja · ${label}`,
+    oauthScheme: appId,
+    artifactPrefix: `Suya-Caja-${label}`,
+  };
+}
+
 const requested = args.filter((argument) => argument !== '--release');
 if (requested.includes('all')) {
   if (requested.length !== 1) throw new Error('Usa all por sí solo, con o sin --release.');
-  requested.splice(0, requested.length, ...Object.keys(targets));
+  requested.splice(0, requested.length, ...standardTargets);
 }
-if (requested.length === 0) requested.push(...Object.keys(targets));
+if (requested.length === 0) requested.push(...standardTargets);
 for (const name of requested) {
   if (!(name in targets)) {
-    throw new Error(`Rol desconocido: ${name}. Usa customer, rider, backoffice o walletobserver.`);
+    throw new Error(`Rol desconocido: ${name}. Usa customer, rider, backoffice, walletobserver u observer-adriano/jean/reserva.`);
   }
 }
 
@@ -97,6 +109,7 @@ for (const name of requested) {
     SUYA_MOBILE_APP_NAME: target.appName,
     SUYA_MOBILE_WEB_DIR: `dist/${target.build}`,
     VITE_MOBILE_ROLE: target.build,
+    VITE_PROFILED_OBSERVER: String(name.startsWith('observer-')),
     VITE_NATIVE_OAUTH_SCHEME: target.oauthScheme,
   };
 

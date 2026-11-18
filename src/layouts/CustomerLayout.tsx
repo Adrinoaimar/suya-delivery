@@ -1,9 +1,11 @@
+import { useLayoutEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { BottomNavigation } from '@/components/layout/BottomNavigation';
 import { DesktopHeader } from '@/components/layout/DesktopHeader';
 import { Footer } from '@/components/layout/Footer';
 import { MobileHeader } from '@/components/layout/MobileHeader';
 import { SeoHead } from '@/components/common/SeoHead';
+import { useUserStore } from '@/store/userStore';
 
 function isPrivateCustomerPath(pathname: string): boolean {
   return (
@@ -22,9 +24,16 @@ function isPrivateCustomerPath(pathname: string): boolean {
 export function CustomerLayout() {
   const location = useLocation();
   const privatePath = isPrivateCustomerPath(location.pathname);
+  const darkMode = useUserStore((state) => state.preferences.darkMode);
+
+  useLayoutEffect(() => {
+    if (!darkMode) return;
+    document.documentElement.dataset.suyaTheme = 'dark';
+    return () => { delete document.documentElement.dataset.suyaTheme; };
+  }, [darkMode]);
 
   return (
-    <div className="flex min-h-dvh flex-col bg-transparent">
+    <div className="flex min-h-dvh flex-col bg-white">
       {privatePath && (
         <SeoHead
           title="Suya Delivery"

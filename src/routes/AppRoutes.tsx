@@ -24,6 +24,9 @@ const RiderCurrentPage = lazy(() => import('@/pages/rider/RiderCurrentPage'));
 const RiderSafetyPage = lazy(() => import('@/pages/rider/RiderSafetyPage'));
 const RiderHistoryPage = lazy(() => import('@/pages/rider/RiderHistoryPage'));
 const RiderSettingsPage = lazy(() => import('@/pages/rider/RiderSettingsPage'));
+const DevPaymentLabPage = import.meta.env.DEV
+  ? lazy(() => import('@/pages/backoffice/PaymentSettingsPage'))
+  : null;
 
 const NotFoundPage = lazy(() => import('@/pages/shared/NotFoundPage'));
 
@@ -54,6 +57,7 @@ export function AppRoutes() {
           <Route path="orders/:id/track" element={<OrderTrackPage />} />
           <Route path="profile" element={<ProfilePage />} />
           <Route path="help" element={<HelpPage />} />
+          {DevPaymentLabPage && <Route path="probar-pagos" element={<DevPaymentLabPage />} />}
           {/* Ficha pública del repartidor: las rutas estáticas de /rider tienen prioridad */}
         </Route>
 

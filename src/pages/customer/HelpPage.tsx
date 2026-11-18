@@ -19,7 +19,7 @@ const FAQ = [
   {
     question: '¿Dónde consulto mi pedido?',
     answer:
-      'Abre «Mis pedidos» para consultar su estado. Por ahora, el cliente no ve mapa ni GPS del repartidor.',
+      'Abre «Mis pedidos» y selecciona el pedido. Verás su avance y, cuando el repartidor lo recoja, su ubicación y recorrido en el mapa.',
   },
   {
     question: '¿Cómo protegemos mi ubicación?',

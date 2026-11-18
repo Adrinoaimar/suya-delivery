@@ -160,7 +160,7 @@ export default function SearchPage() {
               return (
                 <li key={product.id}>
                   <Link
-                    to={`/store/${product.storeId}`}
+                    to={`/store/${product.storeId}?producto=${encodeURIComponent(product.id)}`}
                     className="press flex items-center gap-3 rounded-card border border-suya-mist bg-white p-3 hover:border-suya-lime"
                   >
                     <span className="h-14 w-14 shrink-0 overflow-hidden rounded-xl bg-suya-ivory">

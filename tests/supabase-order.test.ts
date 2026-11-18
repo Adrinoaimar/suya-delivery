@@ -433,6 +433,24 @@ describe('SupabaseOrderServiceImpl', () => {
     }));
   });
 
+  it('consulta un comprobante invitado sin consultar la tabla privada de pedidos', async () => {
+    const row = buildRow();
+    const token = 'ab'.repeat(32);
+    sessionStorage.setItem(`suya.guest-order-token:${row.id}`, token);
+    const { client, from, rpc } = createFakeClient({
+      rowResult: { data: null, error: { message: 'permission denied for table orders' } },
+      rpc: async (name) => ({
+        data: name === 'get_guest_order'
+          ? [{ ...row, order_id: row.id, origin: 'menu', items: [], events: [] }]
+          : null,
+        error: null,
+      }),
+    });
+    await expect(new SupabaseOrderServiceImpl(client).get(row.id)).resolves.toMatchObject({ id: row.id });
+    expect(from).not.toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledWith('get_guest_order', { p_order_id: row.id, p_access_token: token });
+  });
+
   it('clasifica cancelación inexistente, cerrada y con código inválido', async () => {
     const missing = createFakeClient({ rowResult: { data: null, error: null } });
     await expect(
@@ -443,6 +461,7 @@ describe('SupabaseOrderServiceImpl', () => {
     });
 
     const closed = createFakeClient({
+      userId: 'operator-1',
       rowResult: { data: buildRow({ status: 'delivered' }), error: null },
     });
     await expect(
@@ -454,6 +473,7 @@ describe('SupabaseOrderServiceImpl', () => {
     expect(closed.rpc).not.toHaveBeenCalledWith('cancel_order_with_code', expect.anything());
 
     const invalid = createFakeClient({
+      userId: 'operator-1',
       rowResult: { data: buildRow(), error: null },
       rpc: async () => ({ data: false, error: null }),
     });
@@ -471,6 +491,7 @@ describe('SupabaseOrderServiceImpl', () => {
 
   it('clasifica confirmación fuera de estado sin invocar RPC', async () => {
     const { client, rpc } = createFakeClient({
+      userId: 'rider-1',
       rowResult: { data: buildRow({ status: 'preparing' }), error: null },
     });
 

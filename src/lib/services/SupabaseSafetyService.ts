@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase/client';
-import type { IncidentCategory } from '@/types';
+import type { IncidentCategory, RiderLocationPoint } from '@/types';
 import type { SafetyOperationsService } from './types';
 
 const DB_CATEGORY: Record<IncidentCategory, string> = {
@@ -18,6 +18,9 @@ function requireClient(): SupabaseClient {
 }
 
 function normalizePosition(latitude: unknown, longitude: unknown) {
+  if ([latitude, longitude].some((value) =>
+    typeof value !== 'number' && (typeof value !== 'string' || value.trim() === ''),
+  )) return null;
   const lat = Number(latitude);
   const lng = Number(longitude);
   if (
@@ -31,6 +34,14 @@ function normalizePosition(latitude: unknown, longitude: unknown) {
     return null;
   }
   return { lat, lng };
+}
+
+function locationPoint(row: { latitude?: unknown; longitude?: unknown; captured_at?: unknown }): RiderLocationPoint | null {
+  const point = normalizePosition(row.latitude, row.longitude);
+  if (!point) return null;
+  return typeof row.captured_at === 'string' && Number.isFinite(Date.parse(row.captured_at))
+    ? { ...point, capturedAt: row.captured_at }
+    : point;
 }
 
 export class SupabaseSafetyServiceImpl implements SafetyOperationsService {
@@ -90,24 +101,24 @@ export class SupabaseSafetyServiceImpl implements SafetyOperationsService {
 
   async locationHistory(orderId: string) {
     const { data, error } = await this.client.from('rider_locations')
-      .select('latitude, longitude')
+      .select('latitude, longitude, captured_at')
       .eq('order_id', orderId)
       .order('captured_at', { ascending: false })
       .limit(180);
     if (error) throw new Error(error.message);
     if (!Array.isArray(data)) return [];
     return data.flatMap((reading) => {
-      const position = normalizePosition(reading.latitude, reading.longitude);
+      const position = locationPoint(reading);
       return position ? [position] : [];
     }).reverse();
   }
 
-  subscribeLocation(orderId: string, listener: (position: { lat: number; lng: number }) => void) {
+  subscribeLocation(orderId: string, listener: (position: RiderLocationPoint) => void) {
     const channel = this.client.channel(`order-location-${orderId}-${crypto.randomUUID()}`)
       .on('postgres_changes', {
         event: 'INSERT', schema: 'public', table: 'rider_locations', filter: `order_id=eq.${orderId}`,
       }, (payload) => {
-        const position = normalizePosition(payload.new.latitude, payload.new.longitude);
+        const position = locationPoint(payload.new);
         if (position) listener(position);
       })
       .subscribe();

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Bell, ChevronDown, Download, MapPin, ShoppingBag, User } from 'lucide-react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Bell, ChevronDown, MapPin, ShoppingBag, User } from 'lucide-react';
+import { Link, NavLink, useMatch, useNavigate } from 'react-router-dom';
 import { CounterBadge } from '@/components/common/Badge';
 import { Logo } from '@/components/common/Logo';
 import { SearchInput } from '@/components/common/SearchInput';
@@ -18,6 +18,7 @@ const LINKS = [
 
 export function DesktopHeader() {
   const navigate = useNavigate();
+  const isHome = Boolean(useMatch('/'));
   const [query, setQuery] = useState('');
   const [locationOpen, setLocationOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -36,7 +37,7 @@ export function DesktopHeader() {
 
   return (
     <>
-      <header className="suya-lens-nav sticky top-0 z-30 hidden lg:block">
+      <header className="sticky top-0 z-30 hidden border-b border-suya-border bg-white lg:block">
         <div className="shell flex h-[72px] items-center gap-5">
           <Link
             to="/"
@@ -49,7 +50,7 @@ export function DesktopHeader() {
           <button
             type="button"
             onClick={() => setLocationOpen(true)}
-            className="press flex min-h-12 shrink-0 items-center gap-1.5 rounded-btn border border-suya-border bg-white/60 px-3 text-sm font-medium hover:border-suya-green/50 hover:bg-white"
+            className="press flex min-h-12 shrink-0 items-center gap-1.5 rounded-btn bg-suya-ivory px-3 text-sm font-semibold hover:bg-suya-lime-soft"
           >
             <MapPin aria-hidden="true" className="h-4 w-4 text-suya-green" />
             <span className="max-w-[190px] truncate">{locationLabel}</span>
@@ -76,31 +77,25 @@ export function DesktopHeader() {
             ))}
           </nav>
 
-          <div className="ml-auto w-full max-w-xs">
-            <SearchInput value={query} onChange={setQuery} onSubmit={submitSearch} />
-          </div>
+          {!isHome && (
+            <div className="ml-auto w-full max-w-xs">
+              <SearchInput value={query} onChange={setQuery} onSubmit={submitSearch} variant="solid" />
+            </div>
+          )}
 
-          <Link
-            to="/descargar"
-            className="press hidden min-h-12 shrink-0 items-center gap-2 rounded-btn bg-suya-green px-4 text-sm font-semibold text-white hover:bg-suya-green-dark xl:flex"
-          >
-            <Download aria-hidden="true" className="h-4 w-4" />
-            Descargar app
-          </Link>
-
-          <div className="flex shrink-0 items-center gap-1">
+          <div className={cn('flex shrink-0 items-center gap-1', isHome && 'ml-auto')}>
             <button
               type="button"
               onClick={() => setNotificationsOpen(true)}
               aria-label="Notificaciones"
-              className="press flex h-12 w-12 items-center justify-center rounded-full hover:bg-white/70"
+              className="press flex h-12 w-12 items-center justify-center rounded-full hover:bg-suya-ivory"
             >
               <Bell className="h-5 w-5" />
             </button>
             <Link
               to="/cart"
               aria-label={`Carrito, ${count} ${count === 1 ? 'producto' : 'productos'}`}
-              className="press relative flex h-12 w-12 items-center justify-center rounded-full hover:bg-white/70"
+              className="press relative flex h-12 w-12 items-center justify-center rounded-full hover:bg-suya-ivory"
             >
               <ShoppingBag className="h-5 w-5" />
               <CounterBadge count={count} />
@@ -108,7 +103,7 @@ export function DesktopHeader() {
             <Link
               to="/profile"
               aria-label="Mi cuenta"
-              className="press flex h-12 w-12 items-center justify-center rounded-full hover:bg-white/70"
+              className="press flex h-12 w-12 items-center justify-center rounded-full hover:bg-suya-ivory"
             >
               <User className="h-5 w-5" />
             </Link>

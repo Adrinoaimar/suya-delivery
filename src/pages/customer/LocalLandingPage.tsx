@@ -56,7 +56,7 @@ const CONTENT: Record<LandingKind, LandingContent> = {
       {
         title: 'Pagos y estado del pedido',
         paragraphs: [
-          'Suya presenta únicamente los métodos configurados por cada comercio. En pagos digitales, ingresa el monto exacto solicitado; el local recibe el pedido cuando el pago se confirma. No compartas contraseñas ni códigos fuera del flujo oficial. Consulta el estado en Mis pedidos; el mapa y GPS del repartidor no se muestran al cliente.',
+          'Suya presenta únicamente los métodos configurados por cada comercio. En pagos digitales, ingresa el monto exacto solicitado; el local recibe el pedido cuando el pago se confirma. No compartas contraseñas ni códigos fuera del flujo oficial. Consulta el avance en Mis pedidos y sigue al repartidor en el mapa desde que recoge tu pedido.',
         ],
       },
     ],

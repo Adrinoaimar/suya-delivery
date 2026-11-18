@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Bell, ChevronDown, MapPin, ShoppingBag } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { CounterBadge } from '@/components/common/Badge';
-import { LogoMark } from '@/components/common/Logo';
+import { Logo, LogoMark } from '@/components/common/Logo';
 import { useCartStore } from '@/store/cartStore';
 import { useUserStore } from '@/store/userStore';
 import { LocationPicker } from './LocationPicker';
@@ -16,26 +16,27 @@ export function MobileHeader() {
 
   return (
     <>
-      <header className="suya-lens-nav sticky top-0 z-30 border-x-0 border-t-0 text-suya-carbon lg:hidden">
+      <header className="sticky top-0 z-30 border-b border-suya-border bg-white text-suya-carbon lg:hidden">
         <div className="flex items-center gap-1.5 px-3 pb-2.5 pt-[calc(8px+env(safe-area-inset-top))]">
           <Link
             to="/"
             aria-label="Suya Delivery — Inicio"
-            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full"
+            className="flex h-12 min-w-11 shrink-0 items-center justify-center rounded-btn"
           >
-            <LogoMark className="h-9 w-9" />
+            <LogoMark className="h-9 w-9 min-[390px]:hidden" />
+            <Logo size="sm" className="hidden min-[390px]:inline-flex" />
           </Link>
 
           <button
             type="button"
             onClick={() => setLocationOpen(true)}
-            className="press min-h-12 min-w-0 flex-1 rounded-[18px] px-3 text-left transition-colors hover:bg-white/60"
+            className="press min-h-12 min-w-0 flex-1 rounded-btn px-2 text-left transition-colors hover:bg-suya-ivory"
           >
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-suya-carbon/75">
+            <span className="block text-xs font-medium text-suya-muted">
               Entregar en
             </span>
-            <span className="flex w-full items-center gap-1 text-sm font-semibold">
-              <MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
+            <span className="flex w-full items-center gap-1 text-sm font-bold">
+              <MapPin aria-hidden="true" className="h-3.5 w-3.5 shrink-0 text-suya-green" />
               <span className="truncate">{locationLabel}</span>
               <ChevronDown aria-hidden="true" className="h-3.5 w-3.5 shrink-0" />
             </span>
@@ -45,7 +46,7 @@ export function MobileHeader() {
             type="button"
             onClick={() => setNotificationsOpen(true)}
             aria-label="Notificaciones"
-            className="press suya-lens-quiet flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl hover:bg-white/80"
+            className="press flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-suya-ivory hover:bg-suya-lime-soft"
           >
             <Bell className="h-5 w-5" />
           </button>
@@ -53,7 +54,7 @@ export function MobileHeader() {
           <Link
             to="/cart"
             aria-label={`Carrito, ${count} ${count === 1 ? 'producto' : 'productos'}`}
-            className="press suya-lens-quiet relative flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl hover:bg-white/80"
+            className="press relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-suya-lime-soft text-suya-green-dark"
           >
             <ShoppingBag className="h-5 w-5" />
             <CounterBadge count={count} pulse />

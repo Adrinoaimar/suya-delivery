@@ -67,6 +67,7 @@ const patterns = [
   ['Stripe secret key', /\bsk_(?:live|test)_[A-Za-z0-9]{20,}\b/u],
   ['Google API key', /\bAIza[A-Za-z0-9_-]{30,}\b/u],
   ['AWS access key', /\bAKIA[A-Z0-9]{16}\b/u],
+  ['Mercado Pago Access Token', /\b(?:APP_USR|TEST)-\d{10,}-\d{6}-[a-f0-9]{32}-\d+\b/iu],
 ];
 
 const findings = [];

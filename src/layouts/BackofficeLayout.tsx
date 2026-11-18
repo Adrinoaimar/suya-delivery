@@ -45,6 +45,7 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
     { to: `${prefix}/offers`, label: 'Ofertas', icon: Tag },
     { to: `${prefix}/cash`, label: 'Caja', icon: Banknote },
     { to: `${prefix}/wallets`, label: 'Dispositivos de pagos', icon: Wallet },
+    { to: `${prefix}/payments`, label: 'Configuración de cobros', icon: Banknote },
     { to: `${prefix}/riders`, label: 'Repartidores', icon: Users },
     { to: `${prefix}/restaurants`, label: 'Restaurantes', icon: Building2, platformAdminOnly: true },
     { to: `${prefix}/developers/riders`, label: 'Desarrolladores', icon: Code2, platformAdminOnly: true },
@@ -91,14 +92,12 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-dvh bg-transparent text-suya-carbon lg:grid lg:grid-cols-[250px_1fr]">
-      <aside className="suya-lens-dark border-b border-white/10 p-4 text-white lg:sticky lg:top-0 lg:flex lg:h-dvh lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:border-b-0 lg:border-r">
+    <div className="min-h-dvh bg-white text-suya-carbon lg:grid lg:grid-cols-[250px_1fr]">
+      <aside className="border-b border-suya-border bg-white px-4 pb-3 pt-[calc(1rem+env(safe-area-inset-top))] lg:sticky lg:top-0 lg:flex lg:h-dvh lg:min-h-0 lg:flex-col lg:overflow-y-auto lg:border-b-0 lg:bg-suya-green-dark lg:p-4 lg:text-white">
         <div className="flex items-center gap-2">
-          <LogoMark tone="onDark" className="h-9 w-9" />
-          <div>
-            <p className="font-display font-bold">Suya Operaciones</p>
-            <p className="text-xs text-white/65">Backoffice</p>
-          </div>
+          <LogoMark className="h-9 w-9 lg:hidden" />
+          <LogoMark tone="onDark" className="hidden h-9 w-9 lg:block" />
+          <p className="font-display text-lg font-bold">{isPlatformAdmin ? 'Suya Operaciones' : 'Suya Empresas'}</p>
         </div>
         <nav
           ref={navigationRef}
@@ -113,7 +112,7 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
               className={({ isActive }) =>
                 cn(
                   'flex min-h-14 flex-col items-center justify-center gap-1 rounded-btn px-1 py-2 text-center text-[11px] font-medium leading-tight lg:min-h-12 lg:flex-row lg:justify-start lg:gap-2 lg:px-3 lg:py-0 lg:text-left lg:text-sm',
-                  isActive ? 'bg-suya-lime text-suya-carbon' : 'text-white/75 hover:bg-white/10',
+                  isActive ? 'bg-suya-lime-soft text-suya-green-dark' : 'text-white/85 hover:bg-white/10',
                 )
               }
             >
@@ -131,7 +130,7 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
               className={({ isActive }) =>
                 cn(
                   'flex min-h-14 flex-col items-center justify-center gap-1 rounded-btn px-1 py-2 text-center text-[10px] font-medium leading-tight',
-                  isActive ? 'bg-suya-lime text-suya-carbon' : 'text-white/75 hover:bg-white/10',
+                  isActive ? 'bg-suya-lime-soft text-suya-green-dark' : 'text-suya-muted hover:bg-suya-ivory',
                 )
               }
             >
@@ -141,7 +140,7 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
           ))}
           <button
             type="button"
-            className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-btn px-1 py-2 text-center text-[10px] font-medium leading-tight text-white/75 hover:bg-white/10"
+            className="flex min-h-14 flex-col items-center justify-center gap-1 rounded-btn px-1 py-2 text-center text-[10px] font-medium leading-tight text-suya-muted hover:bg-suya-ivory"
             onClick={() => setMobileMenuOpen(true)}
             aria-haspopup="dialog"
           >
@@ -151,7 +150,7 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
         </nav>
       </aside>
       <div className="min-w-0">
-        <header className="suya-lens-nav sticky top-0 z-20 flex items-center justify-between gap-2 px-4 py-3 lg:px-7">
+        <header className="sticky top-0 z-20 flex items-center justify-between gap-2 border-b border-suya-border bg-white px-4 py-3 lg:px-7">
           <div className="min-w-0">
             <p className="font-display font-bold">Centro de operaciones</p>
             <p className="truncate text-xs text-suya-muted">{identity?.email}</p>
@@ -189,7 +188,7 @@ export function BackofficeLayout({ basePath = '' }: BackofficeLayoutProps) {
               className={({ isActive }) =>
                 cn(
                   'flex min-h-12 items-center gap-3 rounded-btn px-3 text-sm font-semibold',
-                  isActive ? 'bg-suya-lime text-suya-carbon' : 'text-suya-carbon hover:bg-suya-mist',
+                isActive ? 'bg-suya-lime-soft text-suya-green-dark' : 'text-suya-carbon hover:bg-suya-mist',
                 )
               }
             >

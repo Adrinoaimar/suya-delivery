@@ -44,8 +44,7 @@ describe('WalletObserverPage', () => {
   it('presenta la conexión dedicada sin cargar autenticación ni pantallas operativas', async () => {
     render(<WalletObserverPage />);
 
-    expect(screen.getByText('Suya Caja')).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Conexión de caja' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Suya Caja' })).toBeInTheDocument();
     expect(screen.getByLabelText('Código de emparejamiento')).toBeInTheDocument();
     expect(screen.queryByText('Pedidos')).not.toBeInTheDocument();
     await waitFor(() => expect(mocks.getStatus).toHaveBeenCalledTimes(1));

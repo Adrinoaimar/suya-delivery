@@ -35,7 +35,7 @@ describe('configuración de disponibilidad del rider', () => {
     });
     useRiderStore.setState({ available: false });
     useUserStore.setState({
-      preferences: { reduceMotion: false, locationLabel: 'Sullana, Perú', notifications: true },
+      preferences: { reduceMotion: false, locationLabel: 'Sullana, Perú', notifications: true, darkMode: false },
     });
     mocks.setAvailability.mockResolvedValue('available');
   });

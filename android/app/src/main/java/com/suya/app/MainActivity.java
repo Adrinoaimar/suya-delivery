@@ -10,10 +10,14 @@ import androidx.core.view.WindowInsetsControllerCompat;
 public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        if ("com.suya.walletobserver".equals(BuildConfig.APPLICATION_ID)) {
+        if (BuildConfig.SUYA_WALLET_OBSERVER_ENABLED) {
             registerPlugin(SuyaWalletObserverPlugin.class);
         }
         registerPlugin(SuyaSecureStoragePlugin.class);
+        if ("com.suya.app".equals(getPackageName())) {
+            registerPlugin(SuyaOrderNotificationsPlugin.class);
+            registerPlugin(SuyaYapeActionsPlugin.class);
+        }
         super.onCreate(savedInstanceState);
         configureSystemBars();
     }

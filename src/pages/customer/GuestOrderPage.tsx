@@ -71,7 +71,8 @@ export default function GuestOrderPage() {
     };
   }, []);
 
-  if (loading) {
+  const currentOrder = order?.id === id ? order : null;
+  if (loading && !currentOrder) {
     return (
       <>
         {seoHead}
@@ -86,7 +87,7 @@ export default function GuestOrderPage() {
     );
   }
 
-  if (!order || error) {
+  if (!currentOrder || !order) {
     return (
       <>
         {seoHead}
@@ -154,9 +155,10 @@ export default function GuestOrderPage() {
         {!closed && !tableOrder && paymentAccepted && canShowDeliveryCode && order.deliveryCode && (
           <OrderCodes order={order} />
         )}
+        {error && <p role="status" className="text-sm text-suya-muted">No pudimos actualizar el comprobante. Intenta de nuevo.</p>}
         <PaymentInstructions
           order={order}
-          onPaymentAccepted={refreshOrder}
+          onPaymentAccepted={paymentPending ? refreshOrder : undefined}
           onPartialPaymentCancelled={refreshOrder}
         />
 
@@ -174,9 +176,10 @@ export default function GuestOrderPage() {
                 size="sm"
                 onClick={refreshOrder}
                 aria-label="Actualizar estado"
+                disabled={loading}
               >
                 <RefreshCw className="h-4 w-4" aria-hidden="true" />
-                Actualizar
+                {loading ? 'Actualizando…' : 'Actualizar'}
               </Button>
             </div>
             <ul className="mt-4 divide-y divide-suya-mist border-y border-suya-mist">

@@ -18,7 +18,7 @@ export function RiderRoutes() {
   return (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
-        <Route path="login" element={<LoginPage title="Acceso de repartidor" allowed={['rider']} defaultPath="/rider" />} />
+        <Route path="login" element={<LoginPage title="Ingresa a Suya Repartidor" allowed={['rider']} defaultPath="/rider" />} />
         <Route path="unauthorized" element={<UnauthorizedPage />} />
         <Route element={<RequireAccess anyOf={['rider']} />}>
           <Route index element={<Navigate to="/rider" replace />} />

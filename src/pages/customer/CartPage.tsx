@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ShoppingBag, Trash2 } from 'lucide-react';
+import { ArrowRight, ShoppingBag, Store as StoreIcon, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button, ButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
@@ -75,11 +75,11 @@ export default function CartPage() {
   return (
     <div className="shell space-y-4 py-4 lg:py-8">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="section-title">Tu carrito</h1>
+        <h1 className="font-display text-3xl font-bold tracking-tight">Tu carrito</h1>
         <button
           type="button"
           onClick={() => setConfirmClear(true)}
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-[#6B7076] hover:text-suya-danger"
+          className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-[#6B7076] hover:text-suya-danger"
         >
           <Trash2 className="h-4 w-4" aria-hidden="true" />
           Vaciar carrito
@@ -89,14 +89,15 @@ export default function CartPage() {
       <div className="grid gap-4 lg:grid-cols-[1fr_340px] lg:items-start">
         <Card padded={false}>
           {store && (
-            <div className="flex items-center justify-between gap-3 border-b border-suya-mist px-4 py-3">
-              <div>
+            <div className="flex flex-wrap items-center gap-3 rounded-t-card border-b border-suya-mist bg-suya-ivory px-4 py-3">
+              <StoreIcon className="h-5 w-5 text-suya-green" aria-hidden="true" />
+              <div className="min-w-0 flex-1">
                 <p className="font-display text-[15px] font-bold">{store.name}</p>
                 <p className="text-xs text-[#6B7076]">
                   Entrega estimada {store.etaMin}–{store.etaMax} min
                 </p>
               </div>
-              <Link to={origin === 'suya_menu' && menuSlug ? `/menu/${menuSlug}` : `/store/${store.id}`} className="text-sm font-semibold text-suya-green">
+              <Link to={origin === 'suya_menu' && menuSlug ? `/menu/${menuSlug}` : `/store/${store.id}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-suya-green">
                 Agregar más
               </Link>
             </div>
@@ -138,12 +139,12 @@ export default function CartPage() {
                   )}
                 </dd>
               </div>
-              <div className="flex justify-between">
+              {totals.discount > 0 && <div className="flex justify-between">
                 <dt className="text-[#6B7076]">Descuento</dt>
                 <dd className="font-medium">
-                  {totals.discount > 0 ? `− ${formatPrice(totals.discount)}` : formatPrice(0)}
+                  − {formatPrice(totals.discount)}
                 </dd>
-              </div>
+              </div>}
               <div className="flex justify-between border-t border-suya-mist pt-2.5 text-base">
                 <dt className="font-display font-bold">Total</dt>
                 <dd className="font-display font-bold">{formatPrice(totals.total)}</dd>
@@ -167,7 +168,7 @@ export default function CartPage() {
               </p>
             ) : (
               <ButtonLink to="/checkout" fullWidth size="lg" className="mt-4">
-                Continuar al pago
+                Continuar al pago <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </ButtonLink>
             )}
           </Card>

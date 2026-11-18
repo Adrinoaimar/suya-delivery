@@ -6,6 +6,8 @@ interface QuantitySelectorProps {
   onIncrement: () => void;
   onDecrement: () => void;
   min?: number;
+  max?: number;
+  removeAtMin?: boolean;
   label?: string;
   size?: 'sm' | 'md';
   className?: string;
@@ -16,11 +18,13 @@ export function QuantitySelector({
   onIncrement,
   onDecrement,
   min = 1,
+  max,
+  removeAtMin = true,
   label = 'producto',
   size = 'md',
   className,
 }: QuantitySelectorProps) {
-  const isRemove = value <= min && min === 1;
+  const isRemove = removeAtMin && value <= min && min === 1;
   const button =
     size === 'sm'
       ? 'h-11 w-11 min-w-11'
@@ -35,10 +39,11 @@ export function QuantitySelector({
     >
       <button
         type="button"
+        disabled={!removeAtMin && value <= min}
         onClick={onDecrement}
         aria-label={isRemove ? `Quitar ${label}` : `Disminuir cantidad de ${label}`}
         className={cn(
-          'press flex items-center justify-center rounded-l-btn text-suya-carbon hover:bg-suya-mist/60',
+          'press flex items-center justify-center rounded-l-btn disabled:opacity-40 text-suya-carbon hover:bg-suya-mist/60',
           button,
         )}
       >
@@ -49,14 +54,15 @@ export function QuantitySelector({
         aria-live="polite"
         aria-label={`Cantidad: ${value}`}
       >
-        {value}
+        <span key={value} className="suya-value-in inline-block">{value}</span>
       </span>
       <button
         type="button"
+        disabled={max !== undefined && value >= max}
         onClick={onIncrement}
         aria-label={`Aumentar cantidad de ${label}`}
         className={cn(
-          'press flex items-center justify-center rounded-r-btn text-suya-green hover:bg-suya-lime-soft',
+          'press flex items-center justify-center rounded-r-btn disabled:opacity-40 text-suya-green hover:bg-suya-lime-soft',
           button,
         )}
       >

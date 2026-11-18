@@ -15,99 +15,52 @@ const ICONS: Record<string, LucideIcon> = {
 };
 
 const ACCENTS = {
-  green: 'bg-suya-green/10 text-suya-green',
-  lime: 'bg-suya-lime-soft text-suya-green-dark',
-  sun: 'bg-suya-sun-soft text-[#8A6100]',
+  green: 'bg-suya-lime-soft text-suya-green-dark',
+  lime: 'bg-suya-lime/20 text-suya-green-dark',
+  sun: 'bg-suya-sun-soft text-[#725303]',
+  all: 'bg-suya-ivory text-suya-carbon',
 };
+
+const RAIL = 'hide-scrollbar -mx-4 flex min-w-0 gap-2 overflow-x-auto px-4 py-1 sm:mx-0 sm:gap-3 sm:px-0';
+const TILE = 'min-w-[132px] max-w-[240px] flex-1 lg:flex-none lg:basis-48';
+const LINK = 'press group flex min-h-16 items-center gap-2.5 rounded-btn px-2.5 py-2 text-[13px] font-bold leading-tight ring-inset hover:ring-1 hover:ring-suya-green/40 sm:gap-3 sm:px-3';
+const ICON = 'suya-category-icon grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/80 sm:h-10 sm:w-10';
 
 interface CategoryRailProps {
   categories: Category[];
-  /** Reserva el espacio del carril mientras llegan las categorías del catálogo. */
   loading?: boolean;
   className?: string;
 }
 
-/** Placeholders con la misma métrica que las fichas reales: el carril no salta al cargar. */
-function CategoryRailSkeleton({ className }: { className?: string }) {
-  return (
-    <div aria-hidden="true" className={className}>
-      <div className="hide-scrollbar -mx-4 flex gap-2.5 overflow-hidden px-4 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-3 sm:px-0 lg:grid-cols-7">
-        {Array.from({ length: 7 }).map((_, index) => (
-          <div
-            key={index}
-            className="suya-lens-quiet flex w-[92px] shrink-0 flex-col items-center gap-2.5 rounded-promo px-2.5 py-3.5 sm:w-full"
-          >
-            <Skeleton className="h-12 w-12 rounded-2xl" />
-            <Skeleton className="h-3 w-14 rounded-full" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/** Accesos por categoría. En móvil se desliza en horizontal; en escritorio es una grilla. */
 export function CategoryRail({ categories, loading = false, className }: CategoryRailProps) {
   if (loading && categories.length === 0) {
-    return <CategoryRailSkeleton className={className} />;
+    return (
+      <div aria-hidden="true" className={cn(RAIL, className)}>
+        {Array.from({ length: 2 }, (_, index) => (
+          <Skeleton key={index} className={cn(TILE, 'h-16 rounded-btn')} />
+        ))}
+      </div>
+    );
   }
-
-  const useCompactGrid = categories.length <= 3;
 
   return (
     <nav aria-label="Categorías" className={className}>
-      <ul
-        className={cn(
-          'hide-scrollbar gap-2.5 pb-1 sm:mx-0 sm:grid sm:grid-cols-4 sm:gap-3 sm:overflow-visible sm:px-0 lg:grid-cols-7',
-          useCompactGrid
-            ? 'grid grid-cols-2 overflow-visible'
-            : '-mx-4 flex overflow-x-auto px-4',
-        )}
-      >
+      <ul className={RAIL}>
         {categories.map((category) => {
           const Icon = ICONS[category.icon] ?? Store;
           return (
-            <li key={category.id} className="shrink-0">
-              <Link
-                to={`/stores?categoria=${category.id}`}
-                className={cn(
-                  'suya-lens-quiet press group flex rounded-promo px-2.5 py-3.5 text-center transition-[border-color,background-color,transform,box-shadow] hover:border-suya-lime hover:bg-white/75 sm:w-full sm:flex-col sm:gap-2.5',
-                  useCompactGrid
-                    ? 'w-full flex-row items-center gap-3 text-left'
-                    : 'w-[92px] flex-col items-center gap-2.5',
-                )}
-              >
-                <span
-                  className={cn(
-                    'flex h-12 w-12 items-center justify-center rounded-2xl shadow-[inset_0_1px_0_rgba(255,255,255,.75)] transition-transform group-hover:scale-105',
-                    ACCENTS[category.accent],
-                  )}
-                >
-                  <Icon aria-hidden="true" className="h-5 w-5" />
-                </span>
-                <span className="text-xs font-semibold leading-tight text-suya-carbon">
-                  {category.name}
-                </span>
+            <li key={category.id} className={TILE}>
+              <Link to={`/stores?categoria=${category.id}`} className={cn(LINK, ACCENTS[category.accent])}>
+                <span className={ICON}><Icon aria-hidden="true" className="h-[19px] w-[19px]" /></span>
+                {category.name}
               </Link>
             </li>
           );
         })}
-        <li className="shrink-0">
-          <Link
-            to="/stores"
-            className={cn(
-              'suya-lens-quiet press group flex rounded-promo px-2.5 py-3.5 text-center transition-[border-color,background-color,transform,box-shadow] hover:border-suya-lime hover:bg-white/75 sm:w-full sm:flex-col sm:gap-2.5',
-              useCompactGrid
-                ? 'w-full flex-row items-center gap-3 text-left'
-                : 'w-[92px] flex-col items-center gap-2.5',
-            )}
-          >
-            <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-suya-mist text-[#4A4F55] shadow-[inset_0_1px_0_rgba(255,255,255,.75)] transition-transform group-hover:scale-105">
-              <LayoutGrid aria-hidden="true" className="h-5 w-5" />
-            </span>
-            <span className="text-xs font-semibold leading-tight text-suya-carbon">
-              Ver más categorías
-            </span>
+        <li className={TILE}>
+          <Link to="/stores" className={cn(LINK, ACCENTS.all)}>
+            <span className={ICON}><LayoutGrid aria-hidden="true" className="h-[19px] w-[19px]" /></span>
+            Todos los negocios
           </Link>
         </li>
       </ul>

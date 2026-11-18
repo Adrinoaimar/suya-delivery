@@ -61,6 +61,7 @@ describe('navegación del backoffice', () => {
     await waitFor(() =>
       expect(screen.getByRole('navigation', { name: 'Más operaciones' })).toBeInTheDocument(),
     );
+    expect(screen.getByRole('dialog', { name: 'Menú de operaciones' })).toHaveClass('flex-col');
     const moreNavigation = screen.getByRole('navigation', { name: 'Más operaciones' });
     expect(within(moreNavigation).getByRole('link', { name: 'Dispositivos de pagos' })).toBeInTheDocument();
     expect(within(moreNavigation).getByRole('link', { name: 'Repartidores' })).toBeInTheDocument();

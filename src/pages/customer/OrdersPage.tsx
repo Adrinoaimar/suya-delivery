@@ -55,7 +55,7 @@ export default function OrdersPage() {
 
       {active && (
         <section>
-          <SectionHeader title="En curso" subtitle="Sigue tu pedido en tiempo real" />
+          <SectionHeader title="En curso" subtitle="Abre el pedido para ver su avance y el mapa de entrega" />
           <OrderCard order={active} />
         </section>
       )}

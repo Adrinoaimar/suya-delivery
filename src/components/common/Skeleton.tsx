@@ -11,12 +11,17 @@ export function Skeleton({ className }: SkeletonProps) {
 /** Copia la superficie y las métricas de `StoreCard`: la lista no salta al resolverse. */
 export function StoreCardSkeleton() {
   return (
-    <div aria-hidden="true" className="suya-lens-raised overflow-hidden rounded-promo p-2">
-      <Skeleton className="h-32 w-full rounded-card sm:h-40" />
-      <div className="flex min-h-[132px] flex-col gap-2 px-1 pb-2 pt-3.5">
-        <Skeleton className="h-4 w-3/5 rounded-full" />
-        <Skeleton className="h-3 w-2/5 rounded-full" />
-        <Skeleton className="mt-auto h-3 w-4/5 rounded-full" />
+    <div aria-hidden="true" className="overflow-hidden rounded-card border border-suya-border bg-white">
+      <Skeleton className="aspect-[2.25] w-full rounded-none" />
+      <div className="p-3">
+        <div className="flex items-center gap-2.5">
+          <Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
+          <div className="flex-1 space-y-1.5">
+            <Skeleton className="h-4 w-3/5 rounded-full" />
+            <Skeleton className="h-3 w-2/5 rounded-full" />
+          </div>
+        </div>
+        <Skeleton className="mt-2 h-4 w-1/2 rounded-full" />
       </div>
     </div>
   );
@@ -48,7 +53,7 @@ export function TrackingSkeleton() {
 
 export function StoreListSkeleton({ count = 4 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: count }).map((_, index) => (
         <StoreCardSkeleton key={index} />
       ))}

@@ -44,8 +44,8 @@ export function AppShell({
         Saltar al contenido
       </a>
       <ScrollToTop />
-      {analyticsEnabled && <AnalyticsBootstrap />}
       {children}
+      {analyticsEnabled && <AnalyticsBootstrap />}
       <OfflineBanner />
       <ToastViewport />
       {showIntro && (

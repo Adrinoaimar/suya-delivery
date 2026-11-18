@@ -53,8 +53,10 @@ select ok(
   'la lista prioriza coincidencia contextual'
 );
 select ok(
-  (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) like '%v_context_hmac%'),
-  'la verificación final exige contexto cuando existe en ambos lados'
+  (select pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure)
+    not like '%update public.payment_attempts%'
+    and pg_get_functiondef('public.verify_wallet_payment(uuid,uuid)'::regprocedure) not like '%update public.orders%'),
+  'la vía de indicios conserva el registro financiero y el pedido sin autorizarlos'
 );
 select ok(
   (select pg_get_functiondef('private.write_audit_log()'::regprocedure) like '%payer_code_hmac_context%'),

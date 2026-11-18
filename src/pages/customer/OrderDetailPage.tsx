@@ -1,14 +1,16 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { ArrowLeft, Receipt } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import { Badge } from '@/components/common/Badge';
-import { ButtonLink } from '@/components/common/Button';
+import { Button, ButtonLink } from '@/components/common/Button';
 import { Card } from '@/components/common/Card';
 import { EmptyState } from '@/components/common/EmptyState';
 import { ErrorState } from '@/components/common/ErrorState';
+import { Modal } from '@/components/common/Modal';
 import { Skeleton } from '@/components/common/Skeleton';
 import { CartLine } from '@/components/order/CartLine';
 import { OrderCodes } from '@/components/order/OrderCodes';
+import { OrderTrackingPanel } from '@/components/order/OrderTrackingPanel';
 import { PaymentInstructions } from '@/components/payment/PaymentInstructions';
 import { useOrderStore } from '@/store/orderStore';
 import {
@@ -24,6 +26,10 @@ export default function OrderDetailPage() {
   const error = useOrderStore((state) => state.error);
   const refresh = useOrderStore((state) => state.refresh);
   const refreshOrder = useOrderStore((state) => state.refreshOrder);
+  const cancelOrder = useOrderStore((state) => state.cancelOrder);
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState('');
   const refreshCurrentOrder = useCallback(() => {
     void refreshOrder(id);
   }, [id, refreshOrder]);
@@ -74,6 +80,24 @@ export default function OrderDetailPage() {
     (order.status === 'confirmed' && !paymentAccepted)
       ? 'pending_payment'
       : order.status;
+  const canCancel = Boolean(order.cancelCode) && !['cancelled', 'delivered', 'picked_up', 'on_the_way'].includes(order.status)
+    && (order.paymentMethod === 'cash' || (!paymentAccepted && visibleStatus === 'pending_payment'));
+
+  async function confirmCancellation() {
+    if (!order || !canCancel || cancelling) return;
+    setCancelling(true);
+    setCancelError('');
+    try {
+      const result = await cancelOrder(order.id, order.cancelCode);
+      if (result.ok) setCancelOpen(false);
+      else setCancelError('No pudimos cancelar este pedido. Revisa su estado actualizado.');
+      await refreshOrder(id);
+    } catch {
+      setCancelError('No pudimos cancelar ahora. Actualiza el pedido y vuelve a intentarlo.');
+    } finally {
+      setCancelling(false);
+    }
+  }
 
   return (
     <div className="shell space-y-4 py-4 lg:py-8">
@@ -101,6 +125,8 @@ export default function OrderDetailPage() {
           {orderStatusLabel(visibleStatus)}
         </Badge>
       </div>
+
+      <OrderTrackingPanel order={{ ...order, status: visibleStatus }} />
 
       <div className="grid gap-4 lg:grid-cols-[1fr_340px] lg:items-start">
         <div className="space-y-4">
@@ -181,6 +207,28 @@ export default function OrderDetailPage() {
           </Card>
         </div>
       </div>
+
+      {canCancel && (
+        <div className="flex justify-center border-t border-suya-border pt-4 sm:justify-end">
+          <button type="button" onClick={() => { setCancelOpen(true); setCancelError(''); }}
+            className="press min-h-11 rounded-btn px-4 text-sm font-semibold text-suya-danger hover:bg-suya-danger-soft">
+            Cancelar pedido
+          </button>
+        </div>
+      )}
+      <Modal open={cancelOpen} onClose={() => { if (!cancelling) setCancelOpen(false); }}
+        title="¿Cancelar este pedido?" initialFocusSelector="[data-keep-order]"
+        description={order.paymentMethod !== 'cash'
+          ? 'Si ya pagaste o acabas de enviar el abono, conserva el pedido y verifica el pago primero.'
+          : 'Esto avisará al negocio que ya no necesitas el pedido.'}
+        footer={<div className="flex flex-wrap gap-2">
+          <Button data-keep-order variant="secondary" disabled={cancelling} onClick={() => setCancelOpen(false)}>Conservar pedido</Button>
+          <Button variant="danger" disabled={cancelling || !canCancel} onClick={() => void confirmCancellation()}>
+            {cancelling ? 'Cancelando…' : 'Sí, cancelar'}
+          </Button>
+        </div>}>
+        {cancelError && <p role="alert" className="text-sm text-suya-danger">{cancelError}</p>}
+      </Modal>
     </div>
   );
 }

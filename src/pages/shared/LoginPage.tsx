@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { AlertTriangle, ArrowRight, LoaderCircle, LockKeyhole, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, ArrowRight, LoaderCircle } from 'lucide-react';
 import { Button } from '@/components/common/Button';
 import { Input } from '@/components/common/Input';
+import { LogoMark } from '@/components/common/Logo';
 import { SeoHead } from '@/components/common/SeoHead';
 import { isGoogleAuthEnabled, isSupabaseConfigured } from '@/lib/supabase/client';
+import { assetUrl } from '@/utils/asset';
 import { safeReturnPath } from '@/lib/auth/oauth';
 import type { AccessRole } from '@/lib/auth/types';
 import { useAuthStore } from '@/store/authStore';
@@ -158,12 +160,13 @@ export default function LoginPage({
   }
 
   const busy = status === 'loading';
+  const riderLogin = allowed.length === 1 && allowed[0] === 'rider';
   const actionLabel = mode === 'signup' ? 'Crear mi cuenta' : 'Ingresar';
 
   return (
     <main
       id="contenido"
-      className="bg-suya-cream relative grid min-h-dvh place-items-center overflow-hidden px-4 py-8"
+      className={`grid min-h-dvh place-items-center px-4 pb-8 pt-[calc(2rem+env(safe-area-inset-top))] ${riderLogin ? 'bg-suya-green-dark' : 'bg-suya-ivory'}`}
     >
       <SeoHead
         title={`${title} | Suya Delivery`}
@@ -171,23 +174,10 @@ export default function LoginPage({
         path="/login"
         noIndex
       />
-      <div
-        className="pointer-events-none absolute -left-24 top-12 h-64 w-64 rounded-full bg-suya-green/10 blur-3xl"
-        aria-hidden="true"
-      />
-      <div
-        className="pointer-events-none absolute -right-20 bottom-8 h-72 w-72 rounded-full bg-suya-sun/20 blur-3xl"
-        aria-hidden="true"
-      />
-      <section className="relative w-full max-w-md animate-slide-up overflow-hidden rounded-card border border-white/80 bg-white/90 p-6 shadow-card backdrop-blur-xl sm:p-8">
-        <div className="flex items-start justify-between gap-4">
-          <div className="grid h-12 w-12 place-items-center rounded-2xl bg-suya-green text-white shadow-lg shadow-suya-green/20">
-            <LockKeyhole className="h-6 w-6" aria-hidden="true" />
-          </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-suya-green/10 px-3 py-1.5 text-xs font-bold text-suya-green">
-            <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />
-            Acceso seguro
-          </span>
+      <section className="motion-fade w-full max-w-md rounded-card border border-suya-border bg-white p-6 sm:p-8">
+        <div className={riderLogin ? 'relative -mx-6 -mt-6 flex min-h-24 items-center justify-between overflow-hidden rounded-t-card bg-suya-lime-soft px-6 sm:-mx-8 sm:-mt-8 sm:px-8' : 'grid h-12 w-12 place-items-center rounded-btn bg-suya-lime-soft'}>
+          <LogoMark className="h-9 w-9" />
+          {riderLogin && <img src={assetUrl('/brand/rider.svg')} alt="" width={110} height={85} loading="eager" decoding="async" className="suya-value-in" />}
         </div>
         <h1 className="mt-5 font-display text-3xl font-bold tracking-tight text-suya-carbon">
           {title}
@@ -195,7 +185,7 @@ export default function LoginPage({
         <p className="mt-1.5 text-sm leading-6 text-suya-muted">
           {allowCustomerSignup
             ? 'Pide, guarda tus direcciones y descubre ofertas exclusivas.'
-            : 'Ingresa con la cuenta asignada a tu operación.'}
+            : riderLogin ? 'Ingresa con tu cuenta de repartidor para empezar tu turno.' : 'Ingresa con la cuenta asignada a tu operación.'}
         </p>
 
         {!isSupabaseConfigured && (
