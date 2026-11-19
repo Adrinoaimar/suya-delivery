@@ -965,7 +965,12 @@ public final class YapeNotificationListenerService extends NotificationListenerS
                 try (InputStream error = connection.getErrorStream()) {
                     if (error != null) {
                         byte[] bytes = new byte[1024];
-                        int length = error.read(bytes);
+                        int length = 0;
+                        while (length < bytes.length) {
+                            int received = error.read(bytes, length, bytes.length - length);
+                            if (received <= 0) break;
+                            length += received;
+                        }
                         if (length > 0) message = new JSONObject(
                                 new String(bytes, 0, length, StandardCharsets.UTF_8)).optString("message", null);
                     }

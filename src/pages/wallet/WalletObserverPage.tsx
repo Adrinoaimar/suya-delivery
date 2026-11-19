@@ -243,7 +243,7 @@ export default function WalletObserverPage() {
             </div>
           )}
           {status?.configured && status.batteryUnrestricted === false && (
-            <p className="mt-3 text-sm text-suya-muted">
+            <div className="mt-3 text-sm text-suya-muted">
               En un teléfono dedicado a Caja, permite el uso de batería sin restricciones para
               reducir las pausas de Android cuando la pantalla esté apagada.
               <Button variant="ghost" size="sm" className="mt-1 min-h-11" onClick={() =>
@@ -253,7 +253,7 @@ export default function WalletObserverPage() {
               }>
                 Ajustes de batería
               </Button>
-            </p>
+            </div>
           )}
           <div className="mt-4 flex flex-wrap gap-2">
             <Button

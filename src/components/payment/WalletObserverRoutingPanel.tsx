@@ -308,9 +308,23 @@ export function WalletObserverRoutingPanel({
       <Card aria-label="Cobro Yape central">
         <h2 className="font-display text-lg font-bold">Cobro Yape central</h2>
         <p className="mt-1 text-sm text-suya-muted">
-          Este comercio usa el QR de {centralCollectorName}. Selecciona esa cuenta en Caja para
+          El QR de este comercio se gestiona desde {centralCollectorName}. Selecciona esa cuenta en Caja para
           ver sus abonos y reclamos por QR vencido. Cada operación conserva el nombre del comercio.
         </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Badge tone={checkoutEnabled ? 'lime' : 'neutral'}>
+            {checkoutEnabled ? 'Asignación activa' : 'Asignación pausada'}
+          </Badge>
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            disabled={busy}
+            onClick={() => void commit({ kind: 'checkout', enabled: !checkoutEnabled })}
+          >
+            {checkoutEnabled ? 'Desactivar asignación' : 'Activar asignación'}
+          </Button>
+        </div>
       </Card>
     );
   }
