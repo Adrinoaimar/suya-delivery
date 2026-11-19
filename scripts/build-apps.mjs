@@ -1,7 +1,7 @@
 import { build } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
-import { rm, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, rm } from 'node:fs/promises';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { assertProductionBuildConfig } from './lib/production-build-config.mjs';
@@ -61,8 +61,13 @@ for (const app of requested) {
   });
 
   if (app === 'rider') {
-    const redirects = path.join(repoRoot, 'dist', app, '_redirects');
-    await writeFile(redirects, '/rider/login /index.html 200\n/login /index.html 200\n');
+    const output = path.join(repoRoot, 'dist', app);
+    await mkdir(path.join(output, 'rider'), { recursive: true });
+    await Promise.all([
+      rm(path.join(output, '_redirects'), { force: true }),
+      copyFile(path.join(output, 'index.html'), path.join(output, 'login.html')),
+      copyFile(path.join(output, 'index.html'), path.join(output, 'rider', 'login.html')),
+    ]);
   }
 
   if (app !== 'customer') {

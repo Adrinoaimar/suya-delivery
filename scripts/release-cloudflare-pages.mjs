@@ -87,19 +87,23 @@ function verifyLive() {
 async function smoke(origin, path) {
   const targets = [origin, new URL(path, origin).href];
   for (const target of targets) {
+    const directLogin = new URL(target).pathname === '/rider/login';
     let lastStatus;
+    let passed = false;
     for (let attempt = 0; attempt < 6; attempt += 1) {
       try {
-        const response = await fetch(target, { redirect: 'follow' });
+        const response = await fetch(target, { redirect: directLogin ? 'manual' : 'follow' });
         lastStatus = response.status;
-        if (response.ok && (response.headers.get('content-type') || '').includes('text/html'))
+        if (response.status === 200 && (response.headers.get('content-type') || '').includes('text/html')) {
+          passed = true;
           break;
+        }
       } catch {
         lastStatus = 'sin conexión';
       }
       if (attempt < 5) await new Promise((resolve) => setTimeout(resolve, 2_000));
     }
-    if (lastStatus !== 200) throw new Error(`Smoke falló en ${target}: ${lastStatus}.`);
+    if (!passed) throw new Error(`Smoke falló en ${target}: ${lastStatus}.`);
   }
 }
 
