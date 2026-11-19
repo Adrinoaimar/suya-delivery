@@ -17,6 +17,7 @@ if (!Number.isSafeInteger(nativeVersion) || nativeVersion < 1 || !Number.isSafeI
 }
 const roles = ['customer', 'rider', 'backoffice', 'walletobserver', 'unified'];
 const protectedRoles = new Set(['rider', 'backoffice']);
+const customerPause = { version: 2, role: 'customer', disabled: true };
 
 if (!privateKey) throw new Error('Falta SUYA_LIVE_UPDATE_PRIVATE_KEY para firmar los bundles móviles.');
 if (!/^[a-zA-Z0-9._-]{1,128}$/.test(bundleId)) {
@@ -77,15 +78,14 @@ async function prepareRole(role) {
   return manifest;
 }
 
-const manifests = new Map();
-for (const role of roles) manifests.set(role, await prepareRole(role));
+for (const role of roles) {
+  if (role !== 'customer') await prepareRole(role);
+}
+const customerDir = path.join(outputDir, 'customer');
+await mkdir(customerDir, { recursive: true });
+await writeFile(path.join(customerDir, 'latest.json'), JSON.stringify(customerPause) + '\n');
 
-// Compatibilidad con APKs de cliente que ya conocen solo el manifiesto raíz.
-// Su URL sigue apuntando al ZIP del subdirectorio customer, que el validador
-// antiguo acepta porque conserva el prefijo /mobile-updates/.
-await writeFile(
-  path.join(outputDir, 'latest.json'),
-  `${JSON.stringify(manifests.get('customer'), null, 2)}\n`,
-);
+// Las APK antiguas también pueden consultar la ruta raíz.
+await writeFile(path.join(outputDir, 'latest.json'), JSON.stringify(customerPause) + '\n');
 
-console.log(`Bundles móviles firmados: ${roles.join(', ')}`);
+console.log(`Bundles móviles firmados: ${roles.filter((role) => role !== 'customer').join(', ')}`);
