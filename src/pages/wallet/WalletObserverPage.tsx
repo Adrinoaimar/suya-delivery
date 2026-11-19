@@ -230,12 +230,30 @@ export default function WalletObserverPage() {
               {yapeAtLabel(status.lastYapeAt) && (
                 <p className="mt-1 text-xs text-suya-muted">Última lectura: {yapeAtLabel(status.lastYapeAt)}</p>
               )}
+              {(status.rejectedEvents ?? 0) > 0 && (
+                <p className="mt-1 text-suya-danger">
+                  Observaciones rechazadas: {status.rejectedEvents}. Revisa esos abonos en la billetera.
+                </p>
+              )}
               {status.queueFull && (
                 <p className="mt-1 text-suya-danger">
                   La cola está llena. Sincroniza antes de seguir capturando pagos.
                 </p>
               )}
             </div>
+          )}
+          {status?.configured && status.batteryUnrestricted === false && (
+            <p className="mt-3 text-sm text-suya-muted">
+              En un teléfono dedicado a Caja, permite el uso de batería sin restricciones para
+              reducir las pausas de Android cuando la pantalla esté apagada.
+              <Button variant="ghost" size="sm" className="mt-1 min-h-11" onClick={() =>
+                void nativeWalletObserver.openBatterySettings().catch(() =>
+                  notificationService.notify('Revisa el uso de batería de Suya Caja en los ajustes de Android.', 'info'),
+                )
+              }>
+                Ajustes de batería
+              </Button>
+            </p>
           )}
           <div className="mt-4 flex flex-wrap gap-2">
             <Button

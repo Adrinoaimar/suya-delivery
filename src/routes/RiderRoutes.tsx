@@ -15,10 +15,12 @@ const LoginPage = lazy(() => import('@/pages/shared/LoginPage'));
 const UnauthorizedPage = lazy(() => import('@/pages/shared/UnauthorizedPage'));
 
 export function RiderRoutes() {
+  const login = <LoginPage title="Ingresa a Suya Repartidor" allowed={['rider']} defaultPath="/rider" />;
   return (
     <Suspense fallback={<RouteFallback />}>
       <Routes>
-        <Route path="login" element={<LoginPage title="Ingresa a Suya Repartidor" allowed={['rider']} defaultPath="/rider" />} />
+        <Route path="login" element={login} />
+        <Route path="rider/login" element={login} />
         <Route path="unauthorized" element={<UnauthorizedPage />} />
         <Route element={<RequireAccess anyOf={['rider']} />}>
           <Route index element={<Navigate to="/rider" replace />} />

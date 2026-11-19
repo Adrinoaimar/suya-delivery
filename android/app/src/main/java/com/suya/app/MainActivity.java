@@ -22,6 +22,14 @@ public class MainActivity extends BridgeActivity {
         configureSystemBars();
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (BuildConfig.SUYA_WALLET_OBSERVER_ENABLED) {
+            YapeNotificationListenerService.syncPendingEvents(this);
+        }
+    }
+
     private void configureSystemBars() {
         getWindow().setStatusBarColor(Color.parseColor("#EEF6F1"));
         getWindow().setNavigationBarColor(Color.parseColor("#F0F7F3"));

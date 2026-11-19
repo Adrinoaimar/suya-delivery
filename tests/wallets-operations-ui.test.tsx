@@ -154,9 +154,11 @@ describe('WalletsOperationsPage', () => {
     fireEvent.click(jean.getAllByRole('button', { name: 'Cargar QR' })[0]);
     fireEvent.change(jean.getByLabelText('Destinatario · Yape de Jean'), { target: { value: 'Jean Prueba' } });
     fireEvent.change(jean.getByLabelText('Contenido del QR · Yape de Jean'), { target: { value: '000201-fixture-yape' } });
+    fireEvent.change(jean.getByRole('textbox', { name: /Celular Yape/ }), { target: { value: '900000003' } });
     fireEvent.click(jean.getByRole('button', { name: 'Guardar QR' }));
     await waitFor(() => expect(mocks.changeObserverRoute).toHaveBeenCalledWith(restaurant.id, {
       kind: 'save', priority: 2, provider: 'yape', recipient: 'Jean Prueba', qrPayload: '000201-fixture-yape',
+      expectedVersion: null, phone: '900000003',
     }));
     const reserve = within(screen.getByRole('region', { name: 'Reserva' }));
     expect(reserve.getAllByText('Falta QR')).toHaveLength(2);

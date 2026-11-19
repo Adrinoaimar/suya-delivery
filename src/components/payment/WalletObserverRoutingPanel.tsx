@@ -42,6 +42,8 @@ function RouteFields({
   const [editing, setEditing] = useState(false);
   const [recipient, setRecipient] = useState(route.recipient ?? '');
   const [qrPayload, setQrPayload] = useState(route.qrPayload ?? '');
+  const [phone, setPhone] = useState(route.phone ?? '');
+  const [editVersion, setEditVersion] = useState(route.version);
   const [tested, setTested] = useState(false);
   const provider = route.provider === 'yape' ? 'Yape' : 'Lemon';
   const field = `${provider} de ${slots[route.priority - 1]}`;
@@ -55,6 +57,7 @@ function RouteFields({
         </Badge>
       </div>
       {route.recipient && <p className="break-words text-sm text-suya-muted">{route.recipient}</p>}
+      {!editing && route.phone && <p className="text-sm text-suya-muted">Celular Yape · {route.phone}</p>}
       {editing ? (
         <form
           className="space-y-2"
@@ -67,6 +70,8 @@ function RouteFields({
                 provider: route.provider,
                 recipient,
                 qrPayload,
+                expectedVersion: editVersion,
+                phone: route.provider === 'yape' ? phone.trim() || null : null,
               })
             ) {
               setEditing(false);
@@ -78,7 +83,10 @@ function RouteFields({
             <input
               required
               value={recipient}
-              onChange={(event) => setRecipient(event.target.value)}
+              onChange={(event) => {
+                if (event.target.value !== recipient) setPhone('');
+                setRecipient(event.target.value);
+              }}
               maxLength={120}
               className={input}
             />
@@ -118,6 +126,23 @@ function RouteFields({
               className={`${input} break-all py-2`}
             />
           </label>
+          {route.provider === 'yape' && (
+            <label className="block text-xs font-semibold">
+              Celular Yape · {field}
+              <input
+                type="tel"
+                inputMode="numeric"
+                maxLength={9}
+                pattern="9[0-9]{8}"
+                value={phone}
+                onChange={(event) => setPhone(event.target.value.replace(/[^0-9]/g, '').slice(0, 9))}
+                className={input}
+              />
+              <span className="mt-1 block font-normal text-suya-muted">
+                Confirma que pertenece al QR. El cliente podrá copiarlo desde su pedido.
+              </span>
+            </label>
+          )}
           <div className="flex flex-wrap gap-2">
             <Button size="sm" type="submit" disabled={busy}>
               Guardar QR
@@ -132,6 +157,7 @@ function RouteFields({
                 variant="secondary"
                 onClick={() => {
                   const preset = PRELOADED_STATIC_QR_PRESETS[route.provider];
+                  if (preset.receiverLabel !== recipient) setPhone('');
                   setRecipient(preset.receiverLabel);
                   setQrPayload(preset.qrPayload);
                 }}
@@ -145,6 +171,7 @@ function RouteFields({
                 type="button"
                 variant="secondary"
                 onClick={() => {
+                  if (account.accountLabel !== recipient) setPhone('');
                   setRecipient(account.accountLabel);
                   setQrPayload(account.qrPayload ?? '');
                 }}
@@ -162,6 +189,8 @@ function RouteFields({
           onClick={() => {
             setRecipient(route.recipient ?? '');
             setQrPayload(route.qrPayload ?? '');
+            setPhone(route.phone ?? '');
+            setEditVersion(route.version);
             setEditing(true);
           }}
         >
@@ -273,6 +302,18 @@ export function WalletObserverRoutingPanel({
     );
   if (!routes.length) return null;
   const checkoutEnabled = routes[0].checkoutEnabled;
+  const centralCollectorName = routes[0].centralCollectorName;
+  if (centralCollectorName) {
+    return (
+      <Card aria-label="Cobro Yape central">
+        <h2 className="font-display text-lg font-bold">Cobro Yape central</h2>
+        <p className="mt-1 text-sm text-suya-muted">
+          Este comercio usa el QR de {centralCollectorName}. Selecciona esa cuenta en Caja para
+          ver sus abonos y reclamos por QR vencido. Cada operación conserva el nombre del comercio.
+        </p>
+      </Card>
+    );
+  }
 
   return (
     <Card className="space-y-4" aria-labelledby="observer-routing-title">

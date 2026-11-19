@@ -4,6 +4,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.provider.Settings;
+import android.os.PowerManager;
 
 import androidx.annotation.Nullable;
 
@@ -65,6 +66,16 @@ public final class SuyaWalletObserverPlugin extends Plugin {
         call.resolve();
     }
 
+    @PluginMethod
+    public void openBatterySettings(PluginCall call) {
+        try {
+            getActivity().startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
+            call.resolve();
+        } catch (Exception ignored) {
+            call.reject("Abre los ajustes de batería de Android para revisar Suya Caja.");
+        }
+    }
+
     private JSObject status() {
         JSObject result = new JSObject();
         result.put("slot", BuildConfig.SUYA_WALLET_OBSERVER_SLOT);
@@ -72,6 +83,9 @@ public final class SuyaWalletObserverPlugin extends Plugin {
         result.put("notificationAccess", hasNotificationAccess(getContext()));
         result.put("role", BuildConfig.SUYA_SUPABASE_URL.isEmpty() ? "unconfigured" : "ready");
         result.put("pendingEvents", YapeNotificationListenerService.pendingEventCount(getContext()));
+        PowerManager power = getContext().getSystemService(PowerManager.class);
+        result.put("batteryUnrestricted", power != null && power.isIgnoringBatteryOptimizations(getContext().getPackageName()));
+        result.put("rejectedEvents", YapeNotificationListenerService.rejectedEventCount(getContext()));
         result.put("queueFull", YapeNotificationListenerService.isQueueFull(getContext()));
         result.put("yapeNotificationsSeen", YapeNotificationListenerService.yapeCallbackCount(getContext()));
         result.put("lastYapeResult", YapeNotificationListenerService.lastYapeResult(getContext()));

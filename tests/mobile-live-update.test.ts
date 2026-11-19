@@ -34,8 +34,8 @@ describe('actualizaciones nativas por rol', () => {
     expect(apkVerifier).toContain("const suffix = `-${versionName}-code${versionCode}-${releaseBuild ? 'release' : 'debug'}.apk`;");
     expect(apkBuilder).toContain("const releaseBuild = args.includes('--release');");
     expect(apkBuilder).toContain("'SUYA_RELEASE_STORE_FILE'");
-    expect(androidBuild).toContain('versionCode 24');
-    expect(androidBuild).toContain('versionName "1.23"');
+    expect(androidBuild).toContain('versionCode 25');
+    expect(androidBuild).toContain('versionName "1.24"');
     expect(iosProject).toContain('CURRENT_PROJECT_VERSION = 2;');
   });
 

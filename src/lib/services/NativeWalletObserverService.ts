@@ -7,6 +7,8 @@ interface NativeWalletObserverStatus {
   role: 'ready' | 'unconfigured' | string;
   pendingEvents?: number;
   queueFull?: boolean;
+  batteryUnrestricted?: boolean;
+  rejectedEvents?: number;
   yapeNotificationsSeen?: number;
   lastYapeResult?: string | null;
   lastYapeAt?: string | null;
@@ -18,6 +20,7 @@ interface NativeWalletObserverPlugin {
   clear(): Promise<NativeWalletObserverStatus>;
   getStatus(): Promise<NativeWalletObserverStatus>;
   openNotificationSettings(): Promise<void>;
+  openBatterySettings(): Promise<void>;
 }
 
 const plugin = registerPlugin<NativeWalletObserverPlugin>('SuyaWalletObserver');
@@ -34,6 +37,9 @@ export const nativeWalletObserver = {
   },
   clear(): Promise<NativeWalletObserverStatus> {
     return plugin.clear();
+  },
+  openBatterySettings(): Promise<void> {
+    return plugin.openBatterySettings();
   },
   openNotificationSettings(): Promise<void> {
     return plugin.openNotificationSettings();

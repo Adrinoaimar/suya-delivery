@@ -1,11 +1,24 @@
 package com.suya.app;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
 public class YapeNotificationListenerServiceTest {
+
+    @Test
+    public void quarantinesOnlyDefinitiveEventRejections() {
+        assertTrue(YapeNotificationListenerService.isPermanentUploadRejection(400, "invalid amount"));
+        assertTrue(YapeNotificationListenerService.isPermanentUploadRejection(422, null));
+        assertFalse(YapeNotificationListenerService.isPermanentUploadRejection(400, "invalid device token"));
+        assertFalse(YapeNotificationListenerService.isPermanentUploadRejection(400, "device observation rate limit exceeded"));
+        assertFalse(YapeNotificationListenerService.isPermanentUploadRejection(400, null));
+        for (int status : new int[]{401, 403, 404, 408, 409, 429, 503}) {
+            assertFalse(YapeNotificationListenerService.isPermanentUploadRejection(status, null));
+        }
+    }
 
     @Test
     public void includesTextLinesWhenWalletSplitsNotificationContentAcrossLines() {

@@ -16,7 +16,7 @@ if (!Number.isSafeInteger(nativeVersion) || nativeVersion < 1 || !Number.isSafeI
   throw new Error('No se pudo determinar la versión nativa o la revisión del bundle.');
 }
 const roles = ['customer', 'rider', 'backoffice', 'walletobserver', 'unified'];
-const protectedRoles = new Set(['rider', 'backoffice']);
+const protectedRoles = new Set(['rider', 'backoffice', 'walletobserver']);
 const customerPause = { version: 2, role: 'customer', disabled: true };
 
 if (!privateKey) throw new Error('Falta SUYA_LIVE_UPDATE_PRIVATE_KEY para firmar los bundles móviles.');

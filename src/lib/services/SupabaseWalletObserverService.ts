@@ -201,6 +201,7 @@ export class SupabaseWalletObserverService implements WalletObserverService {
     if (error) throw new Error(error.message);
     return (data ?? []).map((row: Record<string, unknown>) => ({
       attemptId: text(row.attempt_id), orderCode: text(row.order_code),
+      restaurantName: nullableText(row.restaurant_name),
       method: row.method === 'lemon' ? 'lemon' : 'yape', amount: Number(row.amount),
       payerName: text(row.payer_name), receiptReference: text(row.receipt_reference) || null,
       reportedAt: text(row.reported_at),
@@ -229,6 +230,8 @@ export class SupabaseWalletObserverService implements WalletObserverService {
       recipient: nullableText(row.recipient),
       qrPayload: nullableText(row.qr_payload),
       version: nullableText(row.version),
+      phone: nullableText(row.phone),
+      centralCollectorName: nullableText(row.central_collector_name),
       enabled: row.enabled === true,
       checkoutEnabled: row.checkout_enabled === true,
       health: text(row.health),
@@ -242,9 +245,10 @@ export class SupabaseWalletObserverService implements WalletObserverService {
     const response = await (() => {
       switch (action.kind) {
         case 'save':
-          return invoke('save_wallet_observer_route', {
+          return invoke('save_wallet_observer_route_with_phone', {
             p_priority: action.priority, p_provider: action.provider,
             p_recipient: action.recipient, p_qr_payload: action.qrPayload,
+            p_expected_version: action.expectedVersion, p_phone: action.phone,
           });
         case 'enable':
           return invoke('set_wallet_observer_route_enabled', {

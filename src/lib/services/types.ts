@@ -297,13 +297,15 @@ export interface WalletObserverRoute {
   recipient: string | null;
   qrPayload: string | null;
   version: string | null;
+  phone?: string | null;
+  centralCollectorName?: string | null;
   enabled: boolean;
   checkoutEnabled: boolean;
   health: string;
 }
 
 export type WalletObserverRouteAction =
-  | { kind: 'save'; priority: number; provider: WalletObserverRoute['provider']; recipient: string; qrPayload: string }
+  | { kind: 'save'; priority: number; provider: WalletObserverRoute['provider']; recipient: string; qrPayload: string; expectedVersion: string | null; phone: string | null }
   | { kind: 'enable'; route: WalletObserverRoute; enabled: boolean }
   | { kind: 'bind'; priority: number; deviceId: string }
   | { kind: 'pair'; priority: number; label: string }
@@ -312,6 +314,7 @@ export type WalletObserverRouteAction =
 export interface ExpiredWalletClaim {
   attemptId: string;
   orderCode: string;
+  restaurantName?: string | null;
   method: 'yape' | 'lemon';
   amount: number;
   payerName: string;

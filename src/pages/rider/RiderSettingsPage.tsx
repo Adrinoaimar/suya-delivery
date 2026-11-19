@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Settings } from 'lucide-react';
+import { LogOut, Settings } from 'lucide-react';
+import { Button } from '@/components/common/Button';
 import { Toggle } from '@/components/common/Toggle';
 import { notificationService, riderOperationsService } from '@/lib/services';
 import { useRiderStore } from '@/store/riderStore';
@@ -10,6 +11,8 @@ export default function RiderSettingsPage() {
   const available = useRiderStore((state) => state.available);
   const setAvailable = useRiderStore((state) => state.setAvailable);
   const identity = useAuthStore((state) => state.identity);
+  const signOut = useAuthStore((state) => state.signOut);
+  const [signingOut, setSigningOut] = useState(false);
   const preferences = useUserStore((state) => state.preferences);
   const setPreferences = useUserStore((state) => state.setPreferences);
   const [availabilityBusy, setAvailabilityBusy] = useState(false);
@@ -35,6 +38,18 @@ export default function RiderSettingsPage() {
     }
   }
 
+  async function closeSession(): Promise<void> {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await signOut();
+    } catch {
+      notificationService.notify('No pudimos cerrar tu sesión. Vuelve a intentarlo.', 'danger');
+    } finally {
+      setSigningOut(false);
+    }
+  }
+
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4 px-4 py-5 lg:px-8 lg:py-8">
       <header className="text-white">
@@ -56,6 +71,10 @@ export default function RiderSettingsPage() {
             <dd className="font-medium">{available ? 'Disponible' : 'No disponible'}</dd>
           </div>
         </dl>
+        <Button type="button" variant="secondary" className="mt-4 min-h-11" disabled={signingOut} onClick={() => void closeSession()}>
+          <LogOut className="h-4 w-4" aria-hidden="true" />
+          {signingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}
+        </Button>
       </section>
 
       <section className="space-y-4 rounded-card bg-white p-4 text-suya-carbon">

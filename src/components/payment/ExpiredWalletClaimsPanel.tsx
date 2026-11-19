@@ -63,7 +63,7 @@ export function ExpiredWalletClaimsPanel({ restaurantId }: { restaurantId: strin
                 <li key={claim.attemptId} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <div className="min-w-0 space-y-0.5 break-words text-sm">
                     <p className="font-semibold">Pedido {claim.orderCode} · {claim.method === 'lemon' ? 'Lemon' : 'Yape'} · {formatPrice(claim.amount)}</p>
-                    <p>Pagador declarado: {claim.payerName}</p>
+                    <p>{claim.restaurantName && <span>{claim.restaurantName} · </span>}Pagador declarado: {claim.payerName}</p>
                     {claim.receiptReference && <p>Referencia: {claim.receiptReference}</p>}
                     <p className="text-suya-muted">{formatDateTime(claim.reportedAt)}</p>
                   </div>

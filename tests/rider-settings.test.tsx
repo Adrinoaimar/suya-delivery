@@ -8,6 +8,7 @@ import { useUserStore } from '@/store/userStore';
 const mocks = vi.hoisted(() => ({
   setAvailability: vi.fn(),
   notify: vi.fn(),
+  signOut: vi.fn(),
 }));
 
 vi.mock('@/lib/services', async (importOriginal) => ({
@@ -15,6 +16,8 @@ vi.mock('@/lib/services', async (importOriginal) => ({
   riderOperationsService: { setAvailability: mocks.setAvailability },
   notificationService: { notify: mocks.notify },
 }));
+
+const realSignOut = useAuthStore.getState().signOut;
 
 describe('configuración de disponibilidad del rider', () => {
   beforeEach(() => {
@@ -38,10 +41,12 @@ describe('configuración de disponibilidad del rider', () => {
       preferences: { reduceMotion: false, locationLabel: 'Sullana, Perú', notifications: true, darkMode: false },
     });
     mocks.setAvailability.mockResolvedValue('available');
+    useAuthStore.setState({ signOut: mocks.signOut });
+    mocks.signOut.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
-    useAuthStore.setState({ status: 'idle', identity: null, error: null });
+    useAuthStore.setState({ status: 'idle', identity: null, error: null, signOut: realSignOut });
     useRiderStore.setState({ available: false });
   });
 
@@ -53,6 +58,12 @@ describe('configuración de disponibilidad del rider', () => {
     await waitFor(() => expect(mocks.setAvailability).toHaveBeenCalledWith(true));
     expect(useRiderStore.getState().available).toBe(true);
     expect(mocks.notify).toHaveBeenCalledWith('Ahora estás disponible', 'success');
+  });
+
+  it('cierra la sesión desde Configuración', async () => {
+    render(<RiderSettingsPage />);
+    fireEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }));
+    await waitFor(() => expect(mocks.signOut).toHaveBeenCalledOnce());
   });
 
   it('conserva el estado anterior si el servidor rechaza el cambio', async () => {

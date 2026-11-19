@@ -19,7 +19,7 @@ for (const role of ['rider', 'backoffice', 'walletobserver', 'unified']) {
   const manifest = JSON.parse(latest);
   const {version, bundleId, minimumNativeVersionCode, revision, url, checksum, signature, manifestSignature} = manifest;
   const protectedRole = role === 'rider' || role === 'backoffice';
-  if (manifest.role !== role || version !== (protectedRole ? 2 : 1)) {
+  if (manifest.role !== role || (version !== 2 && (protectedRole || version !== 1))) {
     throw new Error(`Manifiesto OTA incompatible para ${role}.`);
   }
   await mkdir(directory, { recursive: true });
@@ -27,7 +27,7 @@ for (const role of ['rider', 'backoffice', 'walletobserver', 'unified']) {
     if (!/^[a-zA-Z0-9._-]{1,128}$/.test(bundleId) || url !== origin + role + '/' + bundleId + '.zip') {
       throw new Error(`Identificador o URL OTA inválido para ${role}.`);
     }
-    if (protectedRole) {
+    if (version === 2) {
       const metadata = [version, role, bundleId, minimumNativeVersionCode, revision, url, checksum, signature];
       if (!verify('RSA-SHA256', Buffer.from(JSON.stringify(metadata)), publicKey, Buffer.from(manifestSignature, 'base64'))) {
         throw new Error(`Firma OTA de manifiesto inválida para ${role}.`);

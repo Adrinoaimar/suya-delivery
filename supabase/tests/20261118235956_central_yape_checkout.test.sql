@@ -18,6 +18,8 @@ declare
   device record;
   obs_id uuid;
   expired_attempt uuid;
+  original_route uuid;
+  reserve_route uuid;
   fixture_qr constant text := '000201-fixture-suya-central-yape';
   origin constant jsonb := '{"packageName":"com.bcp.innovacxion.yapeapp","operationKind":"incoming_payment"}';
 begin
@@ -29,18 +31,24 @@ begin
     (first_store,'suya-central-first',c,'Restaurante de prueba A','Sullana',true,true),
     (second_store,'suya-central-second',c,'Restaurante de prueba B','Sullana',true,true);
 
-  insert into public.restaurant_members (restaurant_id,user_id,role) values (collector,u,'owner');
+  insert into public.restaurant_members (restaurant_id,user_id,role) values (collector,u,'owner'),(first_store,u,'owner');
   perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);
   perform set_config('request.jwt.claim.sub',u::text,true);
-  perform public.save_wallet_observer_route(collector,1,'yape','Titular de prueba',fixture_qr);
+  perform public.save_wallet_observer_route_with_phone(collector,1,'yape','Titular de prueba',fixture_qr,null,'900000001');
+  select version into strict original_route
+  from public.list_wallet_observer_routes(collector) where priority=1 and provider='yape' and phone='900000001';
   select pairing_code into strict pair from public.create_routed_wallet_observer_pairing(collector,1,'Caja temporal');
   select * into strict device from public.complete_wallet_observer_pairing(pair);
+  select version into strict original_route from public.list_wallet_observer_routes(collector)
+  where priority=1 and provider='yape' and phone='900000001';
   assert public.report_wallet_observer_health(device.device_token,true,array['yape'],0);
   update private.wallet_observer_routes set enabled=true,tested_at=now() where restaurant_id=collector;
   perform public.set_wallet_observer_checkout(collector,true);
   perform public.set_wallet_observer_device_auto_settle(device.device_id,true);
   insert into private.central_yape_checkout values(first_store,collector),(second_store,collector);
   insert into private.wallet_observer_checkout values(first_store,true),(second_store,true);
+  assert exists(select from public.list_wallet_observer_routes(first_store)
+    where central_collector_name='Caja temporal'), 'el comercio conoce el nombre de su Caja colectora';
 
   assert exists(select from public.get_public_checkout_payment_options(first_store) cc
     where cc.active_provider='observer_routing' and cc.supports_yape and not cc.supports_lemon), 'checkout compartido';
@@ -52,6 +60,11 @@ begin
 
   perform public.create_payment_intent(first_order,'yape');
   perform public.create_payment_intent(second_order,'yape');
+  assert public.get_payment_receiver_phone(first_order) = '900000001', 'el cliente copia el teléfono del QR asignado';
+  perform public.save_wallet_observer_route_with_phone(collector,1,'yape','Titular de prueba',fixture_qr,original_route,'900000002');
+  assert public.get_payment_receiver_phone(first_order) = '900000001', 'cambiar el celular no altera pedidos previos';
+  assert exists(select from public.list_wallet_observer_routes(collector)
+    where priority=1 and provider='yape' and phone='900000002');
   assert exists(select from public.get_payment_intent(first_order,null) p where p.observer_routed and p.qr_payload=fixture_qr), 'snapshot de QR compartido';
 
   perform public.ingest_wallet_observation(device.device_token,'central-third','yape','Pedro Familiar','047',100,'PEN',clock_timestamp(),origin);
@@ -70,6 +83,7 @@ begin
   assert public.verify_routed_yape_code(second_order,'047')='unobserved', 'el abono aplicado no es reutilizable';
 
   perform public.create_payment_intent(collision_order,'yape');
+  assert public.get_payment_receiver_phone(collision_order) = '900000002', 'los intentos nuevos copian el celular actualizado';
   perform public.ingest_wallet_observation(device.device_token,'central-known','yape','Pedro Familiar','048',300,'PEN',clock_timestamp(),origin);
   perform public.ingest_wallet_observation(device.device_token,'central-masked','yape',null,'048',300,'PEN',clock_timestamp(),origin);
   assert public.verify_routed_yape_code(collision_order,'048')='review', 'colisión indistinguible va a Caja';
@@ -79,7 +93,7 @@ begin
   update public.payment_attempts set created_at=now()-interval '40 minutes', expires_at=now()-interval '10 minutes'
   where id=expired_attempt;
   assert public.report_expired_wallet_qr(second_order,expired_attempt,'Pedro Familiar','FIX-48') is not null;
-  assert exists(select from public.list_expired_wallet_qr_claims(collector) where order_code='CENTRALFIXB'),
+  assert exists(select from public.list_expired_wallet_qr_claims(collector) where order_code='CENTRALFIXB' and restaurant_name='Restaurante de prueba B'),
     'el colector puede consultar el reclamo por QR vencido';
   perform set_config('request.jwt.claim.sub',extensions.gen_random_uuid()::text,true);
   perform set_config('request.jwt.claims',jsonb_build_object('sub',current_setting('request.jwt.claim.sub'),'role','authenticated')::text,true);
@@ -87,6 +101,12 @@ begin
     'otra cuenta no puede ver la atribución';
   assert not exists(select from public.list_wallet_payment_candidates_with_store(obs_id)),
     'otra cuenta no puede leer candidatos';
+  begin
+    perform public.save_wallet_observer_route_with_phone(collector,1,'yape','Titular de prueba',fixture_qr,original_route,'900000003');
+    assert false, 'otra cuenta no puede cambiar el teléfono de cobro';
+  exception when raise_exception then
+    assert sqlerrm = 'No tienes permiso para administrar estas billeteras.';
+  end;
   begin
     perform public.review_expired_wallet_qr_claim(collector,expired_attempt);
     assert false, 'otra cuenta no puede revisar reclamos';
@@ -97,6 +117,18 @@ begin
   perform set_config('request.jwt.claim.sub',u::text,true);
   perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);
   assert public.review_expired_wallet_qr_claim(collector,expired_attempt);
+  perform public.save_wallet_observer_route_with_phone(collector,2,'yape','Titular de prueba',fixture_qr,null,'900000003');
+  select version into strict reserve_route from public.list_wallet_observer_routes(collector)
+  where priority=2 and provider='yape';
+  begin
+    perform public.save_wallet_observer_route_with_phone(collector,2,'yape','Titular de prueba',fixture_qr||'nuevo',reserve_route,null);
+    assert false, 'rotar con teléfono ya configurado requiere confirmar el celular';
+  exception when raise_exception then
+    assert sqlerrm like 'Confirma el celular%';
+  end;
+  perform public.save_wallet_observer_route_with_phone(collector,2,'yape','Titular de prueba',fixture_qr||'nuevo',reserve_route,'900000003');
+  assert exists(select from public.list_wallet_observer_routes(collector)
+    where priority=2 and provider='yape' and version<>reserve_route and phone='900000003');
   assert (select status='pending_payment' from public.orders where id=second_order),
     'revisar un reclamo no cambia el pago';
 
@@ -106,6 +138,6 @@ begin
 end;
 $$;
 
-select pass('El QR central conserva comercio, valida a terceros, controla colisiones y exige señal');
+select pass('El QR central conserva comercio y teléfono por intento, valida a terceros y controla accesos y colisiones');
 select * from finish();
 rollback;

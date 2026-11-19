@@ -5,18 +5,24 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.os.PowerManager;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
 import android.text.TextUtils;
 import android.util.Base64;
+import android.util.Log;
+import androidx.core.content.ContextCompat;
 
 import androidx.annotation.Nullable;
 
@@ -29,6 +35,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.io.OutputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.MessageDigest;
@@ -44,6 +51,9 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -78,14 +88,23 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     private static final int MAX_EVENTS = 500;
     private static final long HEARTBEAT_INTERVAL_MS = 30_000L;
     private static volatile boolean listenerConnected;
+    private static final AtomicBoolean HEALTH_QUEUED = new AtomicBoolean();
     private static final AtomicBoolean PULSE_QUEUED = new AtomicBoolean();
-    private final Handler heartbeatHandler = new Handler(Looper.getMainLooper());
-    private final Runnable heartbeat = new Runnable() {
+    private static final ScheduledExecutorService HEALTH_EXECUTOR = Executors.newSingleThreadScheduledExecutor();
+    private ScheduledFuture<?> heartbeat;
+    private ConnectivityManager connectivity;
+    private boolean networkRegistered;
+    private boolean powerRegistered;
+    private final ConnectivityManager.NetworkCallback networkCallback = new ConnectivityManager.NetworkCallback() {
         @Override
-        public void run() {
-            if (!listenerConnected) return;
-            scheduleHealthSync(getApplicationContext());
-            heartbeatHandler.postDelayed(this, HEARTBEAT_INTERVAL_MS);
+        public void onAvailable(Network network) {
+            if (listenerConnected) scheduleHealthSync(getApplicationContext());
+        }
+    };
+    private final BroadcastReceiver powerEvents = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (listenerConnected) scheduleHealthSync(context.getApplicationContext());
         }
     };
     private static final long RECENT_NOTIFICATION_WINDOW_MS = 30 * 60 * 1000L;
@@ -122,8 +141,21 @@ public final class YapeNotificationListenerService extends NotificationListenerS
     public void onListenerConnected() {
         super.onListenerConnected();
         listenerConnected = true;
-        heartbeatHandler.removeCallbacks(heartbeat);
-        heartbeatHandler.post(heartbeat);
+        if (heartbeat != null) heartbeat.cancel(false);
+        heartbeat = HEALTH_EXECUTOR.scheduleWithFixedDelay(
+                () -> scheduleHealthSync(getApplicationContext()), 0, HEARTBEAT_INTERVAL_MS, TimeUnit.MILLISECONDS);
+        connectivity = getSystemService(ConnectivityManager.class);
+        if (connectivity != null && !networkRegistered) {
+            connectivity.registerDefaultNetworkCallback(networkCallback);
+            networkRegistered = true;
+        }
+        if (!powerRegistered) {
+            IntentFilter filter = new IntentFilter(PowerManager.ACTION_DEVICE_IDLE_MODE_CHANGED);
+            filter.addAction(Intent.ACTION_SCREEN_ON);
+            filter.addAction(Intent.ACTION_POWER_CONNECTED);
+            ContextCompat.registerReceiver(this, powerEvents, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            powerRegistered = true;
+        }
         StatusBarNotification[] active = getActiveNotifications();
         if (active == null) return;
         long cutoff = System.currentTimeMillis() - RECENT_NOTIFICATION_WINDOW_MS;
@@ -149,8 +181,19 @@ public final class YapeNotificationListenerService extends NotificationListenerS
 
     private void pauseHeartbeat() {
         listenerConnected = false;
-        heartbeatHandler.removeCallbacks(heartbeat);
-        scheduleHealthSync(getApplicationContext());
+        if (heartbeat != null) {
+            heartbeat.cancel(false);
+            heartbeat = null;
+        }
+        if (networkRegistered) {
+            connectivity.unregisterNetworkCallback(networkCallback);
+            networkRegistered = false;
+        }
+        if (powerRegistered) {
+            unregisterReceiver(powerEvents);
+            powerRegistered = false;
+        }
+        reportHealthSoon(getApplicationContext());
     }
 
     @Override
@@ -492,6 +535,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
                     // A previously uploaded event must be retried so the RPC
                     // can fill the missing identity fields server-side.
                     existing.put("synced", false);
+                    existing.remove("uploadRejectedStatus");
                     current.put(index, existing);
                     persistEvents(preferences, current);
                 }
@@ -735,22 +779,32 @@ public final class YapeNotificationListenerService extends NotificationListenerS
 
     /** Reenvía las observaciones pendientes cifradas y reporta la salud del listener por separado. */
     public static void syncPendingEvents(Context context) {
-        if (context == null) return;
-        final Context appContext = context.getApplicationContext();
-        SYNC_EXECUTOR.execute(() -> syncPendingEventsBlocking(appContext));
+        if (context != null) scheduleHealthSync(context.getApplicationContext());
     }
 
     static void syncPendingEventsBlockingForJob(Context context) {
         final Context appContext = context.getApplicationContext();
+        reportHealthSoon(appContext);
         syncPendingEventsBlocking(appContext);
-        reportHealth(appContext);
+    }
+
+    private static void reportHealthSoon(Context context) {
+        if (!HEALTH_QUEUED.compareAndSet(false, true)) return;
+        HEALTH_EXECUTOR.execute(() -> {
+            try {
+                reportHealth(context);
+            } finally {
+                HEALTH_QUEUED.set(false);
+            }
+        });
     }
 
     private static void scheduleHealthSync(Context context) {
+        // El pulso no espera al drenaje de la cola ni a los timeouts de cada abono.
+        reportHealthSoon(context);
         if (!PULSE_QUEUED.compareAndSet(false, true)) return;
         SYNC_EXECUTOR.execute(() -> {
             try {
-                reportHealth(context);
                 syncPendingEventsBlocking(context);
             } finally {
                 PULSE_QUEUED.set(false);
@@ -832,19 +886,21 @@ public final class YapeNotificationListenerService extends NotificationListenerS
                     return;
                 }
             }
-            int uploaded = 0;
-            for (int index = 0; index < snapshot.length() && uploaded < 5; index++) {
+            int processed = 0;
+            for (int index = 0; index < snapshot.length() && processed < 5; index++) {
                 JSONObject event = snapshot.optJSONObject(index);
                 if (event == null || event.optBoolean("synced", false)
                         || !bindingId.equals(event.optString("bindingId", null))) continue;
-                if (!bindingId.equals(currentBindingId(context)) || !uploadEvent(token, event)) break;
-                uploaded++;
-                markUploaded(context, prefs, bindingId, event);
+                if (!bindingId.equals(currentBindingId(context))) break;
+                int outcome = uploadEvent(token, event);
+                if (outcome < 0) break;
+                processed++;
+                markProcessed(context, prefs, bindingId, event, outcome);
             }
         }
     }
 
-    private static void markUploaded(Context context, SharedPreferences prefs, String bindingId, JSONObject sent) {
+    private static void markProcessed(Context context, SharedPreferences prefs, String bindingId, JSONObject sent, int rejectedStatus) {
         synchronized (QUEUE_LOCK) {
             if (!bindingId.equals(currentBindingId(context))) return;
             try {
@@ -854,6 +910,10 @@ public final class YapeNotificationListenerService extends NotificationListenerS
                     // Si llegó información nueva mientras se enviaba, conservarla pendiente.
                     if (queued == null || !queued.toString().equals(sent.toString())) continue;
                     queued.put("synced", true);
+                    if (rejectedStatus > 0) {
+                        queued.put("uploadRejectedStatus", rejectedStatus);
+                        Log.w("SuyaCaja", "Observación en cuarentena por HTTP " + rejectedStatus);
+                    }
                     persistEvents(prefs, current);
                     break;
                 }
@@ -863,7 +923,7 @@ public final class YapeNotificationListenerService extends NotificationListenerS
         }
     }
 
-    private static boolean uploadEvent(String token, JSONObject event) {
+    private static int uploadEvent(String token, JSONObject event) {
         try {
             JSONObject payload = new JSONObject();
             payload.put("p_device_token", token);
@@ -878,11 +938,11 @@ public final class YapeNotificationListenerService extends NotificationListenerS
             if (origin != null) payload.put("p_origin", origin);
             return sendObserverRpc("ingest_wallet_observation", payload);
         } catch (JSONException ignored) {
-            return false;
+            return -1;
         }
     }
 
-    private static boolean sendObserverRpc(String rpc, JSONObject payload) {
+    private static int sendObserverRpc(String rpc, JSONObject payload) {
         HttpURLConnection connection = null;
         try {
             URL endpoint = new URL(BuildConfig.SUYA_SUPABASE_URL.replaceAll("/+$", "") + "/rest/v1/rpc/" + rpc);
@@ -899,11 +959,53 @@ public final class YapeNotificationListenerService extends NotificationListenerS
                 output.write(payload.toString().getBytes(StandardCharsets.UTF_8));
             }
             int status = connection.getResponseCode();
-            return status >= 200 && status < 300;
+            if (status >= 200 && status < 300) return 0;
+            String message = null;
+            if (status == 400) {
+                try (InputStream error = connection.getErrorStream()) {
+                    if (error != null) {
+                        byte[] bytes = new byte[1024];
+                        int length = error.read(bytes);
+                        if (length > 0) message = new JSONObject(
+                                new String(bytes, 0, length, StandardCharsets.UTF_8)).optString("message", null);
+                    }
+                } catch (Exception ignored) {
+                    // Un error desconocido conserva la evidencia pendiente.
+                }
+            }
+            return isPermanentUploadRejection(status, message) ? status : -1;
         } catch (Exception ignored) {
-            return false;
+            return -1;
         } finally {
             if (connection != null) connection.disconnect();
+        }
+    }
+
+    static boolean isPermanentUploadRejection(int status, @Nullable String message) {
+        if (status == 413 || status == 415 || status == 422) return true;
+        if (status != 400) return false;
+        return "invalid wallet observation".equals(message) || "invalid amount".equals(message)
+                || "unsupported currency".equals(message) || "invalid observed_at".equals(message);
+    }
+
+    static int rejectedEventCount(Context context) {
+        if (context == null) return 0;
+        synchronized (QUEUE_LOCK) {
+            String bindingId = currentBindingId(context);
+            if (bindingId == null) return 0;
+            String saved = context.getSharedPreferences(PREFS, MODE_PRIVATE).getString(EVENTS_KEY, null);
+            int count = 0;
+            try {
+                JSONArray events = new JSONArray(decryptEvents(saved));
+                for (int i = 0; i < events.length(); i++) {
+                    JSONObject event = events.optJSONObject(i);
+                    if (event != null && bindingId.equals(event.optString("bindingId"))
+                            && event.optInt("uploadRejectedStatus", 0) > 0) count++;
+                }
+            } catch (JSONException ignored) {
+                return 0;
+            }
+            return count;
         }
     }
 
