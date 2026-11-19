@@ -3,9 +3,11 @@ import { existsSync } from 'node:fs';
 
 const targets = [
   { app: 'customer', url: process.env.SMOKE_CUSTOMER_URL ?? 'http://127.0.0.1:4173/help', heading: 'Centro de ayuda', path: '/help' },
-  { app: 'rider', url: process.env.SMOKE_RIDER_URL ?? 'http://127.0.0.1:4174/rider/current', heading: 'Acceso de repartidor', path: '/login' },
-  { app: 'backoffice', url: process.env.SMOKE_BACKOFFICE_URL ?? 'http://127.0.0.1:4175/orders', heading: 'Acceso de operaciones', path: '/login' },
+  { app: 'rider', url: process.env.SMOKE_RIDER_URL ?? 'http://127.0.0.1:4174/rider/current', heading: 'Ingresa a Suya Repartidor', path: '/login' },
+  { app: 'backoffice', url: process.env.SMOKE_BACKOFFICE_URL ?? 'http://127.0.0.1:4175/orders', heading: 'Ingresa a Suya Empresas', path: '/login' },
 ];
+const riderLoginUrl = new URL('/rider/login', targets[1].url).href;
+targets.push({ app: 'rider-login', url: riderLoginUrl, heading: targets[1].heading, path: '/rider/login' });
 const viewports = [
   { width: 360, height: 800, name: 'narrow-mobile' },
   { width: 390, height: 844, name: 'mobile' },
