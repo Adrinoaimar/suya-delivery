@@ -117,16 +117,16 @@ begin
   perform set_config('request.jwt.claim.sub',u::text,true);
   perform set_config('request.jwt.claims',jsonb_build_object('sub',u,'role','authenticated')::text,true);
   assert public.review_expired_wallet_qr_claim(collector,expired_attempt);
-  perform public.save_wallet_observer_route_with_phone(collector,2,'yape','Titular de prueba',fixture_qr,null,'900000003');
+  perform public.save_wallet_observer_route_with_phone(collector,2,'yape','Titular de prueba',fixture_qr||'-reserva',null,'900000003');
   select version into strict reserve_route from public.list_wallet_observer_routes(collector)
   where priority=2 and provider='yape';
   begin
-    perform public.save_wallet_observer_route_with_phone(collector,2,'yape','Titular de prueba',fixture_qr||'nuevo',reserve_route,null);
+    perform public.save_wallet_observer_route_with_phone(collector,2,'yape','Titular de prueba',fixture_qr||'-reserva-nuevo',reserve_route,null);
     assert false, 'rotar con teléfono ya configurado requiere confirmar el celular';
   exception when raise_exception then
     assert sqlerrm like 'Confirma el celular%';
   end;
-  perform public.save_wallet_observer_route_with_phone(collector,2,'yape','Titular de prueba',fixture_qr||'nuevo',reserve_route,'900000003');
+  perform public.save_wallet_observer_route_with_phone(collector,2,'yape','Titular de prueba',fixture_qr||'-reserva-nuevo',reserve_route,'900000003');
   assert exists(select from public.list_wallet_observer_routes(collector)
     where priority=2 and provider='yape' and version<>reserve_route and phone='900000003');
   assert (select status='pending_payment' from public.orders where id=second_order),
