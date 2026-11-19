@@ -631,6 +631,11 @@ export default function WalletsOperationsPage() {
                     </p>
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge tone={status.tone}>{status.label}</Badge>
+                      {observation.attributedOrder && (
+                        <p className="text-xs font-semibold text-suya-green-dark">
+                          #{observation.attributedOrder.code} · {observation.attributedOrder.restaurantName}
+                        </p>
+                      )}
                       {(observation.provider === 'yape' || observation.provider === 'lemon') &&
                         observation.verification !== 'verified' && (
                           <Button
@@ -729,6 +734,7 @@ export default function WalletsOperationsPage() {
                                   <p className="font-semibold">
                                     Pedido #{candidate.orderCode} · {formatPrice(candidate.amount)}
                                   </p>
+                                  {candidate.restaurantName && <p className="text-xs font-semibold">{candidate.restaurantName}</p>}
                                   <p className="text-xs text-suya-muted">
                                     Cliente: {candidate.customerName} · Referencia{' '}
                                     {candidate.checkoutReference} · Remitente:{' '}

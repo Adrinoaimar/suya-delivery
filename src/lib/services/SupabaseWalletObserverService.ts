@@ -65,6 +65,7 @@ type CandidateRow = {
   payment_attempt_id?: unknown;
   order_id?: unknown;
   order_code?: unknown;
+  restaurant_name?: unknown;
   customer_name?: unknown;
   checkout_reference?: unknown;
   method?: unknown;
@@ -379,7 +380,19 @@ export class SupabaseWalletObserverService implements WalletObserverService {
       .order('observed_at', { ascending: false })
       .limit(100);
     if (!withOrigin.error) {
-      return (withOrigin.data ?? []).map((row) => mapObservation(row as ObservationRow));
+      const observations = (withOrigin.data ?? []).map((row) => mapObservation(row as ObservationRow));
+      const resolved = observations.filter((row) => row.observerRouted && row.verification === 'verified').map((row) => row.id);
+      if (resolved.length === 0) return observations;
+
+      const { data, error } = await this.client.rpc('list_wallet_observation_orders', { p_observation_ids: resolved });
+      if (error) return observations;
+      const attributed = new Map<string, NonNullable<WalletObservation['attributedOrder']>>();
+      for (const row of Array.isArray(data) ? data : []) {
+        if (typeof row.observation_id === 'string' && typeof row.order_code === 'string' && typeof row.restaurant_name === 'string') {
+          attributed.set(row.observation_id, { code: row.order_code, restaurantName: row.restaurant_name });
+        }
+      }
+      return observations.map((row) => ({ ...row, attributedOrder: attributed.get(row.id) }));
     }
 
     // Durante el rollout puede existir un panel actualizado contra un proyecto
@@ -401,7 +414,7 @@ export class SupabaseWalletObserverService implements WalletObserverService {
   }
 
   async listPaymentCandidates(observationId: string): Promise<WalletPaymentCandidate[]> {
-    const { data, error } = await this.client.rpc('list_wallet_payment_candidates', {
+    const { data, error } = await this.client.rpc('list_wallet_payment_candidates_with_store', {
       p_observation_id: observationId,
     });
     if (error) throw new Error(error.message);
@@ -419,6 +432,7 @@ export class SupabaseWalletObserverService implements WalletObserverService {
           paymentAttemptId: candidate.payment_attempt_id,
           orderId: candidate.order_id,
           orderCode: candidate.order_code,
+          restaurantName: nullableText(candidate.restaurant_name) ?? undefined,
           customerName: text(candidate.customer_name, 'Cliente'),
           checkoutReference: candidate.checkout_reference,
           method: candidate.method === 'lemon' ? 'lemon' : 'yape',

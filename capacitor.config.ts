@@ -1,14 +1,6 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
-const liveUpdatePublicKey = `-----BEGIN PUBLIC KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAi43fM/96xVYVtFVIrCxS
-orvocd4rJvXRsT16bVWWmDsjjngitoRQC16BNDqAJeFvafiKy8JvBxBwyA3AkMMz
-bD59lp5z5+SCt2lWSEeDl4DiV/zKXBxIeeBZWp/7mgqQQXxFkYhSf+bfHe72ske2
-ht91VI/E0LhVfIp4tPjKVQVT4DgoAUuUcK7xwtJGXThnhITy4ZuyMo0yyDjbb0Li
-KdkoTsAbIaamsbT5D8QHi6WtOeOdQN9gP77xzA4R6PeD2CDny0v3LxRWjDXQZnEQ
-n1z2nBPm56x96spZ8c+UCcxxeiVvm+5VjWgIpydl2//WP4VWuSJYs+eb0Br45HFQ
-9wIDAQAB
------END PUBLIC KEY-----`;
+import { liveUpdatePublicKey } from './src/lib/mobileUpdatePublicKey';
 
 const mobileAppId = process.env.SUYA_MOBILE_APP_ID?.trim() || 'com.suya.app';
 const mobileAppName = process.env.SUYA_MOBILE_APP_NAME?.trim() || 'Suya';

@@ -92,9 +92,12 @@ incompleta.
 Para reconstruir la web de un despliegue, abre el commit registrado en Cloudflare Pages, usa Node 22,
 ejecuta `npm ci` y aplica las variables de producción de `.github/workflows/cloudflare-pages.yml`.
 `npm run build:apps` genera los bundles en `dist/customer`, `dist/backoffice` y `dist/rider`.
-Los paquetes OTA firmados se publican por separado y tienen su propio identificador y checksum.
+Los paquetes OTA firmados se publican por separado. Empresas y Repartidor requieren un
+manifiesto firmado compatible con su versión nativa y posterior a la revisión instalada.
 
-Andá Paya Restaurante y Donde Joel aceptan efectivo mientras se validan sus cobros digitales.
+El cobro Yape central usa el QR principal de Suya Caja cuando su observador está activo. Cada
+pedido conserva su comercio y su código. El cliente valida el código de seguridad del abono y,
+si pagó otra persona, Suya puede pedir el nombre que figura en su comprobante.
 En un pedido con QR de billetera vencido, el cliente puede enviar un reclamo. Caja lo consulta por
 restaurante en `/wallets`, coteja el comprobante con la billetera receptora y marca la revisión.
 El reclamo y su revisión no cambian el estado del pedido ni del pago.

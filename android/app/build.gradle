@@ -52,8 +52,8 @@ android {
         ]
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 23
-        versionName "1.22"
+        versionCode 24
+        versionName "1.23"
         buildConfigField "boolean", "SUYA_WALLET_OBSERVER_ENABLED", suyaWalletObserverEnabled.toString()
         buildConfigField "int", "SUYA_WALLET_OBSERVER_SLOT", suyaObserverSlot.toString()
         buildConfigField "String", "SUYA_SUPABASE_URL", "\"${suyaSupabaseUrl}\""

@@ -2,6 +2,7 @@ import { build } from 'vite';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath } from 'node:url';
 import { rm } from 'node:fs/promises';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { assertProductionBuildConfig } from './lib/production-build-config.mjs';
 
@@ -11,6 +12,9 @@ const webApps = ['customer', 'rider', 'backoffice'];
 const requested = process.argv[2] ? [process.argv[2]] : webApps;
 
 assertProductionBuildConfig();
+const bundleRevision = execFileSync('git', ['show', '-s', '--format=%ct', 'HEAD'], {
+  cwd: repoRoot, encoding: 'utf8',
+}).trim();
 
 if (requested.length === webApps.length && webApps.every((app) => requested.includes(app))) {
   await rm(path.join(repoRoot, 'dist'), { recursive: true, force: true });
@@ -36,6 +40,7 @@ for (const app of requested) {
     },
     define: {
       'import.meta.env.VITE_MOBILE_ROLE': JSON.stringify(mobileRole),
+      'import.meta.env.VITE_MOBILE_BUNDLE_REVISION': JSON.stringify(bundleRevision),
     },
     build: {
       outDir: path.join(repoRoot, 'dist', app),

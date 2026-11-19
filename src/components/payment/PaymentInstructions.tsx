@@ -18,6 +18,7 @@ interface PaymentInstructionsProps {
   order: Pick<
     Order,
     | 'id'
+    | 'code'
     | 'storeName'
     | 'total'
     | 'paymentMethod'
@@ -661,6 +662,7 @@ export function PaymentInstructions({
             <div className="mt-1 space-y-0.5">
               <p className="font-display text-xl font-bold text-suya-carbon">{formatPrice(intent.amount)}</p>
               {intent.receiverLabel && <p className="text-sm text-suya-muted">Destinatario <strong className="text-suya-carbon">{intent.receiverLabel}</strong></p>}
+              <p className="text-xs text-suya-muted">Código de pedido <strong className="text-suya-carbon">{order.code || intent.checkoutReference}</strong></p>
             </div>
           ) : (
             <p className="mt-1 text-sm text-suya-carbon">

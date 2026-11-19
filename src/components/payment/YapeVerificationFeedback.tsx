@@ -9,7 +9,7 @@ const COPY: Record<YapeVerificationPhase, [string, string]> = {
   authorized: ['Código correcto', 'Pago confirmado. Enviamos el pedido al local.'],
   code_mismatch: ['Código incorrecto', 'Revisa los 3 dígitos del comprobante e inténtalo otra vez.'],
   unobserved: ['Aún no encontramos el abono', 'Si ya pagaste, puedes volver a verificar con el mismo código.'],
-  name_required: ['Necesitamos el nombre de quien pagó', 'Hay varios abonos con el mismo código y monto. Escribe el nombre que aparece en el comprobante.'],
+  name_required: ['Necesitamos el nombre de quien pagó', 'Escribe el nombre que aparece en el comprobante para identificar tu abono.'],
   review: ['Caja debe revisar el pago', 'Conserva el comprobante. Evita repetir el pago.'],
   retry_limit: ['Límite de intentos alcanzado', 'Contacta a Caja con tu comprobante para revisar el pago.'],
   expired: ['El QR venció', 'Si ya pagaste, conserva el comprobante y contacta a Caja.'],

@@ -1,12 +1,17 @@
 import { Capacitor } from '@capacitor/core';
 import { App } from '@capacitor/app';
+import { Preferences } from '@capacitor/preferences';
+import { hasValidUpdateManifestSignature, isNewerProtectedUpdate } from '@/lib/mobileUpdatePolicy';
+import type { ProtectedMobileUpdate } from '@/lib/mobileUpdatePolicy';
 import { supportsOrderNotifications } from '@/lib/nativeOrderNotifications';
 
 const UPDATE_BASE_URL = 'https://suyadelivery.com/mobile-updates';
 const UPDATE_ORIGIN = 'https://suyadelivery.com';
 const UPDATE_PATH_PREFIX = '/mobile-updates/';
 const UPDATE_TIMEOUT_MS = 10_000;
+const PROTECTED_ROLES = new Set(['rider', 'backoffice']);
 const MOBILE_ROLES = new Set(['customer', 'rider', 'backoffice', 'walletobserver', 'unified']);
+let updateInProgress = false;
 
 interface MobileUpdateManifest {
   version: 1;
@@ -18,9 +23,9 @@ interface MobileUpdateManifest {
   minimumNativeVersionCode?: number;
 }
 
-function isManifest(value: unknown, expectedRole: string): value is MobileUpdateManifest {
+function isManifest(value: unknown, expectedRole: string): value is MobileUpdateManifest | ProtectedMobileUpdate {
   if (!value || typeof value !== 'object') return false;
-  const manifest = value as Partial<MobileUpdateManifest>;
+  const manifest = value as Partial<MobileUpdateManifest | ProtectedMobileUpdate>;
   let artifactUrl: URL;
   try {
     artifactUrl = new URL(typeof manifest.url === 'string' ? manifest.url : '');
@@ -29,7 +34,7 @@ function isManifest(value: unknown, expectedRole: string): value is MobileUpdate
   }
 
   return (
-    manifest.version === 1 &&
+    manifest.version === (PROTECTED_ROLES.has(expectedRole) ? 2 : 1) &&
     manifest.role === expectedRole &&
     typeof manifest.bundleId === 'string' &&
     /^[a-zA-Z0-9._-]{1,128}$/.test(manifest.bundleId) &&
@@ -50,7 +55,8 @@ function isManifest(value: unknown, expectedRole: string): value is MobileUpdate
  * from Pages. A role can never install another role's bundle.
  */
 export async function syncMobileLiveUpdate(): Promise<void> {
-  if (!Capacitor.isNativePlatform() || import.meta.env.VITE_PROFILED_OBSERVER === 'true') return;
+  if (updateInProgress || !Capacitor.isNativePlatform() || import.meta.env.VITE_PROFILED_OBSERVER === 'true') return;
+  updateInProgress = true;
 
   try {
     const { LiveUpdate } = await import('@capawesome/capacitor-live-update');
@@ -74,7 +80,17 @@ export async function syncMobileLiveUpdate(): Promise<void> {
       const manifest: unknown = await response.json();
       if (!isManifest(manifest, mobileRole)) return;
 
-      if (supportsOrderNotifications()) {
+      let revisionPreference: string | undefined;
+      if (manifest.version === 2) {
+        const { build } = await App.getInfo();
+        revisionPreference = `suya-ota-revision:${mobileRole}:${build}`;
+        const { value } = await Preferences.get({ key: revisionPreference });
+        const previousRevision = Number(value);
+        if (!isNewerProtectedUpdate(
+          manifest, Number(build), Number(import.meta.env.VITE_MOBILE_BUNDLE_REVISION),
+          Number.isSafeInteger(previousRevision) && previousRevision > 0 ? previousRevision : 0,
+        ) || !await hasValidUpdateManifestSignature(manifest)) return;
+      } else if (supportsOrderNotifications()) {
         const { build } = await App.getInfo();
         const minimum = manifest.minimumNativeVersionCode;
         // La versión nativa de avisos requiere un bundle web compatible.
@@ -91,11 +107,27 @@ export async function syncMobileLiveUpdate(): Promise<void> {
         signature: manifest.signature,
         url: manifest.url,
       });
-      await LiveUpdate.setNextBundle({ bundleId: manifest.bundleId });
+      // Guarda el piso antes de publicar el siguiente arranque. Un fallo al preparar el
+      // cambio se puede reintentar sin perder el piso de la versión anterior.
+      if (manifest.version === 2 && revisionPreference) {
+        const previous = await Preferences.get({ key: revisionPreference });
+        await Preferences.set({ key: revisionPreference, value: String(manifest.revision) });
+        try {
+          await LiveUpdate.setNextBundle({ bundleId: manifest.bundleId });
+        } catch (error) {
+          if (previous.value === null) await Preferences.remove({ key: revisionPreference });
+          else await Preferences.set({ key: revisionPreference, value: previous.value });
+          throw error;
+        }
+      } else {
+        await LiveUpdate.setNextBundle({ bundleId: manifest.bundleId });
+      }
     } finally {
       clearTimeout(timeout);
     }
   } catch {
     // A failed optional update must never prevent the bundled app from opening.
+  } finally {
+    updateInProgress = false;
   }
 }

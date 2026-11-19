@@ -10,11 +10,13 @@ const bundleId = process.env.GITHUB_SHA ?? `local-${Date.now()}`;
 const baseUrl = process.env.SUYA_LIVE_UPDATE_BASE_URL ?? 'https://suyadelivery.com';
 const privateKey = process.env.SUYA_LIVE_UPDATE_PRIVATE_KEY;
 const androidConfig = await readFile(path.join(repoRoot, 'android', 'app', 'build.gradle'), 'utf8');
-const customerNativeVersion = Number(androidConfig.match(/^\s*versionCode\s+(\d+)\s*$/m)?.[1]);
-if (!Number.isSafeInteger(customerNativeVersion) || customerNativeVersion < 1) {
-  throw new Error('No se pudo determinar la versión nativa del cliente.');
+const nativeVersion = Number(androidConfig.match(/^\s*versionCode\s+(\d+)\s*$/m)?.[1]);
+const revision = Number(execFileSync('git', ['show', '-s', '--format=%ct', 'HEAD'], { cwd: repoRoot, encoding: 'utf8' }));
+if (!Number.isSafeInteger(nativeVersion) || nativeVersion < 1 || !Number.isSafeInteger(revision) || revision < 1) {
+  throw new Error('No se pudo determinar la versión nativa o la revisión del bundle.');
 }
 const roles = ['customer', 'rider', 'backoffice', 'walletobserver', 'unified'];
+const protectedRoles = new Set(['rider', 'backoffice']);
 
 if (!privateKey) throw new Error('Falta SUYA_LIVE_UPDATE_PRIVATE_KEY para firmar los bundles móviles.');
 if (!/^[a-zA-Z0-9._-]{1,128}$/.test(bundleId)) {
@@ -52,19 +54,24 @@ async function prepareRole(role) {
 
   const archive = await readFile(archivePath);
   const checksum = createHash('sha256').update(archive).digest('hex');
-  const signer = createSign('RSA-SHA256');
-  signer.update(archive);
-  signer.end();
-  const signature = signer.sign(privateKey, 'base64');
+  const signature = createSign('RSA-SHA256').update(archive).sign(privateKey, 'base64');
+  const protectedRole = protectedRoles.has(role);
   const manifest = {
-    version: 1,
+    version: protectedRole ? 2 : 1,
     role,
     bundleId,
-    ...(role === 'customer' ? { minimumNativeVersionCode: customerNativeVersion } : {}),
+    minimumNativeVersionCode: nativeVersion,
+    revision,
     url: `${baseUrl}/mobile-updates/${role}/${archiveName}`,
     checksum,
     signature,
   };
+  if (protectedRole) {
+    const metadata = JSON.stringify([
+      manifest.version, role, bundleId, nativeVersion, revision, manifest.url, checksum, signature,
+    ]);
+    manifest.manifestSignature = createSign('RSA-SHA256').update(metadata).sign(privateKey, 'base64');
+  }
 
   await writeFile(path.join(roleDir, 'latest.json'), `${JSON.stringify(manifest, null, 2)}\n`);
   return manifest;

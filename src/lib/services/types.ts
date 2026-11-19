@@ -210,6 +210,7 @@ export interface WalletObservation {
   receivedAt?: string | null;
   verification: string;
   observerRouted?: boolean;
+  attributedOrder?: { code: string; restaurantName: string };
   origin: WalletObservationOrigin;
 }
 
@@ -217,6 +218,7 @@ export interface WalletPaymentCandidate {
   paymentAttemptId: string;
   orderId: string;
   orderCode: string;
+  restaurantName?: string;
   customerName: string;
   checkoutReference: string;
   method: PaymentMethod;

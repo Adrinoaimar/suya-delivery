@@ -1014,9 +1014,10 @@ describe('UI Cliente y Panel "Configuración de cobros — SUYA Delivery" (Fases
     };
     const sampleOrder: Pick<
       Order,
-      'id' | 'storeName' | 'total' | 'paymentMethod' | 'paymentIntent' | 'status'
+      'id' | 'code' | 'storeName' | 'total' | 'paymentMethod' | 'paymentIntent' | 'status'
     > = {
       id: 'order-mp-1',
+      code: 'MP35',
       storeName: 'El Tío Jhony',
       total: 35,
       paymentMethod: 'yape',
@@ -1167,6 +1168,7 @@ describe('UI Cliente y Panel "Configuración de cobros — SUYA Delivery" (Fases
       <PaymentInstructions
         order={{
           id: 'order-static-1',
+          code: 'AUTO2499',
           storeName: 'El Tío Jhony',
           total: 25,
           paymentMethod: 'yape',
