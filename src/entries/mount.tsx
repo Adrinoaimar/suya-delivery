@@ -5,7 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { AppShell } from '@/app/AppShell';
 import { AuthBootstrap } from '@/app/AuthBootstrap';
 import { CatalogBootstrap } from '@/app/CatalogBootstrap';
-import { syncMobileLiveUpdate } from '@/lib/liveUpdate';
+import { startMobileLiveUpdates } from '@/lib/liveUpdate';
 import { removeStaleCustomerServiceWorker } from '@/lib/serviceWorker';
 import '@/styles/index.css';
 
@@ -38,7 +38,7 @@ export function mountApp(Routes: ComponentType, options: MountOptions = {}): voi
     </StrictMode>,
   );
 
-  void syncMobileLiveUpdate();
+  startMobileLiveUpdates();
 
   const mobileRole = import.meta.env.VITE_MOBILE_ROLE?.trim();
   if (

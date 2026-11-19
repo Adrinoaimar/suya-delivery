@@ -1,0 +1,36 @@
+name: Firmar OTA de Empresas y Repartidor
+
+on:
+  push:
+    branches: [release/ota-signing]
+    paths: ['.github/ota-signing-request.json']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: suya-protected-ota-signing
+  cancel-in-progress: false
+
+jobs:
+  sign:
+    if: github.actor == github.repository_owner
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Firmar los ZIP verificados por SHA-256
+        env:
+          SUYA_LIVE_UPDATE_PRIVATE_KEY: ${{ secrets.SUYA_LIVE_UPDATE_PRIVATE_KEY }}
+        run: node scripts/sign-protected-mobile-update.mjs .github/ota-signing-request.json signed
+      - uses: actions/upload-artifact@v4
+        with:
+          name: suya-ota-manifests
+          path: signed
+          if-no-files-found: error
+          retention-days: 7

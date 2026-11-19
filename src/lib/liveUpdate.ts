@@ -9,9 +9,11 @@ const UPDATE_BASE_URL = 'https://suyadelivery.com/mobile-updates';
 const UPDATE_ORIGIN = 'https://suyadelivery.com';
 const UPDATE_PATH_PREFIX = '/mobile-updates/';
 const UPDATE_TIMEOUT_MS = 10_000;
+const RESUME_INTERVAL_MS = 5 * 60_000;
 const PROTECTED_ROLES = new Set(['rider', 'backoffice']);
 const MOBILE_ROLES = new Set(['customer', 'rider', 'backoffice', 'walletobserver', 'unified']);
 let updateInProgress = false;
+let lastUpdateCheckAt = 0;
 
 interface MobileUpdateManifest {
   version: 1;
@@ -49,6 +51,17 @@ function isManifest(value: unknown, expectedRole: string): value is MobileUpdate
   );
 }
 
+export function startMobileLiveUpdates(): void {
+  void syncMobileLiveUpdate();
+  const role = import.meta.env.VITE_MOBILE_ROLE?.trim();
+  if (!role || !PROTECTED_ROLES.has(role) || !Capacitor.isNativePlatform()
+    || import.meta.env.VITE_DISABLE_MOBILE_LIVE_UPDATE === 'true') return;
+
+  void App.addListener('appStateChange', ({ isActive }) => {
+    if (isActive && Date.now() - lastUpdateCheckAt >= RESUME_INTERVAL_MS) void syncMobileLiveUpdate();
+  }).catch(() => undefined);
+}
+
 /**
  * Checks for a signed web bundle for this native role and stages it for the
  * next app launch. Native code stays in the APK; HTML/CSS/JS changes arrive
@@ -57,6 +70,7 @@ function isManifest(value: unknown, expectedRole: string): value is MobileUpdate
 export async function syncMobileLiveUpdate(): Promise<void> {
   if (updateInProgress || !Capacitor.isNativePlatform() || import.meta.env.VITE_PROFILED_OBSERVER === 'true') return;
   updateInProgress = true;
+  lastUpdateCheckAt = Date.now();
 
   try {
     const { LiveUpdate } = await import('@capawesome/capacitor-live-update');
